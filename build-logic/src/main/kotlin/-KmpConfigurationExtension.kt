@@ -22,7 +22,7 @@ fun KmpConfigurationExtension.configureShared(
     action: Action<KmpConfigurationContainerDsl>
 ) {
     configure {
-//        androidNativeAll()
+        androidNativeAll()
         iosAll()
         linuxAll()
         macosAll()

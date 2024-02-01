@@ -26,6 +26,32 @@ kmpConfiguration {
     configureShared(publish = true) {
         kotlin {
             targets.filterIsInstance<KotlinNativeTarget>().spawnCInterop()
+
+            with(sourceSets) {
+                val androidNativeMain = findByName("androidNativeMain")
+                val linuxMain = findByName("linuxMain")
+                val macosMain = findByName("macosMain")
+
+                if (androidNativeMain != null || linuxMain != null || macosMain != null) {
+                    val nativeMain = getByName("nativeMain")
+                    val forkMain = maybeCreate("forkMain").apply { dependsOn(nativeMain) }
+                    androidNativeMain?.apply { dependsOn(forkMain) }
+                    linuxMain?.apply { dependsOn(forkMain) }
+                    macosMain?.apply { dependsOn(forkMain) }
+                }
+
+                val iosMain = findByName("iosMain")
+                val tvosMain = findByName("tvosMain")
+                val watchosMain = findByName("watchosMain")
+
+                if (iosMain != null || tvosMain != null || watchosMain != null) {
+                    val darwinMain = getByName("darwinMain")
+                    val spawnMain = maybeCreate("spawnMain").apply { dependsOn(darwinMain) }
+                    iosMain?.apply { dependsOn(spawnMain) }
+                    tvosMain?.apply { dependsOn(spawnMain) }
+                    watchosMain?.apply { dependsOn(spawnMain) }
+                }
+            }
         }
     }
 }
