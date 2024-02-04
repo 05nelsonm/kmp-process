@@ -24,6 +24,20 @@ plugins {
 
 kmpConfiguration {
     configureShared(publish = true) {
+        common {
+            sourceSetMain {
+                dependencies {
+                    implementation(libs.immutable.collections)
+                }
+            }
+            sourceSetTest {
+                dependencies {
+                    implementation(libs.kmp.tor.resource.tor)
+                    implementation(libs.kotlinx.coroutines.test)
+                }
+            }
+        }
+
         kotlin {
             targets.filterIsInstance<KotlinNativeTarget>().spawnCInterop()
         }

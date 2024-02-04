@@ -13,21 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-plugins {
-    alias(libs.plugins.kotlin.multiplatform) apply(false)
-}
+@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
 
-allprojects {
+package io.matthewnelson.process.internal
 
-    findProperty("GROUP")?.let { group = it }
-    findProperty("VERSION_NAME")?.let { version = it }
-    findProperty("POM_DESCRIPTION")?.let { description = it.toString() }
+import io.matthewnelson.process.ProcessException
+import kotlinx.cinterop.CValuesRef
+import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.MemScope
 
-    repositories {
-        mavenCentral()
-        gradlePluginPortal()
+@OptIn(ExperimentalForeignApi::class)
+internal expect value class PosixSpawnAttrs private constructor(
+    private val _ref: CValuesRef<*>,
+) {
 
-        maven("https://s01.oss.sonatype.org/content/repositories/snapshots")
+    internal companion object {
+
+        @Throws(ProcessException::class)
+        internal fun MemScope.posixSpawnAttrInit(): PosixSpawnAttrs
     }
-
 }

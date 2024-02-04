@@ -13,21 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-plugins {
-    alias(libs.plugins.kotlin.multiplatform) apply(false)
-}
+package io.matthewnelson.process.internal
 
-allprojects {
+import io.matthewnelson.process.Process
+import io.matthewnelson.process.ProcessException
 
-    findProperty("GROUP")?.let { group = it }
-    findProperty("VERSION_NAME")?.let { version = it }
-    findProperty("POM_DESCRIPTION")?.let { description = it.toString() }
+internal class NativeProcess
+@Throws(ProcessException::class)
+internal constructor(
+    internal val pid: Int,
+    command: String,
+    args: List<String>,
+    env: Map<String, String>,
+): Process(command, args, env) {
 
-    repositories {
-        mavenCentral()
-        gradlePluginPortal()
-
-        maven("https://s01.oss.sonatype.org/content/repositories/snapshots")
+    init {
+        if (pid <= 0) {
+            // TODO: Close pipes #Issue 2
+            throw ProcessException("pid[$pid] must be greater than 0")
+        }
     }
-
 }

@@ -7,8 +7,6 @@
 ![badge-platform-linux]
 ![badge-platform-ios]
 ![badge-platform-macos]
-![badge-platform-tvos]
-![badge-platform-watchos]
 ![badge-support-apple-silicon]
 ![badge-support-linux-arm]
 

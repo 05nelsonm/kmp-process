@@ -27,8 +27,11 @@ fun KmpConfigurationExtension.configureShared(
         linuxAll()
         macosAll()
 //        mingwAll()
-        tvosAll()
-        watchosAll()
+
+        // posix_spawn is "supported" but APIs for posix_spawn_file_actions
+        // and posix_spawnattr are unavailable
+//        tvosAll()
+//        watchosAll()
 
         common {
             if (publish) pluginIds("publication")
