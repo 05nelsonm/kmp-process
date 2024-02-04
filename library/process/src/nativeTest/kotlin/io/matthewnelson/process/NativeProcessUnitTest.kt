@@ -12,7 +12,7 @@ import platform.posix.kill
 import kotlin.test.Test
 import kotlin.time.Duration.Companion.seconds
 
-class ProcessUnitTest {
+class NativeProcessUnitTest {
 
     private companion object {
         private val installer = TorResources(installationDir = SysTempDir.resolve("process"))
