@@ -1,7 +1,6 @@
 package io.matthewnelson.process.internal
 
-import kotlinx.cinterop.ExperimentalForeignApi
-import kotlinx.cinterop.toKString
+import io.matthewnelson.process.ProcessException
 import platform.posix.*
 import kotlin.concurrent.Volatile
 
@@ -10,7 +9,7 @@ import kotlin.concurrent.Volatile
 internal class UnixSocket private constructor(val fd: Int): AutoCloseable {
 
     @Volatile
-    internal var isClosed: Boolean = fd < 0
+    internal var isClosed: Boolean = false
         private set
 
     override fun close() {
@@ -22,22 +21,13 @@ internal class UnixSocket private constructor(val fd: Int): AutoCloseable {
 
     internal companion object {
 
-        @OptIn(ExperimentalForeignApi::class)
+        @Throws(ProcessException::class)
         internal fun new(): UnixSocket {
-            var descriptor = socket(AF_UNIX, SOCK_STREAM, 0)
-            if (descriptor < 0) {
-                val errno = errno
-                val message = strerror(errno)?.toKString() ?: "errno: $errno"
-                println("UNIX_SOCKET[$errno]: $message")
-            } else {
-                val result = fcntl(descriptor, F_SETFL, O_NONBLOCK)
-                if (result != 0) {
-                    close(descriptor)
-                    descriptor = -1
-                    val errno = errno
-                    val message = strerror(errno)?.toKString() ?: "errno: $errno"
-                    println("FCNTL[$errno]: $message")
-                }
+            val descriptor = socket(AF_UNIX, SOCK_STREAM, 0).check()
+
+            if (fcntl(descriptor, F_SETFL, O_NONBLOCK) != 0) {
+                close(descriptor)
+                throw errnoToProcessException(errno)
             }
 
             return UnixSocket(descriptor)

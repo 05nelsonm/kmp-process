@@ -62,10 +62,15 @@ public abstract class Process internal constructor(
             block(env)
         }
 
-        public fun start(): Process = createProcess(
-            command = command,
-            args = args.toImmutableList(),
-            env = env.toImmutableMap(),
-        )
+        @Throws(ProcessException::class)
+        public fun start(): Process {
+            if (command.isBlank()) throw ProcessException("command cannot be blank")
+
+            return createProcess(
+                command = command,
+                args = args.toImmutableList(),
+                env = env.toImmutableMap(),
+            )
+        }
     }
 }

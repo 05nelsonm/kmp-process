@@ -2,6 +2,7 @@
 
 package io.matthewnelson.process.internal
 
+import io.matthewnelson.process.ProcessException
 import io.matthewnelson.process.posix_spawnattr_destroy
 import io.matthewnelson.process.posix_spawnattr_init
 import io.matthewnelson.process.posix_spawnattr_tVar
@@ -19,11 +20,12 @@ internal actual value class PosixSpawnAttrs private actual constructor(
 
     internal actual companion object {
 
-        internal actual fun MemScope.posixSpawnAttrInit(): Pair<Int, PosixSpawnAttrs> {
+        @Throws(ProcessException::class)
+        internal actual fun MemScope.posixSpawnAttrInit(): PosixSpawnAttrs {
             val attrs = alloc<posix_spawnattr_tVar>()
-            val result = posix_spawnattr_init(attrs.ptr)
+            posix_spawnattr_init(attrs.ptr).check()
             defer { posix_spawnattr_destroy(attrs.ptr) }
-            return result to PosixSpawnAttrs(attrs.ptr)
+            return PosixSpawnAttrs(attrs.ptr)
         }
     }
 }

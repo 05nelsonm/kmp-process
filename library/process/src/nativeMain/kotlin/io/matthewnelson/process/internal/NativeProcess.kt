@@ -16,13 +16,21 @@
 package io.matthewnelson.process.internal
 
 import io.matthewnelson.process.Process
+import io.matthewnelson.process.ProcessException
 
-internal class NativeProcess(
-    pid: Int,
+internal class NativeProcess
+@Throws(ProcessException::class)
+internal constructor(
+    internal val pid: Int,
     command: String,
     args: List<String>,
     env: Map<String, String>,
 ): Process(command, args, env) {
 
-    internal val pid: Int? = pid.takeIf { it > 0 }
+    init {
+        if (pid <= 0) {
+            // TODO: Close pipes #Issue 2
+            throw ProcessException("pid[$pid] must be greater than 0")
+        }
+    }
 }

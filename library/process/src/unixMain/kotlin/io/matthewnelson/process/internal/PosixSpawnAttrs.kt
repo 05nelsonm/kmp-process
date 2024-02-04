@@ -17,6 +17,7 @@
 
 package io.matthewnelson.process.internal
 
+import io.matthewnelson.process.ProcessException
 import kotlinx.cinterop.CValuesRef
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.MemScope
@@ -28,6 +29,7 @@ internal expect value class PosixSpawnAttrs private constructor(
 
     internal companion object {
 
-        internal fun MemScope.posixSpawnAttrInit(): Pair<Int, PosixSpawnAttrs>
+        @Throws(ProcessException::class)
+        internal fun MemScope.posixSpawnAttrInit(): PosixSpawnAttrs
     }
 }

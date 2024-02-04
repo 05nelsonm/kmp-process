@@ -18,11 +18,13 @@
 package io.matthewnelson.process.internal
 
 import io.matthewnelson.process.Process
+import io.matthewnelson.process.ProcessException
 import io.matthewnelson.process.internal.PosixSpawnAttrs.Companion.posixSpawnAttrInit
 import io.matthewnelson.process.internal.PosixSpawnFileActions.Companion.posixSpawnFileActionsInit
 import kotlinx.cinterop.*
 import platform.posix.*
 
+@Throws(ProcessException::class)
 @OptIn(ExperimentalForeignApi::class)
 internal actual fun createProcess(
     command: String,
@@ -32,28 +34,8 @@ internal actual fun createProcess(
 
     // TODO: pipes Issue #2
 
-    val fileActions: PosixSpawnFileActions = posixSpawnFileActionsInit().let { (result, ref) ->
-        if (result != 0) {
-            // TODO: error to stdioerr
-            val errno = errno
-            val message = strerror(errno)?.toKString() ?: "errno: $errno"
-            println("ERR_FILE_ACTIONS[$errno]: $message")
-            return@memScoped NativeProcess(-1, command, args, env)
-        }
-        ref
-    }
-
-    val attrs: PosixSpawnAttrs = posixSpawnAttrInit().let { (result, ref) ->
-        if (result != 0) {
-            // TODO: error to stdioerr
-            val errno = errno
-            val message = strerror(errno)?.toKString() ?: "errno: $errno"
-            println("ERR_ATTRS[$errno]: $message")
-            return@memScoped NativeProcess(-1, command, args, env)
-        }
-        ref
-    }
-
+    val fileActions = posixSpawnFileActionsInit()
+    val attrs = posixSpawnAttrInit()
     val pid = alloc<pid_tVar>()
 
     // null terminated c-string array
@@ -83,19 +65,13 @@ internal actual fun createProcess(
         this[i] = null
     }
 
-    val result = if (command.startsWith('/')) {
+    if (command.startsWith('/')) {
         // Absolute path, utilize posix_spawn
         posixSpawn(command, pid.ptr, fileActions, attrs, argv, envp)
     } else {
         // relative path, utilize posix_spawnp
         posixSpawnP(command, pid.ptr, fileActions, attrs, argv, envp)
-    }
-    if (result != 0) {
-        // TODO: error to stdioerr
-        val errno = errno
-        val message = strerror(errno)?.toKString() ?: "errno: $errno"
-        println("ERR_SPAWN[$errno]: $message")
-    }
+    }.check()
 
     NativeProcess(pid.value, command, args, env)
 }

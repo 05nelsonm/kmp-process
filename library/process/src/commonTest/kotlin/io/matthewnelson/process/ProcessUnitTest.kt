@@ -10,7 +10,6 @@ import kotlinx.coroutines.test.runTest
 import platform.posix.SIGTERM
 import platform.posix.kill
 import kotlin.test.Test
-import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 class ProcessUnitTest {
@@ -31,30 +30,35 @@ class ProcessUnitTest {
         //  compiling the ios simulator targets?
         //  .
         //  https://github.com/05nelsonm/kmp-tor-resource/issues/33
-        val p = Process.Builder(paths.tor.path)
-            .arg("--DataDirectory")
-            .arg(installer.installationDir.resolve("data").path)
-            .arg("--CacheDirectory")
-            .arg(installer.installationDir.resolve("cache").path)
-            .arg("--GeoIPFile")
-            .arg(paths.geoip.path)
-            .arg("--GeoIPv6File")
-            .arg(paths.geoip6.path)
-            .arg("--DormantCanceledByStartup")
-            .arg("1")
-            .arg("--ControlPort")
-            .arg("auto")
-            .arg("--SocksPort")
-            .arg("auto")
-            .arg("--DisableNetwork")
-            .arg("1")
-            .arg("--RunAsDaemon")
-            .arg("0")
-            .environment("HOME", installer.installationDir.path)
-            .start() as NativeProcess
+        val p = try {
+            Process.Builder(paths.tor.path)
+                .arg("--DataDirectory")
+                .arg(installer.installationDir.resolve("data").path)
+                .arg("--CacheDirectory")
+                .arg(installer.installationDir.resolve("cache").path)
+                .arg("--GeoIPFile")
+                .arg(paths.geoip.path)
+                .arg("--GeoIPv6File")
+                .arg(paths.geoip6.path)
+                .arg("--DormantCanceledByStartup")
+                .arg("1")
+                .arg("--ControlPort")
+                .arg("auto")
+                .arg("--SocksPort")
+                .arg("auto")
+                .arg("--DisableNetwork")
+                .arg("1")
+                .arg("--RunAsDaemon")
+                .arg("0")
+                .environment("HOME", installer.installationDir.path)
+                .start() as NativeProcess
+        } catch (e: ProcessException) {
+            e.printStackTrace()
+            return@runTest Unit
+        }
 
         currentCoroutineContext()[Job]?.invokeOnCompletion {
-            p.pid?.let { pid -> kill(pid, SIGTERM)  }
+            kill(p.pid, SIGTERM)
         }
 
         println("PID[${p.pid}]")
@@ -62,13 +66,7 @@ class ProcessUnitTest {
         p.args.forEach { arg -> println("ARG[$arg]") }
 
         withContext(Dispatchers.Default) {
-            delay(300.milliseconds)
-        }
-
-        if (p.pid != null) {
-            withContext(Dispatchers.Default) {
-                delay(5.seconds)
-            }
+            delay(5.seconds)
         }
     }
 }
