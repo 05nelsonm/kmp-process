@@ -29,7 +29,32 @@ internal actual fun createProcess(
     args: List<String>,
     env: Map<String, String>,
 ): Process = memScoped {
-    val pid = alloc<pid_tVar> {}
+
+    // TODO: pipes Issue #2
+
+    val fileActions: PosixSpawnFileActions = posixSpawnFileActionsInit().let { (result, ref) ->
+        if (result != 0) {
+            // TODO: error to stdioerr
+            val errno = errno
+            val message = strerror(errno)?.toKString() ?: "errno: $errno"
+            println("ERR_FILE_ACTIONS[$errno]: $message")
+            return@memScoped NativeProcess(-1, command, args, env)
+        }
+        ref
+    }
+
+    val attrs: PosixSpawnAttrs = posixSpawnAttrInit().let { (result, ref) ->
+        if (result != 0) {
+            // TODO: error to stdioerr
+            val errno = errno
+            val message = strerror(errno)?.toKString() ?: "errno: $errno"
+            println("ERR_ATTRS[$errno]: $message")
+            return@memScoped NativeProcess(-1, command, args, env)
+        }
+        ref
+    }
+
+    val pid = alloc<pid_tVar>()
 
     // null terminated c-string array
     val argv = allocArray<CPointerVar<ByteVar>>(args.size + 2).apply {
@@ -58,20 +83,6 @@ internal actual fun createProcess(
         this[i] = null
     }
 
-    // TODO: pipes Issue #2
-
-    val fileActions: PosixSpawnFileActions = posixSpawnFileActionsInit().let { (result, ref) ->
-        println("FILE_ACTIONS[$result]")
-        // TODO: error to stdioerr and return early
-        ref
-    }
-
-    val attrs: PosixSpawnAttrs = posixSpawnAttrInit().let { (result, ref) ->
-        println("ATTRS[$result]")
-        // TODO: error to stdioerr and return early
-        ref
-    }
-
     val result = if (command.startsWith('/')) {
         // Absolute path, utilize posix_spawn
         posixSpawn(command, pid.ptr, fileActions, attrs, argv, envp)
@@ -80,10 +91,10 @@ internal actual fun createProcess(
         posixSpawnP(command, pid.ptr, fileActions, attrs, argv, envp)
     }
     if (result != 0) {
+        // TODO: error to stdioerr
         val errno = errno
         val message = strerror(errno)?.toKString() ?: "errno: $errno"
-        println("ERROR[$errno]: $message")
-        // TODO: error to stdioerr and return early
+        println("ERR_SPAWN[$errno]: $message")
     }
 
     NativeProcess(pid.value, command, args, env)
