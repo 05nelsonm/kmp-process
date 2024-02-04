@@ -13,21 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-plugins {
-    alias(libs.plugins.kotlin.multiplatform) apply(false)
-}
+package io.matthewnelson.process.internal
 
-allprojects {
+import io.matthewnelson.process.Process
 
-    findProperty("GROUP")?.let { group = it }
-    findProperty("VERSION_NAME")?.let { version = it }
-    findProperty("POM_DESCRIPTION")?.let { description = it.toString() }
+internal class NativeProcess(
+    pid: Int,
+    command: String,
+    args: List<String>,
+    env: Map<String, String>,
+): Process(command, args, env) {
 
-    repositories {
-        mavenCentral()
-        gradlePluginPortal()
-
-        maven("https://s01.oss.sonatype.org/content/repositories/snapshots")
-    }
-
+    internal val pid: Int? = pid.takeIf { it > 0 }
 }

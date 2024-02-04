@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     https://www.apache.org/licenses/LICENSE-2.0
+ *         https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,19 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
+package io.matthewnelson.process.internal
 
-package io.matthewnelson.process
+import io.matthewnelson.process.Process
 
-// spawnMain
-public actual sealed class PlatformProcess actual constructor(args: Args) {
+internal expect inline fun parentEnvironment(): MutableMap<String, String>
 
-    public actual sealed class Builder actual constructor() {
-
-    }
-
-    protected actual companion object {
-        internal actual class Args
-    }
-
-}
+internal expect fun createProcess(
+    command: String,
+    args: List<String>,
+    env: Map<String, String>,
+): Process

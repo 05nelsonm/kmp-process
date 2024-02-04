@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     https://www.apache.org/licenses/LICENSE-2.0
+ *         https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,17 +15,19 @@
  **/
 @file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
 
-package io.matthewnelson.process
+package io.matthewnelson.process.internal
 
-// forkMain
-public actual sealed class PlatformProcess actual constructor(args: Args) {
+import kotlinx.cinterop.CValuesRef
+import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.MemScope
 
-    public actual sealed class Builder actual constructor() {
+@OptIn(ExperimentalForeignApi::class)
+internal expect value class PosixSpawnAttrs private constructor(
+    private val _ref: CValuesRef<*>,
+) {
 
+    internal companion object {
+
+        internal fun MemScope.posixSpawnAttrInit(): Pair<Int, PosixSpawnAttrs>
     }
-
-    protected actual companion object {
-        internal actual class Args
-    }
-
 }
