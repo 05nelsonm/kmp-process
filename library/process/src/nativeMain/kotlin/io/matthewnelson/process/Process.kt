@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
+@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING", "ACTUAL_ANNOTATIONS_NOT_MATCH_EXPECT")
 
 package io.matthewnelson.process
 
@@ -24,12 +24,14 @@ import io.matthewnelson.process.internal.commonArg
 import io.matthewnelson.process.internal.commonEnvironment
 import io.matthewnelson.process.internal.commonIsAlive
 import io.matthewnelson.process.internal.commonWithEnvironment
+import kotlinx.coroutines.delay
+import platform.posix.usleep
+import kotlin.time.Duration
 
 /**
  * A Process.
  *
  * @see [Builder]
- * @see [io.matthewnelson.process.waitFor]
  * */
 public actual sealed class Process actual constructor(
     public actual val command: String,
@@ -48,6 +50,30 @@ public actual sealed class Process actual constructor(
     public actual abstract fun exitCode(): Int
 
     public actual val isAlive: Boolean get() = commonIsAlive()
+
+    /**
+     * Blocks the current thread for the specified [timeout],
+     * or until [Process.exitCode] is available (i.e. the
+     * [Process] completed).
+     *
+     * @param [timeout] the [Duration] to wait
+     * @return The [Process.exitCode], or null if [timeout] is exceeded
+     * */
+    public actual fun waitFor(timeout: Duration): Int? {
+        return commonWaitFor(timeout) { usleep(it.inWholeMicroseconds.toUInt()) }
+    }
+
+    /**
+     * Delays the current coroutine for the specified [timeout],
+     * or until [Process.exitCode] is available (i.e. the
+     * [Process] completed).
+     *
+     * @param [timeout] the [Duration] to wait
+     * @return The [Process.exitCode], or null if [timeout] is exceeded
+     * */
+    public actual suspend fun waitForAsync(timeout: Duration): Int? {
+        return commonWaitFor(timeout) { delay(it) }
+    }
 
     /**
      * Kills the [Process] via signal SIGTERM and closes

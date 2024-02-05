@@ -17,7 +17,8 @@ package io.matthewnelson.process
 
 import io.matthewnelson.kmp.file.SysPathSep
 
-class JvmProcessUnitTest: ProcessNonJsBaseTest() {
+class JvmProcessUnitTest: ProcessBaseTest() {
 
     override val isUnixDesktop: Boolean = SysPathSep == '/'
+    override val isNodeJS: Boolean = false
 }

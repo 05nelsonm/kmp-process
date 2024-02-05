@@ -23,11 +23,9 @@ import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.toKString
 import platform.posix.errno
 import platform.posix.strerror
-import platform.posix.usleep
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
-import kotlin.time.Duration
 
 @Suppress("NOTHING_TO_INLINE")
 internal expect inline fun Process.Builder.parentEnvironment(): MutableMap<String, String>
@@ -38,11 +36,6 @@ internal expect fun Process.Builder.createProcess(
     args: List<String>,
     env: Map<String, String>
 ): Process
-
-@Suppress("NOTHING_TO_INLINE")
-internal actual inline fun threadSleep(amount: Duration) {
-    usleep(amount.inWholeMicroseconds.toUInt())
-}
 
 @Suppress("NOTHING_TO_INLINE")
 @Throws(ProcessException::class)
