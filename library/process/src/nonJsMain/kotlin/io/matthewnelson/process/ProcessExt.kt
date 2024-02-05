@@ -13,10 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
+@file:JvmName("ProcessExt")
+
 package io.matthewnelson.process
 
 import io.matthewnelson.process.internal.commonWaitFor
 import io.matthewnelson.process.internal.threadSleep
+import kotlin.jvm.JvmName
 import kotlin.time.Duration
 
 /**

@@ -30,7 +30,7 @@ public final class io/matthewnelson/process/ProcessException : java/lang/Runtime
 	public fun <init> (Ljava/lang/Throwable;)V
 }
 
-public final class io/matthewnelson/process/ProcessExtKt {
+public final class io/matthewnelson/process/ProcessExt {
 	public static final fun waitFor-HG0u8IE (Lio/matthewnelson/process/Process;J)Ljava/lang/Integer;
 }
 

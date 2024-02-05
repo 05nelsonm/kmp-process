@@ -3,12 +3,72 @@
 [![badge-latest-release]][url-latest-release]
 
 [![badge-kotlin]][url-kotlin]
+[![badge-immutable]][url-immutable]
 
+![badge-platform-android]
+![badge-platform-jvm]
 ![badge-platform-linux]
 ![badge-platform-ios]
 ![badge-platform-macos]
 ![badge-support-apple-silicon]
 ![badge-support-linux-arm]
+
+`Process` implementation for Kotlin Multiplatform
+
+## Info
+
+|         | Process Creation Method Used                                     |
+|---------|------------------------------------------------------------------|
+| `Jvm`   | `java.lang.ProcessBuilder`                                       |
+| `Linux` | [posix_spawn][url-posix-spawn] & [posix_spawnp][url-posix-spawn] |
+| `macOS` | [posix_spawn][url-posix-spawn] & [posix_spawnp][url-posix-spawn] |
+| `iOS`   | [posix_spawn][url-posix-spawn] & [posix_spawnp][url-posix-spawn] |
+
+## Usage
+
+```kotlin
+val expected = 5
+
+val p = Process.Builder("sh")
+    .arg("-c")
+    .arg("""
+        sleep 0.25
+        echo "HOME: $${"HOME"}"
+        exit $expected
+    """.trimIndent())
+    .withEnvironment {
+        remove("HOME")
+        // ...
+    }
+    .environment("HOME", myAppDir.absolutePath)
+    .start()
+
+println("IS_ALIVE: ${p.isAlive}")
+assertEquals(expected, p.waitFor(500.milliseconds))
+```
+
+```kotlin
+val p = Process.Builder(myExecutable.absolutePath)
+    .arg("--some-flag")
+    .arg("someValue")
+    .start()
+
+p.waitFor(5.seconds).let { code ->
+    println("EXIT_CODE: ${code ?: "NULL"}")
+}
+
+try {
+    println("EXIT_CODE: ${p.exitCode()}")
+} catch (_: ProcessException) {}
+
+// Send process `SIGTERM` signal
+// Like calling `java.lang.Process.destroy()`
+p.sigterm()
+
+// Alternatively, send process `SIGKILL` signal.
+// Like calling `java.lang.Process.destroyForcibly()`
+p.sigkill()
+```
 
 <!-- TAG_VERSION -->
 [badge-latest-release]: https://img.shields.io/badge/latest--release-Unreleased-blue.svg?style=flat
@@ -16,6 +76,7 @@
 
 <!-- TAG_DEPENDENCIES -->
 [badge-kotlin]: https://img.shields.io/badge/kotlin-1.9.21-blue.svg?logo=kotlin
+[badge-immutable]: https://img.shields.io/badge/immutable-0.1.0-blue.svg?style=flat
 
 <!-- TAG_PLATFORMS -->
 [badge-platform-android]: http://img.shields.io/badge/-android-6EDB8D.svg?style=flat
@@ -37,3 +98,5 @@
 [url-latest-release]: https://github.com/05nelsonm/process/releases/latest
 [url-license]: https://www.apache.org/licenses/LICENSE-2.0
 [url-kotlin]: https://kotlinlang.org
+[url-immutable]: https://github.com/05nelsonm/immutable
+[url-posix-spawn]: https://man7.org/linux/man-pages/man3/posix_spawn.3.html
