@@ -19,18 +19,59 @@ import io.matthewnelson.kmp.file.SysTempDir
 import io.matthewnelson.kmp.file.path
 import io.matthewnelson.kmp.file.resolve
 import io.matthewnelson.kmp.tor.resource.tor.TorResources
-import io.matthewnelson.process.internal.commonWaitFor
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
-import kotlin.test.Test
+import kotlin.test.*
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.measureTime
 
 abstract class ProcessBaseTest {
 
     private companion object {
         private val installer = TorResources(installationDir = SysTempDir.resolve("process"))
+    }
+
+    protected abstract val isUnixDesktop: Boolean
+    protected abstract val isNodeJS: Boolean
+
+    @Test
+    fun givenWaitFor_whenProcessExits_thenWaitForReturnsEarly() {
+        if (!isUnixDesktop || isNodeJS) {
+            println("Skipping...")
+            return
+        }
+
+        val runTime = measureTime {
+            val p = Process.Builder("sleep")
+                .arg("0.25")
+                .start()
+
+            assertNull(p.waitFor(100.milliseconds))
+            assertTrue(p.isAlive)
+            assertEquals(0, p.waitFor(2.seconds))
+            assertFalse(p.isAlive)
+        }
+
+        // Should be less than the 2 seconds (dropped out early)
+        assertTrue(runTime < 1.seconds)
+    }
+
+    @Test
+    fun givenExitCode_whenCompleted_thenIsAsExpected() {
+        if (!isUnixDesktop || isNodeJS) {
+            println("Skipping...")
+            return
+        }
+
+        val expected = 42
+        val p = Process.Builder("sh")
+            .arg("-c")
+            .arg("sleep 0.25; exit $expected")
+            .start()
+
+        assertEquals(expected, p.waitFor(1.seconds))
     }
 
     @Test
@@ -63,9 +104,9 @@ abstract class ProcessBaseTest {
         p.args.forEach { arg -> println("ARG[$arg]") }
 
         try {
-            p.commonWaitFor(5.seconds, sleep = {
-                withContext(Dispatchers.Default) { delay(it) }
-            })
+            withContext(Dispatchers.Default) {
+                p.waitForAsync(5.seconds)
+            }
         } finally {
             p.sigterm()
         }

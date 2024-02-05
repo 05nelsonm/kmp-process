@@ -17,11 +17,12 @@
 
 package io.matthewnelson.process
 
+import kotlin.time.Duration
+
 /**
  * A Process.
  *
  * @see [Builder]
- * @see [io.matthewnelson.process.waitFor]
  * */
 public expect sealed class Process(
     command: String,
@@ -46,6 +47,28 @@ public expect sealed class Process(
     // Android API 26+. This provides the functionality
     // w/o conflicting with java.lang.Process' function.
     public val isAlive: Boolean
+
+    /**
+     * Blocks the current thread for the specified [timeout],
+     * or until [Process.exitCode] is available (i.e. the
+     * [Process] completed).
+     *
+     * @param [timeout] the [Duration] to wait
+     * @return The [Process.exitCode], or null if [timeout] is exceeded
+     * @throws [UnsupportedOperationException] on Node.js
+     * */
+    @Throws(UnsupportedOperationException::class)
+    public fun waitFor(timeout: Duration): Int?
+
+    /**
+     * Delays the current coroutine for the specified [timeout],
+     * or until [Process.exitCode] is available (i.e. the
+     * [Process] completed).
+     *
+     * @param [timeout] the [Duration] to wait
+     * @return The [Process.exitCode], or null if [timeout] is exceeded
+     * */
+    public suspend fun waitForAsync(timeout: Duration): Int?
 
     /**
      * Kills the [Process] via signal SIGTERM and closes
