@@ -23,7 +23,7 @@ import platform.Foundation.NSProcessInfo
 import platform.posix.pid_tVar
 
 @Suppress("NOTHING_TO_INLINE")
-internal actual inline fun PlatformProcessBuilder.parentEnvironment(): MutableMap<String, String> {
+internal actual inline fun Process.Builder.parentEnvironment(): MutableMap<String, String> {
     // NSDictionary<NSString *, NSString *>
     val env = NSProcessInfo.processInfo.environment
     val map = LinkedHashMap<String, String>(env.size, 1.0F)

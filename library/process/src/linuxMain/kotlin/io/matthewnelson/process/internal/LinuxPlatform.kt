@@ -17,7 +17,7 @@
 
 package io.matthewnelson.process.internal
 
-import io.matthewnelson.process.PlatformProcessBuilder
+import io.matthewnelson.process.Process
 import kotlinx.cinterop.*
 import platform.linux.*
 import platform.posix.__environ
@@ -25,7 +25,7 @@ import platform.posix.pid_tVar
 
 @Suppress("NOTHING_TO_INLINE")
 @OptIn(ExperimentalForeignApi::class)
-internal actual inline fun PlatformProcessBuilder.parentEnvironment(): MutableMap<String, String> {
+internal actual inline fun Process.Builder.parentEnvironment(): MutableMap<String, String> {
     val map = LinkedHashMap<String, String>(10, 1.0F)
     val env = __environ ?: return map
     var i = 0
