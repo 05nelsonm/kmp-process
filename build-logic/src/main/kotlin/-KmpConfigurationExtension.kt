@@ -16,12 +16,21 @@
 import io.matthewnelson.kmp.configuration.extension.KmpConfigurationExtension
 import io.matthewnelson.kmp.configuration.extension.container.target.KmpConfigurationContainerDsl
 import org.gradle.api.Action
+import org.gradle.api.JavaVersion
 
 fun KmpConfigurationExtension.configureShared(
     publish: Boolean = false,
     action: Action<KmpConfigurationContainerDsl>
 ) {
     configure {
+        jvm {
+            target { withJava() }
+
+            kotlinJvmTarget = JavaVersion.VERSION_1_8
+            compileSourceCompatibility = JavaVersion.VERSION_1_8
+            compileTargetCompatibility = JavaVersion.VERSION_1_8
+        }
+
 //        androidNativeAll()
         iosAll()
         linuxAll()

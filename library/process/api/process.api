@@ -1,0 +1,34 @@
+public abstract class io/matthewnelson/process/PlatformProcessBuilder {
+	protected final fun createProcess (Ljava/lang/String;Ljava/util/List;Ljava/util/Map;)Lio/matthewnelson/process/Process;
+	protected final fun env ()Ljava/util/Map;
+}
+
+public abstract class io/matthewnelson/process/Process : java/lang/Process {
+	public final field args Ljava/util/List;
+	public final field command Ljava/lang/String;
+	public final field environment Ljava/util/Map;
+	public abstract fun exitCode ()I
+	public final fun isProcessAlive ()Z
+}
+
+public final class io/matthewnelson/process/Process$Builder : io/matthewnelson/process/PlatformProcessBuilder {
+	public final field command Ljava/lang/String;
+	public fun <init> (Ljava/lang/String;)V
+	public final fun arg (Ljava/lang/String;)Lio/matthewnelson/process/Process$Builder;
+	public final fun arg (Ljava/util/List;)Lio/matthewnelson/process/Process$Builder;
+	public final fun arg ([Ljava/lang/String;)Lio/matthewnelson/process/Process$Builder;
+	public final fun environment (Ljava/lang/String;Ljava/lang/String;)Lio/matthewnelson/process/Process$Builder;
+	public final fun start ()Lio/matthewnelson/process/Process;
+	public final fun withEnvironment (Lkotlin/jvm/functions/Function1;)Lio/matthewnelson/process/Process$Builder;
+}
+
+public final class io/matthewnelson/process/ProcessException : java/lang/RuntimeException {
+	public fun <init> (Ljava/lang/String;)V
+	public fun <init> (Ljava/lang/String;Ljava/lang/Throwable;)V
+	public fun <init> (Ljava/lang/Throwable;)V
+}
+
+public final class io/matthewnelson/process/ProcessExtKt {
+	public static final fun waitFor-HG0u8IE (Lio/matthewnelson/process/Process;J)Ljava/lang/Integer;
+}
+
