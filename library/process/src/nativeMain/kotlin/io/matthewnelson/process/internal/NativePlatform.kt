@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
+@file:Suppress("KotlinRedundantDiagnosticSuppress")
+
 package io.matthewnelson.process.internal
 
 import io.matthewnelson.process.ProcessException
@@ -20,16 +22,18 @@ import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.toKString
 import platform.posix.errno
 import platform.posix.strerror
+import platform.posix.usleep
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
+import kotlin.time.Duration
 
-@OptIn(ExperimentalForeignApi::class)
-internal fun errnoToProcessException(errno: Int): ProcessException {
-    val message = strerror(errno)?.toKString() ?: "errno: $errno"
-    return ProcessException(message)
+@Suppress("NOTHING_TO_INLINE")
+internal actual inline fun threadSleep(amount: Duration) {
+    usleep(amount.inWholeMicroseconds.toUInt())
 }
 
+@Suppress("NOTHING_TO_INLINE")
 @Throws(ProcessException::class)
 @OptIn(ExperimentalContracts::class)
 internal inline fun Int.check(
@@ -44,4 +48,11 @@ internal inline fun Int.check(
     }
 
     return this
+}
+
+@OptIn(ExperimentalForeignApi::class)
+internal fun errnoToProcessException(errno: Int): ProcessException {
+    val message = strerror(errno)?.toKString() ?: "errno: $errno"
+    // TODO: errno string prefix e.g. "[ENOENT] "
+    return ProcessException(message)
 }

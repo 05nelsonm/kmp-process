@@ -13,7 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
+import org.jetbrains.kotlin.gradle.targets.js.yarn.YarnPlugin
+import org.jetbrains.kotlin.gradle.targets.js.yarn.YarnRootExtension
+
 plugins {
+    alias(libs.plugins.binary.compat)
     alias(libs.plugins.kotlin.multiplatform) apply(false)
 }
 
@@ -30,4 +34,14 @@ allprojects {
         maven("https://s01.oss.sonatype.org/content/repositories/snapshots")
     }
 
+}
+
+plugins.withType<YarnPlugin> {
+    the<YarnRootExtension>().lockFileDirectory = rootDir.resolve(".kotlin-js-store")
+}
+
+apiValidation {
+    if (findProperty("CHECK_PUBLICATION") != null) {
+        ignoredProjects.add("check-publication")
+    }
 }

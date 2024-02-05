@@ -17,18 +17,79 @@ package io.matthewnelson.process
 
 import io.matthewnelson.immutable.collections.toImmutableList
 import io.matthewnelson.immutable.collections.toImmutableMap
-import io.matthewnelson.process.internal.createProcess
-import io.matthewnelson.process.internal.parentEnvironment
+import io.matthewnelson.process.internal.JavaLock
+import kotlin.jvm.JvmField
+import kotlin.jvm.JvmName
 
+/**
+ * A Process.
+ *
+ * @see [Builder]
+ * @see [io.matthewnelson.process.waitFor]
+ * */
 public abstract class Process internal constructor(
+    @JvmField
     public val command: String,
+    @JvmField
     public val args: List<String>,
+    @JvmField
     public val environment: Map<String, String>,
-) {
 
-    public class Builder(public val command: String) {
+    @Suppress("UNUSED_PARAMETER")
+    unused: JavaLock,
+): PlatformProcess() {
 
-        private val env = parentEnvironment()
+    /**
+     * Returns the exit code for which the process
+     * completed with.
+     *
+     * @throws [ProcessException] if the [Process] has
+     *   not exited yet
+     * */
+    @Throws(ProcessException::class)
+    public abstract fun exitCode(): Int
+
+    // java.lang.Process.isAlive() is only available for
+    // Android API 26+. This provides the functionality
+    // w/o conflicting with java.lang.Process' function.
+    @get:JvmName("isProcessAlive")
+    public val isAlive: Boolean get() = try {
+        exitCode()
+        false
+    } catch (_: ProcessException) {
+        true
+    }
+
+    /**
+     * Creates a new [Process].
+     *
+     * e.g. (shell commands)
+     *
+     *     val p = Process.Builder("sh")
+     *         .arg("-c")
+     *         .arg("sleep 1; exit 5")
+     *         .environment("HOME", appDir.absolutePath)
+     *         .start()
+     *
+     * e.g. (Executable file)
+     *
+     *     val p = Process.Builder(myExecutable.absolutePath)
+     *         .arg("--some-flag")
+     *         .arg("someValue")
+     *         .arg("--another-flag", "anotherValue")
+     *         .withEnvironment {
+     *             remove("HOME")
+     *             // ...
+     *         }
+     *         .start()
+     *
+     * @see [PlatformProcessBuilder]
+     * */
+    public class Builder(
+        @JvmField
+        public val command: String
+    ): PlatformProcessBuilder() {
+
         private val args = mutableListOf<String>()
 
         public fun arg(

@@ -17,6 +17,12 @@ package io.matthewnelson.process.internal
 
 import io.matthewnelson.process.Process
 import io.matthewnelson.process.ProcessException
+import kotlinx.cinterop.*
+import platform.posix.WNOHANG
+import platform.posix.WUNTRACED
+import platform.posix.errno
+import platform.posix.waitpid
+import kotlin.concurrent.AtomicReference
 
 internal class NativeProcess
 @Throws(ProcessException::class)
@@ -25,12 +31,35 @@ internal constructor(
     command: String,
     args: List<String>,
     env: Map<String, String>,
-): Process(command, args, env) {
+): Process(command, args, env, JavaLock.get()) {
 
     init {
         if (pid <= 0) {
             // TODO: Close pipes #Issue 2
             throw ProcessException("pid[$pid] must be greater than 0")
         }
+    }
+
+    private val _exitCode = AtomicReference<Int?>(null)
+
+    @Throws(ProcessException::class)
+    override fun exitCode(): Int {
+        _exitCode.value?.let { return it }
+
+        @OptIn(ExperimentalForeignApi::class)
+        memScoped {
+            val statLoc = alloc<IntVar>()
+
+            when (waitpid(pid, statLoc.ptr, WNOHANG or WUNTRACED)) {
+                0 -> { /* unavailable status */ }
+                pid -> {
+                    val code = statLoc.value shr 8 and 0x000000FF
+                    _exitCode.compareAndSet(null, code)
+                }
+                else -> throw errnoToProcessException(errno)
+            }
+        }
+
+        return _exitCode.value ?: throw ProcessException("Process hasn't exited")
     }
 }
