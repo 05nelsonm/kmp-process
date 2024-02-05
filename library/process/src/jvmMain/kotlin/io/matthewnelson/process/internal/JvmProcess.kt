@@ -39,6 +39,23 @@ internal class JvmProcess private constructor(
         return result ?: throw ProcessException("Process hasn't exited")
     }
 
+    override fun sigterm(): Process {
+        jProcess.destroy()
+        return this
+    }
+
+    override fun sigkill(): Process {
+        ANDROID_SDK_INT?.let { sdkInt ->
+            // Android runtime, check API version
+            if (sdkInt >= 26) {
+                jProcess.destroyForcibly()
+            } else {
+                jProcess.destroy()
+            }
+        } ?: jProcess.destroyForcibly()
+        return this
+    }
+
     override fun isAlive(): Boolean = jProcess.isAlive
 
     override fun getInputStream(): InputStream = jProcess.inputStream
@@ -78,5 +95,28 @@ internal class JvmProcess private constructor(
             env,
             delegate,
         )
+
+        private val ANDROID_SDK_INT: Int? by lazy {
+
+            if (
+                System.getProperty("java.runtime.name")
+                    ?.contains("android", ignoreCase = true) != true
+            ) {
+                // Not Android runtime
+                return@lazy null
+            }
+
+            try {
+                val clazz = Class.forName("android.os.Build\$VERSION")
+
+                try {
+                    clazz?.getField("SDK_INT")?.getInt(null)
+                } catch (_: Throwable) {
+                    clazz?.getField("SDK")?.get(null)?.toString()?.toIntOrNull()
+                }
+            } catch (_: Throwable) {
+                null
+            }
+        }
     }
 }

@@ -29,8 +29,6 @@ import kotlin.time.Duration.Companion.seconds
 
 abstract class ProcessBaseTest {
 
-    protected abstract fun Process.sigterm()
-
     private companion object {
         private val installer = TorResources(installationDir = SysTempDir.resolve("process"))
     }
