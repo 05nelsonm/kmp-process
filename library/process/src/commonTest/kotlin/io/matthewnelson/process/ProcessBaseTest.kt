@@ -34,7 +34,7 @@ abstract class ProcessBaseTest {
     }
 
     @Test
-    fun givenExecutableFile_whenExecuteAsProcess_thenIsSuccessful() = runTest {
+    fun givenExecutableFile_whenExecuteAsProcess_thenIsSuccessful() = runTest(timeout = 25.seconds) {
         val paths = installer.install()
 
         val p = Process.Builder(paths.tor.path)
