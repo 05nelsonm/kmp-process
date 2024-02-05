@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *         https://www.apache.org/licenses/LICENSE-2.0
+ *     https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,13 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-package io.matthewnelson.process
+@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
 
-import io.matthewnelson.immutable.collections.toImmutableList
-import io.matthewnelson.immutable.collections.toImmutableMap
-import io.matthewnelson.process.internal.JavaLock
-import kotlin.jvm.JvmField
-import kotlin.jvm.JvmName
+package io.matthewnelson.process
 
 /**
  * A Process.
@@ -27,17 +23,14 @@ import kotlin.jvm.JvmName
  * @see [Builder]
  * @see [io.matthewnelson.process.waitFor]
  * */
-public abstract class Process internal constructor(
-    @JvmField
-    public val command: String,
-    @JvmField
-    public val args: List<String>,
-    @JvmField
-    public val environment: Map<String, String>,
-
-    @Suppress("UNUSED_PARAMETER")
-    unused: JavaLock,
-): PlatformProcess() {
+public expect sealed class Process(
+    command: String,
+    args: List<String>,
+    environment: Map<String, String>,
+) {
+    public val command: String
+    public val args: List<String>
+    public val environment: Map<String, String>
 
     /**
      * Returns the exit code for which the process
@@ -52,13 +45,7 @@ public abstract class Process internal constructor(
     // java.lang.Process.isAlive() is only available for
     // Android API 26+. This provides the functionality
     // w/o conflicting with java.lang.Process' function.
-    @get:JvmName("isProcessAlive")
-    public val isAlive: Boolean get() = try {
-        exitCode()
-        false
-    } catch (_: ProcessException) {
-        true
-    }
+    public val isAlive: Boolean
 
     /**
      * Kills the [Process] via signal SIGTERM and closes
@@ -75,78 +62,17 @@ public abstract class Process internal constructor(
      * */
     public abstract fun sigkill(): Process
 
-    /**
-     * Creates a new [Process].
-     *
-     * e.g. (shell commands)
-     *
-     *     val p = Process.Builder("sh")
-     *         .arg("-c")
-     *         .arg("sleep 1; exit 5")
-     *         .environment("HOME", appDir.absolutePath)
-     *         .start()
-     *
-     * e.g. (Executable file)
-     *
-     *     val p = Process.Builder(myExecutable.absolutePath)
-     *         .arg("--some-flag")
-     *         .arg("someValue")
-     *         .arg("--another-flag", "anotherValue")
-     *         .withEnvironment {
-     *             remove("HOME")
-     *             // ...
-     *         }
-     *         .start()
-     *
-     * @see [PlatformProcessBuilder]
-     * */
-    public class Builder(
-        @JvmField
+    public class Builder(command: String) {
         public val command: String
-    ): PlatformProcessBuilder() {
 
-        private val args = mutableListOf<String>()
+        public fun arg(arg: String): Builder
+        public fun arg(vararg args: String): Builder
+        public fun arg(args: List<String>): Builder
 
-        public fun arg(
-            arg: String,
-        ): Builder = apply {
-            args.add(arg)
-        }
-
-        public fun arg(
-            vararg args: String,
-        ): Builder = apply {
-            args.forEach { this.args.add(it) }
-        }
-
-        public fun arg(
-            args: List<String>,
-        ): Builder = apply {
-            args.forEach { this.args.add(it) }
-        }
-
-        public fun environment(
-            key: String,
-            value: String,
-        ): Builder = apply {
-            env[key] = value
-        }
-
-        public fun withEnvironment(
-            block: MutableMap<String, String>.() -> Unit,
-        ): Builder = apply {
-            block(env)
-        }
+        public fun environment(key: String, value: String): Builder
+        public fun withEnvironment(block: MutableMap<String, String>.() -> Unit): Builder
 
         @Throws(ProcessException::class)
-        public fun start(): Process {
-            if (command.isBlank()) throw ProcessException("command cannot be blank")
-
-            return createProcess(
-                command = command,
-                args = args.toImmutableList(),
-                env = env.toImmutableMap(),
-            )
-        }
+        public fun start(): Process
     }
 }

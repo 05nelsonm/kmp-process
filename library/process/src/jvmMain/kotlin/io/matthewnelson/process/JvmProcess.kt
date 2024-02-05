@@ -13,10 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-package io.matthewnelson.process.internal
+package io.matthewnelson.process
 
-import io.matthewnelson.process.Process
-import io.matthewnelson.process.ProcessException
 import java.io.InputStream
 import java.io.OutputStream
 import java.util.concurrent.TimeUnit
@@ -26,7 +24,7 @@ internal class JvmProcess private constructor(
     args: List<String>,
     env: Map<String, String>,
     private val jProcess: java.lang.Process,
-): Process(command, args, env, JavaLock.get()) {
+): Process(command, args, env) {
 
     @Throws(ProcessException::class)
     override fun exitCode(): Int {

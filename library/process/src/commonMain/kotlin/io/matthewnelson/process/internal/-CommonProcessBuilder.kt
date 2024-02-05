@@ -18,52 +18,45 @@
 package io.matthewnelson.process.internal
 
 import io.matthewnelson.process.Process
-import io.matthewnelson.process.ProcessException
-import kotlinx.cinterop.ExperimentalForeignApi
-import kotlinx.cinterop.toKString
-import platform.posix.errno
-import platform.posix.strerror
-import platform.posix.usleep
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
-import kotlin.time.Duration
 
 @Suppress("NOTHING_TO_INLINE")
-internal expect inline fun Process.Builder.parentEnvironment(): MutableMap<String, String>
+internal inline fun Process.Builder.commonArg(
+    bArgs: MutableList<String>,
+    arg: String,
+): Process.Builder = apply { bArgs.add(arg) }
 
-@Throws(ProcessException::class)
-internal expect fun Process.Builder.createProcess(
-    command: String,
+@Suppress("NOTHING_TO_INLINE")
+internal inline fun Process.Builder.commonArg(
+    bArgs: MutableList<String>,
+    vararg args: String,
+): Process.Builder = apply { args.forEach { bArgs.add(it) } }
+
+@Suppress("NOTHING_TO_INLINE")
+internal inline fun Process.Builder.commonArg(
+    bArgs: MutableList<String>,
     args: List<String>,
-    env: Map<String, String>
-): Process
+): Process.Builder = apply { args.forEach { bArgs.add(it) } }
 
 @Suppress("NOTHING_TO_INLINE")
-internal actual inline fun threadSleep(amount: Duration) {
-    usleep(amount.inWholeMicroseconds.toUInt())
-}
+internal inline fun Process.Builder.commonEnvironment(
+    bEnv: MutableMap<String, String>,
+    key: String,
+    value: String,
+): Process.Builder = apply { bEnv[key] = value }
 
 @Suppress("NOTHING_TO_INLINE")
-@Throws(ProcessException::class)
 @OptIn(ExperimentalContracts::class)
-internal inline fun Int.check(
-    block: (result: Int) -> Boolean = { it >= 0 },
-): Int {
+internal inline fun Process.Builder.commonWithEnvironment(
+    bEnv: MutableMap<String, String>,
+    block: MutableMap<String, String>.() -> Unit,
+): Process.Builder {
     contract {
         callsInPlace(block, InvocationKind.EXACTLY_ONCE)
     }
 
-    if (!block(this)) {
-        throw errnoToProcessException(errno)
-    }
-
+    bEnv.apply(block)
     return this
-}
-
-@OptIn(ExperimentalForeignApi::class)
-internal fun errnoToProcessException(errno: Int): ProcessException {
-    val message = strerror(errno)?.toKString() ?: "errno: $errno"
-    // TODO: errno string prefix e.g. "[ENOENT] "
-    return ProcessException(message)
 }

@@ -29,6 +29,14 @@ import kotlin.time.Duration.Companion.nanoseconds
 import kotlin.time.TimeSource
 
 @Suppress("NOTHING_TO_INLINE")
+internal inline fun Process.commonIsAlive(): Boolean = try {
+    exitCode()
+    false
+} catch (_: ProcessException) {
+    true
+}
+
+@Suppress("NOTHING_TO_INLINE")
 @OptIn(ExperimentalContracts::class)
 internal inline fun Process.commonWaitFor(
     timeout: Duration,
