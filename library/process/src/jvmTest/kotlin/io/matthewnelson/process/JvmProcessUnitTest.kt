@@ -16,14 +16,8 @@
 package io.matthewnelson.process
 
 import io.matthewnelson.kmp.file.SysPathSep
-import io.matthewnelson.process.internal.JvmProcess
 
 class JvmProcessUnitTest: ProcessNonJsBaseTest() {
-
-    override fun Process.sigterm() {
-        val p = this as JvmProcess
-        p.destroy()
-    }
 
     override val isUnixDesktop: Boolean = SysPathSep == '/'
 }

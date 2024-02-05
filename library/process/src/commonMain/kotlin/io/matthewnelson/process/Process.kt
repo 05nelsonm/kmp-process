@@ -61,6 +61,21 @@ public abstract class Process internal constructor(
     }
 
     /**
+     * Kills the [Process] via signal SIGTERM and closes
+     * all Pipes.
+     * */
+    public abstract fun sigterm(): Process
+
+    /**
+     * Kills the [Process] via signal SIGKILL and closes
+     * all Pipes.
+     *
+     * Note that for Android API < 26, sigterm is utilized
+     * as java.lang.Process.destroyForcibly is unavailable.
+     * */
+    public abstract fun sigkill(): Process
+
+    /**
      * Creates a new [Process].
      *
      * e.g. (shell commands)

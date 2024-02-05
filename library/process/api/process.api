@@ -9,6 +9,8 @@ public abstract class io/matthewnelson/process/Process : java/lang/Process {
 	public final field environment Ljava/util/Map;
 	public abstract fun exitCode ()I
 	public final fun isProcessAlive ()Z
+	public abstract fun sigkill ()Lio/matthewnelson/process/Process;
+	public abstract fun sigterm ()Lio/matthewnelson/process/Process;
 }
 
 public final class io/matthewnelson/process/Process$Builder : io/matthewnelson/process/PlatformProcessBuilder {

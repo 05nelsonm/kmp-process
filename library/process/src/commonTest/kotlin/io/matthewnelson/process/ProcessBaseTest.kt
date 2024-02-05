@@ -29,14 +29,12 @@ import kotlin.time.Duration.Companion.seconds
 
 abstract class ProcessBaseTest {
 
-    protected abstract fun Process.sigterm()
-
     private companion object {
         private val installer = TorResources(installationDir = SysTempDir.resolve("process"))
     }
 
     @Test
-    fun givenExecutableFile_whenExecuteAsProcess_thenIsSuccessful() = runTest {
+    fun givenExecutableFile_whenExecuteAsProcess_thenIsSuccessful() = runTest(timeout = 25.seconds) {
         val paths = installer.install()
 
         val p = Process.Builder(paths.tor.path)

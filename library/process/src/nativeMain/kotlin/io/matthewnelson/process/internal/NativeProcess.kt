@@ -18,16 +18,13 @@ package io.matthewnelson.process.internal
 import io.matthewnelson.process.Process
 import io.matthewnelson.process.ProcessException
 import kotlinx.cinterop.*
-import platform.posix.WNOHANG
-import platform.posix.WUNTRACED
-import platform.posix.errno
-import platform.posix.waitpid
+import platform.posix.*
 import kotlin.concurrent.AtomicReference
 
 internal class NativeProcess
 @Throws(ProcessException::class)
 internal constructor(
-    internal val pid: Int,
+    private val pid: Int,
     command: String,
     args: List<String>,
     env: Map<String, String>,
@@ -55,11 +52,22 @@ internal constructor(
                 pid -> {
                     val code = statLoc.value shr 8 and 0x000000FF
                     _exitCode.compareAndSet(null, code)
+                    // TODO: Close Pipes Issue #2
                 }
                 else -> throw errnoToProcessException(errno)
             }
         }
 
         return _exitCode.value ?: throw ProcessException("Process hasn't exited")
+    }
+
+    override fun sigterm(): Process {
+        if (isAlive) kill(pid, SIGTERM)
+        return this
+    }
+
+    override fun sigkill(): Process {
+        if (isAlive) kill(pid, SIGKILL)
+        return this
     }
 }
