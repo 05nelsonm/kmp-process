@@ -13,10 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
+@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
+
 package io.matthewnelson.process
 
-public class ProcessException: RuntimeException {
-    public constructor(message: String?): super(message)
-    public constructor(message: String?, cause: Throwable?): super(message, cause)
-    public constructor(cause: Throwable?): super(cause)
-}
+public actual typealias InterruptedException = java.lang.InterruptedException
