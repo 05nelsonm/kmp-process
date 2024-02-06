@@ -75,6 +75,38 @@ abstract class ProcessBaseTest {
     }
 
     @Test
+    fun givenWaitFor_whenCompletion_thenReturnsExitCode() = runTest {
+        if (!isUnixDesktop || isNodeJS) {
+            println("Skipping...")
+            return@runTest
+        }
+
+        val p = Process.Builder("sleep")
+            .arg("1")
+            .start()
+
+        assertEquals(0, p.waitFor())
+    }
+
+    @Test
+    fun givenWaitForAsync_whenCompletion_thenReturnsExitCode() = runTest {
+        if (!isUnixDesktop || isNodeJS) {
+            println("Skipping...")
+            return@runTest
+        }
+
+        val p = Process.Builder("sleep")
+            .arg("1")
+            .start()
+
+        val exitCode = withContext(Dispatchers.Default) {
+            p.waitForAsync()
+        }
+
+        assertEquals(0, exitCode)
+    }
+
+    @Test
     fun givenExecutableFile_whenExecuteAsProcess_thenIsSuccessful() = runTest(timeout = 25.seconds) {
         val paths = installer.install()
 

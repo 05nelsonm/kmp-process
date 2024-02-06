@@ -19,6 +19,7 @@ import io.matthewnelson.process.internal.errnoToProcessException
 import kotlinx.cinterop.*
 import platform.posix.*
 import kotlin.concurrent.AtomicReference
+import kotlin.time.Duration
 
 internal class NativeProcess
 @Throws(ProcessException::class)
@@ -58,6 +59,14 @@ internal constructor(
         }
 
         return _exitCode.value ?: throw ProcessException("Process hasn't exited")
+    }
+
+    override fun waitFor(): Int {
+        var exitCode: Int? = null
+        while (exitCode == null) {
+            exitCode = waitFor(Duration.INFINITE)
+        }
+        return exitCode
     }
 
     override fun sigterm(): Process {

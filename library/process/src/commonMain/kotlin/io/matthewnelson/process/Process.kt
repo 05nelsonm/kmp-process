@@ -49,6 +49,16 @@ public expect sealed class Process(
     public val isAlive: Boolean
 
     /**
+     * Blocks the current thread until [Process] completion.
+     *
+     * @return The [Process.exitCode]
+     * @throws [InterruptedException]
+     * @throws [UnsupportedOperationException] on Node.js
+     * */
+    @Throws(InterruptedException::class, UnsupportedOperationException::class)
+    public abstract fun waitFor(): Int
+
+    /**
      * Blocks the current thread for the specified [timeout],
      * or until [Process.exitCode] is available (i.e. the
      * [Process] completed).
@@ -60,6 +70,13 @@ public expect sealed class Process(
      * */
     @Throws(InterruptedException::class, UnsupportedOperationException::class)
     public fun waitFor(timeout: Duration): Int?
+
+    /**
+     * Delays the current coroutine until [Process] completion.
+     *
+     * @return The [Process.exitCode]
+     * */
+    public suspend fun waitForAsync(): Int
 
     /**
      * Delays the current coroutine for the specified [timeout],
@@ -86,6 +103,29 @@ public expect sealed class Process(
      * */
     public abstract fun sigkill(): Process
 
+    /**
+     * Creates a new [Process].
+     *
+     * e.g. (shell commands)
+     *
+     *     val p = Process.Builder("sh")
+     *         .arg("-c")
+     *         .arg("sleep 1; exit 5")
+     *         .environment("HOME", appDir.absolutePath)
+     *         .start()
+     *
+     * e.g. (Executable file)
+     *
+     *     val p = Process.Builder(myExecutable.absolutePath)
+     *         .arg("--some-flag")
+     *         .arg("someValue")
+     *         .arg("--another-flag", "anotherValue")
+     *         .withEnvironment {
+     *             remove("HOME")
+     *             // ...
+     *         }
+     *         .start()
+     * */
     public class Builder(command: String) {
         public val command: String
 
