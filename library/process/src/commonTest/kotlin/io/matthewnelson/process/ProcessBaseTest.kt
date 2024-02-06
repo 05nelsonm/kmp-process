@@ -20,6 +20,8 @@ import io.matthewnelson.kmp.file.path
 import io.matthewnelson.kmp.file.resolve
 import io.matthewnelson.kmp.tor.resource.tor.TorResources
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.job
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
 import kotlin.test.*
@@ -38,15 +40,24 @@ abstract class ProcessBaseTest {
 
     @Test
     fun givenWaitFor_whenProcessExits_thenWaitForReturnsEarly() {
-        if (!isUnixDesktop || isNodeJS) {
+        if (isNodeJS) {
             println("Skipping...")
             return
         }
 
         val runTime = measureTime {
-            val p = Process.Builder("sleep")
-                .arg("0.25")
-                .start()
+            val p = try {
+                Process.Builder("sleep")
+                    .arg("0.25")
+                    .start()
+            } catch (e: ProcessException) {
+                // Host (Window or iOS) did not have sleep available
+                if (!isUnixDesktop) {
+                    println("Skipping...")
+                    return
+                }
+                throw e
+            }
 
             assertNull(p.waitFor(100.milliseconds))
             assertTrue(p.isAlive)
@@ -76,28 +87,41 @@ abstract class ProcessBaseTest {
 
     @Test
     fun givenWaitFor_whenCompletion_thenReturnsExitCode() = runTest {
-        if (!isUnixDesktop || isNodeJS) {
+        if (isNodeJS) {
             println("Skipping...")
             return@runTest
         }
 
-        val p = Process.Builder("sleep")
-            .arg("1")
-            .start()
+        val p = try {
+            Process.Builder("sleep")
+                .arg("1")
+                .start()
+        } catch (e: ProcessException) {
+            // Host (Window or iOS) did not have sleep available
+            if (!isUnixDesktop) {
+                println("Skipping...")
+                return@runTest
+            }
+            throw e
+        }
 
         assertEquals(0, p.waitFor())
     }
 
     @Test
     fun givenWaitForAsync_whenCompletion_thenReturnsExitCode() = runTest {
-        if (!isUnixDesktop || isNodeJS) {
-            println("Skipping...")
-            return@runTest
+        val p = try {
+            Process.Builder("sleep")
+                .arg("1")
+                .start()
+        } catch (e: ProcessException) {
+            // Host (Window or iOS) did not have sleep available
+            if (!isUnixDesktop) {
+                println("Skipping...")
+                return@runTest
+            }
+            throw e
         }
-
-        val p = Process.Builder("sleep")
-            .arg("1")
-            .start()
 
         val exitCode = withContext(Dispatchers.Default) {
             p.waitForAsync()
@@ -131,6 +155,8 @@ abstract class ProcessBaseTest {
             .arg("0")
             .environment("HOME", installer.installationDir.path)
             .start()
+
+        currentCoroutineContext().job.invokeOnCompletion { p.sigkill() }
 
         println("CMD[${p.command}]")
         p.args.forEach { arg -> println("ARG[$arg]") }
