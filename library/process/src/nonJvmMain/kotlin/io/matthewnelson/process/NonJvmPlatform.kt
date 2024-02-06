@@ -13,13 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
+@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
+
 package io.matthewnelson.process
 
-import io.matthewnelson.kmp.file.SysPathSep
-
-class JvmProcessUnitTest: ProcessBaseTest() {
-
-    override val isUnixDesktop: Boolean = SysPathSep == '/'
-    override val isNodeJS: Boolean = false
-    override val isDarwinMobile: Boolean = false
+public actual class InterruptedException: Exception {
+    public actual constructor(): super()
+    public actual constructor(s: String): super(s)
 }

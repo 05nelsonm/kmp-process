@@ -19,6 +19,7 @@ package io.matthewnelson.process
 
 import io.matthewnelson.immutable.collections.toImmutableList
 import io.matthewnelson.immutable.collections.toImmutableMap
+import io.matthewnelson.process.InterruptedException
 import io.matthewnelson.process.internal.*
 import io.matthewnelson.process.internal.commonArg
 import io.matthewnelson.process.internal.commonEnvironment
@@ -59,16 +60,34 @@ public actual sealed class Process actual constructor(
     public actual val isAlive: Boolean get() = commonIsAlive()
 
     /**
+     * Blocks the current thread until [Process] completion.
+     *
+     * @return The [Process.exitCode]
+     * @throws [InterruptedException]
+     * */
+    @Throws(InterruptedException::class)
+    public actual abstract override fun waitFor(): Int
+
+    /**
      * Blocks the current thread for the specified [timeout],
      * or until [Process.exitCode] is available (i.e. the
      * [Process] completed).
      *
      * @param [timeout] the [Duration] to wait
      * @return The [Process.exitCode], or null if [timeout] is exceeded
+     * @throws [InterruptedException]
      * */
+    @Throws(InterruptedException::class)
     public actual fun waitFor(timeout: Duration): Int? {
         return commonWaitFor(timeout) { Thread.sleep(it.inWholeMilliseconds) }
     }
+
+    /**
+     * Delays the current coroutine until [Process] completion.
+     *
+     * @return The [Process.exitCode]
+     * */
+    public actual suspend fun waitForAsync(): Int = commonWaitForAsync()
 
     /**
      * Delays the current coroutine for the specified [timeout],

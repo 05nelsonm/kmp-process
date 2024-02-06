@@ -7,7 +7,9 @@ public abstract class io/matthewnelson/process/Process : java/lang/Process {
 	public final fun isProcessAlive ()Z
 	public abstract fun sigkill ()Lio/matthewnelson/process/Process;
 	public abstract fun sigterm ()Lio/matthewnelson/process/Process;
+	public abstract fun waitFor ()I
 	public final fun waitFor-LRDsOJo (J)Ljava/lang/Integer;
+	public final fun waitForAsync (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun waitForAsync-VtjQ1oo (JLkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 

@@ -20,6 +20,9 @@ import io.matthewnelson.kmp.file.path
 import io.matthewnelson.kmp.file.resolve
 import io.matthewnelson.kmp.tor.resource.tor.TorResources
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.job
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
 import kotlin.test.*
@@ -35,23 +38,37 @@ abstract class ProcessBaseTest {
 
     protected abstract val isUnixDesktop: Boolean
     protected abstract val isNodeJS: Boolean
+    protected abstract val isDarwinMobile: Boolean
 
     @Test
     fun givenWaitFor_whenProcessExits_thenWaitForReturnsEarly() {
-        if (!isUnixDesktop || isNodeJS) {
+        if (isNodeJS || isDarwinMobile) {
             println("Skipping...")
             return
         }
 
         val runTime = measureTime {
-            val p = Process.Builder("sleep")
-                .arg("0.25")
-                .start()
+            val p = try {
+                Process.Builder("sleep")
+                    .arg("0.25")
+                    .start()
+            } catch (e: ProcessException) {
+                // Host (Window or iOS) did not have sleep available
+                if (!isUnixDesktop) {
+                    println("Skipping...")
+                    return
+                }
+                throw e
+            }
 
-            assertNull(p.waitFor(100.milliseconds))
-            assertTrue(p.isAlive)
-            assertEquals(0, p.waitFor(2.seconds))
-            assertFalse(p.isAlive)
+            try {
+                assertNull(p.waitFor(100.milliseconds))
+                assertTrue(p.isAlive)
+                assertEquals(0, p.waitFor(2.seconds))
+                assertFalse(p.isAlive)
+            } finally {
+                p.sigkill()
+            }
         }
 
         // Should be less than the 2 seconds (dropped out early)
@@ -71,7 +88,65 @@ abstract class ProcessBaseTest {
             .arg("sleep 0.25; exit $expected")
             .start()
 
-        assertEquals(expected, p.waitFor(1.seconds))
+        try {
+            assertEquals(expected, p.waitFor(1.seconds))
+        } finally {
+            p.sigkill()
+        }
+    }
+
+    @Test
+    fun givenWaitFor_whenCompletion_thenReturnsExitCode() = runTest {
+        if (isNodeJS || isDarwinMobile) {
+            println("Skipping...")
+            return@runTest
+        }
+
+        val p = try {
+            Process.Builder("sleep")
+                .arg("1")
+                .start()
+        } catch (e: ProcessException) {
+            // Host (Window) did not have sleep available
+            if (!isUnixDesktop) {
+                println("Skipping...")
+                return@runTest
+            }
+            throw e
+        }
+
+        sigkillOnCompletion(p)
+
+        assertEquals(0, p.waitFor())
+    }
+
+    @Test
+    fun givenWaitForAsync_whenCompletion_thenReturnsExitCode() = runTest {
+        if (isDarwinMobile) {
+            println("Skipping...")
+            return@runTest
+        }
+
+        val p = try {
+            Process.Builder("sleep")
+                .arg("1")
+                .start()
+        } catch (e: ProcessException) {
+            // Host (Window or iOS) did not have sleep available
+            if (!isUnixDesktop) {
+                println("Skipping...")
+                return@runTest
+            }
+            throw e
+        }
+
+        sigkillOnCompletion(p)
+
+        val exitCode = withContext(Dispatchers.Default) {
+            p.waitForAsync()
+        }
+
+        assertEquals(0, exitCode)
     }
 
     @Test
@@ -100,6 +175,8 @@ abstract class ProcessBaseTest {
             .environment("HOME", installer.installationDir.path)
             .start()
 
+        sigkillOnCompletion(p)
+
         println("CMD[${p.command}]")
         p.args.forEach { arg -> println("ARG[$arg]") }
 
@@ -110,5 +187,9 @@ abstract class ProcessBaseTest {
         } finally {
             p.sigterm()
         }
+    }
+
+    protected fun TestScope.sigkillOnCompletion(p: Process) {
+        coroutineContext.job.invokeOnCompletion { p.sigkill() }
     }
 }

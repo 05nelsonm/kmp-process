@@ -37,6 +37,15 @@ internal inline fun Process.commonIsAlive(): Boolean = try {
 }
 
 @Suppress("NOTHING_TO_INLINE")
+internal suspend inline fun Process.commonWaitForAsync(): Int {
+    var exitCode: Int? = null
+    while (exitCode == null) {
+        exitCode = waitForAsync(Duration.INFINITE)
+    }
+    return exitCode
+}
+
+@Suppress("NOTHING_TO_INLINE")
 @OptIn(ExperimentalContracts::class)
 internal inline fun Process.commonWaitFor(
     timeout: Duration,

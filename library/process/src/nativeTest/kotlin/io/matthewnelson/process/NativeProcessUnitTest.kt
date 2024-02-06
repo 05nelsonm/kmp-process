@@ -11,4 +11,11 @@ class NativeProcessUnitTest: ProcessBaseTest() {
         else -> false
     }
     override val isNodeJS: Boolean = false
+    @OptIn(ExperimentalNativeApi::class)
+    override val isDarwinMobile: Boolean = when (Platform.osFamily) {
+        OsFamily.IOS,
+        OsFamily.TVOS,
+        OsFamily.WATCHOS -> true
+        else -> false
+    }
 }

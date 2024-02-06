@@ -52,16 +52,40 @@ public actual sealed class Process actual constructor(
     public actual val isAlive: Boolean get() = commonIsAlive()
 
     /**
+     * Blocks the current thread until [Process] completion.
+     *
+     * @return The [Process.exitCode]
+     * @throws [InterruptedException]
+     * */
+    @Throws(InterruptedException::class)
+    public actual abstract fun waitFor(): Int
+
+    /**
      * Blocks the current thread for the specified [timeout],
      * or until [Process.exitCode] is available (i.e. the
      * [Process] completed).
      *
      * @param [timeout] the [Duration] to wait
      * @return The [Process.exitCode], or null if [timeout] is exceeded
+     * @throws [InterruptedException]
      * */
+    @Throws(InterruptedException::class)
     public actual fun waitFor(timeout: Duration): Int? {
-        return commonWaitFor(timeout) { usleep(it.inWholeMicroseconds.toUInt()) }
+        return commonWaitFor(timeout) {
+            if (usleep(it.inWholeMicroseconds.toUInt()) == -1) {
+                // EINVAL will never happen b/c duration is
+                // max 100 millis. Must be EINTR
+                throw InterruptedException()
+            }
+        }
     }
+
+    /**
+     * Delays the current coroutine until [Process] completion.
+     *
+     * @return The [Process.exitCode]
+     * */
+    public actual suspend fun waitForAsync(): Int = commonWaitForAsync()
 
     /**
      * Delays the current coroutine for the specified [timeout],
