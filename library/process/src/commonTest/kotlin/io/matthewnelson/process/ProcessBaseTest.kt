@@ -22,6 +22,7 @@ import io.matthewnelson.kmp.tor.resource.tor.TorResources
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.job
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
 import kotlin.test.*
@@ -60,10 +61,14 @@ abstract class ProcessBaseTest {
                 throw e
             }
 
-            assertNull(p.waitFor(100.milliseconds))
-            assertTrue(p.isAlive)
-            assertEquals(0, p.waitFor(2.seconds))
-            assertFalse(p.isAlive)
+            try {
+                assertNull(p.waitFor(100.milliseconds))
+                assertTrue(p.isAlive)
+                assertEquals(0, p.waitFor(2.seconds))
+                assertFalse(p.isAlive)
+            } finally {
+                p.sigkill()
+            }
         }
 
         // Should be less than the 2 seconds (dropped out early)
@@ -83,7 +88,11 @@ abstract class ProcessBaseTest {
             .arg("sleep 0.25; exit $expected")
             .start()
 
-        assertEquals(expected, p.waitFor(1.seconds))
+        try {
+            assertEquals(expected, p.waitFor(1.seconds))
+        } finally {
+            p.sigkill()
+        }
     }
 
     @Test
@@ -105,6 +114,8 @@ abstract class ProcessBaseTest {
             }
             throw e
         }
+
+        sigkillOnCompletion(p)
 
         assertEquals(0, p.waitFor())
     }
@@ -128,6 +139,8 @@ abstract class ProcessBaseTest {
             }
             throw e
         }
+
+        sigkillOnCompletion(p)
 
         val exitCode = withContext(Dispatchers.Default) {
             p.waitForAsync()
@@ -162,7 +175,7 @@ abstract class ProcessBaseTest {
             .environment("HOME", installer.installationDir.path)
             .start()
 
-        currentCoroutineContext().job.invokeOnCompletion { p.sigkill() }
+        sigkillOnCompletion(p)
 
         println("CMD[${p.command}]")
         p.args.forEach { arg -> println("ARG[$arg]") }
@@ -174,5 +187,9 @@ abstract class ProcessBaseTest {
         } finally {
             p.sigterm()
         }
+    }
+
+    protected fun TestScope.sigkillOnCompletion(p: Process) {
+        coroutineContext.job.invokeOnCompletion { p.sigkill() }
     }
 }
