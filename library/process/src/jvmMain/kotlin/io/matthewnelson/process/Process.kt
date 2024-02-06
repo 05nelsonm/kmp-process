@@ -19,9 +19,8 @@ package io.matthewnelson.process
 
 import io.matthewnelson.immutable.collections.toImmutableList
 import io.matthewnelson.immutable.collections.toImmutableMap
-import io.matthewnelson.process.InterruptedException
 import io.matthewnelson.process.internal.*
-import io.matthewnelson.process.internal.commonArg
+import io.matthewnelson.process.internal.commonArgs
 import io.matthewnelson.process.internal.commonEnvironment
 import io.matthewnelson.process.internal.commonIsAlive
 import io.matthewnelson.process.internal.commonWithEnvironment
@@ -74,7 +73,8 @@ public actual sealed class Process actual constructor(
      * [Process] completed).
      *
      * @param [timeout] the [Duration] to wait
-     * @return The [Process.exitCode], or null if [timeout] is exceeded
+     * @return The [Process.exitCode], or null if [timeout] is
+     *   exceeded without [Process] completion.
      * @throws [InterruptedException]
      * */
     @Throws(InterruptedException::class)
@@ -95,7 +95,8 @@ public actual sealed class Process actual constructor(
      * [Process] completed).
      *
      * @param [timeout] the [Duration] to wait
-     * @return The [Process.exitCode], or null if [timeout] is exceeded
+     * @return The [Process.exitCode], or null if [timeout] is
+     *   exceeded without [Process] completion.
      * */
     public actual suspend fun waitForAsync(timeout: Duration): Int? {
         return commonWaitFor(timeout) { delay(it) }
@@ -122,22 +123,24 @@ public actual sealed class Process actual constructor(
      * e.g. (shell commands)
      *
      *     val p = Process.Builder("sh")
-     *         .arg("-c")
-     *         .arg("sleep 1; exit 5")
+     *         .args("-c")
+     *         .args("sleep 1; exit 5")
      *         .environment("HOME", appDir.absolutePath)
      *         .start()
      *
      * e.g. (Executable file)
      *
      *     val p = Process.Builder(myExecutable.absolutePath)
-     *         .arg("--some-flag")
-     *         .arg("someValue")
-     *         .arg("--another-flag", "anotherValue")
+     *         .args("--some-flag")
+     *         .args("someValue")
+     *         .args("--another-flag", "anotherValue")
      *         .withEnvironment {
      *             remove("HOME")
      *             // ...
      *         }
      *         .start()
+     *
+     * @param [command] The command to run.
      * */
     public actual class Builder public actual constructor(
         @JvmField
@@ -148,17 +151,17 @@ public actual sealed class Process actual constructor(
         private val env by lazy { jProcessBuilder.environment() }
         private val args = mutableListOf<String>()
 
-        public actual fun arg(
+        public actual fun args(
             arg: String,
-        ): Builder = commonArg(args, arg)
+        ): Builder = commonArgs(args, arg)
 
-        public actual fun arg(
+        public actual fun args(
             vararg args: String,
-        ): Builder = commonArg(this.args, *args)
+        ): Builder = commonArgs(this.args, args)
 
-        public actual fun arg(
+        public actual fun args(
             args: List<String>,
-        ): Builder = commonArg(this.args, args)
+        ): Builder = commonArgs(this.args, args)
 
         public actual fun environment(
             key: String,

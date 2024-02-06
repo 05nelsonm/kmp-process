@@ -20,7 +20,6 @@ import io.matthewnelson.kmp.file.path
 import io.matthewnelson.kmp.file.resolve
 import io.matthewnelson.kmp.tor.resource.tor.TorResources
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.job
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
@@ -50,7 +49,7 @@ abstract class ProcessBaseTest {
         val runTime = measureTime {
             val p = try {
                 Process.Builder("sleep")
-                    .arg("0.25")
+                    .args("0.25")
                     .start()
             } catch (e: ProcessException) {
                 // Host (Window or iOS) did not have sleep available
@@ -84,8 +83,8 @@ abstract class ProcessBaseTest {
 
         val expected = 42
         val p = Process.Builder("sh")
-            .arg("-c")
-            .arg("sleep 0.25; exit $expected")
+            .args("-c")
+            .args("sleep 0.25; exit $expected")
             .start()
 
         try {
@@ -104,7 +103,7 @@ abstract class ProcessBaseTest {
 
         val p = try {
             Process.Builder("sleep")
-                .arg("1")
+                .args("1")
                 .start()
         } catch (e: ProcessException) {
             // Host (Window) did not have sleep available
@@ -129,7 +128,7 @@ abstract class ProcessBaseTest {
 
         val p = try {
             Process.Builder("sleep")
-                .arg("1")
+                .args("1")
                 .start()
         } catch (e: ProcessException) {
             // Host (Window or iOS) did not have sleep available
@@ -154,24 +153,24 @@ abstract class ProcessBaseTest {
         val paths = installer.install()
 
         val p = Process.Builder(paths.tor.path)
-            .arg("--DataDirectory")
-            .arg(installer.installationDir.resolve("data").path)
-            .arg("--CacheDirectory")
-            .arg(installer.installationDir.resolve("cache").path)
-            .arg("--GeoIPFile")
-            .arg(paths.geoip.path)
-            .arg("--GeoIPv6File")
-            .arg(paths.geoip6.path)
-            .arg("--DormantCanceledByStartup")
-            .arg("1")
-            .arg("--ControlPort")
-            .arg("auto")
-            .arg("--SocksPort")
-            .arg("auto")
-            .arg("--DisableNetwork")
-            .arg("1")
-            .arg("--RunAsDaemon")
-            .arg("0")
+            .args("--DataDirectory")
+            .args(installer.installationDir.resolve("data").path)
+            .args("--CacheDirectory")
+            .args(installer.installationDir.resolve("cache").path)
+            .args("--GeoIPFile")
+            .args(paths.geoip.path)
+            .args("--GeoIPv6File")
+            .args(paths.geoip6.path)
+            .args("--DormantCanceledByStartup")
+            .args("1")
+            .args("--ControlPort")
+            .args("auto")
+            .args("--SocksPort")
+            .args("auto")
+            .args("--DisableNetwork")
+            .args("1")
+            .args("--RunAsDaemon")
+            .args("0")
             .environment("HOME", installer.installationDir.path)
             .start()
 

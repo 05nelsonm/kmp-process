@@ -20,7 +20,7 @@ package io.matthewnelson.process
 import io.matthewnelson.immutable.collections.toImmutableList
 import io.matthewnelson.immutable.collections.toImmutableMap
 import io.matthewnelson.process.internal.*
-import io.matthewnelson.process.internal.commonArg
+import io.matthewnelson.process.internal.commonArgs
 import io.matthewnelson.process.internal.commonEnvironment
 import io.matthewnelson.process.internal.commonIsAlive
 import io.matthewnelson.process.internal.commonWithEnvironment
@@ -108,9 +108,6 @@ public actual sealed class Process actual constructor(
     /**
      * Kills the [Process] via signal SIGKILL and closes
      * all Pipes.
-     *
-     * Note that for Android API < 26, sigterm is utilized
-     * as java.lang.Process.destroyForcibly is unavailable.
      * */
     public actual abstract fun sigkill(): Process
 
@@ -120,22 +117,27 @@ public actual sealed class Process actual constructor(
      * e.g. (shell commands)
      *
      *     val p = Process.Builder("sh")
-     *         .arg("-c")
-     *         .arg("sleep 1; exit 5")
+     *         .args("-c")
+     *         .args("sleep 1; exit 5")
      *         .environment("HOME", appDir.absolutePath)
      *         .start()
      *
      * e.g. (Executable file)
      *
      *     val p = Process.Builder(myExecutable.absolutePath)
-     *         .arg("--some-flag")
-     *         .arg("someValue")
-     *         .arg("--another-flag", "anotherValue")
+     *         .args("--some-flag")
+     *         .args("someValue")
+     *         .args("--another-flag", "anotherValue")
      *         .withEnvironment {
      *             remove("HOME")
      *             // ...
      *         }
      *         .start()
+     *
+     * @param [command] The command to run. On `Linux`, `macOS` and `iOS` if
+     *   [command] is a relative file path or program name (e.g. `ping`) then
+     *   `posix_spawnp` is utilized. If it is an absolute file path
+     *   (e.g. `/usr/bin/ping`), then `posix_spawn` is utilized.
      * */
     public actual class Builder public actual constructor(
         public actual val command: String
@@ -144,17 +146,17 @@ public actual sealed class Process actual constructor(
         private val env by lazy { parentEnvironment() }
         private val args = mutableListOf<String>()
 
-        public actual fun arg(
+        public actual fun args(
             arg: String,
-        ): Builder = commonArg(args, arg)
+        ): Builder = commonArgs(args, arg)
 
-        public actual fun arg(
+        public actual fun args(
             vararg args: String,
-        ): Builder = commonArg(this.args, *args)
+        ): Builder = commonArgs(this.args, args)
 
-        public actual fun arg(
+        public actual fun args(
             args: List<String>,
-        ): Builder = commonArg(this.args, args)
+        ): Builder = commonArgs(this.args, args)
 
         public actual fun environment(
             key: String,

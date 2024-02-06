@@ -16,9 +16,9 @@ public abstract class io/matthewnelson/process/Process : java/lang/Process {
 public final class io/matthewnelson/process/Process$Builder {
 	public final field command Ljava/lang/String;
 	public fun <init> (Ljava/lang/String;)V
-	public final fun arg (Ljava/lang/String;)Lio/matthewnelson/process/Process$Builder;
-	public final fun arg (Ljava/util/List;)Lio/matthewnelson/process/Process$Builder;
-	public final fun arg ([Ljava/lang/String;)Lio/matthewnelson/process/Process$Builder;
+	public final fun args (Ljava/lang/String;)Lio/matthewnelson/process/Process$Builder;
+	public final fun args (Ljava/util/List;)Lio/matthewnelson/process/Process$Builder;
+	public final fun args ([Ljava/lang/String;)Lio/matthewnelson/process/Process$Builder;
 	public final fun environment (Ljava/lang/String;Ljava/lang/String;)Lio/matthewnelson/process/Process$Builder;
 	public final fun start ()Lio/matthewnelson/process/Process;
 	public final fun withEnvironment (Lkotlin/jvm/functions/Function1;)Lio/matthewnelson/process/Process$Builder;

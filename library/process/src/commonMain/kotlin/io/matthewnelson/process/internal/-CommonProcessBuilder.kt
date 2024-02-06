@@ -23,19 +23,19 @@ import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
 
 @Suppress("NOTHING_TO_INLINE")
-internal inline fun Process.Builder.commonArg(
+internal inline fun Process.Builder.commonArgs(
     bArgs: MutableList<String>,
     arg: String,
 ): Process.Builder = apply { bArgs.add(arg) }
 
 @Suppress("NOTHING_TO_INLINE")
-internal inline fun Process.Builder.commonArg(
+internal inline fun Process.Builder.commonArgs(
     bArgs: MutableList<String>,
-    vararg args: String,
+    args: Array<out String>,
 ): Process.Builder = apply { args.forEach { bArgs.add(it) } }
 
 @Suppress("NOTHING_TO_INLINE")
-internal inline fun Process.Builder.commonArg(
+internal inline fun Process.Builder.commonArgs(
     bArgs: MutableList<String>,
     args: List<String>,
 ): Process.Builder = apply { args.forEach { bArgs.add(it) } }

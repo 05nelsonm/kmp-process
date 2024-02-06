@@ -64,7 +64,8 @@ public expect sealed class Process(
      * [Process] completed).
      *
      * @param [timeout] the [Duration] to wait
-     * @return The [Process.exitCode], or null if [timeout] is exceeded
+     * @return The [Process.exitCode], or null if [timeout] is
+     *   exceeded without [Process] completion.
      * @throws [InterruptedException]
      * @throws [UnsupportedOperationException] on Node.js
      * */
@@ -84,7 +85,8 @@ public expect sealed class Process(
      * [Process] completed).
      *
      * @param [timeout] the [Duration] to wait
-     * @return The [Process.exitCode], or null if [timeout] is exceeded
+     * @return The [Process.exitCode], or null if [timeout] is
+     *   exceeded without [Process] completion.
      * */
     public suspend fun waitForAsync(timeout: Duration): Int?
 
@@ -109,29 +111,34 @@ public expect sealed class Process(
      * e.g. (shell commands)
      *
      *     val p = Process.Builder("sh")
-     *         .arg("-c")
-     *         .arg("sleep 1; exit 5")
+     *         .args("-c")
+     *         .args("sleep 1; exit 5")
      *         .environment("HOME", appDir.absolutePath)
      *         .start()
      *
      * e.g. (Executable file)
      *
      *     val p = Process.Builder(myExecutable.absolutePath)
-     *         .arg("--some-flag")
-     *         .arg("someValue")
-     *         .arg("--another-flag", "anotherValue")
+     *         .args("--some-flag")
+     *         .args("someValue")
+     *         .args("--another-flag", "anotherValue")
      *         .withEnvironment {
      *             remove("HOME")
      *             // ...
      *         }
      *         .start()
+     *
+     * @param [command] The command to run. On `Linux`, `macOS` and `iOS` if
+     *   [command] is a relative file path or program name (e.g. `ping`) then
+     *   `posix_spawnp` is utilized. If it is an absolute file path
+     *   (e.g. `/usr/bin/ping`), then `posix_spawn` is utilized.
      * */
     public class Builder(command: String) {
         public val command: String
 
-        public fun arg(arg: String): Builder
-        public fun arg(vararg args: String): Builder
-        public fun arg(args: List<String>): Builder
+        public fun args(arg: String): Builder
+        public fun args(vararg args: String): Builder
+        public fun args(args: List<String>): Builder
 
         public fun environment(key: String, value: String): Builder
         public fun withEnvironment(block: MutableMap<String, String>.() -> Unit): Builder

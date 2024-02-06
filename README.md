@@ -31,8 +31,8 @@
 val expected = 5
 
 val p = Process.Builder("sh")
-    .arg("-c")
-    .arg("""
+    .args("-c")
+    .args("""
         sleep 0.25
         echo "HOME: $${"HOME"}"
         exit $expected
@@ -50,8 +50,8 @@ assertEquals(expected, p.waitFor(500.milliseconds))
 
 ```kotlin
 val p = Process.Builder(myExecutable.absolutePath)
-    .arg("--some-flag")
-    .arg("someValue")
+    .args("--some-flag")
+    .args("someValue")
     .start()
 
 p.waitFor(5.seconds).let { code ->
