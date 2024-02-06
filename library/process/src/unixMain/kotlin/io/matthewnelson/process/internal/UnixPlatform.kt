@@ -28,7 +28,6 @@ import platform.posix.*
 @Throws(ProcessException::class)
 @OptIn(ExperimentalForeignApi::class)
 internal actual fun Process.Builder.createProcess(
-    command: String,
     args: List<String>,
     env: Map<String, String>
 ): Process = memScoped {
@@ -71,7 +70,7 @@ internal actual fun Process.Builder.createProcess(
         // Absolute path, utilize posix_spawn
         posixSpawn(command, pid.ptr, fileActions, attrs, argv, envp)
     } else {
-        // relative path, utilize posix_spawnp
+        // relative path or program name, utilize posix_spawnp
         posixSpawnP(command, pid.ptr, fileActions, attrs, argv, envp)
     }
 

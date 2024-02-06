@@ -18,6 +18,7 @@
 package io.matthewnelson.process.internal
 
 import io.matthewnelson.process.Process
+import io.matthewnelson.process.ProcessException
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
@@ -59,4 +60,11 @@ internal inline fun Process.Builder.commonWithEnvironment(
 
     bEnv.apply(block)
     return this
+}
+
+@Suppress("NOTHING_TO_INLINE")
+@Throws(ProcessException::class)
+internal inline fun Process.Builder.commonCheckCommand() {
+    if (command.isNotBlank()) return
+    throw ProcessException("command cannot be blank")
 }

@@ -70,11 +70,13 @@ internal constructor(
     }
 
     override fun sigterm(): Process {
+        // TODO: https://man7.org/linux/man-pages/man7/signal.7.html
         if (isAlive) kill(pid, SIGTERM)
         return this
     }
 
     override fun sigkill(): Process {
+        // TODO: https://man7.org/linux/man-pages/man7/signal.7.html
         if (isAlive) kill(pid, SIGKILL)
         return this
     }

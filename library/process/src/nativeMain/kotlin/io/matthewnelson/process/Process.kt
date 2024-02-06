@@ -140,7 +140,7 @@ public actual sealed class Process actual constructor(
      *   (e.g. `/usr/bin/ping`), then `posix_spawn` is utilized.
      * */
     public actual class Builder public actual constructor(
-        public actual val command: String
+        public actual val command: String,
     ) {
 
         private val env by lazy { parentEnvironment() }
@@ -168,10 +168,13 @@ public actual sealed class Process actual constructor(
         ): Builder = commonWithEnvironment(env, block)
 
         @Throws(ProcessException::class)
-        public actual fun start(): Process = createProcess(
-            command = command,
-            args = args.toImmutableList(),
-            env = env.toImmutableMap(),
-        )
+        public actual fun start(): Process {
+            commonCheckCommand()
+
+            val args = args.toImmutableList()
+            val env = env.toImmutableMap()
+
+            return createProcess(args, env)
+        }
     }
 }

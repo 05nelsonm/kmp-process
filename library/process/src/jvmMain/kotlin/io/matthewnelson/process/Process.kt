@@ -144,7 +144,7 @@ public actual sealed class Process actual constructor(
      * */
     public actual class Builder public actual constructor(
         @JvmField
-        public actual val command: String
+        public actual val command: String,
     ) {
 
         private val jProcessBuilder = ProcessBuilder(emptyList())
@@ -174,6 +174,8 @@ public actual sealed class Process actual constructor(
 
         @Throws(ProcessException::class)
         public actual fun start(): Process {
+            commonCheckCommand()
+
             val args = args.toImmutableList()
             val env = env.toImmutableMap()
 

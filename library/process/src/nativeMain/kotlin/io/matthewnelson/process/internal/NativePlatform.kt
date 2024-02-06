@@ -32,7 +32,6 @@ internal expect inline fun Process.Builder.parentEnvironment(): MutableMap<Strin
 
 @Throws(ProcessException::class)
 internal expect fun Process.Builder.createProcess(
-    command: String,
     args: List<String>,
     env: Map<String, String>
 ): Process
