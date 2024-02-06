@@ -58,9 +58,17 @@ public actual sealed class Process actual constructor(
      *
      * @param [timeout] the [Duration] to wait
      * @return The [Process.exitCode], or null if [timeout] is exceeded
+     * @throws [InterruptedException]
      * */
+    @Throws(InterruptedException::class)
     public actual fun waitFor(timeout: Duration): Int? {
-        return commonWaitFor(timeout) { usleep(it.inWholeMicroseconds.toUInt()) }
+        return commonWaitFor(timeout) {
+            if (usleep(it.inWholeMicroseconds.toUInt()) == -1) {
+                // EINVAL will never happen b/c duration is
+                // max 100 millis. Must be EINTR
+                throw InterruptedException()
+            }
+        }
     }
 
     /**

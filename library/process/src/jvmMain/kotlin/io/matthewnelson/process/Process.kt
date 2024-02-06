@@ -19,6 +19,7 @@ package io.matthewnelson.process
 
 import io.matthewnelson.immutable.collections.toImmutableList
 import io.matthewnelson.immutable.collections.toImmutableMap
+import io.matthewnelson.process.InterruptedException
 import io.matthewnelson.process.internal.*
 import io.matthewnelson.process.internal.commonArg
 import io.matthewnelson.process.internal.commonEnvironment
@@ -65,7 +66,9 @@ public actual sealed class Process actual constructor(
      *
      * @param [timeout] the [Duration] to wait
      * @return The [Process.exitCode], or null if [timeout] is exceeded
+     * @throws [InterruptedException]
      * */
+    @Throws(InterruptedException::class)
     public actual fun waitFor(timeout: Duration): Int? {
         return commonWaitFor(timeout) { Thread.sleep(it.inWholeMilliseconds) }
     }

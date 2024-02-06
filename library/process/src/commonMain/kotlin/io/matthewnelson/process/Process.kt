@@ -55,9 +55,10 @@ public expect sealed class Process(
      *
      * @param [timeout] the [Duration] to wait
      * @return The [Process.exitCode], or null if [timeout] is exceeded
+     * @throws [InterruptedException]
      * @throws [UnsupportedOperationException] on Node.js
      * */
-    @Throws(UnsupportedOperationException::class)
+    @Throws(InterruptedException::class, UnsupportedOperationException::class)
     public fun waitFor(timeout: Duration): Int?
 
     /**
