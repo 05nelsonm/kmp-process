@@ -37,10 +37,11 @@ abstract class ProcessBaseTest {
 
     protected abstract val isUnixDesktop: Boolean
     protected abstract val isNodeJS: Boolean
+    protected abstract val isDarwinMobile: Boolean
 
     @Test
     fun givenWaitFor_whenProcessExits_thenWaitForReturnsEarly() {
-        if (isNodeJS) {
+        if (isNodeJS || isDarwinMobile) {
             println("Skipping...")
             return
         }
@@ -87,7 +88,7 @@ abstract class ProcessBaseTest {
 
     @Test
     fun givenWaitFor_whenCompletion_thenReturnsExitCode() = runTest {
-        if (isNodeJS) {
+        if (isNodeJS || isDarwinMobile) {
             println("Skipping...")
             return@runTest
         }
@@ -97,7 +98,7 @@ abstract class ProcessBaseTest {
                 .arg("1")
                 .start()
         } catch (e: ProcessException) {
-            // Host (Window or iOS) did not have sleep available
+            // Host (Window) did not have sleep available
             if (!isUnixDesktop) {
                 println("Skipping...")
                 return@runTest
@@ -110,6 +111,11 @@ abstract class ProcessBaseTest {
 
     @Test
     fun givenWaitForAsync_whenCompletion_thenReturnsExitCode() = runTest {
+        if (isDarwinMobile) {
+            println("Skipping...")
+            return@runTest
+        }
+
         val p = try {
             Process.Builder("sleep")
                 .arg("1")

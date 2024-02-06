@@ -21,4 +21,5 @@ class JvmProcessUnitTest: ProcessBaseTest() {
 
     override val isUnixDesktop: Boolean = SysPathSep == '/'
     override val isNodeJS: Boolean = false
+    override val isDarwinMobile: Boolean = false
 }
