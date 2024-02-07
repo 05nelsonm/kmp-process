@@ -17,10 +17,7 @@
 
 package io.matthewnelson.process.internal
 
-import io.matthewnelson.process.NativeProcess
-import io.matthewnelson.process.Process
 import io.matthewnelson.process.ProcessException
-import io.matthewnelson.process.Stdio
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.toKString
 import platform.posix.errno
@@ -30,14 +27,7 @@ import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
 
 @Suppress("NOTHING_TO_INLINE")
-internal expect inline fun Process.Builder.parentEnvironment(): MutableMap<String, String>
-
-@Throws(ProcessException::class)
-internal expect fun Process.Builder.createProcess(
-    args: List<String>,
-    env: Map<String, String>,
-    stdio: Stdio.Config,
-): NativeProcess
+internal expect inline fun PlatformBuilder.parentEnvironment(): MutableMap<String, String>
 
 @Suppress("NOTHING_TO_INLINE")
 @Throws(ProcessException::class)

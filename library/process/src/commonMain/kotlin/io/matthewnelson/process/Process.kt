@@ -13,10 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
-
 package io.matthewnelson.process
 
+import io.matthewnelson.immutable.collections.toImmutableList
+import io.matthewnelson.immutable.collections.toImmutableMap
+import io.matthewnelson.process.internal.PlatformBuilder
+import io.matthewnelson.process.internal.commonWaitFor
+import kotlinx.coroutines.delay
+import kotlin.jvm.JvmField
+import kotlin.jvm.JvmName
 import kotlin.time.Duration
 
 /**
@@ -24,16 +29,16 @@ import kotlin.time.Duration
  *
  * @see [Builder]
  * */
-public expect sealed class Process(
-    command: String,
-    args: List<String>,
-    environment: Map<String, String>,
-    stdio: Stdio.Config,
+public abstract class Process internal constructor(
+    @JvmField
+    public val command: String,
+    @JvmField
+    public val args: List<String>,
+    @JvmField
+    public val environment: Map<String, String>,
+    @JvmField
+    public val stdio: Stdio.Config,
 ) {
-    public val command: String
-    public val args: List<String>
-    public val environment: Map<String, String>
-    public val stdio: Stdio.Config
 
     /**
      * Returns the exit code for which the process
@@ -48,7 +53,13 @@ public expect sealed class Process(
     // java.lang.Process.isAlive() is only available for
     // Android API 26+. This provides the functionality
     // w/o conflicting with java.lang.Process' function.
-    public val isAlive: Boolean
+    @get:JvmName("isAlive")
+    public val isAlive: Boolean get() = try {
+        exitCode()
+        false
+    } catch (_: ProcessException) {
+        true
+    }
 
     /**
      * Blocks the current thread until [Process] completion.
@@ -79,7 +90,13 @@ public expect sealed class Process(
      *
      * @return The [Process.exitCode]
      * */
-    public abstract suspend fun waitForAsync(): Int
+    public suspend fun waitForAsync(): Int {
+        var exitCode: Int? = null
+        while (exitCode == null) {
+            exitCode = waitForAsync(Duration.INFINITE)
+        }
+        return exitCode
+    }
 
     /**
      * Delays the current coroutine for the specified [timeout],
@@ -90,7 +107,9 @@ public expect sealed class Process(
      * @return The [Process.exitCode], or null if [timeout] is
      *   exceeded without [Process] completion.
      * */
-    public abstract suspend fun waitForAsync(timeout: Duration): Int?
+    public suspend fun waitForAsync(timeout: Duration): Int? {
+        return commonWaitFor(timeout) { delay(it) }
+    }
 
     /**
      * Kills the [Process] via signal SIGTERM and closes
@@ -136,26 +155,64 @@ public expect sealed class Process(
      *         .stderr(Stdio.File.of("myProgram.err"))
      *         .spawn()
      *
-     * @param [command] The command to run. On `Linux`, `macOS` and `iOS` if
-     *   [command] is a relative file path or program name (e.g. `ping`) then
-     *   `posix_spawnp` is utilized. If it is an absolute file path
-     *   (e.g. `/usr/bin/ping`), then `posix_spawn` is utilized.
+     * @param [command] The command to run. On Native `Linux`, `macOS` and
+     *   `iOS`, if [command] is a relative file path or program name (e.g.
+     *   `ping`) then `posix_spawnp` is utilized. If it is an absolute file
+     *   path (e.g. `/usr/bin/ping`), then `posix_spawn` is utilized.
      * */
-    public class Builder(command: String) {
+    public class Builder(
+        @JvmField
         public val command: String
+    ) {
 
-        public fun args(arg: String): Builder
-        public fun args(vararg args: String): Builder
-        public fun args(args: List<String>): Builder
+        private val platform = PlatformBuilder()
+        private val args = mutableListOf<String>()
+        private val stdio = Stdio.Config.Builder()
 
-        public fun environment(key: String, value: String): Builder
-        public fun withEnvironment(block: MutableMap<String, String>.() -> Unit): Builder
+        public fun args(
+            arg: String,
+        ): Builder = apply { args.add(arg) }
 
-        public fun stdin(source: Stdio): Builder
-        public fun stdout(destination: Stdio): Builder
-        public fun stderr(destination: Stdio): Builder
+        public fun args(
+            vararg args: String,
+        ): Builder = apply { args.forEach { this.args.add(it) } }
+
+        public fun args(
+            args: List<String>,
+        ): Builder = apply { args.forEach { this.args.add(it) } }
+
+        public fun environment(
+            key: String,
+            value: String,
+        ): Builder = apply { platform.env[key] = value }
+
+        public fun withEnvironment(
+            block: MutableMap<String, String>.() -> Unit,
+        ): Builder = apply { block(platform.env) }
+
+        public fun stdin(
+            source: Stdio,
+        ): Builder = apply { stdio.stdin = source }
+
+        public fun stdout(
+            destination: Stdio,
+        ): Builder = apply { stdio.stdout = destination }
+
+        public fun stderr(
+            destination: Stdio,
+        ): Builder = apply { stdio.stderr = destination }
 
         @Throws(ProcessException::class)
-        public fun spawn(): Process
+        public fun spawn(): Process {
+            if (command.isBlank()) {
+                throw ProcessException("command cannot be blank")
+            }
+
+            val args = args.toImmutableList()
+            val env = platform.env.toImmutableMap()
+            val stdio = stdio.build()
+
+            return platform.build(command, args, env, stdio)
+        }
     }
 }

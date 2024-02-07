@@ -13,11 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-package io.matthewnelson.process
+package io.matthewnelson.process.internal
 
-import io.matthewnelson.process.internal.commonWaitFor
-import io.matthewnelson.process.internal.commonWaitForAsync
-import kotlinx.coroutines.delay
+import io.matthewnelson.process.InterruptedException
+import io.matthewnelson.process.Process
+import io.matthewnelson.process.ProcessException
+import io.matthewnelson.process.Stdio
 import kotlin.time.Duration
 
 internal class JvmProcess private constructor(
@@ -60,9 +61,6 @@ internal class JvmProcess private constructor(
     override fun waitFor(): Int = jProcess.waitFor()
     @Throws(InterruptedException::class)
     override fun waitFor(timeout: Duration): Int? = commonWaitFor(timeout) { Thread.sleep(it.inWholeMilliseconds) }
-
-    override suspend fun waitForAsync(): Int = commonWaitForAsync()
-    override suspend fun waitForAsync(timeout: Duration): Int? = commonWaitFor(timeout) { delay(it) }
 
     internal companion object {
 

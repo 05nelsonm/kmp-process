@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-package io.matthewnelson.process
+package io.matthewnelson.process.internal
 
-import io.matthewnelson.process.internal.commonWaitFor
-import io.matthewnelson.process.internal.commonWaitForAsync
-import io.matthewnelson.process.internal.errnoToProcessException
+import io.matthewnelson.process.InterruptedException
+import io.matthewnelson.process.Process
+import io.matthewnelson.process.ProcessException
+import io.matthewnelson.process.Stdio
 import kotlinx.cinterop.*
-import kotlinx.coroutines.delay
 import platform.posix.*
 import kotlin.concurrent.AtomicReference
 import kotlin.time.Duration
@@ -82,9 +82,6 @@ internal constructor(
             }
         }
     }
-
-    override suspend fun waitForAsync(): Int = commonWaitForAsync()
-    override suspend fun waitForAsync(timeout: Duration): Int? = commonWaitFor(timeout) { delay(it) }
 
     override fun sigterm(): Process {
         // TODO: https://man7.org/linux/man-pages/man7/signal.7.html

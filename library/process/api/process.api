@@ -3,15 +3,14 @@ public abstract class io/matthewnelson/process/Process {
 	public final field command Ljava/lang/String;
 	public final field environment Ljava/util/Map;
 	public final field stdio Lio/matthewnelson/process/Stdio$Config;
-	public synthetic fun <init> (Ljava/lang/String;Ljava/util/List;Ljava/util/Map;Lio/matthewnelson/process/Stdio$Config;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public abstract fun exitCode ()I
 	public final fun isAlive ()Z
 	public abstract fun sigkill ()Lio/matthewnelson/process/Process;
 	public abstract fun sigterm ()Lio/matthewnelson/process/Process;
 	public abstract fun waitFor ()I
 	public abstract fun waitFor-LRDsOJo (J)Ljava/lang/Integer;
-	public abstract fun waitForAsync (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public abstract fun waitForAsync-VtjQ1oo (JLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun waitForAsync (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun waitForAsync-VtjQ1oo (JLkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
 public final class io/matthewnelson/process/Process$Builder {
