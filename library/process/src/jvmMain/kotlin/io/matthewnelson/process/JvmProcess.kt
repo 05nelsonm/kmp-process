@@ -15,9 +15,14 @@
  **/
 package io.matthewnelson.process
 
+import io.matthewnelson.process.InterruptedException
+import io.matthewnelson.process.internal.commonWaitFor
+import io.matthewnelson.process.internal.commonWaitForAsync
+import kotlinx.coroutines.delay
 import java.io.InputStream
 import java.io.OutputStream
 import java.util.concurrent.TimeUnit
+import kotlin.time.Duration
 
 internal class JvmProcess private constructor(
     command: String,
@@ -64,6 +69,11 @@ internal class JvmProcess private constructor(
     override fun waitFor(): Int = jProcess.waitFor()
     @Throws(InterruptedException::class)
     override fun waitFor(timeout: Long, unit: TimeUnit?): Boolean = jProcess.waitFor(timeout, unit)
+    @Throws(InterruptedException::class)
+    override fun waitFor(timeout: Duration): Int? = commonWaitFor(timeout) { Thread.sleep(it.inWholeMilliseconds) }
+
+    override suspend fun waitForAsync(): Int = commonWaitForAsync()
+    override suspend fun waitForAsync(timeout: Duration): Int? = commonWaitFor(timeout) { delay(it) }
 
     @Throws(IllegalThreadStateException::class)
     override fun exitValue(): Int = jProcess.exitValue()

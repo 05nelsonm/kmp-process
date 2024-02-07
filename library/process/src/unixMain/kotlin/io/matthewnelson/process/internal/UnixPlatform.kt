@@ -34,7 +34,7 @@ internal actual fun Process.Builder.createProcess(
     stdin: Stdio,
     stdout: Stdio,
     stderr: Stdio,
-): Process = memScoped {
+): NativeProcess = memScoped {
 
     // TODO: pipes Issue #2
 

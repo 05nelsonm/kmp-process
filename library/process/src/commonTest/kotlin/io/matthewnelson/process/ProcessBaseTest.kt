@@ -50,7 +50,7 @@ abstract class ProcessBaseTest {
             val p = try {
                 Process.Builder("sleep")
                     .args("0.25")
-                    .start()
+                    .spawn()
             } catch (e: ProcessException) {
                 // Host (Window or iOS) did not have sleep available
                 if (!isUnixDesktop) {
@@ -85,7 +85,7 @@ abstract class ProcessBaseTest {
         val p = Process.Builder("sh")
             .args("-c")
             .args("sleep 0.25; exit $expected")
-            .start()
+            .spawn()
 
         try {
             assertEquals(expected, p.waitFor(1.seconds))
@@ -104,7 +104,7 @@ abstract class ProcessBaseTest {
         val p = try {
             Process.Builder("sleep")
                 .args("1")
-                .start()
+                .spawn()
         } catch (e: ProcessException) {
             // Host (Window) did not have sleep available
             if (!isUnixDesktop) {
@@ -129,7 +129,7 @@ abstract class ProcessBaseTest {
         val p = try {
             Process.Builder("sleep")
                 .args("1")
-                .start()
+                .spawn()
         } catch (e: ProcessException) {
             // Host (Window or iOS) did not have sleep available
             if (!isUnixDesktop) {
@@ -174,7 +174,7 @@ abstract class ProcessBaseTest {
             .environment("HOME", installer.installationDir.path)
             .stdout(Stdio.Inherit)
             .stderr(Stdio.Inherit)
-            .start()
+            .spawn()
 
         sigkillOnCompletion(p)
 

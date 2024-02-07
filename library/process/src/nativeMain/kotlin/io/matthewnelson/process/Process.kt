@@ -24,8 +24,6 @@ import io.matthewnelson.process.internal.commonArgs
 import io.matthewnelson.process.internal.commonEnvironment
 import io.matthewnelson.process.internal.commonIsAlive
 import io.matthewnelson.process.internal.commonWithEnvironment
-import kotlinx.coroutines.delay
-import platform.posix.usleep
 import kotlin.time.Duration
 
 /**
@@ -70,22 +68,14 @@ public actual sealed class Process actual constructor(
      * @throws [InterruptedException]
      * */
     @Throws(InterruptedException::class)
-    public actual fun waitFor(timeout: Duration): Int? {
-        return commonWaitFor(timeout) {
-            if (usleep(it.inWholeMicroseconds.toUInt()) == -1) {
-                // EINVAL will never happen b/c duration is
-                // max 100 millis. Must be EINTR
-                throw InterruptedException()
-            }
-        }
-    }
+    public actual abstract fun waitFor(timeout: Duration): Int?
 
     /**
      * Delays the current coroutine until [Process] completion.
      *
      * @return The [Process.exitCode]
      * */
-    public actual suspend fun waitForAsync(): Int = commonWaitForAsync()
+    public actual abstract suspend fun waitForAsync(): Int
 
     /**
      * Delays the current coroutine for the specified [timeout],
@@ -95,9 +85,7 @@ public actual sealed class Process actual constructor(
      * @param [timeout] the [Duration] to wait
      * @return The [Process.exitCode], or null if [timeout] is exceeded
      * */
-    public actual suspend fun waitForAsync(timeout: Duration): Int? {
-        return commonWaitFor(timeout) { delay(it) }
-    }
+    public actual abstract suspend fun waitForAsync(timeout: Duration): Int?
 
     /**
      * Kills the [Process] via signal SIGTERM and closes
@@ -120,7 +108,7 @@ public actual sealed class Process actual constructor(
      *         .args("-c")
      *         .args("sleep 1; exit 5")
      *         .environment("HOME", appDir.absolutePath)
-     *         .start()
+     *         .spawn()
      *
      * e.g. (Executable file)
      *
@@ -132,7 +120,7 @@ public actual sealed class Process actual constructor(
      *             remove("HOME")
      *             // ...
      *         }
-     *         .start()
+     *         .spawn()
      *
      * @param [command] The command to run. On `Linux`, `macOS` and `iOS` if
      *   [command] is a relative file path or program name (e.g. `ping`) then
@@ -196,7 +184,7 @@ public actual sealed class Process actual constructor(
         }
 
         @Throws(ProcessException::class)
-        public actual fun start(): Process {
+        public actual fun spawn(): Process {
             commonCheckCommand()
 
             val args = args.toImmutableList()

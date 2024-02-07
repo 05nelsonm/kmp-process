@@ -17,6 +17,7 @@
 
 package io.matthewnelson.process.internal
 
+import io.matthewnelson.process.NativeProcess
 import io.matthewnelson.process.Process
 import io.matthewnelson.process.ProcessException
 import io.matthewnelson.process.Stdio
@@ -38,7 +39,7 @@ internal expect fun Process.Builder.createProcess(
     stdin: Stdio,
     stdout: Stdio,
     stderr: Stdio,
-): Process
+): NativeProcess
 
 @Suppress("NOTHING_TO_INLINE")
 @Throws(ProcessException::class)

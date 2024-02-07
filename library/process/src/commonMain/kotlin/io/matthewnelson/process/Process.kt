@@ -70,14 +70,14 @@ public expect sealed class Process(
      * @throws [UnsupportedOperationException] on Node.js
      * */
     @Throws(InterruptedException::class, UnsupportedOperationException::class)
-    public fun waitFor(timeout: Duration): Int?
+    public abstract fun waitFor(timeout: Duration): Int?
 
     /**
      * Delays the current coroutine until [Process] completion.
      *
      * @return The [Process.exitCode]
      * */
-    public suspend fun waitForAsync(): Int
+    public abstract suspend fun waitForAsync(): Int
 
     /**
      * Delays the current coroutine for the specified [timeout],
@@ -88,7 +88,7 @@ public expect sealed class Process(
      * @return The [Process.exitCode], or null if [timeout] is
      *   exceeded without [Process] completion.
      * */
-    public suspend fun waitForAsync(timeout: Duration): Int?
+    public abstract suspend fun waitForAsync(timeout: Duration): Int?
 
     /**
      * Kills the [Process] via signal SIGTERM and closes
@@ -114,7 +114,7 @@ public expect sealed class Process(
      *         .args("-c")
      *         .args("sleep 1; exit 5")
      *         .environment("HOME", appDir.absolutePath)
-     *         .start()
+     *         .spawn()
      *
      * e.g. (Executable file)
      *
@@ -126,7 +126,7 @@ public expect sealed class Process(
      *             remove("HOME")
      *             // ...
      *         }
-     *         .start()
+     *         .spawn()
      *
      * @param [command] The command to run. On `Linux`, `macOS` and `iOS` if
      *   [command] is a relative file path or program name (e.g. `ping`) then
@@ -149,6 +149,6 @@ public expect sealed class Process(
         public fun stderr(destination: Stdio): Builder
 
         @Throws(ProcessException::class)
-        public fun start(): Process
+        public fun spawn(): Process
     }
 }

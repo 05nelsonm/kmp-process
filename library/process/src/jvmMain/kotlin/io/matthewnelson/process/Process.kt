@@ -79,16 +79,14 @@ public actual sealed class Process actual constructor(
      * @throws [InterruptedException]
      * */
     @Throws(InterruptedException::class)
-    public actual fun waitFor(timeout: Duration): Int? {
-        return commonWaitFor(timeout) { Thread.sleep(it.inWholeMilliseconds) }
-    }
+    public actual abstract fun waitFor(timeout: Duration): Int?
 
     /**
      * Delays the current coroutine until [Process] completion.
      *
      * @return The [Process.exitCode]
      * */
-    public actual suspend fun waitForAsync(): Int = commonWaitForAsync()
+    public actual abstract suspend fun waitForAsync(): Int
 
     /**
      * Delays the current coroutine for the specified [timeout],
@@ -99,9 +97,7 @@ public actual sealed class Process actual constructor(
      * @return The [Process.exitCode], or null if [timeout] is
      *   exceeded without [Process] completion.
      * */
-    public actual suspend fun waitForAsync(timeout: Duration): Int? {
-        return commonWaitFor(timeout) { delay(it) }
-    }
+    public actual abstract suspend fun waitForAsync(timeout: Duration): Int?
 
     /**
      * Kills the [Process] via signal SIGTERM and closes
@@ -127,7 +123,7 @@ public actual sealed class Process actual constructor(
      *         .args("-c")
      *         .args("sleep 1; exit 5")
      *         .environment("HOME", appDir.absolutePath)
-     *         .start()
+     *         .spawn()
      *
      * e.g. (Executable file)
      *
@@ -139,7 +135,7 @@ public actual sealed class Process actual constructor(
      *             remove("HOME")
      *             // ...
      *         }
-     *         .start()
+     *         .spawn()
      *
      * @param [command] The command to run.
      * */
@@ -198,7 +194,7 @@ public actual sealed class Process actual constructor(
         }
 
         @Throws(ProcessException::class)
-        public actual fun start(): Process {
+        public actual fun spawn(): Process {
             commonCheckCommand()
 
             val args = args.toImmutableList()

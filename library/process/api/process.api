@@ -8,9 +8,9 @@ public abstract class io/matthewnelson/process/Process : java/lang/Process {
 	public abstract fun sigkill ()Lio/matthewnelson/process/Process;
 	public abstract fun sigterm ()Lio/matthewnelson/process/Process;
 	public abstract fun waitFor ()I
-	public final fun waitFor-LRDsOJo (J)Ljava/lang/Integer;
-	public final fun waitForAsync (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public final fun waitForAsync-VtjQ1oo (JLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun waitFor-LRDsOJo (J)Ljava/lang/Integer;
+	public abstract fun waitForAsync (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun waitForAsync-VtjQ1oo (JLkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
 public final class io/matthewnelson/process/Process$Builder {
@@ -20,7 +20,7 @@ public final class io/matthewnelson/process/Process$Builder {
 	public final fun args (Ljava/util/List;)Lio/matthewnelson/process/Process$Builder;
 	public final fun args ([Ljava/lang/String;)Lio/matthewnelson/process/Process$Builder;
 	public final fun environment (Ljava/lang/String;Ljava/lang/String;)Lio/matthewnelson/process/Process$Builder;
-	public final fun start ()Lio/matthewnelson/process/Process;
+	public final fun spawn ()Lio/matthewnelson/process/Process;
 	public final fun stderr (Lio/matthewnelson/process/Stdio;)Lio/matthewnelson/process/Process$Builder;
 	public final fun stdin (Lio/matthewnelson/process/Stdio$Inherit;)Lio/matthewnelson/process/Process$Builder;
 	public final fun stdin (Lio/matthewnelson/process/Stdio$Pipe;)Lio/matthewnelson/process/Process$Builder;

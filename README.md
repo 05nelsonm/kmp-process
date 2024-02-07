@@ -42,7 +42,7 @@ val p = Process.Builder("sh")
         // ...
     }
     .environment("HOME", myAppDir.absolutePath)
-    .start()
+    .spawn()
 
 println("IS_ALIVE: ${p.isAlive}")
 assertEquals(expected, p.waitFor(500.milliseconds))
@@ -52,7 +52,7 @@ assertEquals(expected, p.waitFor(500.milliseconds))
 val p = Process.Builder(myExecutable.absolutePath)
     .args("--some-flag")
     .args("someValue")
-    .start()
+    .spawn()
 
 p.waitFor(5.seconds).let { code ->
     println("EXIT_CODE: ${code ?: "NULL"}")

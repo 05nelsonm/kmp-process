@@ -15,8 +15,11 @@
  **/
 package io.matthewnelson.process
 
+import io.matthewnelson.process.internal.commonWaitFor
+import io.matthewnelson.process.internal.commonWaitForAsync
 import io.matthewnelson.process.internal.errnoToProcessException
 import kotlinx.cinterop.*
+import kotlinx.coroutines.delay
 import platform.posix.*
 import kotlin.concurrent.AtomicReference
 import kotlin.time.Duration
@@ -68,6 +71,19 @@ internal constructor(
         }
         return exitCode
     }
+
+    override fun waitFor(timeout: Duration): Int? {
+        return commonWaitFor(timeout) {
+            if (usleep(it.inWholeMicroseconds.toUInt()) == -1) {
+                // EINVAL will never happen b/c duration is
+                // max 100 millis. Must be EINTR
+                throw InterruptedException()
+            }
+        }
+    }
+
+    override suspend fun waitForAsync(): Int = commonWaitForAsync()
+    override suspend fun waitForAsync(timeout: Duration): Int? = commonWaitFor(timeout) { delay(it) }
 
     override fun sigterm(): Process {
         // TODO: https://man7.org/linux/man-pages/man7/signal.7.html
