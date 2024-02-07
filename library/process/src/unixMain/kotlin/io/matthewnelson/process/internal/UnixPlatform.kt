@@ -33,9 +33,7 @@ internal actual val PATH_STDIO_NULL: String = "/dev/null"
 internal actual fun Process.Builder.createProcess(
     args: List<String>,
     env: Map<String, String>,
-    stdin: Stdio,
-    stdout: Stdio,
-    stderr: Stdio,
+    stdio: Stdio.Config,
 ): NativeProcess = memScoped {
 
     // TODO: pipes Issue #2
@@ -83,7 +81,7 @@ internal actual fun Process.Builder.createProcess(
     // TODO: close things
     result.check()
 
-    NativeProcess(pid.value, command, args, env)
+    NativeProcess(pid.value, command, args, env, stdio)
 }
 
 @Suppress("NOTHING_TO_INLINE")

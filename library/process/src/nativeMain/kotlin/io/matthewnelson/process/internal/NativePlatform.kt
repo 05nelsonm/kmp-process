@@ -36,9 +36,7 @@ internal expect inline fun Process.Builder.parentEnvironment(): MutableMap<Strin
 internal expect fun Process.Builder.createProcess(
     args: List<String>,
     env: Map<String, String>,
-    stdin: Stdio,
-    stdout: Stdio,
-    stderr: Stdio,
+    stdio: Stdio.Config,
 ): NativeProcess
 
 @Suppress("NOTHING_TO_INLINE")

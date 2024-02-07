@@ -24,10 +24,7 @@ import io.matthewnelson.process.internal.commonArgs
 import io.matthewnelson.process.internal.commonEnvironment
 import io.matthewnelson.process.internal.commonIsAlive
 import io.matthewnelson.process.internal.commonWithEnvironment
-import kotlinx.coroutines.delay
-import java.io.File
 import java.io.IOException
-import java.io.RandomAccessFile
 import kotlin.time.Duration
 
 /**
@@ -42,7 +39,9 @@ public actual sealed class Process actual constructor(
     public actual val args: List<String>,
     @JvmField
     public actual val environment: Map<String, String>,
-): java.lang.Process() {
+    @JvmField
+    public actual val stdio: Stdio.Config,
+) {
 
     /**
      * Returns the exit code for which the process
@@ -54,10 +53,7 @@ public actual sealed class Process actual constructor(
     @Throws(ProcessException::class)
     public actual abstract fun exitCode(): Int
 
-    // java.lang.Process.isAlive() is only available for
-    // Android API 26+. This provides the functionality
-    // w/o conflicting with java.lang.Process' function.
-    @get:JvmName("isProcessAlive")
+    @get:JvmName("isAlive")
     public actual val isAlive: Boolean get() = commonIsAlive()
 
     /**
@@ -67,7 +63,7 @@ public actual sealed class Process actual constructor(
      * @throws [InterruptedException]
      * */
     @Throws(InterruptedException::class)
-    public actual abstract override fun waitFor(): Int
+    public actual abstract fun waitFor(): Int
 
     /**
      * Blocks the current thread for the specified [timeout],
@@ -154,6 +150,7 @@ public actual sealed class Process actual constructor(
         private val jProcessBuilder = ProcessBuilder(emptyList())
         private val env by lazy { jProcessBuilder.environment() }
         private val args = mutableListOf<String>()
+        private val stdio = Stdio.Config.Builder()
 
         public actual fun args(
             arg: String,
@@ -178,21 +175,15 @@ public actual sealed class Process actual constructor(
 
         public actual fun stdin(
             source: Stdio,
-        ): Builder = apply {
-            jProcessBuilder.redirectInput(source.toRedirect(isStdin = true))
-        }
+        ): Builder = commonStdin(stdio, source)
 
         public actual fun stdout(
             destination: Stdio,
-        ): Builder = apply {
-            jProcessBuilder.redirectOutput(destination.toRedirect(isStdin = false))
-        }
+        ): Builder = commonStdout(stdio, destination)
 
         public actual fun stderr(
             destination: Stdio,
-        ): Builder = apply {
-            jProcessBuilder.redirectError(destination.toRedirect(isStdin = false))
-        }
+        ): Builder = commonStderr(stdio, destination)
 
         @Throws(ProcessException::class)
         public actual fun spawn(): Process {
@@ -200,25 +191,14 @@ public actual sealed class Process actual constructor(
 
             val args = args.toImmutableList()
             val env = env.toImmutableMap()
+            val stdio = stdio.build()
 
             val jCommands = ArrayList<String>(args.size + 1)
             jCommands.add(command)
             jCommands.addAll(args)
 
             jProcessBuilder.command(jCommands)
-
-            listOf<File?>(
-                jProcessBuilder.redirectInput().file(),
-                jProcessBuilder.redirectOutput().file(),
-                jProcessBuilder.redirectError().file(),
-            ).forEach { file ->
-                if (file == null) return@forEach
-                if (file.path == PATH_STDIO_NULL) return@forEach
-                val parent = file.parentFile ?: return@forEach
-                if (!parent.exists() && !parent.mkdirs()) {
-                    throw ProcessException("Failed to mkdirs for $parent")
-                }
-            }
+            jProcessBuilder.configureRedirects(stdio)
 
             val jProcess = try {
                 jProcessBuilder.start()
@@ -226,7 +206,7 @@ public actual sealed class Process actual constructor(
                 throw ProcessException(e)
             }
 
-            return JvmProcess.of(command, args, env, jProcess)
+            return JvmProcess.of(command, args, env, stdio, jProcess)
         }
     }
 }

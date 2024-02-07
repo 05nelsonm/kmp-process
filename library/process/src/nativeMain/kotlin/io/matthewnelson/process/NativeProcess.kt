@@ -31,7 +31,8 @@ internal constructor(
     command: String,
     args: List<String>,
     env: Map<String, String>,
-): Process(command, args, env) {
+    stdio: Stdio.Config
+): Process(command, args, env, stdio) {
 
     init {
         if (pid <= 0) {

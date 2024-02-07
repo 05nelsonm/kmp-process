@@ -1,10 +1,11 @@
-public abstract class io/matthewnelson/process/Process : java/lang/Process {
+public abstract class io/matthewnelson/process/Process {
 	public final field args Ljava/util/List;
 	public final field command Ljava/lang/String;
 	public final field environment Ljava/util/Map;
-	public synthetic fun <init> (Ljava/lang/String;Ljava/util/List;Ljava/util/Map;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final field stdio Lio/matthewnelson/process/Stdio$Config;
+	public synthetic fun <init> (Ljava/lang/String;Ljava/util/List;Ljava/util/Map;Lio/matthewnelson/process/Stdio$Config;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public abstract fun exitCode ()I
-	public final fun isProcessAlive ()Z
+	public final fun isAlive ()Z
 	public abstract fun sigkill ()Lio/matthewnelson/process/Process;
 	public abstract fun sigterm ()Lio/matthewnelson/process/Process;
 	public abstract fun waitFor ()I
@@ -36,10 +37,18 @@ public final class io/matthewnelson/process/ProcessException : java/lang/Runtime
 public abstract class io/matthewnelson/process/Stdio {
 	public static final field Companion Lio/matthewnelson/process/Stdio$Companion;
 	public static final fun Null ()Lio/matthewnelson/process/Stdio$File;
+	public final fun toString ()Ljava/lang/String;
 }
 
 public final class io/matthewnelson/process/Stdio$Companion {
 	public final fun Null ()Lio/matthewnelson/process/Stdio$File;
+}
+
+public final class io/matthewnelson/process/Stdio$Config {
+	public final field stderr Lio/matthewnelson/process/Stdio;
+	public final field stdin Lio/matthewnelson/process/Stdio;
+	public final field stdout Lio/matthewnelson/process/Stdio;
+	public synthetic fun <init> (Lio/matthewnelson/process/Stdio;Lio/matthewnelson/process/Stdio;Lio/matthewnelson/process/Stdio;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 }
 
 public final class io/matthewnelson/process/Stdio$File : io/matthewnelson/process/Stdio {
@@ -51,7 +60,6 @@ public final class io/matthewnelson/process/Stdio$File : io/matthewnelson/proces
 	public fun hashCode ()I
 	public static final fun of (Ljava/lang/String;)Lio/matthewnelson/process/Stdio$File;
 	public static final fun of (Ljava/lang/String;Z)Lio/matthewnelson/process/Stdio$File;
-	public fun toString ()Ljava/lang/String;
 }
 
 public final class io/matthewnelson/process/Stdio$File$Companion {
@@ -64,13 +72,11 @@ public final class io/matthewnelson/process/Stdio$Inherit : io/matthewnelson/pro
 	public static final field INSTANCE Lio/matthewnelson/process/Stdio$Inherit;
 	public fun equals (Ljava/lang/Object;)Z
 	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
 }
 
 public final class io/matthewnelson/process/Stdio$Pipe : io/matthewnelson/process/Stdio {
 	public static final field INSTANCE Lio/matthewnelson/process/Stdio$Pipe;
 	public fun equals (Ljava/lang/Object;)Z
 	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
 }
 

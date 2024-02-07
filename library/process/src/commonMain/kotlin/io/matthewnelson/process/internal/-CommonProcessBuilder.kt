@@ -19,6 +19,7 @@ package io.matthewnelson.process.internal
 
 import io.matthewnelson.process.Process
 import io.matthewnelson.process.ProcessException
+import io.matthewnelson.process.Stdio
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
@@ -61,6 +62,24 @@ internal inline fun Process.Builder.commonWithEnvironment(
     bEnv.apply(block)
     return this
 }
+
+@Suppress("NOTHING_TO_INLINE")
+internal inline fun Process.Builder.commonStdin(
+    bStdio: Stdio.Config.Builder,
+    stdio: Stdio,
+): Process.Builder = apply { bStdio.stdin = stdio }
+
+@Suppress("NOTHING_TO_INLINE")
+internal inline fun Process.Builder.commonStdout(
+    bStdio: Stdio.Config.Builder,
+    stdio: Stdio,
+): Process.Builder = apply { bStdio.stdout = stdio }
+
+@Suppress("NOTHING_TO_INLINE")
+internal inline fun Process.Builder.commonStderr(
+    bStdio: Stdio.Config.Builder,
+    stdio: Stdio,
+): Process.Builder = apply { bStdio.stderr = stdio }
 
 @Suppress("NOTHING_TO_INLINE")
 @Throws(ProcessException::class)

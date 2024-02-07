@@ -15,6 +15,7 @@
  **/
 package io.matthewnelson.process.internal
 
+import io.matthewnelson.process.ProcessException
 import io.matthewnelson.process.Stdio
 import java.io.File
 
@@ -24,7 +25,27 @@ internal actual val PATH_STDIO_NULL: String = (System.getProperty("os.name")
     ?: (File.separatorChar == '\\'))
     .let { isWindows -> if (isWindows) "NUL" else "/dev/null" }
 
-internal fun Stdio.toRedirect(
+@Throws(ProcessException::class)
+internal fun ProcessBuilder.configureRedirects(stdio: Stdio.Config) {
+    redirectInput(stdio.stdin.toRedirect(isStdin = true))
+    redirectOutput(stdio.stdout.toRedirect(isStdin = false))
+    redirectError(stdio.stderr.toRedirect(isStdin = false))
+
+    listOf<File?>(
+        redirectInput().file(),
+        redirectOutput().file(),
+        redirectError().file(),
+    ).forEach { file ->
+        if (file == null) return@forEach
+        if (file.path == PATH_STDIO_NULL) return@forEach
+        val parent = file.parentFile ?: return@forEach
+        if (!parent.exists() && !parent.mkdirs()) {
+            throw ProcessException("Failed to mkdirs for $parent")
+        }
+    }
+}
+
+private fun Stdio.toRedirect(
     isStdin: Boolean,
 ): ProcessBuilder.Redirect = when (this) {
     is Stdio.Inherit -> ProcessBuilder.Redirect.INHERIT
@@ -44,7 +65,7 @@ internal fun Stdio.toRedirect(
 }
 
 private val REDIRECT_NULL_READ: ProcessBuilder.Redirect by lazy {
-    ProcessBuilder.Redirect.from(File(PATH_STDIO_NULL))
+    ProcessBuilder.Redirect.from(REDIRECT_NULL_WRITE.file())
 }
 
 private val REDIRECT_NULL_WRITE: ProcessBuilder.Redirect by lazy {

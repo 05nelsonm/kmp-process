@@ -98,7 +98,39 @@ public sealed class Stdio private constructor() {
             result = result * 31 + append.hashCode()
             return result
         }
+    }
 
-        override fun toString(): String = "File[path=$path,append=$append]"
+    public class Config private constructor(
+        @JvmField
+        public val stdin: Stdio,
+        @JvmField
+        public val stdout: Stdio,
+        @JvmField
+        public val stderr: Stdio,
+    ) {
+
+        internal class Builder internal constructor() {
+            internal var stdin: Stdio = Pipe
+            internal var stdout: Stdio = Pipe
+            internal var stderr: Stdio = Pipe
+
+            internal fun build(): Config {
+                val stdin = stdin.let {
+                    if (it !is File) return@let it
+                    if (!it.append) return@let it
+                    File.of(it.path, append = false)
+                }
+
+                return Config(stdin, stdout, stderr)
+            }
+        }
+    }
+
+    final override fun toString(): String {
+        return "Stdio." + when (this) {
+            is File -> "File[path=$path,append=$append]"
+            is Inherit -> "Inherit"
+            is Pipe -> "Pipe"
+        }
     }
 }

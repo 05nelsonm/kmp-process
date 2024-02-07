@@ -35,6 +35,7 @@ public actual sealed class Process actual constructor(
     public actual val command: String,
     public actual val args: List<String>,
     public actual val environment: Map<String, String>,
+    public actual val stdio: Stdio.Config,
 ) {
 
     /**
@@ -139,6 +140,7 @@ public actual sealed class Process actual constructor(
 
         private val env by lazy { parentEnvironment() }
         private val args = mutableListOf<String>()
+        private val stdio = Stdio.Config.Builder()
 
         private var stdin: Stdio = Stdio.Pipe
         private var stdout: Stdio = Stdio.Pipe
@@ -167,21 +169,15 @@ public actual sealed class Process actual constructor(
 
         public actual fun stdin(
             source: Stdio,
-        ): Builder = apply {
-            stdin = source
-        }
+        ): Builder = commonStdin(stdio, source)
 
         public actual fun stdout(
             destination: Stdio,
-        ): Builder = apply {
-            stdout = destination
-        }
+        ): Builder = commonStdout(stdio, destination)
 
         public actual fun stderr(
             destination: Stdio,
-        ): Builder = apply {
-            stderr = destination
-        }
+        ): Builder = commonStderr(stdio, destination)
 
         @Throws(ProcessException::class)
         public actual fun spawn(): Process {
@@ -189,8 +185,9 @@ public actual sealed class Process actual constructor(
 
             val args = args.toImmutableList()
             val env = env.toImmutableMap()
+            val stdio = stdio.build()
 
-            return createProcess(args, env, stdin, stdout, stderr)
+            return createProcess(args, env, stdio)
         }
     }
 }

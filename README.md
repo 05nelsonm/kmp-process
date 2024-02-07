@@ -42,6 +42,7 @@ val p = Process.Builder("sh")
         // ...
     }
     .environment("HOME", myAppDir.absolutePath)
+    .stdout(Stdio.Inherit)
     .spawn()
 
 println("IS_ALIVE: ${p.isAlive}")

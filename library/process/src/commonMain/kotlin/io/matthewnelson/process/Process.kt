@@ -28,10 +28,12 @@ public expect sealed class Process(
     command: String,
     args: List<String>,
     environment: Map<String, String>,
+    stdio: Stdio.Config,
 ) {
     public val command: String
     public val args: List<String>
     public val environment: Map<String, String>
+    public val stdio: Stdio.Config
 
     /**
      * Returns the exit code for which the process
