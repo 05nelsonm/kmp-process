@@ -114,6 +114,9 @@ public expect sealed class Process(
      *         .args("-c")
      *         .args("sleep 1; exit 5")
      *         .environment("HOME", appDir.absolutePath)
+     *         .stdin(Stdio.Null)
+     *         .stdout(Stdio.Inherit)
+     *         .stderr(Stdio.Pipe)
      *         .spawn()
      *
      * e.g. (Executable file)
@@ -126,6 +129,9 @@ public expect sealed class Process(
      *             remove("HOME")
      *             // ...
      *         }
+     *         .stdin(Stdio.Null)
+     *         .stdout(Stdio.File.of("myProgram.log", append = true))
+     *         .stderr(Stdio.File.of("myProgram.err"))
      *         .spawn()
      *
      * @param [command] The command to run. On `Linux`, `macOS` and `iOS` if
@@ -143,8 +149,7 @@ public expect sealed class Process(
         public fun environment(key: String, value: String): Builder
         public fun withEnvironment(block: MutableMap<String, String>.() -> Unit): Builder
 
-        public fun stdin(source: Stdio.Inherit): Builder
-        public fun stdin(source: Stdio.Pipe): Builder
+        public fun stdin(source: Stdio): Builder
         public fun stdout(destination: Stdio): Builder
         public fun stderr(destination: Stdio): Builder
 

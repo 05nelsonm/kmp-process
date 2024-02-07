@@ -52,9 +52,18 @@ assertEquals(expected, p.waitFor(500.milliseconds))
 val p = Process.Builder(myExecutable.absolutePath)
     .args("--some-flag")
     .args("someValue")
+    .stdin(Stdio.Null)
+    .stdout(Stdio.File.of("myExecutable.log", append = true))
+    .stderr(Stdio.File.of("myExecutable.err"))
     .spawn()
 
+// Jvm/Native block for specified duration
 p.waitFor(5.seconds).let { code ->
+    println("EXIT_CODE: ${code ?: "NULL"}")
+}
+
+// Jvm/Js/Native suspend coroutine for specified duration
+p.waitForSync(5.seconds).let { code ->
     println("EXIT_CODE: ${code ?: "NULL"}")
 }
 

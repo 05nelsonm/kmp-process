@@ -108,6 +108,9 @@ public actual sealed class Process actual constructor(
      *         .args("-c")
      *         .args("sleep 1; exit 5")
      *         .environment("HOME", appDir.absolutePath)
+     *         .stdin(Stdio.Null)
+     *         .stdout(Stdio.Inherit)
+     *         .stderr(Stdio.Pipe)
      *         .spawn()
      *
      * e.g. (Executable file)
@@ -120,6 +123,9 @@ public actual sealed class Process actual constructor(
      *             remove("HOME")
      *             // ...
      *         }
+     *         .stdin(Stdio.Null)
+     *         .stdout(Stdio.File.of("myProgram.log", append = true))
+     *         .stderr(Stdio.File.of("myProgram.err"))
      *         .spawn()
      *
      * @param [command] The command to run. On `Linux`, `macOS` and `iOS` if
@@ -160,13 +166,7 @@ public actual sealed class Process actual constructor(
         ): Builder = commonWithEnvironment(env, block)
 
         public actual fun stdin(
-            source: Stdio.Inherit,
-        ): Builder = apply {
-            stdin = source
-        }
-
-        public actual fun stdin(
-            source: Stdio.Pipe,
+            source: Stdio,
         ): Builder = apply {
             stdin = source
         }

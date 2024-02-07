@@ -26,6 +26,8 @@ import io.matthewnelson.process.internal.PosixSpawnFileActions.Companion.posixSp
 import kotlinx.cinterop.*
 import platform.posix.*
 
+internal actual val PATH_STDIO_NULL: String = "/dev/null"
+
 @Throws(ProcessException::class)
 @OptIn(ExperimentalForeignApi::class)
 internal actual fun Process.Builder.createProcess(

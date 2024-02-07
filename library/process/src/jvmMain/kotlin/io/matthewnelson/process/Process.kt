@@ -27,6 +27,7 @@ import io.matthewnelson.process.internal.commonWithEnvironment
 import kotlinx.coroutines.delay
 import java.io.File
 import java.io.IOException
+import java.io.RandomAccessFile
 import kotlin.time.Duration
 
 /**
@@ -123,6 +124,9 @@ public actual sealed class Process actual constructor(
      *         .args("-c")
      *         .args("sleep 1; exit 5")
      *         .environment("HOME", appDir.absolutePath)
+     *         .stdin(Stdio.Null)
+     *         .stdout(Stdio.Inherit)
+     *         .stderr(Stdio.Pipe)
      *         .spawn()
      *
      * e.g. (Executable file)
@@ -135,6 +139,9 @@ public actual sealed class Process actual constructor(
      *             remove("HOME")
      *             // ...
      *         }
+     *         .stdin(Stdio.Null)
+     *         .stdout(Stdio.File.of("myProgram.log", append = true))
+     *         .stderr(Stdio.File.of("myProgram.err"))
      *         .spawn()
      *
      * @param [command] The command to run.
@@ -170,27 +177,21 @@ public actual sealed class Process actual constructor(
         ): Builder = commonWithEnvironment(env, block)
 
         public actual fun stdin(
-            source: Stdio.Inherit,
+            source: Stdio,
         ): Builder = apply {
-            jProcessBuilder.redirectInput(source.toRedirect())
-        }
-
-        public actual fun stdin(
-            source: Stdio.Pipe,
-        ): Builder = apply {
-            jProcessBuilder.redirectInput(source.toRedirect())
+            jProcessBuilder.redirectInput(source.toRedirect(isStdin = true))
         }
 
         public actual fun stdout(
             destination: Stdio,
         ): Builder = apply {
-            jProcessBuilder.redirectOutput(destination.toRedirect())
+            jProcessBuilder.redirectOutput(destination.toRedirect(isStdin = false))
         }
 
         public actual fun stderr(
             destination: Stdio,
         ): Builder = apply {
-            jProcessBuilder.redirectError(destination.toRedirect())
+            jProcessBuilder.redirectError(destination.toRedirect(isStdin = false))
         }
 
         @Throws(ProcessException::class)
@@ -205,6 +206,19 @@ public actual sealed class Process actual constructor(
             jCommands.addAll(args)
 
             jProcessBuilder.command(jCommands)
+
+            listOf<File?>(
+                jProcessBuilder.redirectInput().file(),
+                jProcessBuilder.redirectOutput().file(),
+                jProcessBuilder.redirectError().file(),
+            ).forEach { file ->
+                if (file == null) return@forEach
+                if (file.path == PATH_STDIO_NULL) return@forEach
+                val parent = file.parentFile ?: return@forEach
+                if (!parent.exists() && !parent.mkdirs()) {
+                    throw ProcessException("Failed to mkdirs for $parent")
+                }
+            }
 
             val jProcess = try {
                 jProcessBuilder.start()

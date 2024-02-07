@@ -22,8 +22,7 @@ public final class io/matthewnelson/process/Process$Builder {
 	public final fun environment (Ljava/lang/String;Ljava/lang/String;)Lio/matthewnelson/process/Process$Builder;
 	public final fun spawn ()Lio/matthewnelson/process/Process;
 	public final fun stderr (Lio/matthewnelson/process/Stdio;)Lio/matthewnelson/process/Process$Builder;
-	public final fun stdin (Lio/matthewnelson/process/Stdio$Inherit;)Lio/matthewnelson/process/Process$Builder;
-	public final fun stdin (Lio/matthewnelson/process/Stdio$Pipe;)Lio/matthewnelson/process/Process$Builder;
+	public final fun stdin (Lio/matthewnelson/process/Stdio;)Lio/matthewnelson/process/Process$Builder;
 	public final fun stdout (Lio/matthewnelson/process/Stdio;)Lio/matthewnelson/process/Process$Builder;
 	public final fun withEnvironment (Lkotlin/jvm/functions/Function1;)Lio/matthewnelson/process/Process$Builder;
 }
@@ -35,17 +34,34 @@ public final class io/matthewnelson/process/ProcessException : java/lang/Runtime
 }
 
 public abstract class io/matthewnelson/process/Stdio {
+	public static final field Companion Lio/matthewnelson/process/Stdio$Companion;
+	public static final fun Null ()Lio/matthewnelson/process/Stdio$File;
+}
+
+public final class io/matthewnelson/process/Stdio$Companion {
+	public final fun Null ()Lio/matthewnelson/process/Stdio$File;
+}
+
+public final class io/matthewnelson/process/Stdio$File : io/matthewnelson/process/Stdio {
+	public static final field Companion Lio/matthewnelson/process/Stdio$File$Companion;
+	public final field append Z
+	public final field path Ljava/lang/String;
+	public synthetic fun <init> (Ljava/lang/String;ZLkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public static final fun of (Ljava/lang/String;)Lio/matthewnelson/process/Stdio$File;
+	public static final fun of (Ljava/lang/String;Z)Lio/matthewnelson/process/Stdio$File;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/matthewnelson/process/Stdio$File$Companion {
+	public final fun of (Ljava/lang/String;)Lio/matthewnelson/process/Stdio$File;
+	public final fun of (Ljava/lang/String;Z)Lio/matthewnelson/process/Stdio$File;
+	public static synthetic fun of$default (Lio/matthewnelson/process/Stdio$File$Companion;Ljava/lang/String;ZILjava/lang/Object;)Lio/matthewnelson/process/Stdio$File;
 }
 
 public final class io/matthewnelson/process/Stdio$Inherit : io/matthewnelson/process/Stdio {
 	public static final field INSTANCE Lio/matthewnelson/process/Stdio$Inherit;
-	public fun equals (Ljava/lang/Object;)Z
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class io/matthewnelson/process/Stdio$Null : io/matthewnelson/process/Stdio {
-	public static final field INSTANCE Lio/matthewnelson/process/Stdio$Null;
 	public fun equals (Ljava/lang/Object;)Z
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;

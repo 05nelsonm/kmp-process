@@ -18,13 +18,36 @@ package io.matthewnelson.process.internal
 import io.matthewnelson.process.Stdio
 import java.io.File
 
-internal fun Stdio.toRedirect(): ProcessBuilder.Redirect = when (this) {
-    Stdio.Inherit -> ProcessBuilder.Redirect.INHERIT
-    Stdio.Null -> REDIRECT_DISCARD
-    Stdio.Pipe -> ProcessBuilder.Redirect.PIPE
+internal actual val PATH_STDIO_NULL: String = (System.getProperty("os.name")
+    ?.ifBlank { null }
+    ?.contains("windows", ignoreCase = true)
+    ?: (File.separatorChar == '\\'))
+    .let { isWindows -> if (isWindows) "NUL" else "/dev/null" }
+
+internal fun Stdio.toRedirect(
+    isStdin: Boolean,
+): ProcessBuilder.Redirect = when (this) {
+    is Stdio.Inherit -> ProcessBuilder.Redirect.INHERIT
+    is Stdio.Pipe -> ProcessBuilder.Redirect.PIPE
+    is Stdio.File -> {
+        when {
+            path == PATH_STDIO_NULL -> if (isStdin) {
+                REDIRECT_NULL_READ
+            } else {
+                REDIRECT_NULL_WRITE
+            }
+            isStdin -> ProcessBuilder.Redirect.from(File(path))
+            append -> ProcessBuilder.Redirect.appendTo(File(path))
+            else -> ProcessBuilder.Redirect.to(File(path))
+        }
+    }
 }
 
-private val REDIRECT_DISCARD: ProcessBuilder.Redirect by lazy {
+private val REDIRECT_NULL_READ: ProcessBuilder.Redirect by lazy {
+    ProcessBuilder.Redirect.from(File(PATH_STDIO_NULL))
+}
+
+private val REDIRECT_NULL_WRITE: ProcessBuilder.Redirect by lazy {
     val discard = try {
         Class.forName("java.lang.ProcessBuilder\$Redirect")
             ?.getField("DISCARD")
@@ -35,12 +58,5 @@ private val REDIRECT_DISCARD: ProcessBuilder.Redirect by lazy {
 
     if (discard != null) return@lazy discard
 
-    val isWindows: Boolean = System.getProperty("os.name")
-        ?.ifBlank { null }
-        ?.contains("windows", ignoreCase = true)
-        ?: (File.separatorChar == '\\')
-
-    val nullFile = File(if (isWindows) "NUL" else "/dev/null")
-
-    ProcessBuilder.Redirect.to(nullFile)
+    ProcessBuilder.Redirect.to(File(PATH_STDIO_NULL))
 }

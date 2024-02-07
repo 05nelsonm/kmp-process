@@ -172,8 +172,11 @@ abstract class ProcessBaseTest {
             .args("--RunAsDaemon")
             .args("0")
             .environment("HOME", installer.installationDir.path)
+            .stdin(Stdio.Null)
             .stdout(Stdio.Inherit)
             .stderr(Stdio.Inherit)
+//            .stdout(Stdio.File.of(installer.installationDir.resolve("tor.log").path))
+//            .stderr(Stdio.File.of(installer.installationDir.resolve("tor.err").path))
             .spawn()
 
         sigkillOnCompletion(p)
