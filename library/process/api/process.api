@@ -21,6 +21,10 @@ public final class io/matthewnelson/process/Process$Builder {
 	public final fun args ([Ljava/lang/String;)Lio/matthewnelson/process/Process$Builder;
 	public final fun environment (Ljava/lang/String;Ljava/lang/String;)Lio/matthewnelson/process/Process$Builder;
 	public final fun start ()Lio/matthewnelson/process/Process;
+	public final fun stderr (Lio/matthewnelson/process/Stdio;)Lio/matthewnelson/process/Process$Builder;
+	public final fun stdin (Lio/matthewnelson/process/Stdio$Inherit;)Lio/matthewnelson/process/Process$Builder;
+	public final fun stdin (Lio/matthewnelson/process/Stdio$Pipe;)Lio/matthewnelson/process/Process$Builder;
+	public final fun stdout (Lio/matthewnelson/process/Stdio;)Lio/matthewnelson/process/Process$Builder;
 	public final fun withEnvironment (Lkotlin/jvm/functions/Function1;)Lio/matthewnelson/process/Process$Builder;
 }
 
@@ -28,5 +32,29 @@ public final class io/matthewnelson/process/ProcessException : java/lang/Runtime
 	public fun <init> (Ljava/lang/String;)V
 	public fun <init> (Ljava/lang/String;Ljava/lang/Throwable;)V
 	public fun <init> (Ljava/lang/Throwable;)V
+}
+
+public abstract class io/matthewnelson/process/Stdio {
+}
+
+public final class io/matthewnelson/process/Stdio$Inherit : io/matthewnelson/process/Stdio {
+	public static final field INSTANCE Lio/matthewnelson/process/Stdio$Inherit;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/matthewnelson/process/Stdio$Null : io/matthewnelson/process/Stdio {
+	public static final field INSTANCE Lio/matthewnelson/process/Stdio$Null;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/matthewnelson/process/Stdio$Pipe : io/matthewnelson/process/Stdio {
+	public static final field INSTANCE Lio/matthewnelson/process/Stdio$Pipe;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
 }
 

@@ -143,6 +143,11 @@ public expect sealed class Process(
         public fun environment(key: String, value: String): Builder
         public fun withEnvironment(block: MutableMap<String, String>.() -> Unit): Builder
 
+        public fun stdin(source: Stdio.Inherit): Builder
+        public fun stdin(source: Stdio.Pipe): Builder
+        public fun stdout(destination: Stdio): Builder
+        public fun stderr(destination: Stdio): Builder
+
         @Throws(ProcessException::class)
         public fun start(): Process
     }

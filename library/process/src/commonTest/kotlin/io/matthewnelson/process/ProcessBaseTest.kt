@@ -172,6 +172,8 @@ abstract class ProcessBaseTest {
             .args("--RunAsDaemon")
             .args("0")
             .environment("HOME", installer.installationDir.path)
+            .stdout(Stdio.Inherit)
+            .stderr(Stdio.Inherit)
             .start()
 
         sigkillOnCompletion(p)

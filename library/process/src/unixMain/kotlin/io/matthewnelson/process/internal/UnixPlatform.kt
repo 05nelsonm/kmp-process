@@ -20,6 +20,7 @@ package io.matthewnelson.process.internal
 import io.matthewnelson.process.NativeProcess
 import io.matthewnelson.process.Process
 import io.matthewnelson.process.ProcessException
+import io.matthewnelson.process.Stdio
 import io.matthewnelson.process.internal.PosixSpawnAttrs.Companion.posixSpawnAttrInit
 import io.matthewnelson.process.internal.PosixSpawnFileActions.Companion.posixSpawnFileActionsInit
 import kotlinx.cinterop.*
@@ -29,7 +30,10 @@ import platform.posix.*
 @OptIn(ExperimentalForeignApi::class)
 internal actual fun Process.Builder.createProcess(
     args: List<String>,
-    env: Map<String, String>
+    env: Map<String, String>,
+    stdin: Stdio,
+    stdout: Stdio,
+    stderr: Stdio,
 ): Process = memScoped {
 
     // TODO: pipes Issue #2

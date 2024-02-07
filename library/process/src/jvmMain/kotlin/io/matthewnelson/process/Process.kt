@@ -25,6 +25,7 @@ import io.matthewnelson.process.internal.commonEnvironment
 import io.matthewnelson.process.internal.commonIsAlive
 import io.matthewnelson.process.internal.commonWithEnvironment
 import kotlinx.coroutines.delay
+import java.io.File
 import java.io.IOException
 import kotlin.time.Duration
 
@@ -169,8 +170,32 @@ public actual sealed class Process actual constructor(
         ): Builder = commonEnvironment(env, key, value)
 
         public actual fun withEnvironment(
-            block: MutableMap<String, String>.() -> Unit
+            block: MutableMap<String, String>.() -> Unit,
         ): Builder = commonWithEnvironment(env, block)
+
+        public actual fun stdin(
+            source: Stdio.Inherit,
+        ): Builder = apply {
+            jProcessBuilder.redirectInput(source.toRedirect())
+        }
+
+        public actual fun stdin(
+            source: Stdio.Pipe,
+        ): Builder = apply {
+            jProcessBuilder.redirectInput(source.toRedirect())
+        }
+
+        public actual fun stdout(
+            destination: Stdio,
+        ): Builder = apply {
+            jProcessBuilder.redirectOutput(destination.toRedirect())
+        }
+
+        public actual fun stderr(
+            destination: Stdio,
+        ): Builder = apply {
+            jProcessBuilder.redirectError(destination.toRedirect())
+        }
 
         @Throws(ProcessException::class)
         public actual fun start(): Process {

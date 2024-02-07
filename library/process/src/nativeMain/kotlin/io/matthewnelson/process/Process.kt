@@ -146,6 +146,10 @@ public actual sealed class Process actual constructor(
         private val env by lazy { parentEnvironment() }
         private val args = mutableListOf<String>()
 
+        private var stdin: Stdio = Stdio.Pipe
+        private var stdout: Stdio = Stdio.Pipe
+        private var stderr: Stdio = Stdio.Pipe
+
         public actual fun args(
             arg: String,
         ): Builder = commonArgs(args, arg)
@@ -167,6 +171,30 @@ public actual sealed class Process actual constructor(
             block: MutableMap<String, String>.() -> Unit
         ): Builder = commonWithEnvironment(env, block)
 
+        public actual fun stdin(
+            source: Stdio.Inherit,
+        ): Builder = apply {
+            stdin = source
+        }
+
+        public actual fun stdin(
+            source: Stdio.Pipe,
+        ): Builder = apply {
+            stdin = source
+        }
+
+        public actual fun stdout(
+            destination: Stdio,
+        ): Builder = apply {
+            stdout = destination
+        }
+
+        public actual fun stderr(
+            destination: Stdio,
+        ): Builder = apply {
+            stderr = destination
+        }
+
         @Throws(ProcessException::class)
         public actual fun start(): Process {
             commonCheckCommand()
@@ -174,7 +202,7 @@ public actual sealed class Process actual constructor(
             val args = args.toImmutableList()
             val env = env.toImmutableMap()
 
-            return createProcess(args, env)
+            return createProcess(args, env, stdin, stdout, stderr)
         }
     }
 }

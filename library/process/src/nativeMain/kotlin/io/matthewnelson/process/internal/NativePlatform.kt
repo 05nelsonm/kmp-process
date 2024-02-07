@@ -19,6 +19,7 @@ package io.matthewnelson.process.internal
 
 import io.matthewnelson.process.Process
 import io.matthewnelson.process.ProcessException
+import io.matthewnelson.process.Stdio
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.toKString
 import platform.posix.errno
@@ -33,7 +34,10 @@ internal expect inline fun Process.Builder.parentEnvironment(): MutableMap<Strin
 @Throws(ProcessException::class)
 internal expect fun Process.Builder.createProcess(
     args: List<String>,
-    env: Map<String, String>
+    env: Map<String, String>,
+    stdin: Stdio,
+    stdout: Stdio,
+    stderr: Stdio,
 ): Process
 
 @Suppress("NOTHING_TO_INLINE")
