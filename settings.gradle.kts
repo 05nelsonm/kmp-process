@@ -1,4 +1,4 @@
-rootProject.name = "process"
+rootProject.name = "kmp-process"
 
 pluginManagement {
     repositories {
