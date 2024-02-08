@@ -13,10 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
-
 package io.matthewnelson.process
 
+import io.matthewnelson.immutable.collections.toImmutableList
+import io.matthewnelson.immutable.collections.toImmutableMap
+import io.matthewnelson.kmp.file.*
+import io.matthewnelson.process.internal.STDIO_NULL
+import io.matthewnelson.process.internal.PlatformBuilder
+import io.matthewnelson.process.internal.commonWaitFor
+import kotlinx.coroutines.delay
+import kotlin.jvm.JvmField
+import kotlin.jvm.JvmName
 import kotlin.time.Duration
 
 /**
@@ -24,29 +31,37 @@ import kotlin.time.Duration
  *
  * @see [Builder]
  * */
-public expect sealed class Process(
-    command: String,
-    args: List<String>,
-    environment: Map<String, String>,
+public abstract class Process internal constructor(
+    @JvmField
+    public val command: String,
+    @JvmField
+    public val args: List<String>,
+    @JvmField
+    public val environment: Map<String, String>,
+    @JvmField
+    public val stdio: Stdio.Config,
 ) {
-    public val command: String
-    public val args: List<String>
-    public val environment: Map<String, String>
 
     /**
      * Returns the exit code for which the process
      * completed with.
      *
-     * @throws [ProcessException] if the [Process] has
+     * @throws [IllegalStateException] if the [Process] has
      *   not exited yet
      * */
-    @Throws(ProcessException::class)
+    @Throws(IllegalStateException::class)
     public abstract fun exitCode(): Int
 
     // java.lang.Process.isAlive() is only available for
     // Android API 26+. This provides the functionality
     // w/o conflicting with java.lang.Process' function.
-    public val isAlive: Boolean
+    @get:JvmName("isAlive")
+    public val isAlive: Boolean get() = try {
+        exitCode()
+        false
+    } catch (_: IllegalStateException) {
+        true
+    }
 
     /**
      * Blocks the current thread until [Process] completion.
@@ -64,19 +79,26 @@ public expect sealed class Process(
      * [Process] completed).
      *
      * @param [timeout] the [Duration] to wait
-     * @return The [Process.exitCode], or null if [timeout] is exceeded
+     * @return The [Process.exitCode], or null if [timeout] is
+     *   exceeded without [Process] completion.
      * @throws [InterruptedException]
      * @throws [UnsupportedOperationException] on Node.js
      * */
     @Throws(InterruptedException::class, UnsupportedOperationException::class)
-    public fun waitFor(timeout: Duration): Int?
+    public abstract fun waitFor(timeout: Duration): Int?
 
     /**
      * Delays the current coroutine until [Process] completion.
      *
      * @return The [Process.exitCode]
      * */
-    public suspend fun waitForAsync(): Int
+    public suspend fun waitForAsync(): Int {
+        var exitCode: Int? = null
+        while (exitCode == null) {
+            exitCode = waitForAsync(Duration.INFINITE)
+        }
+        return exitCode
+    }
 
     /**
      * Delays the current coroutine for the specified [timeout],
@@ -84,21 +106,22 @@ public expect sealed class Process(
      * [Process] completed).
      *
      * @param [timeout] the [Duration] to wait
-     * @return The [Process.exitCode], or null if [timeout] is exceeded
+     * @return The [Process.exitCode], or null if [timeout] is
+     *   exceeded without [Process] completion.
      * */
-    public suspend fun waitForAsync(timeout: Duration): Int?
+    public suspend fun waitForAsync(timeout: Duration): Int? {
+        return commonWaitFor(timeout) { delay(it) }
+    }
 
     /**
-     * Kills the [Process] via signal SIGTERM and closes
-     * all Pipes.
+     * Kills the [Process] via signal SIGTERM.
      * */
     public abstract fun sigterm(): Process
 
     /**
-     * Kills the [Process] via signal SIGKILL and closes
-     * all Pipes.
+     * Kills the [Process] via signal SIGKILL.
      *
-     * Note that for Android API < 26, sigterm is utilized
+     * Note that for Android API < 26, [sigterm] is utilized
      * as java.lang.Process.destroyForcibly is unavailable.
      * */
     public abstract fun sigkill(): Process
@@ -109,34 +132,108 @@ public expect sealed class Process(
      * e.g. (shell commands)
      *
      *     val p = Process.Builder("sh")
-     *         .arg("-c")
-     *         .arg("sleep 1; exit 5")
+     *         .args("-c")
+     *         .args("sleep 1; exit 5")
      *         .environment("HOME", appDir.absolutePath)
-     *         .start()
+     *         .stdin(Stdio.Null)
+     *         .stdout(Stdio.Inherit)
+     *         .stderr(Stdio.Pipe)
+     *         .spawn()
      *
      * e.g. (Executable file)
      *
      *     val p = Process.Builder(myExecutable.absolutePath)
-     *         .arg("--some-flag")
-     *         .arg("someValue")
-     *         .arg("--another-flag", "anotherValue")
+     *         .args("--some-flag")
+     *         .args("someValue")
+     *         .args("--another-flag", "anotherValue")
      *         .withEnvironment {
      *             remove("HOME")
      *             // ...
      *         }
-     *         .start()
+     *         .stdin(Stdio.Null)
+     *         .stdout(Stdio.File.of("myProgram.log", append = true))
+     *         .stderr(Stdio.File.of("myProgram.err"))
+     *         .spawn()
+     *
+     * @param [command] The command to run. On Native `Linux`, `macOS` and
+     *   `iOS`, if [command] is a relative file path or program name (e.g.
+     *   `ping`) then `posix_spawnp` is utilized. If it is an absolute file
+     *   path (e.g. `/usr/bin/ping`), then `posix_spawn` is utilized.
      * */
-    public class Builder(command: String) {
+    public class Builder(
+        @JvmField
         public val command: String
+    ) {
 
-        public fun arg(arg: String): Builder
-        public fun arg(vararg args: String): Builder
-        public fun arg(args: List<String>): Builder
+        /**
+         * Alternate constructor for an executable [File]. Will take the
+         * normalized path to use for [command].
+         * */
+        public constructor(executable: File): this(executable.normalize().path)
 
-        public fun environment(key: String, value: String): Builder
-        public fun withEnvironment(block: MutableMap<String, String>.() -> Unit): Builder
+        private val platform = PlatformBuilder()
+        private val args = mutableListOf<String>()
+        private val stdio = Stdio.Config.Builder.get()
 
-        @Throws(ProcessException::class)
-        public fun start(): Process
+        public fun args(
+            arg: String,
+        ): Builder = apply { args.add(arg) }
+
+        public fun args(
+            vararg args: String,
+        ): Builder = apply { args.forEach { this.args.add(it) } }
+
+        public fun args(
+            args: List<String>,
+        ): Builder = apply { args.forEach { this.args.add(it) } }
+
+        public fun environment(
+            key: String,
+            value: String,
+        ): Builder = apply { platform.env[key] = value }
+
+        public fun withEnvironment(
+            block: MutableMap<String, String>.() -> Unit,
+        ): Builder = apply { block(platform.env) }
+
+        public fun stdin(
+            source: Stdio,
+        ): Builder = apply { stdio.stdin = source }
+
+        public fun stdout(
+            destination: Stdio,
+        ): Builder = apply { stdio.stdout = destination }
+
+        public fun stderr(
+            destination: Stdio,
+        ): Builder = apply { stdio.stderr = destination }
+
+        @Throws(IOException::class)
+        public fun spawn(): Process {
+            if (command.isBlank()) {
+                throw IOException("command cannot be blank")
+            }
+
+            val args = args.toImmutableList()
+            val env = platform.env.toImmutableMap()
+            val stdio = stdio.build()
+
+            stdio.forEach {
+                if (it !is Stdio.File) return@forEach
+                if (it.file == STDIO_NULL) return@forEach
+                val parent = it.file
+                    .parentFile
+                    ?: return@forEach
+                if (!parent.exists() && !parent.mkdirs()) {
+                    throw IOException("Failed to mkdirs for $parent")
+                }
+            }
+
+            return platform.build(command, args, env, stdio)
+        }
     }
+
+    // TODO: equals
+    // TODO: hashCode
+    // TODO: toString
 }

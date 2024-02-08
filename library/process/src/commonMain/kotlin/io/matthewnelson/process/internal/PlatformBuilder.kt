@@ -15,6 +15,21 @@
  **/
 @file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
 
-package io.matthewnelson.process
+package io.matthewnelson.process.internal
 
-public actual typealias InterruptedException = java.lang.InterruptedException
+import io.matthewnelson.kmp.file.IOException
+import io.matthewnelson.process.Process
+import io.matthewnelson.process.Stdio
+
+internal expect class PlatformBuilder internal constructor() {
+
+    internal val env: MutableMap<String, String>
+
+    @Throws(IOException::class)
+    internal fun build(
+        command: String,
+        args: List<String>,
+        env: Map<String, String>,
+        stdio: Stdio.Config,
+    ): Process
+}

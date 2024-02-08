@@ -17,7 +17,7 @@
 
 package io.matthewnelson.process.internal
 
-import io.matthewnelson.process.ProcessException
+import io.matthewnelson.kmp.file.IOException
 import kotlinx.cinterop.*
 import platform.linux.posix_spawn_file_actions_adddup2
 import platform.linux.posix_spawn_file_actions_destroy
@@ -40,7 +40,7 @@ internal actual value class PosixSpawnFileActions private actual constructor(
 
     internal actual companion object {
 
-        @Throws(ProcessException::class)
+        @Throws(IOException::class)
         internal actual fun MemScope.posixSpawnFileActionsInit(): PosixSpawnFileActions {
             val fileActions = alloc<posix_spawn_file_actions_t>()
             posix_spawn_file_actions_init(fileActions.ptr).check()

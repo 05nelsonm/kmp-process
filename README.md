@@ -31,8 +31,8 @@
 val expected = 5
 
 val p = Process.Builder("sh")
-    .arg("-c")
-    .arg("""
+    .args("-c")
+    .args("""
         sleep 0.25
         echo "HOME: $${"HOME"}"
         exit $expected
@@ -42,25 +42,35 @@ val p = Process.Builder("sh")
         // ...
     }
     .environment("HOME", myAppDir.absolutePath)
-    .start()
+    .stdout(Stdio.Inherit)
+    .spawn()
 
 println("IS_ALIVE: ${p.isAlive}")
 assertEquals(expected, p.waitFor(500.milliseconds))
 ```
 
 ```kotlin
-val p = Process.Builder(myExecutable.absolutePath)
-    .arg("--some-flag")
-    .arg("someValue")
-    .start()
+val p = Process.Builder(myExecutable)
+    .args("--some-flag")
+    .args("someValue")
+    .stdin(Stdio.Null)
+    .stdout(Stdio.File.of("myExecutable.log", append = true))
+    .stderr(Stdio.File.of("myExecutable.err"))
+    .spawn()
 
+// Jvm/Native block for specified duration
 p.waitFor(5.seconds).let { code ->
+    println("EXIT_CODE: ${code ?: "NULL"}")
+}
+
+// Jvm/Js/Native suspend coroutine for specified duration
+p.waitForSync(5.seconds).let { code ->
     println("EXIT_CODE: ${code ?: "NULL"}")
 }
 
 try {
     println("EXIT_CODE: ${p.exitCode()}")
-} catch (_: ProcessException) {}
+} catch (_: IllegalStateException) {}
 
 // Send process `SIGTERM` signal
 // Like calling `java.lang.Process.destroy()`

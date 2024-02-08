@@ -1,32 +1,85 @@
-public abstract class io/matthewnelson/process/Process : java/lang/Process {
+public abstract class io/matthewnelson/process/Process {
 	public final field args Ljava/util/List;
 	public final field command Ljava/lang/String;
 	public final field environment Ljava/util/Map;
-	public synthetic fun <init> (Ljava/lang/String;Ljava/util/List;Ljava/util/Map;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final field stdio Lio/matthewnelson/process/Stdio$Config;
 	public abstract fun exitCode ()I
-	public final fun isProcessAlive ()Z
+	public final fun isAlive ()Z
 	public abstract fun sigkill ()Lio/matthewnelson/process/Process;
 	public abstract fun sigterm ()Lio/matthewnelson/process/Process;
 	public abstract fun waitFor ()I
-	public final fun waitFor-LRDsOJo (J)Ljava/lang/Integer;
+	public abstract fun waitFor-LRDsOJo (J)Ljava/lang/Integer;
 	public final fun waitForAsync (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun waitForAsync-VtjQ1oo (JLkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
 public final class io/matthewnelson/process/Process$Builder {
 	public final field command Ljava/lang/String;
+	public fun <init> (Ljava/io/File;)V
 	public fun <init> (Ljava/lang/String;)V
-	public final fun arg (Ljava/lang/String;)Lio/matthewnelson/process/Process$Builder;
-	public final fun arg (Ljava/util/List;)Lio/matthewnelson/process/Process$Builder;
-	public final fun arg ([Ljava/lang/String;)Lio/matthewnelson/process/Process$Builder;
+	public final fun args (Ljava/lang/String;)Lio/matthewnelson/process/Process$Builder;
+	public final fun args (Ljava/util/List;)Lio/matthewnelson/process/Process$Builder;
+	public final fun args ([Ljava/lang/String;)Lio/matthewnelson/process/Process$Builder;
 	public final fun environment (Ljava/lang/String;Ljava/lang/String;)Lio/matthewnelson/process/Process$Builder;
-	public final fun start ()Lio/matthewnelson/process/Process;
+	public final fun spawn ()Lio/matthewnelson/process/Process;
+	public final fun stderr (Lio/matthewnelson/process/Stdio;)Lio/matthewnelson/process/Process$Builder;
+	public final fun stdin (Lio/matthewnelson/process/Stdio;)Lio/matthewnelson/process/Process$Builder;
+	public final fun stdout (Lio/matthewnelson/process/Stdio;)Lio/matthewnelson/process/Process$Builder;
 	public final fun withEnvironment (Lkotlin/jvm/functions/Function1;)Lio/matthewnelson/process/Process$Builder;
 }
 
-public final class io/matthewnelson/process/ProcessException : java/lang/RuntimeException {
-	public fun <init> (Ljava/lang/String;)V
-	public fun <init> (Ljava/lang/String;Ljava/lang/Throwable;)V
-	public fun <init> (Ljava/lang/Throwable;)V
+public abstract class io/matthewnelson/process/Stdio {
+	public static final field Companion Lio/matthewnelson/process/Stdio$Companion;
+	public static final fun Null ()Lio/matthewnelson/process/Stdio$File;
+	public final fun toString ()Ljava/lang/String;
+}
+
+public final class io/matthewnelson/process/Stdio$Companion {
+	public final fun Null ()Lio/matthewnelson/process/Stdio$File;
+}
+
+public final class io/matthewnelson/process/Stdio$Config : java/lang/Iterable, kotlin/jvm/internal/markers/KMappedMarker {
+	public final field stderr Lio/matthewnelson/process/Stdio;
+	public final field stdin Lio/matthewnelson/process/Stdio;
+	public final field stdout Lio/matthewnelson/process/Stdio;
+	public synthetic fun <init> (Lio/matthewnelson/process/Stdio;Lio/matthewnelson/process/Stdio;Lio/matthewnelson/process/Stdio;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun iterator ()Ljava/util/Iterator;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/matthewnelson/process/Stdio$File : io/matthewnelson/process/Stdio {
+	public static final field Companion Lio/matthewnelson/process/Stdio$File$Companion;
+	public final field append Z
+	public final field file Ljava/io/File;
+	public synthetic fun <init> (Ljava/io/File;ZLkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public static final fun of (Ljava/io/File;)Lio/matthewnelson/process/Stdio$File;
+	public static final fun of (Ljava/io/File;Z)Lio/matthewnelson/process/Stdio$File;
+	public static final fun of (Ljava/lang/String;)Lio/matthewnelson/process/Stdio$File;
+	public static final fun of (Ljava/lang/String;Z)Lio/matthewnelson/process/Stdio$File;
+}
+
+public final class io/matthewnelson/process/Stdio$File$Companion {
+	public final fun of (Ljava/io/File;)Lio/matthewnelson/process/Stdio$File;
+	public final fun of (Ljava/io/File;Z)Lio/matthewnelson/process/Stdio$File;
+	public final fun of (Ljava/lang/String;)Lio/matthewnelson/process/Stdio$File;
+	public final fun of (Ljava/lang/String;Z)Lio/matthewnelson/process/Stdio$File;
+	public static synthetic fun of$default (Lio/matthewnelson/process/Stdio$File$Companion;Ljava/io/File;ZILjava/lang/Object;)Lio/matthewnelson/process/Stdio$File;
+	public static synthetic fun of$default (Lio/matthewnelson/process/Stdio$File$Companion;Ljava/lang/String;ZILjava/lang/Object;)Lio/matthewnelson/process/Stdio$File;
+}
+
+public final class io/matthewnelson/process/Stdio$Inherit : io/matthewnelson/process/Stdio {
+	public static final field INSTANCE Lio/matthewnelson/process/Stdio$Inherit;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+}
+
+public final class io/matthewnelson/process/Stdio$Pipe : io/matthewnelson/process/Stdio {
+	public static final field INSTANCE Lio/matthewnelson/process/Stdio$Pipe;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
 }
 

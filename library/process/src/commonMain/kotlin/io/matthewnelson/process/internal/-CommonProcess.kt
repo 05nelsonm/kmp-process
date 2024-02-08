@@ -18,7 +18,7 @@
 package io.matthewnelson.process.internal
 
 import io.matthewnelson.process.Process
-import io.matthewnelson.process.ProcessException
+import io.matthewnelson.kmp.file.IOException
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
@@ -27,23 +27,6 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.nanoseconds
 import kotlin.time.TimeSource
-
-@Suppress("NOTHING_TO_INLINE")
-internal inline fun Process.commonIsAlive(): Boolean = try {
-    exitCode()
-    false
-} catch (_: ProcessException) {
-    true
-}
-
-@Suppress("NOTHING_TO_INLINE")
-internal suspend inline fun Process.commonWaitForAsync(): Int {
-    var exitCode: Int? = null
-    while (exitCode == null) {
-        exitCode = waitForAsync(Duration.INFINITE)
-    }
-    return exitCode
-}
 
 @Suppress("NOTHING_TO_INLINE")
 @OptIn(ExperimentalContracts::class)
@@ -61,7 +44,7 @@ internal inline fun Process.commonWaitFor(
     do {
         try {
             return exitCode()
-        } catch (_: ProcessException) {
+        } catch (_: IllegalStateException) {
             if (remainingNanos > 0) {
                 val millis = min(
                     (remainingNanos.nanoseconds.inWholeMilliseconds + 1).toDouble(),

@@ -13,33 +13,39 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-package io.matthewnelson.process
+package io.matthewnelson.process.internal
 
-import io.matthewnelson.process.internal.errnoToProcessException
+import io.matthewnelson.kmp.file.DelicateFileApi
+import io.matthewnelson.kmp.file.InterruptedException
+import io.matthewnelson.kmp.file.IOException
+import io.matthewnelson.kmp.file.errnoToIOException
+import io.matthewnelson.process.Process
+import io.matthewnelson.process.Stdio
 import kotlinx.cinterop.*
 import platform.posix.*
 import kotlin.concurrent.AtomicReference
 import kotlin.time.Duration
 
 internal class NativeProcess
-@Throws(ProcessException::class)
+@Throws(IOException::class)
 internal constructor(
     private val pid: Int,
     command: String,
     args: List<String>,
     env: Map<String, String>,
-): Process(command, args, env) {
+    stdio: Stdio.Config
+): Process(command, args, env, stdio) {
 
     init {
         if (pid <= 0) {
             // TODO: Close pipes #Issue 2
-            throw ProcessException("pid[$pid] must be greater than 0")
+            throw IOException("pid[$pid] must be greater than 0")
         }
     }
 
     private val _exitCode = AtomicReference<Int?>(null)
 
-    @Throws(ProcessException::class)
+    @Throws(IllegalStateException::class)
     override fun exitCode(): Int {
         _exitCode.value?.let { return it }
 
@@ -54,11 +60,14 @@ internal constructor(
                     _exitCode.compareAndSet(null, code)
                     // TODO: Close Pipes Issue #2
                 }
-                else -> throw errnoToProcessException(errno)
+                else -> {
+                    val message = strerror(errno)?.toKString() ?: "errno: $errno"
+                    throw IllegalStateException(message)
+                }
             }
         }
 
-        return _exitCode.value ?: throw ProcessException("Process hasn't exited")
+        return _exitCode.value ?: throw IllegalStateException("Process hasn't exited")
     }
 
     override fun waitFor(): Int {
@@ -69,12 +78,24 @@ internal constructor(
         return exitCode
     }
 
+    override fun waitFor(timeout: Duration): Int? {
+        return commonWaitFor(timeout) {
+            if (usleep(it.inWholeMicroseconds.toUInt()) == -1) {
+                // EINVAL will never happen b/c duration is
+                // max 100 millis. Must be EINTR
+                throw InterruptedException()
+            }
+        }
+    }
+
     override fun sigterm(): Process {
+        // TODO: https://man7.org/linux/man-pages/man7/signal.7.html
         if (isAlive) kill(pid, SIGTERM)
         return this
     }
 
     override fun sigkill(): Process {
+        // TODO: https://man7.org/linux/man-pages/man7/signal.7.html
         if (isAlive) kill(pid, SIGKILL)
         return this
     }

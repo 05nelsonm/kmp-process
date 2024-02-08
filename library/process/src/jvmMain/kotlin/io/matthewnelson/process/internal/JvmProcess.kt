@@ -13,20 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-package io.matthewnelson.process
+package io.matthewnelson.process.internal
 
-import java.io.InputStream
-import java.io.OutputStream
-import java.util.concurrent.TimeUnit
+import io.matthewnelson.kmp.file.InterruptedException
+import io.matthewnelson.kmp.file.IOException
+import io.matthewnelson.process.Process
+import io.matthewnelson.process.Stdio
+import kotlin.time.Duration
 
 internal class JvmProcess private constructor(
     command: String,
     args: List<String>,
     env: Map<String, String>,
+    stdio: Stdio.Config,
     private val jProcess: java.lang.Process,
-): Process(command, args, env) {
+): Process(command, args, env, stdio) {
 
-    @Throws(ProcessException::class)
+    @Throws(IllegalStateException::class)
     override fun exitCode(): Int {
         val result: Int? = try {
             jProcess.exitValue()
@@ -34,7 +37,7 @@ internal class JvmProcess private constructor(
             null
         }
 
-        return result ?: throw ProcessException("Process hasn't exited")
+        return result ?: throw IllegalStateException("Process hasn't exited")
     }
 
     override fun sigterm(): Process {
@@ -54,30 +57,10 @@ internal class JvmProcess private constructor(
         return this
     }
 
-    override fun isAlive(): Boolean = jProcess.isAlive
-
-    override fun getInputStream(): InputStream = jProcess.inputStream
-    override fun getOutputStream(): OutputStream = jProcess.outputStream
-    override fun getErrorStream(): InputStream = jProcess.errorStream
-
     @Throws(InterruptedException::class)
     override fun waitFor(): Int = jProcess.waitFor()
     @Throws(InterruptedException::class)
-    override fun waitFor(timeout: Long, unit: TimeUnit?): Boolean = jProcess.waitFor(timeout, unit)
-
-    @Throws(IllegalThreadStateException::class)
-    override fun exitValue(): Int = jProcess.exitValue()
-
-    override fun destroy() { jProcess.destroy() }
-    override fun destroyForcibly(): java.lang.Process = jProcess.destroyForcibly()
-
-    @Suppress("Since15")
-    @Throws(UnsupportedOperationException::class)
-    override fun toHandle(): ProcessHandle = jProcess.toHandle()
-
-    @Suppress("Since15")
-    @Throws(UnsupportedOperationException::class)
-    override fun supportsNormalTermination(): Boolean = jProcess.supportsNormalTermination()
+    override fun waitFor(timeout: Duration): Int? = commonWaitFor(timeout) { Thread.sleep(it.inWholeMilliseconds) }
 
     internal companion object {
 
@@ -86,12 +69,14 @@ internal class JvmProcess private constructor(
             command: String,
             args: List<String>,
             env: Map<String, String>,
-            delegate: java.lang.Process
+            stdio: Stdio.Config,
+            jProcess: java.lang.Process
         ): JvmProcess = JvmProcess(
             command,
             args,
             env,
-            delegate,
+            stdio,
+            jProcess,
         )
 
         private val ANDROID_SDK_INT: Int? by lazy {

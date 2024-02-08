@@ -17,7 +17,7 @@
 
 package io.matthewnelson.process.internal
 
-import io.matthewnelson.process.ProcessException
+import io.matthewnelson.kmp.file.IOException
 import kotlinx.cinterop.*
 import platform.linux.posix_spawnattr_destroy
 import platform.linux.posix_spawnattr_init
@@ -35,7 +35,7 @@ internal actual value class PosixSpawnAttrs private actual constructor(
 
     internal actual companion object {
 
-        @Throws(ProcessException::class)
+        @Throws(IOException::class)
         internal actual fun MemScope.posixSpawnAttrInit(): PosixSpawnAttrs {
             val attrs = alloc<posix_spawnattr_t>()
             posix_spawnattr_init(attrs.ptr).check()

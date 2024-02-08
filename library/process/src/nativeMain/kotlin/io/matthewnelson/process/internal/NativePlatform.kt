@@ -17,28 +17,20 @@
 
 package io.matthewnelson.process.internal
 
-import io.matthewnelson.process.Process
-import io.matthewnelson.process.ProcessException
+import io.matthewnelson.kmp.file.DelicateFileApi
+import io.matthewnelson.kmp.file.IOException
+import io.matthewnelson.kmp.file.errnoToIOException
 import kotlinx.cinterop.ExperimentalForeignApi
-import kotlinx.cinterop.toKString
 import platform.posix.errno
-import platform.posix.strerror
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
 
 @Suppress("NOTHING_TO_INLINE")
-internal expect inline fun Process.Builder.parentEnvironment(): MutableMap<String, String>
-
-@Throws(ProcessException::class)
-internal expect fun Process.Builder.createProcess(
-    command: String,
-    args: List<String>,
-    env: Map<String, String>
-): Process
+internal expect inline fun PlatformBuilder.parentEnvironment(): MutableMap<String, String>
 
 @Suppress("NOTHING_TO_INLINE")
-@Throws(ProcessException::class)
+@Throws(IOException::class)
 @OptIn(ExperimentalContracts::class)
 internal inline fun Int.check(
     block: (result: Int) -> Boolean = { it >= 0 },
@@ -48,15 +40,9 @@ internal inline fun Int.check(
     }
 
     if (!block(this)) {
-        throw errnoToProcessException(errno)
+        @OptIn(DelicateFileApi::class, ExperimentalForeignApi::class)
+        throw errnoToIOException(errno)
     }
 
     return this
-}
-
-@OptIn(ExperimentalForeignApi::class)
-internal fun errnoToProcessException(errno: Int): ProcessException {
-    val message = strerror(errno)?.toKString() ?: "errno: $errno"
-    // TODO: errno string prefix e.g. "[ENOENT] "
-    return ProcessException(message)
 }

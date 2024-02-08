@@ -13,17 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
+package io.matthewnelson.process.internal
 
-package io.matthewnelson.process
+import io.matthewnelson.kmp.file.File
+import io.matthewnelson.kmp.file.SysPathSep
+import io.matthewnelson.kmp.file.toFile
 
-public class ProcessException: RuntimeException {
-    public constructor(message: String?): super(message)
-    public constructor(message: String?, cause: Throwable?): super(message, cause)
-    public constructor(cause: Throwable?): super(cause)
-}
-
-public expect class InterruptedException: Exception {
-    public constructor()
-    public constructor(s: String)
-}
+internal actual val STDIO_NULL: File = (System.getProperty("os.name")
+    ?.ifBlank { null }
+    ?.contains("windows", ignoreCase = true)
+    ?: (SysPathSep == '\\'))
+    .let { isWindows -> if (isWindows) "NUL" else "/dev/null" }
+    .toFile()

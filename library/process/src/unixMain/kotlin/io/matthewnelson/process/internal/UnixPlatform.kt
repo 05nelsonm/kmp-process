@@ -17,69 +17,12 @@
 
 package io.matthewnelson.process.internal
 
-import io.matthewnelson.process.NativeProcess
-import io.matthewnelson.process.Process
-import io.matthewnelson.process.ProcessException
-import io.matthewnelson.process.internal.PosixSpawnAttrs.Companion.posixSpawnAttrInit
-import io.matthewnelson.process.internal.PosixSpawnFileActions.Companion.posixSpawnFileActionsInit
+import io.matthewnelson.kmp.file.File
+import io.matthewnelson.kmp.file.toFile
 import kotlinx.cinterop.*
 import platform.posix.*
 
-@Throws(ProcessException::class)
-@OptIn(ExperimentalForeignApi::class)
-internal actual fun Process.Builder.createProcess(
-    command: String,
-    args: List<String>,
-    env: Map<String, String>
-): Process = memScoped {
-
-    // TODO: pipes Issue #2
-
-    val fileActions = posixSpawnFileActionsInit()
-    val attrs = posixSpawnAttrInit()
-
-    val pid = alloc<pid_tVar>()
-
-    // null terminated c-string array
-    val argv = allocArray<CPointerVar<ByteVar>>(args.size + 2).apply {
-        // First argument for posix_spawn's argv should be the executable name.
-        // If command is the absolute path to the executable, take the final
-        // path argument after last separator.
-        this[0] = command.substringAfterLast('/').cstr.ptr
-
-        var i = 1
-        val iterator = args.iterator()
-        while (iterator.hasNext()) {
-            this[i++] = iterator.next().cstr.ptr
-        }
-
-        this[i] = null
-    }
-
-    // null terminated c-string array
-    val envp = allocArray<CPointerVar<ByteVar>>(env.size + 1).apply {
-        var i = 0
-        val iterator = env.entries.iterator()
-        while (iterator.hasNext()) {
-            this[i++] = iterator.next().toString().cstr.ptr
-        }
-
-        this[i] = null
-    }
-
-    val result = if (command.startsWith('/')) {
-        // Absolute path, utilize posix_spawn
-        posixSpawn(command, pid.ptr, fileActions, attrs, argv, envp)
-    } else {
-        // relative path, utilize posix_spawnp
-        posixSpawnP(command, pid.ptr, fileActions, attrs, argv, envp)
-    }
-
-    // TODO: close things
-    result.check()
-
-    NativeProcess(pid.value, command, args, env)
-}
+internal actual val STDIO_NULL: File = "/dev/null".toFile()
 
 @Suppress("NOTHING_TO_INLINE")
 @OptIn(ExperimentalForeignApi::class)

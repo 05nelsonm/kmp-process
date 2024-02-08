@@ -6,6 +6,7 @@ gradle-publish-maven = "0.25.3"
 
 immutable = "0.1.0"
 
+kmp-file = "0.1.0-alpha06"
 kmp-tor-resource = "408.10.0-SNAPSHOT"
 kotlinx-coroutines = "1.7.3"
 
@@ -16,6 +17,7 @@ gradle-publish-maven = { module = "com.vanniktech:gradle-maven-publish-plugin", 
 
 immutable-collections = { module = "io.matthewnelson.immutable:collections", version.ref = "immutable" }
 
+kmp-file = { module = "io.matthewnelson.kmp-file:file", version.ref = "kmp-file" }
 kmp-tor-resource-tor = { module = "io.matthewnelson.kmp-tor:resource-tor", version.ref = "kmp-tor-resource" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
