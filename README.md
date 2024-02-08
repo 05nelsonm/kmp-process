@@ -1,4 +1,4 @@
-# process
+# kmp-process
 [![badge-license]][url-license]
 [![badge-latest-release]][url-latest-release]
 
@@ -107,7 +107,7 @@ p.sigkill()
 [badge-support-js-ir]: https://img.shields.io/badge/support-[js--IR]-AAC4E0.svg?style=flat
 [badge-support-linux-arm]: http://img.shields.io/badge/support-[LinuxArm]-2D3F6C.svg?style=flat
 
-[url-latest-release]: https://github.com/05nelsonm/process/releases/latest
+[url-latest-release]: https://github.com/05nelsonm/kmp-process/releases/latest
 [url-license]: https://www.apache.org/licenses/LICENSE-2.0
 [url-kotlin]: https://kotlinlang.org
 [url-coroutines]: https://github.com/Kotlin/kotlinx.coroutines
