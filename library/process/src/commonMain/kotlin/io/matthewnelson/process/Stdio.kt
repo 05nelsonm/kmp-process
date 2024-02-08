@@ -16,7 +16,9 @@
 package io.matthewnelson.process
 
 import io.matthewnelson.immutable.collections.immutableListOf
-import io.matthewnelson.process.internal.PATH_STDIO_NULL
+import io.matthewnelson.kmp.file.path
+import io.matthewnelson.kmp.file.toFile
+import io.matthewnelson.process.internal.STDIO_NULL
 import kotlin.jvm.*
 
 /**
@@ -50,11 +52,11 @@ public sealed class Stdio private constructor() {
          * */
         @JvmStatic
         @get:JvmName("Null")
-        public val Null: File get() = File.of(PATH_STDIO_NULL)
+        public val Null: File get() = File.of(STDIO_NULL)
     }
 
     /**
-     * Uses the specified [path] for the standard
+     * Uses the specified [file] for the standard
      * input/output stream.
      *
      * Note that [append] is ignored when using with
@@ -64,7 +66,7 @@ public sealed class Stdio private constructor() {
      * */
     public class File private constructor(
         @JvmField
-        public val path: String,
+        public val file: io.matthewnelson.kmp.file.File,
         @JvmField
         public val append: Boolean,
     ): Stdio() {
@@ -76,23 +78,30 @@ public sealed class Stdio private constructor() {
             public fun of(
                 path: String,
                 append: Boolean = false,
+            ): File = of(path.toFile(), append)
+
+            @JvmStatic
+            @JvmOverloads
+            public fun of(
+                file: io.matthewnelson.kmp.file.File,
+                append: Boolean = false,
             ): File {
-                if (path == PATH_STDIO_NULL) return NULL
-                return File(path, append)
+                if (file == STDIO_NULL) return NULL
+                return File(file, append)
             }
 
-            private val NULL = File(PATH_STDIO_NULL, append = false)
+            private val NULL = File(STDIO_NULL, append = false)
         }
 
         override fun equals(other: Any?): Boolean {
             return  other is File
-                    && other.path == path
+                    && other.file == file
                     && other.append == append
         }
 
         override fun hashCode(): Int {
             var result = 42
-            result = result * 31 + path.hashCode()
+            result = result * 31 + file.hashCode()
             result = result * 31 + append.hashCode()
             return result
         }
@@ -119,7 +128,7 @@ public sealed class Stdio private constructor() {
                 val stdin = stdin.let {
                     if (it !is File) return@let it
                     if (!it.append) return@let it
-                    File.of(it.path, append = false)
+                    File.of(it.file, append = false)
                 }
 
                 return Config(stdin, stdout, stderr)
@@ -131,11 +140,37 @@ public sealed class Stdio private constructor() {
                 internal fun get() = Builder()
             }
         }
+
+        override fun equals(other: Any?): Boolean {
+            return  other is Config
+                    && other.stdin == stdin
+                    && other.stdout == stdout
+                    && other.stderr == stderr
+        }
+
+        override fun hashCode(): Int {
+            var result = 17
+            result = result * 31 + stdin.hashCode()
+            result = result * 31 + stdout.hashCode()
+            result = result * 31 + stderr.hashCode()
+            return result
+        }
+
+        override fun toString(): String = buildString {
+            appendLine("Stdio.Config: [")
+            append("    stdin: ")
+            appendLine(stdin)
+            append("    stdout: ")
+            appendLine(stdout)
+            append("    stderr: ")
+            appendLine(stderr)
+            append(']')
+        }
     }
 
     final override fun toString(): String {
         return "Stdio." + when (this) {
-            is File -> "File[path=$path,append=$append]"
+            is File -> "File[file=$file,append=$append]"
             is Inherit -> "Inherit"
             is Pipe -> "Pipe"
         }

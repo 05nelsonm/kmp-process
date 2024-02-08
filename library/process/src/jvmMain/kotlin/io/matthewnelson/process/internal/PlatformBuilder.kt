@@ -61,14 +61,14 @@ internal actual class PlatformBuilder internal actual constructor() {
             is Stdio.Pipe -> ProcessBuilder.Redirect.PIPE
             is Stdio.File -> {
                 when {
-                    path == PATH_STDIO_NULL -> if (isStdin) {
+                    file == STDIO_NULL -> if (isStdin) {
                         REDIRECT_NULL_READ
                     } else {
                         REDIRECT_NULL_WRITE
                     }
-                    isStdin -> ProcessBuilder.Redirect.from(File(path))
-                    append -> ProcessBuilder.Redirect.appendTo(File(path))
-                    else -> ProcessBuilder.Redirect.to(File(path))
+                    isStdin -> ProcessBuilder.Redirect.from(file)
+                    append -> ProcessBuilder.Redirect.appendTo(file)
+                    else -> ProcessBuilder.Redirect.to(file)
                 }
             }
         }
@@ -88,7 +88,7 @@ internal actual class PlatformBuilder internal actual constructor() {
 
             if (discard != null) return@lazy discard
 
-            ProcessBuilder.Redirect.to(File(PATH_STDIO_NULL))
+            ProcessBuilder.Redirect.to(STDIO_NULL)
         }
     }
 }

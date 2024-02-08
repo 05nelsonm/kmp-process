@@ -17,10 +17,12 @@
 
 package io.matthewnelson.process.internal
 
+import io.matthewnelson.kmp.file.File
+import io.matthewnelson.kmp.file.toFile
 import kotlinx.cinterop.*
 import platform.posix.*
 
-internal actual val PATH_STDIO_NULL: String = "/dev/null"
+internal actual val STDIO_NULL: File = "/dev/null".toFile()
 
 @Suppress("NOTHING_TO_INLINE")
 @OptIn(ExperimentalForeignApi::class)

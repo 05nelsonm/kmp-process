@@ -153,7 +153,7 @@ abstract class ProcessBaseTest {
     fun givenExecutableFile_whenExecuteAsProcess_thenIsSuccessful() = runTest(timeout = 25.seconds) {
         val paths = installer.install()
 
-        val p = Process.Builder(paths.tor.path)
+        val p = Process.Builder(paths.tor)
             .args("--DataDirectory")
             .args(installer.installationDir.resolve("data").path)
             .args("--CacheDirectory")
@@ -176,8 +176,8 @@ abstract class ProcessBaseTest {
             .stdin(Stdio.Null)
             .stdout(Stdio.Inherit)
             .stderr(Stdio.Inherit)
-//            .stdout(Stdio.File.of(installer.installationDir.resolve("tor.log").path))
-//            .stderr(Stdio.File.of(installer.installationDir.resolve("tor.err").path))
+//            .stdout(Stdio.File.of(installer.installationDir.resolve("tor.log")))
+//            .stderr(Stdio.File.of(installer.installationDir.resolve("tor.err")))
             .spawn()
 
         sigkillOnCompletion(p)

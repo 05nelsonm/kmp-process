@@ -15,4 +15,6 @@
  **/
 package io.matthewnelson.process.internal
 
-internal expect val PATH_STDIO_NULL: String
+import io.matthewnelson.kmp.file.File
+
+internal expect val STDIO_NULL: File

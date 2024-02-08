@@ -15,10 +15,12 @@
  **/
 package io.matthewnelson.process.internal
 
+import io.matthewnelson.kmp.file.toFile
 import java.io.File
 
-internal actual val PATH_STDIO_NULL: String = (System.getProperty("os.name")
+internal actual val STDIO_NULL: File = (System.getProperty("os.name")
     ?.ifBlank { null }
     ?.contains("windows", ignoreCase = true)
     ?: (File.separatorChar == '\\'))
     .let { isWindows -> if (isWindows) "NUL" else "/dev/null" }
+    .toFile()

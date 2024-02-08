@@ -15,6 +15,7 @@ public abstract class io/matthewnelson/process/Process {
 
 public final class io/matthewnelson/process/Process$Builder {
 	public final field command Ljava/lang/String;
+	public fun <init> (Ljava/io/File;)V
 	public fun <init> (Ljava/lang/String;)V
 	public final fun args (Ljava/lang/String;)Lio/matthewnelson/process/Process$Builder;
 	public final fun args (Ljava/util/List;)Lio/matthewnelson/process/Process$Builder;
@@ -42,23 +43,31 @@ public final class io/matthewnelson/process/Stdio$Config : java/lang/Iterable, k
 	public final field stdin Lio/matthewnelson/process/Stdio;
 	public final field stdout Lio/matthewnelson/process/Stdio;
 	public synthetic fun <init> (Lio/matthewnelson/process/Stdio;Lio/matthewnelson/process/Stdio;Lio/matthewnelson/process/Stdio;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
 	public fun iterator ()Ljava/util/Iterator;
+	public fun toString ()Ljava/lang/String;
 }
 
 public final class io/matthewnelson/process/Stdio$File : io/matthewnelson/process/Stdio {
 	public static final field Companion Lio/matthewnelson/process/Stdio$File$Companion;
 	public final field append Z
-	public final field path Ljava/lang/String;
-	public synthetic fun <init> (Ljava/lang/String;ZLkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final field file Ljava/io/File;
+	public synthetic fun <init> (Ljava/io/File;ZLkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun equals (Ljava/lang/Object;)Z
 	public fun hashCode ()I
+	public static final fun of (Ljava/io/File;)Lio/matthewnelson/process/Stdio$File;
+	public static final fun of (Ljava/io/File;Z)Lio/matthewnelson/process/Stdio$File;
 	public static final fun of (Ljava/lang/String;)Lio/matthewnelson/process/Stdio$File;
 	public static final fun of (Ljava/lang/String;Z)Lio/matthewnelson/process/Stdio$File;
 }
 
 public final class io/matthewnelson/process/Stdio$File$Companion {
+	public final fun of (Ljava/io/File;)Lio/matthewnelson/process/Stdio$File;
+	public final fun of (Ljava/io/File;Z)Lio/matthewnelson/process/Stdio$File;
 	public final fun of (Ljava/lang/String;)Lio/matthewnelson/process/Stdio$File;
 	public final fun of (Ljava/lang/String;Z)Lio/matthewnelson/process/Stdio$File;
+	public static synthetic fun of$default (Lio/matthewnelson/process/Stdio$File$Companion;Ljava/io/File;ZILjava/lang/Object;)Lio/matthewnelson/process/Stdio$File;
 	public static synthetic fun of$default (Lio/matthewnelson/process/Stdio$File$Companion;Ljava/lang/String;ZILjava/lang/Object;)Lio/matthewnelson/process/Stdio$File;
 }
 

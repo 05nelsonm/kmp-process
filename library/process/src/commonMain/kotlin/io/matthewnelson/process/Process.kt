@@ -17,11 +17,8 @@ package io.matthewnelson.process
 
 import io.matthewnelson.immutable.collections.toImmutableList
 import io.matthewnelson.immutable.collections.toImmutableMap
-import io.matthewnelson.kmp.file.InterruptedException
-import io.matthewnelson.kmp.file.IOException
-import io.matthewnelson.kmp.file.parentFile
-import io.matthewnelson.kmp.file.toFile
-import io.matthewnelson.process.internal.PATH_STDIO_NULL
+import io.matthewnelson.kmp.file.*
+import io.matthewnelson.process.internal.STDIO_NULL
 import io.matthewnelson.process.internal.PlatformBuilder
 import io.matthewnelson.process.internal.commonWaitFor
 import kotlinx.coroutines.delay
@@ -117,16 +114,14 @@ public abstract class Process internal constructor(
     }
 
     /**
-     * Kills the [Process] via signal SIGTERM and closes
-     * all Pipes.
+     * Kills the [Process] via signal SIGTERM.
      * */
     public abstract fun sigterm(): Process
 
     /**
-     * Kills the [Process] via signal SIGKILL and closes
-     * all Pipes.
+     * Kills the [Process] via signal SIGKILL.
      *
-     * Note that for Android API < 26, sigterm is utilized
+     * Note that for Android API < 26, [sigterm] is utilized
      * as java.lang.Process.destroyForcibly is unavailable.
      * */
     public abstract fun sigkill(): Process
@@ -169,6 +164,12 @@ public abstract class Process internal constructor(
         @JvmField
         public val command: String
     ) {
+
+        /**
+         * Alternate constructor for an executable [File]. Will take the
+         * normalized path to use for [command].
+         * */
+        public constructor(executable: File): this(executable.normalize().path)
 
         private val platform = PlatformBuilder()
         private val args = mutableListOf<String>()
@@ -219,9 +220,8 @@ public abstract class Process internal constructor(
 
             stdio.forEach {
                 if (it !is Stdio.File) return@forEach
-                if (it.path == PATH_STDIO_NULL) return@forEach
-                val parent = it.path
-                    .toFile()
+                if (it.file == STDIO_NULL) return@forEach
+                val parent = it.file
                     .parentFile
                     ?: return@forEach
                 if (!parent.exists() && !parent.mkdirs()) {
@@ -232,4 +232,8 @@ public abstract class Process internal constructor(
             return platform.build(command, args, env, stdio)
         }
     }
+
+    // TODO: equals
+    // TODO: hashCode
+    // TODO: toString
 }
