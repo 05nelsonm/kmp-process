@@ -15,12 +15,13 @@
  **/
 package io.matthewnelson.process.internal
 
+import io.matthewnelson.kmp.file.File
+import io.matthewnelson.kmp.file.SysPathSep
 import io.matthewnelson.kmp.file.toFile
-import java.io.File
 
 internal actual val STDIO_NULL: File = (System.getProperty("os.name")
     ?.ifBlank { null }
     ?.contains("windows", ignoreCase = true)
-    ?: (File.separatorChar == '\\'))
+    ?: (SysPathSep == '\\'))
     .let { isWindows -> if (isWindows) "NUL" else "/dev/null" }
     .toFile()
