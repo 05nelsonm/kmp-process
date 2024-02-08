@@ -168,11 +168,18 @@ public sealed class Stdio private constructor() {
         }
     }
 
-    final override fun toString(): String {
-        return "Stdio." + when (this) {
-            is File -> "File[file=$file,append=$append]"
-            is Inherit -> "Inherit"
-            is Pipe -> "Pipe"
+    final override fun toString(): String = buildString {
+        append("Stdio.")
+        when (this@Stdio) {
+            is File -> {
+                append("File[file=")
+                append(file)
+                append(",append=")
+                append(append)
+                append(']')
+            }
+            is Inherit -> append("Inherit")
+            is Pipe -> append("Pipe")
         }
     }
 }

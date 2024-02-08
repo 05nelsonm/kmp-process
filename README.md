@@ -50,7 +50,7 @@ assertEquals(expected, p.waitFor(500.milliseconds))
 ```
 
 ```kotlin
-val p = Process.Builder(myExecutable.absolutePath)
+val p = Process.Builder(myExecutable)
     .args("--some-flag")
     .args("someValue")
     .stdin(Stdio.Null)
