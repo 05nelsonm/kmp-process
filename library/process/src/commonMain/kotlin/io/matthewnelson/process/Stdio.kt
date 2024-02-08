@@ -15,11 +15,9 @@
  **/
 package io.matthewnelson.process
 
+import io.matthewnelson.immutable.collections.immutableListOf
 import io.matthewnelson.process.internal.PATH_STDIO_NULL
-import kotlin.jvm.JvmField
-import kotlin.jvm.JvmName
-import kotlin.jvm.JvmOverloads
-import kotlin.jvm.JvmStatic
+import kotlin.jvm.*
 
 /**
  * Standard input/output stream types for [Process]
@@ -107,9 +105,12 @@ public sealed class Stdio private constructor() {
         public val stdout: Stdio,
         @JvmField
         public val stderr: Stdio,
-    ) {
+    ): Iterable<Stdio> {
 
-        internal class Builder internal constructor() {
+        override fun iterator(): Iterator<Stdio> = immutableListOf(stdin, stdout, stderr).iterator()
+
+        internal class Builder private constructor() {
+
             internal var stdin: Stdio = Pipe
             internal var stdout: Stdio = Pipe
             internal var stderr: Stdio = Pipe
@@ -122,6 +123,12 @@ public sealed class Stdio private constructor() {
                 }
 
                 return Config(stdin, stdout, stderr)
+            }
+
+            internal companion object {
+
+                @JvmSynthetic
+                internal fun get() = Builder()
             }
         }
     }

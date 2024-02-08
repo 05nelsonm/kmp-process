@@ -27,6 +27,7 @@ kmpConfiguration {
         common {
             sourceSetMain {
                 dependencies {
+                    api(libs.kmp.file)
                     implementation(libs.immutable.collections)
                     implementation(libs.kotlinx.coroutines.core)
                 }

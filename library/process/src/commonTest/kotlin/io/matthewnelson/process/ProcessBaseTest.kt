@@ -15,6 +15,7 @@
  **/
 package io.matthewnelson.process
 
+import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.file.SysTempDir
 import io.matthewnelson.kmp.file.path
 import io.matthewnelson.kmp.file.resolve
@@ -51,7 +52,7 @@ abstract class ProcessBaseTest {
                 Process.Builder("sleep")
                     .args("0.25")
                     .spawn()
-            } catch (e: ProcessException) {
+            } catch (e: IOException) {
                 // Host (Window or iOS) did not have sleep available
                 if (!isUnixDesktop) {
                     println("Skipping...")
@@ -105,7 +106,7 @@ abstract class ProcessBaseTest {
             Process.Builder("sleep")
                 .args("1")
                 .spawn()
-        } catch (e: ProcessException) {
+        } catch (e: IOException) {
             // Host (Window) did not have sleep available
             if (!isUnixDesktop) {
                 println("Skipping...")
@@ -130,7 +131,7 @@ abstract class ProcessBaseTest {
             Process.Builder("sleep")
                 .args("1")
                 .spawn()
-        } catch (e: ProcessException) {
+        } catch (e: IOException) {
             // Host (Window or iOS) did not have sleep available
             if (!isUnixDesktop) {
                 println("Skipping...")

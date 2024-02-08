@@ -17,7 +17,7 @@
 
 package io.matthewnelson.process.internal
 
-import io.matthewnelson.process.ProcessException
+import io.matthewnelson.kmp.file.IOException
 import kotlinx.cinterop.CValuesRef
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.MemScope
@@ -31,7 +31,7 @@ internal expect value class PosixSpawnFileActions private constructor(
 
     internal companion object {
 
-        @Throws(ProcessException::class)
+        @Throws(IOException::class)
         internal fun MemScope.posixSpawnFileActionsInit(): PosixSpawnFileActions
     }
 }

@@ -18,10 +18,9 @@
 package io.matthewnelson.process.internal
 
 import io.matthewnelson.process.Process
-import io.matthewnelson.process.ProcessException
+import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.process.Stdio
 import java.io.File
-import java.io.IOException
 
 // jvmMain
 internal actual class PlatformBuilder internal actual constructor() {
@@ -31,7 +30,7 @@ internal actual class PlatformBuilder internal actual constructor() {
         jProcessBuilder.environment()
     }
 
-    @Throws(ProcessException::class)
+    @Throws(IOException::class)
     internal actual fun build(
         command: String,
         args: List<String>,
@@ -43,38 +42,17 @@ internal actual class PlatformBuilder internal actual constructor() {
         jCommands.addAll(args)
 
         jProcessBuilder.command(jCommands)
-        jProcessBuilder.configureRedirects(stdio)
 
-        val jProcess = try {
-            jProcessBuilder.start()
-        } catch (e: IOException) {
-            throw ProcessException(e)
-        }
+        jProcessBuilder.redirectInput(stdio.stdin.toRedirect(isStdin = true))
+        jProcessBuilder.redirectOutput(stdio.stdout.toRedirect(isStdin = false))
+        jProcessBuilder.redirectError(stdio.stderr.toRedirect(isStdin = false))
+
+        val jProcess = jProcessBuilder.start()
 
         return JvmProcess.of(command, args, env, stdio, jProcess)
     }
 
     private companion object {
-
-        @Throws(ProcessException::class)
-        private fun ProcessBuilder.configureRedirects(stdio: Stdio.Config) {
-            redirectInput(stdio.stdin.toRedirect(isStdin = true))
-            redirectOutput(stdio.stdout.toRedirect(isStdin = false))
-            redirectError(stdio.stderr.toRedirect(isStdin = false))
-
-            listOf<File?>(
-                redirectInput().file(),
-                redirectOutput().file(),
-                redirectError().file(),
-            ).forEach { file ->
-                if (file == null) return@forEach
-                if (file.path == PATH_STDIO_NULL) return@forEach
-                val parent = file.parentFile ?: return@forEach
-                if (!parent.exists() && !parent.mkdirs()) {
-                    throw ProcessException("Failed to mkdirs for $parent")
-                }
-            }
-        }
 
         private fun Stdio.toRedirect(
             isStdin: Boolean,

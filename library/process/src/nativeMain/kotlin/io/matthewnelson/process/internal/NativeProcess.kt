@@ -15,9 +15,11 @@
  **/
 package io.matthewnelson.process.internal
 
-import io.matthewnelson.process.InterruptedException
+import io.matthewnelson.kmp.file.DelicateFileApi
+import io.matthewnelson.kmp.file.InterruptedException
+import io.matthewnelson.kmp.file.IOException
+import io.matthewnelson.kmp.file.errnoToIOException
 import io.matthewnelson.process.Process
-import io.matthewnelson.process.ProcessException
 import io.matthewnelson.process.Stdio
 import kotlinx.cinterop.*
 import platform.posix.*
@@ -25,7 +27,7 @@ import kotlin.concurrent.AtomicReference
 import kotlin.time.Duration
 
 internal class NativeProcess
-@Throws(ProcessException::class)
+@Throws(IOException::class)
 internal constructor(
     private val pid: Int,
     command: String,
@@ -37,17 +39,17 @@ internal constructor(
     init {
         if (pid <= 0) {
             // TODO: Close pipes #Issue 2
-            throw ProcessException("pid[$pid] must be greater than 0")
+            throw IOException("pid[$pid] must be greater than 0")
         }
     }
 
     private val _exitCode = AtomicReference<Int?>(null)
 
-    @Throws(ProcessException::class)
+    @Throws(IOException::class)
     override fun exitCode(): Int {
         _exitCode.value?.let { return it }
 
-        @OptIn(ExperimentalForeignApi::class)
+        @OptIn(DelicateFileApi::class, ExperimentalForeignApi::class)
         memScoped {
             val statLoc = alloc<IntVar>()
 
@@ -58,11 +60,11 @@ internal constructor(
                     _exitCode.compareAndSet(null, code)
                     // TODO: Close Pipes Issue #2
                 }
-                else -> throw errnoToProcessException(errno)
+                else -> throw errnoToIOException(errno)
             }
         }
 
-        return _exitCode.value ?: throw ProcessException("Process hasn't exited")
+        return _exitCode.value ?: throw IOException("Process hasn't exited")
     }
 
     override fun waitFor(): Int {

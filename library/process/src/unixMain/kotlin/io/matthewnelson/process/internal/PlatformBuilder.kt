@@ -17,8 +17,8 @@
 
 package io.matthewnelson.process.internal
 
+import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.process.Process
-import io.matthewnelson.process.ProcessException
 import io.matthewnelson.process.Stdio
 import io.matthewnelson.process.internal.PosixSpawnAttrs.Companion.posixSpawnAttrInit
 import io.matthewnelson.process.internal.PosixSpawnFileActions.Companion.posixSpawnFileActionsInit
@@ -32,7 +32,7 @@ internal actual class PlatformBuilder internal actual constructor() {
         parentEnvironment()
     }
 
-    @Throws(ProcessException::class)
+    @Throws(IOException::class)
     @OptIn(ExperimentalForeignApi::class)
     internal actual fun build(
         command: String,

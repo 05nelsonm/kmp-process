@@ -15,9 +15,9 @@
  **/
 package io.matthewnelson.process.internal
 
-import io.matthewnelson.process.InterruptedException
+import io.matthewnelson.kmp.file.InterruptedException
+import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.process.Process
-import io.matthewnelson.process.ProcessException
 import io.matthewnelson.process.Stdio
 import kotlin.time.Duration
 
@@ -29,7 +29,7 @@ internal class JvmProcess private constructor(
     private val jProcess: java.lang.Process,
 ): Process(command, args, env, stdio) {
 
-    @Throws(ProcessException::class)
+    @Throws(IOException::class)
     override fun exitCode(): Int {
         val result: Int? = try {
             jProcess.exitValue()
@@ -37,7 +37,7 @@ internal class JvmProcess private constructor(
             null
         }
 
-        return result ?: throw ProcessException("Process hasn't exited")
+        return result ?: throw IOException("Process hasn't exited")
     }
 
     override fun sigterm(): Process {

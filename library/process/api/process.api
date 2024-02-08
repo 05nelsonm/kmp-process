@@ -27,12 +27,6 @@ public final class io/matthewnelson/process/Process$Builder {
 	public final fun withEnvironment (Lkotlin/jvm/functions/Function1;)Lio/matthewnelson/process/Process$Builder;
 }
 
-public final class io/matthewnelson/process/ProcessException : java/lang/RuntimeException {
-	public fun <init> (Ljava/lang/String;)V
-	public fun <init> (Ljava/lang/String;Ljava/lang/Throwable;)V
-	public fun <init> (Ljava/lang/Throwable;)V
-}
-
 public abstract class io/matthewnelson/process/Stdio {
 	public static final field Companion Lio/matthewnelson/process/Stdio$Companion;
 	public static final fun Null ()Lio/matthewnelson/process/Stdio$File;
@@ -43,11 +37,12 @@ public final class io/matthewnelson/process/Stdio$Companion {
 	public final fun Null ()Lio/matthewnelson/process/Stdio$File;
 }
 
-public final class io/matthewnelson/process/Stdio$Config {
+public final class io/matthewnelson/process/Stdio$Config : java/lang/Iterable, kotlin/jvm/internal/markers/KMappedMarker {
 	public final field stderr Lio/matthewnelson/process/Stdio;
 	public final field stdin Lio/matthewnelson/process/Stdio;
 	public final field stdout Lio/matthewnelson/process/Stdio;
 	public synthetic fun <init> (Lio/matthewnelson/process/Stdio;Lio/matthewnelson/process/Stdio;Lio/matthewnelson/process/Stdio;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun iterator ()Ljava/util/Iterator;
 }
 
 public final class io/matthewnelson/process/Stdio$File : io/matthewnelson/process/Stdio {

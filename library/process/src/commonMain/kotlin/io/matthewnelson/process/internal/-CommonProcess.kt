@@ -18,7 +18,7 @@
 package io.matthewnelson.process.internal
 
 import io.matthewnelson.process.Process
-import io.matthewnelson.process.ProcessException
+import io.matthewnelson.kmp.file.IOException
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
@@ -44,7 +44,7 @@ internal inline fun Process.commonWaitFor(
     do {
         try {
             return exitCode()
-        } catch (_: ProcessException) {
+        } catch (_: IOException) {
             if (remainingNanos > 0) {
                 val millis = min(
                     (remainingNanos.nanoseconds.inWholeMilliseconds + 1).toDouble(),

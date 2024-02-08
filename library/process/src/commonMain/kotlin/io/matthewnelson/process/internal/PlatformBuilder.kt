@@ -17,15 +17,15 @@
 
 package io.matthewnelson.process.internal
 
+import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.process.Process
-import io.matthewnelson.process.ProcessException
 import io.matthewnelson.process.Stdio
 
 internal expect class PlatformBuilder internal constructor() {
 
     internal val env: MutableMap<String, String>
 
-    @Throws(ProcessException::class)
+    @Throws(IOException::class)
     internal fun build(
         command: String,
         args: List<String>,

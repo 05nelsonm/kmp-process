@@ -17,6 +17,11 @@ package io.matthewnelson.process
 
 import io.matthewnelson.immutable.collections.toImmutableList
 import io.matthewnelson.immutable.collections.toImmutableMap
+import io.matthewnelson.kmp.file.InterruptedException
+import io.matthewnelson.kmp.file.IOException
+import io.matthewnelson.kmp.file.parentFile
+import io.matthewnelson.kmp.file.toFile
+import io.matthewnelson.process.internal.PATH_STDIO_NULL
 import io.matthewnelson.process.internal.PlatformBuilder
 import io.matthewnelson.process.internal.commonWaitFor
 import kotlinx.coroutines.delay
@@ -44,10 +49,10 @@ public abstract class Process internal constructor(
      * Returns the exit code for which the process
      * completed with.
      *
-     * @throws [ProcessException] if the [Process] has
+     * @throws [IOException] if the [Process] has
      *   not exited yet
      * */
-    @Throws(ProcessException::class)
+    @Throws(IOException::class)
     public abstract fun exitCode(): Int
 
     // java.lang.Process.isAlive() is only available for
@@ -57,7 +62,7 @@ public abstract class Process internal constructor(
     public val isAlive: Boolean get() = try {
         exitCode()
         false
-    } catch (_: ProcessException) {
+    } catch (_: IOException) {
         true
     }
 
@@ -167,7 +172,7 @@ public abstract class Process internal constructor(
 
         private val platform = PlatformBuilder()
         private val args = mutableListOf<String>()
-        private val stdio = Stdio.Config.Builder()
+        private val stdio = Stdio.Config.Builder.get()
 
         public fun args(
             arg: String,
@@ -202,15 +207,27 @@ public abstract class Process internal constructor(
             destination: Stdio,
         ): Builder = apply { stdio.stderr = destination }
 
-        @Throws(ProcessException::class)
+        @Throws(IOException::class)
         public fun spawn(): Process {
             if (command.isBlank()) {
-                throw ProcessException("command cannot be blank")
+                throw IOException("command cannot be blank")
             }
 
             val args = args.toImmutableList()
             val env = platform.env.toImmutableMap()
             val stdio = stdio.build()
+
+            stdio.forEach {
+                if (it !is Stdio.File) return@forEach
+                if (it.path == PATH_STDIO_NULL) return@forEach
+                val parent = it.path
+                    .toFile()
+                    .parentFile
+                    ?: return@forEach
+                if (!parent.exists() && !parent.mkdirs()) {
+                    throw IOException("Failed to mkdirs for $parent")
+                }
+            }
 
             return platform.build(command, args, env, stdio)
         }
