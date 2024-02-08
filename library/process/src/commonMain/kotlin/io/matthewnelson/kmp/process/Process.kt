@@ -21,7 +21,6 @@ import io.matthewnelson.kmp.file.*
 import io.matthewnelson.kmp.process.internal.STDIO_NULL
 import io.matthewnelson.kmp.process.internal.PlatformBuilder
 import io.matthewnelson.kmp.process.internal.commonWaitFor
-import kotlinx.coroutines.delay
 import kotlin.jvm.JvmField
 import kotlin.jvm.JvmName
 import kotlin.time.Duration
@@ -90,12 +89,26 @@ public abstract class Process internal constructor(
     /**
      * Delays the current coroutine until [Process] completion.
      *
+     * **NOTE:** This API requires the `kotlinx.coroutines` core
+     * dependency (at a minimum) in order to pass in the
+     * `kotlinx.coroutines.delay` function. Adding the dependency
+     * to `kmp-process` for a single function to use in an API
+     * that may not even be utilized (because [waitFor] exists for
+     * non-JS) seemed ridiculous.
+     *
+     * e.g.
+     *
+     *     myProcess.waitForAsync(::delay)
+     *
+     * @param [delay] `kotlinx.coroutines.delay` function (e.g. `::delay`)
      * @return The [Process.exitCode]
      * */
-    public suspend fun waitForAsync(): Int {
+    public suspend fun waitForAsync(
+        delay: suspend (duration: Duration) -> Unit,
+    ): Int {
         var exitCode: Int? = null
         while (exitCode == null) {
-            exitCode = waitForAsync(Duration.INFINITE)
+            exitCode = waitForAsync(Duration.INFINITE, delay)
         }
         return exitCode
     }
@@ -105,11 +118,26 @@ public abstract class Process internal constructor(
      * or until [Process.exitCode] is available (i.e. the
      * [Process] completed).
      *
+     * **NOTE:** This API requires the `kotlinx.coroutines` core
+     * dependency (at a minimum) in order to pass in the
+     * `kotlinx.coroutines.delay` function. Adding the dependency
+     * to `kmp-process` for a single function to use in an API
+     * that may not even be utilized (because [waitFor] exists for
+     * non-JS) seemed ridiculous.
+     *
+     * e.g.
+     *
+     *     myProcess.waitForAsync(250.milliseconds, ::delay)
+     *
      * @param [timeout] the [Duration] to wait
+     * @param [delay] `kotlinx.coroutines.delay` function (e.g. `::delay`)
      * @return The [Process.exitCode], or null if [timeout] is
      *   exceeded without [Process] completion.
      * */
-    public suspend fun waitForAsync(timeout: Duration): Int? {
+    public suspend fun waitForAsync(
+        timeout: Duration,
+        delay: suspend (duration: Duration) -> Unit,
+    ): Int? {
         return commonWaitFor(timeout) { delay(it) }
     }
 

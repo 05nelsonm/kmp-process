@@ -21,6 +21,7 @@ import io.matthewnelson.kmp.file.path
 import io.matthewnelson.kmp.file.resolve
 import io.matthewnelson.kmp.tor.resource.tor.TorResources
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.job
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
@@ -143,7 +144,7 @@ abstract class ProcessBaseTest {
         sigkillOnCompletion(p)
 
         val exitCode = withContext(Dispatchers.Default) {
-            p.waitForAsync()
+            p.waitForAsync(::delay)
         }
 
         assertEquals(0, exitCode)
@@ -187,7 +188,7 @@ abstract class ProcessBaseTest {
 
         try {
             withContext(Dispatchers.Default) {
-                p.waitForAsync(5.seconds)
+                p.waitForAsync(5.seconds, ::delay)
             }
         } finally {
             p.sigterm()

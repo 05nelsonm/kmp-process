@@ -3,7 +3,7 @@
 [![badge-latest-release]][url-latest-release]
 
 [![badge-kotlin]][url-kotlin]
-[![badge-coroutines]][url-coroutines]
+[![badge-kmp-file]][url-kmp-file]
 [![badge-immutable]][url-immutable]
 
 ![badge-platform-android]
@@ -64,7 +64,7 @@ p.waitFor(5.seconds).let { code ->
 }
 
 // Jvm/Js/Native suspend coroutine for specified duration
-p.waitForSync(5.seconds).let { code ->
+p.waitForAsync(5.seconds, ::delay).let { code ->
     println("EXIT_CODE: ${code ?: "NULL"}")
 }
 
@@ -86,9 +86,9 @@ p.sigkill()
 [badge-license]: https://img.shields.io/badge/license-Apache%20License%202.0-blue.svg?style=flat
 
 <!-- TAG_DEPENDENCIES -->
-[badge-kotlin]: https://img.shields.io/badge/kotlin-1.9.21-blue.svg?logo=kotlin
-[badge-coroutines]: https://img.shields.io/badge/coroutines-1.7.3-blue.svg?logo=kotlin
 [badge-immutable]: https://img.shields.io/badge/immutable-0.1.0-blue.svg?style=flat
+[badge-kmp-file]: https://img.shields.io/badge/kmp--file-0.1.0--alpha06-blue.svg?style=flat
+[badge-kotlin]: https://img.shields.io/badge/kotlin-1.9.21-blue.svg?logo=kotlin
 
 <!-- TAG_PLATFORMS -->
 [badge-platform-android]: http://img.shields.io/badge/-android-6EDB8D.svg?style=flat
@@ -109,7 +109,7 @@ p.sigkill()
 
 [url-latest-release]: https://github.com/05nelsonm/kmp-process/releases/latest
 [url-license]: https://www.apache.org/licenses/LICENSE-2.0
-[url-kotlin]: https://kotlinlang.org
-[url-coroutines]: https://github.com/Kotlin/kotlinx.coroutines
 [url-immutable]: https://github.com/05nelsonm/immutable
+[url-kmp-file]: https://github.com/05nelsonm/kmp-file
+[url-kotlin]: https://kotlinlang.org
 [url-posix-spawn]: https://man7.org/linux/man-pages/man3/posix_spawn.3.html
