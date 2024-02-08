@@ -70,7 +70,7 @@ p.waitForSync(5.seconds).let { code ->
 
 try {
     println("EXIT_CODE: ${p.exitCode()}")
-} catch (_: ProcessException) {}
+} catch (_: IllegalStateException) {}
 
 // Send process `SIGTERM` signal
 // Like calling `java.lang.Process.destroy()`

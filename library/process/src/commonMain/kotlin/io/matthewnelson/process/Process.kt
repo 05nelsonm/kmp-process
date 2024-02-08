@@ -49,10 +49,10 @@ public abstract class Process internal constructor(
      * Returns the exit code for which the process
      * completed with.
      *
-     * @throws [IOException] if the [Process] has
+     * @throws [IllegalStateException] if the [Process] has
      *   not exited yet
      * */
-    @Throws(IOException::class)
+    @Throws(IllegalStateException::class)
     public abstract fun exitCode(): Int
 
     // java.lang.Process.isAlive() is only available for
@@ -62,7 +62,7 @@ public abstract class Process internal constructor(
     public val isAlive: Boolean get() = try {
         exitCode()
         false
-    } catch (_: IOException) {
+    } catch (_: IllegalStateException) {
         true
     }
 

@@ -29,7 +29,7 @@ internal class JvmProcess private constructor(
     private val jProcess: java.lang.Process,
 ): Process(command, args, env, stdio) {
 
-    @Throws(IOException::class)
+    @Throws(IllegalStateException::class)
     override fun exitCode(): Int {
         val result: Int? = try {
             jProcess.exitValue()
@@ -37,7 +37,7 @@ internal class JvmProcess private constructor(
             null
         }
 
-        return result ?: throw IOException("Process hasn't exited")
+        return result ?: throw IllegalStateException("Process hasn't exited")
     }
 
     override fun sigterm(): Process {

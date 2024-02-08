@@ -44,7 +44,7 @@ internal inline fun Process.commonWaitFor(
     do {
         try {
             return exitCode()
-        } catch (_: IOException) {
+        } catch (_: IllegalStateException) {
             if (remainingNanos > 0) {
                 val millis = min(
                     (remainingNanos.nanoseconds.inWholeMilliseconds + 1).toDouble(),

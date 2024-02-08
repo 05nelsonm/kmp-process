@@ -45,11 +45,11 @@ internal constructor(
 
     private val _exitCode = AtomicReference<Int?>(null)
 
-    @Throws(IOException::class)
+    @Throws(IllegalStateException::class)
     override fun exitCode(): Int {
         _exitCode.value?.let { return it }
 
-        @OptIn(DelicateFileApi::class, ExperimentalForeignApi::class)
+        @OptIn(ExperimentalForeignApi::class)
         memScoped {
             val statLoc = alloc<IntVar>()
 
@@ -60,11 +60,14 @@ internal constructor(
                     _exitCode.compareAndSet(null, code)
                     // TODO: Close Pipes Issue #2
                 }
-                else -> throw errnoToIOException(errno)
+                else -> {
+                    val message = strerror(errno)?.toKString() ?: "errno: $errno"
+                    throw IllegalStateException(message)
+                }
             }
         }
 
-        return _exitCode.value ?: throw IOException("Process hasn't exited")
+        return _exitCode.value ?: throw IllegalStateException("Process hasn't exited")
     }
 
     override fun waitFor(): Int {
