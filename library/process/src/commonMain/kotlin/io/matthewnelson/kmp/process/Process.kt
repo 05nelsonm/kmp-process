@@ -294,7 +294,7 @@ public abstract class Process internal constructor(
             if (command.isBlank()) throw IOException("command cannot be blank")
             command.toFile().let { cmd ->
                 if (!cmd.isAbsolute()) return@let
-                if (!cmd.exists()) throw FileNotFoundException("$cmd")
+                if (!cmd.exists()) throw FileNotFoundException("command: $cmd")
             }
 
             val stdio = stdio.build()
@@ -304,7 +304,7 @@ public abstract class Process internal constructor(
                 if (it.file == STDIO_NULL) return@forEach
 
                 if (isInput) {
-                    if (!it.file.exists()) throw FileNotFoundException("stdin: $it")
+                    if (!it.file.exists()) throw FileNotFoundException("stdin: ${it.file}")
                     return@forEach
                 }
 
@@ -314,7 +314,7 @@ public abstract class Process internal constructor(
                     ?: return@forEach
 
                 if (!parent.exists() && !parent.mkdirs()) {
-                    throw IOException("Failed to mkdirs for $parent")
+                    throw IOException("Failed to mkdirs for $it")
                 }
             }
 
