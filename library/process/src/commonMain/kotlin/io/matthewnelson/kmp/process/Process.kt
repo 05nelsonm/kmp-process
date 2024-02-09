@@ -39,7 +39,22 @@ public abstract class Process internal constructor(
     public val environment: Map<String, String>,
     @JvmField
     public val stdio: Stdio.Config,
-) {
+    @JvmField
+    public val destroySignal: Signal,
+)/*: AutoCloseable */ {
+
+    /**
+     * Destroys the [Process] by:
+     *  - Sending it [destroySignal] (if it has not completed yet)
+     *  - Closes all input/output streams
+     *
+     * This should **always** be called after you are done with
+     * the [Process] to ensure resource closure occurs.
+     *
+     * @see [Signal]
+     * @return this [Process] instance
+     * */
+    public abstract fun destroy(): Process
 
     /**
      * Returns the exit code for which the process
@@ -51,9 +66,9 @@ public abstract class Process internal constructor(
     @Throws(IllegalStateException::class)
     public abstract fun exitCode(): Int
 
-    // java.lang.Process.isAlive() is only available for
-    // Android API 26+. This provides the functionality
-    // w/o conflicting with java.lang.Process' function.
+    /**
+     * Checks if the [Process] is still running
+     * */
     @get:JvmName("isAlive")
     public val isAlive: Boolean get() = try {
         exitCode()
@@ -73,18 +88,18 @@ public abstract class Process internal constructor(
     public abstract fun waitFor(): Int
 
     /**
-     * Blocks the current thread for the specified [timeout],
+     * Blocks the current thread for the specified [duration],
      * or until [Process.exitCode] is available (i.e. the
      * [Process] completed).
      *
-     * @param [timeout] the [Duration] to wait
-     * @return The [Process.exitCode], or null if [timeout] is
+     * @param [duration] the [Duration] to wait
+     * @return The [Process.exitCode], or null if [duration] is
      *   exceeded without [Process] completion.
      * @throws [InterruptedException]
      * @throws [UnsupportedOperationException] on Node.js
      * */
     @Throws(InterruptedException::class, UnsupportedOperationException::class)
-    public abstract fun waitFor(timeout: Duration): Int?
+    public abstract fun waitFor(duration: Duration): Int?
 
     /**
      * Delays the current coroutine until [Process] completion.
@@ -114,7 +129,7 @@ public abstract class Process internal constructor(
     }
 
     /**
-     * Delays the current coroutine for the specified [timeout],
+     * Delays the current coroutine for the specified [duration],
      * or until [Process.exitCode] is available (i.e. the
      * [Process] completed).
      *
@@ -129,39 +144,27 @@ public abstract class Process internal constructor(
      *
      *     myProcess.waitForAsync(250.milliseconds, ::delay)
      *
-     * @param [timeout] the [Duration] to wait
+     * @param [duration] the [Duration] to wait
      * @param [delay] `kotlinx.coroutines.delay` function (e.g. `::delay`)
-     * @return The [Process.exitCode], or null if [timeout] is
+     * @return The [Process.exitCode], or null if [duration] is
      *   exceeded without [Process] completion.
      * */
     public suspend fun waitForAsync(
-        timeout: Duration,
+        duration: Duration,
         delay: suspend (duration: Duration) -> Unit,
     ): Int? {
-        return commonWaitFor(timeout) { delay(it) }
+        return commonWaitFor(duration) { delay(it) }
     }
-
-    /**
-     * Kills the [Process] via signal SIGTERM.
-     * */
-    public abstract fun sigterm(): Process
-
-    /**
-     * Kills the [Process] via signal SIGKILL.
-     *
-     * Note that for Android API < 26, [sigterm] is utilized
-     * as java.lang.Process.destroyForcibly is unavailable.
-     * */
-    public abstract fun sigkill(): Process
 
     /**
      * Creates a new [Process].
      *
-     * e.g. (shell commands)
+     * e.g. (Shell commands on a Unix system)
      *
      *     val p = Process.Builder("sh")
      *         .args("-c")
      *         .args("sleep 1; exit 5")
+     *         .destroySignal(Signal.SIGKILL)
      *         .environment("HOME", appDir.absolutePath)
      *         .stdin(Stdio.Null)
      *         .stdout(Stdio.Inherit)
@@ -170,17 +173,17 @@ public abstract class Process internal constructor(
      *
      * e.g. (Executable file)
      *
-     *     val p = Process.Builder(myExecutable.absolutePath)
+     *     val p = Process.Builder(myExecutableFile.absolutePath)
      *         .args("--some-flag")
      *         .args("someValue")
      *         .args("--another-flag", "anotherValue")
-     *         .withEnvironment {
+     *         .environment {
      *             remove("HOME")
      *             // ...
      *         }
      *         .stdin(Stdio.Null)
-     *         .stdout(Stdio.File.of("myProgram.log", append = true))
-     *         .stderr(Stdio.File.of("myProgram.err"))
+     *         .stdout(Stdio.File.of("logs/myExecutable.log", append = true))
+     *         .stderr(Stdio.File.of("logs/myExecutable.err"))
      *         .spawn()
      *
      * @param [command] The command to run. On Native `Linux`, `macOS` and
@@ -195,69 +198,130 @@ public abstract class Process internal constructor(
 
         /**
          * Alternate constructor for an executable [File]. Will take the
-         * normalized path to use for [command].
+         * absolute + normalized path to use for [command].
          * */
-        public constructor(executable: File): this(executable.normalize().path)
+        public constructor(executable: File): this(executable.absoluteFile.normalize().path)
 
         private val platform = PlatformBuilder()
         private val args = mutableListOf<String>()
         private val stdio = Stdio.Config.Builder.get()
+        private var destroy: Signal = Signal.SIGTERM
 
+        /**
+         * Add a single argument
+         * */
         public fun args(
             arg: String,
         ): Builder = apply { args.add(arg) }
 
+        /**
+         * Add multiple arguments
+         * */
         public fun args(
             vararg args: String,
         ): Builder = apply { args.forEach { this.args.add(it) } }
 
+        /**
+         * Add multiple arguments
+         * */
         public fun args(
             args: List<String>,
         ): Builder = apply { args.forEach { this.args.add(it) } }
 
+        /**
+         * Set the [Signal] to use when [Process.destroy]
+         * is called.
+         * */
+        public fun destroySignal(
+            signal: Signal,
+        ): Builder = apply { destroy = signal }
+
+        /**
+         * Set/overwrite an environment variable
+         *
+         * By default, the new [Process] will inherit all
+         * environment variables from the current one.
+         * */
         public fun environment(
             key: String,
             value: String,
         ): Builder = apply { platform.env[key] = value }
 
-        public fun withEnvironment(
+        /**
+         * Modify the environment via lambda
+         *
+         * By default, the new [Process] will inherit all
+         * environment variables from the current one.
+         * */
+        public fun environment(
             block: MutableMap<String, String>.() -> Unit,
         ): Builder = apply { block(platform.env) }
 
+        /**
+         * Modify the standard input source
+         *
+         * @see [Stdio]
+         * */
         public fun stdin(
             source: Stdio,
         ): Builder = apply { stdio.stdin = source }
 
+        /**
+         * Modify the standard output destination
+         *
+         * @see [Stdio]
+         * */
         public fun stdout(
             destination: Stdio,
         ): Builder = apply { stdio.stdout = destination }
 
+        /**
+         * Modify the standard error output destination
+         *
+         * @see [Stdio]
+         * */
         public fun stderr(
             destination: Stdio,
         ): Builder = apply { stdio.stderr = destination }
 
+        /**
+         * Spawns the [Process]
+         *
+         * @throws [IOException] if [Process] creation failed
+         * */
         @Throws(IOException::class)
         public fun spawn(): Process {
-            if (command.isBlank()) {
-                throw IOException("command cannot be blank")
+            if (command.isBlank()) throw IOException("command cannot be blank")
+            command.toFile().let { cmd ->
+                if (!cmd.isAbsolute()) return@let
+                if (!cmd.exists()) throw FileNotFoundException("command: $cmd")
+            }
+
+            val stdio = stdio.build()
+
+            stdio.iterator().forEach { (isInput, it) ->
+                if (it !is Stdio.File) return@forEach
+                if (it.file == STDIO_NULL) return@forEach
+
+                if (isInput) {
+                    if (!it.file.exists()) throw FileNotFoundException("stdin: ${it.file}")
+                    return@forEach
+                }
+
+                // output
+                val parent = it.file
+                    .parentFile
+                    ?: return@forEach
+
+                if (!parent.exists() && !parent.mkdirs()) {
+                    throw IOException("Failed to mkdirs for $it")
+                }
             }
 
             val args = args.toImmutableList()
             val env = platform.env.toImmutableMap()
-            val stdio = stdio.build()
 
-            stdio.forEach {
-                if (it !is Stdio.File) return@forEach
-                if (it.file == STDIO_NULL) return@forEach
-                val parent = it.file
-                    .parentFile
-                    ?: return@forEach
-                if (!parent.exists() && !parent.mkdirs()) {
-                    throw IOException("Failed to mkdirs for $parent")
-                }
-            }
-
-            return platform.build(command, args, env, stdio)
+            return platform.build(command, args, env, stdio, destroy)
         }
     }
 

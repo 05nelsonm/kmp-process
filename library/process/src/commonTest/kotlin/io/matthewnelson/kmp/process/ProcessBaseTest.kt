@@ -52,6 +52,7 @@ abstract class ProcessBaseTest {
             val p = try {
                 Process.Builder("sleep")
                     .args("0.25")
+                    .destroySignal(Signal.SIGKILL)
                     .spawn()
             } catch (e: IOException) {
                 // Host (Window or iOS) did not have sleep available
@@ -68,7 +69,7 @@ abstract class ProcessBaseTest {
                 assertEquals(0, p.waitFor(2.seconds))
                 assertFalse(p.isAlive)
             } finally {
-                p.sigkill()
+                p.destroy()
             }
         }
 
@@ -87,12 +88,13 @@ abstract class ProcessBaseTest {
         val p = Process.Builder("sh")
             .args("-c")
             .args("sleep 0.25; exit $expected")
+            .destroySignal(Signal.SIGKILL)
             .spawn()
 
         try {
             assertEquals(expected, p.waitFor(1.seconds))
         } finally {
-            p.sigkill()
+            p.destroy()
         }
     }
 
@@ -106,6 +108,7 @@ abstract class ProcessBaseTest {
         val p = try {
             Process.Builder("sleep")
                 .args("1")
+                .destroySignal(Signal.SIGKILL)
                 .spawn()
         } catch (e: IOException) {
             // Host (Window) did not have sleep available
@@ -116,7 +119,7 @@ abstract class ProcessBaseTest {
             throw e
         }
 
-        sigkillOnCompletion(p)
+        destroyOnCompletion(p)
 
         assertEquals(0, p.waitFor())
     }
@@ -131,6 +134,7 @@ abstract class ProcessBaseTest {
         val p = try {
             Process.Builder("sleep")
                 .args("1")
+                .destroySignal(Signal.SIGKILL)
                 .spawn()
         } catch (e: IOException) {
             // Host (Window or iOS) did not have sleep available
@@ -141,7 +145,7 @@ abstract class ProcessBaseTest {
             throw e
         }
 
-        sigkillOnCompletion(p)
+        destroyOnCompletion(p)
 
         val exitCode = withContext(Dispatchers.Default) {
             p.waitForAsync(::delay)
@@ -181,21 +185,17 @@ abstract class ProcessBaseTest {
 //            .stderr(Stdio.File.of(installer.installationDir.resolve("tor.err")))
             .spawn()
 
-        sigkillOnCompletion(p)
+        destroyOnCompletion(p)
 
         println("CMD[${p.command}]")
         p.args.forEach { arg -> println("ARG[$arg]") }
 
-        try {
-            withContext(Dispatchers.Default) {
-                p.waitForAsync(5.seconds, ::delay)
-            }
-        } finally {
-            p.sigterm()
+        withContext(Dispatchers.Default) {
+            p.waitForAsync(5.seconds, ::delay)
         }
     }
 
-    protected fun TestScope.sigkillOnCompletion(p: Process) {
-        coroutineContext.job.invokeOnCompletion { p.sigkill() }
+    protected fun TestScope.destroyOnCompletion(p: Process) {
+        coroutineContext.job.invokeOnCompletion { p.destroy() }
     }
 }

@@ -14,7 +14,10 @@
 ![badge-support-apple-silicon]
 ![badge-support-linux-arm]
 
-`Process` implementation for Kotlin Multiplatform
+`Process` implementation for Kotlin Multiplatform.
+
+API is highly inspired by `Node.js` [child_process][url-node-child_process] 
+and `Rust` [Command][url-rust-command]
 
 ## Info
 
@@ -25,60 +28,64 @@
 | `macOS` | [posix_spawn][url-posix-spawn] & [posix_spawnp][url-posix-spawn] |
 | `iOS`   | [posix_spawn][url-posix-spawn] & [posix_spawnp][url-posix-spawn] |
 
-## Usage
+## Example
 
 ```kotlin
-val expected = 5
+val b = Process.Builder(command = "cat")
+    // Optional arguments
+    .args("--show-ends")
+    // Also accepts vararg and List<String>
+    .args("--number", "--squeeze-blank")
 
-val p = Process.Builder("sh")
-    .args("-c")
-    .args("""
-        sleep 0.25
-        echo "HOME: $${"HOME"}"
-        exit $expected
-    """.trimIndent())
-    .withEnvironment {
+    // Modify the Signal to send the Process
+    // when Process.destroy is called (only sent
+    // if the Process has not completed yet).
+    .destroySignal(Signal.SIGKILL)
+
+    // Take input from a file
+    .stdin(Stdio.File.of("build.gradle.kts"))
+    // Pipe output to system out
+    .stdout(Stdio.Inherit)
+    // Dump error output to log file
+    .stderr(Stdio.File.of("logs/example_cat.err"))
+
+    // Modify the environment variables inherited
+    // from the current process (parent).
+    .environment {        
         remove("HOME")
         // ...
     }
-    .environment("HOME", myAppDir.absolutePath)
-    .stdout(Stdio.Inherit)
-    .spawn()
+    // shortcut to set/overwrite an environment
+    // variable
+    .environment("HOME", myApplicationDir.path)
 
-println("IS_ALIVE: ${p.isAlive}")
-assertEquals(expected, p.waitFor(500.milliseconds))
+// Spawn the process
+b.spawn().let { p ->
+
+    try {
+        // Blocking APIs (Jvm & Native)
+        val code: Int? = p.waitFor(250.milliseconds)
+
+        if (code == null) {
+            println("Process did not complete after 250ms")
+            // do something
+        }
+    } finally {
+        p.destroy()
+    }
+}
+
+// TODO: output example
 ```
 
+## Get Started
+
+<!-- TAG_VERSION -->
+
 ```kotlin
-val p = Process.Builder(myExecutable)
-    .args("--some-flag")
-    .args("someValue")
-    .stdin(Stdio.Null)
-    .stdout(Stdio.File.of("myExecutable.log", append = true))
-    .stderr(Stdio.File.of("myExecutable.err"))
-    .spawn()
-
-// Jvm/Native block for specified duration
-p.waitFor(5.seconds).let { code ->
-    println("EXIT_CODE: ${code ?: "NULL"}")
+dependencies {
+    implementation("io.matthewnelson.kmp-process:process:[TODO]")
 }
-
-// Jvm/Js/Native suspend coroutine for specified duration
-p.waitForAsync(5.seconds, ::delay).let { code ->
-    println("EXIT_CODE: ${code ?: "NULL"}")
-}
-
-try {
-    println("EXIT_CODE: ${p.exitCode()}")
-} catch (_: IllegalStateException) {}
-
-// Send process `SIGTERM` signal
-// Like calling `java.lang.Process.destroy()`
-p.sigterm()
-
-// Alternatively, send process `SIGKILL` signal.
-// Like calling `java.lang.Process.destroyForcibly()`
-p.sigkill()
 ```
 
 <!-- TAG_VERSION -->
@@ -112,4 +119,6 @@ p.sigkill()
 [url-immutable]: https://github.com/05nelsonm/immutable
 [url-kmp-file]: https://github.com/05nelsonm/kmp-file
 [url-kotlin]: https://kotlinlang.org
+[url-node-child_process]: https://nodejs.org/api/child_process.html
 [url-posix-spawn]: https://man7.org/linux/man-pages/man3/posix_spawn.3.html
+[url-rust-command]: https://doc.rust-lang.org/std/process/struct.Command.html
