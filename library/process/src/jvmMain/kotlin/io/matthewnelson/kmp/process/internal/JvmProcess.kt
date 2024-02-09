@@ -33,16 +33,14 @@ internal class JvmProcess private constructor(
     override fun destroy(): Process {
         when (destroySignal) {
             Signal.SIGTERM -> jProcess.destroy()
-            Signal.SIGKILL -> {
-                ANDROID_SDK_INT?.let { sdkInt ->
-                    // Android runtime, check API version
-                    if (sdkInt >= 26) {
-                        jProcess.destroyForcibly()
-                    } else {
-                        jProcess.destroy()
-                    }
-                } ?: jProcess.destroyForcibly()
-            }
+            Signal.SIGKILL -> ANDROID_SDK_INT?.let { sdkInt ->
+                // Android runtime, check API version
+                if (sdkInt >= 26) {
+                    jProcess.destroyForcibly()
+                } else {
+                    jProcess.destroy()
+                }
+            } ?: jProcess.destroyForcibly()
         }
 
         return this

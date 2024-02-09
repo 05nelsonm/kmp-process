@@ -37,9 +37,9 @@ val b = Process.Builder(command = "cat")
     // Also accepts vararg and List<String>
     .args("--number", "--squeeze-blank")
 
-    // Modify the signal to use when Process.destroy
-    // is called (if it has not completed yet) from 
-    // the default of Signal.SIGTERM.
+    // Modify the Signal to send the Process
+    // when Process.destroy is called (only sent
+    // if the Process has not completed yet).
     .destroySignal(Signal.SIGKILL)
 
     // Take input from a file
