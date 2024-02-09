@@ -76,8 +76,8 @@ internal constructor(
         return exitCode
     }
 
-    override fun waitFor(timeout: Duration): Int? {
-        return commonWaitFor(timeout) {
+    override fun waitFor(duration: Duration): Int? {
+        return commonWaitFor(duration) {
             if (usleep(it.inWholeMicroseconds.toUInt()) == -1) {
                 // EINVAL will never happen b/c duration is
                 // max 100 millis. Must be EINTR

@@ -21,11 +21,11 @@ public final class io/matthewnelson/kmp/process/Process$Builder {
 	public final fun args (Ljava/util/List;)Lio/matthewnelson/kmp/process/Process$Builder;
 	public final fun args ([Ljava/lang/String;)Lio/matthewnelson/kmp/process/Process$Builder;
 	public final fun environment (Ljava/lang/String;Ljava/lang/String;)Lio/matthewnelson/kmp/process/Process$Builder;
+	public final fun environment (Lkotlin/jvm/functions/Function1;)Lio/matthewnelson/kmp/process/Process$Builder;
 	public final fun spawn ()Lio/matthewnelson/kmp/process/Process;
 	public final fun stderr (Lio/matthewnelson/kmp/process/Stdio;)Lio/matthewnelson/kmp/process/Process$Builder;
 	public final fun stdin (Lio/matthewnelson/kmp/process/Stdio;)Lio/matthewnelson/kmp/process/Process$Builder;
 	public final fun stdout (Lio/matthewnelson/kmp/process/Stdio;)Lio/matthewnelson/kmp/process/Process$Builder;
-	public final fun withEnvironment (Lkotlin/jvm/functions/Function1;)Lio/matthewnelson/kmp/process/Process$Builder;
 }
 
 public abstract class io/matthewnelson/kmp/process/Stdio {
@@ -38,14 +38,13 @@ public final class io/matthewnelson/kmp/process/Stdio$Companion {
 	public final fun Null ()Lio/matthewnelson/kmp/process/Stdio$File;
 }
 
-public final class io/matthewnelson/kmp/process/Stdio$Config : java/lang/Iterable, kotlin/jvm/internal/markers/KMappedMarker {
+public final class io/matthewnelson/kmp/process/Stdio$Config {
 	public final field stderr Lio/matthewnelson/kmp/process/Stdio;
 	public final field stdin Lio/matthewnelson/kmp/process/Stdio;
 	public final field stdout Lio/matthewnelson/kmp/process/Stdio;
 	public synthetic fun <init> (Lio/matthewnelson/kmp/process/Stdio;Lio/matthewnelson/kmp/process/Stdio;Lio/matthewnelson/kmp/process/Stdio;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun equals (Ljava/lang/Object;)Z
 	public fun hashCode ()I
-	public fun iterator ()Ljava/util/Iterator;
 	public fun toString ()Ljava/lang/String;
 }
 

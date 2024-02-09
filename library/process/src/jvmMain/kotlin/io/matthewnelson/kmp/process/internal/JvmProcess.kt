@@ -59,7 +59,7 @@ internal class JvmProcess private constructor(
     @Throws(InterruptedException::class)
     override fun waitFor(): Int = jProcess.waitFor()
     @Throws(InterruptedException::class)
-    override fun waitFor(timeout: Duration): Int? = commonWaitFor(timeout) { Thread.sleep(it.inWholeMilliseconds) }
+    override fun waitFor(duration: Duration): Int? = commonWaitFor(duration) { Thread.sleep(it.inWholeMilliseconds) }
 
     internal companion object {
 

@@ -73,18 +73,18 @@ public abstract class Process internal constructor(
     public abstract fun waitFor(): Int
 
     /**
-     * Blocks the current thread for the specified [timeout],
+     * Blocks the current thread for the specified [duration],
      * or until [Process.exitCode] is available (i.e. the
      * [Process] completed).
      *
-     * @param [timeout] the [Duration] to wait
-     * @return The [Process.exitCode], or null if [timeout] is
+     * @param [duration] the [Duration] to wait
+     * @return The [Process.exitCode], or null if [duration] is
      *   exceeded without [Process] completion.
      * @throws [InterruptedException]
      * @throws [UnsupportedOperationException] on Node.js
      * */
     @Throws(InterruptedException::class, UnsupportedOperationException::class)
-    public abstract fun waitFor(timeout: Duration): Int?
+    public abstract fun waitFor(duration: Duration): Int?
 
     /**
      * Delays the current coroutine until [Process] completion.
@@ -114,7 +114,7 @@ public abstract class Process internal constructor(
     }
 
     /**
-     * Delays the current coroutine for the specified [timeout],
+     * Delays the current coroutine for the specified [duration],
      * or until [Process.exitCode] is available (i.e. the
      * [Process] completed).
      *
@@ -129,16 +129,16 @@ public abstract class Process internal constructor(
      *
      *     myProcess.waitForAsync(250.milliseconds, ::delay)
      *
-     * @param [timeout] the [Duration] to wait
+     * @param [duration] the [Duration] to wait
      * @param [delay] `kotlinx.coroutines.delay` function (e.g. `::delay`)
-     * @return The [Process.exitCode], or null if [timeout] is
+     * @return The [Process.exitCode], or null if [duration] is
      *   exceeded without [Process] completion.
      * */
     public suspend fun waitForAsync(
-        timeout: Duration,
+        duration: Duration,
         delay: suspend (duration: Duration) -> Unit,
     ): Int? {
-        return commonWaitFor(timeout) { delay(it) }
+        return commonWaitFor(duration) { delay(it) }
     }
 
     /**
@@ -150,7 +150,8 @@ public abstract class Process internal constructor(
      * Kills the [Process] via signal SIGKILL.
      *
      * Note that for Android API < 26, [sigterm] is utilized
-     * as java.lang.Process.destroyForcibly is unavailable.
+     * under the hood as java.lang.Process.destroyForcibly is
+     * not available.
      * */
     public abstract fun sigkill(): Process
 
@@ -203,59 +204,111 @@ public abstract class Process internal constructor(
         private val args = mutableListOf<String>()
         private val stdio = Stdio.Config.Builder.get()
 
+        /**
+         * Add a single argument
+         * */
         public fun args(
             arg: String,
         ): Builder = apply { args.add(arg) }
 
+        /**
+         * Add multiple arguments
+         * */
         public fun args(
             vararg args: String,
         ): Builder = apply { args.forEach { this.args.add(it) } }
 
+        /**
+         * Add multiple arguments
+         * */
         public fun args(
             args: List<String>,
         ): Builder = apply { args.forEach { this.args.add(it) } }
 
+        /**
+         * Set/overwrite an environment variable
+         *
+         * By default, the new [Process] will inherit all
+         * environment variables from the current one.
+         * */
         public fun environment(
             key: String,
             value: String,
         ): Builder = apply { platform.env[key] = value }
 
-        public fun withEnvironment(
+        /**
+         * Modify the environment via lambda
+         *
+         * By default, the new [Process] will inherit all
+         * environment variables from the current one.
+         * */
+        public fun environment(
             block: MutableMap<String, String>.() -> Unit,
         ): Builder = apply { block(platform.env) }
 
+        /**
+         * Modify the standard input source
+         *
+         * @see [Stdio]
+         * */
         public fun stdin(
             source: Stdio,
         ): Builder = apply { stdio.stdin = source }
 
+        /**
+         * Modify the standard output destination
+         *
+         * @see [Stdio]
+         * */
         public fun stdout(
             destination: Stdio,
         ): Builder = apply { stdio.stdout = destination }
 
+        /**
+         * Modify the standard error output destination
+         *
+         * @see [Stdio]
+         * */
         public fun stderr(
             destination: Stdio,
         ): Builder = apply { stdio.stderr = destination }
 
+        /**
+         * Spawn a new [Process]
+         *
+         * @throws [IOException] if [Process] creation failed
+         * */
         @Throws(IOException::class)
         public fun spawn(): Process {
-            if (command.isBlank()) {
-                throw IOException("command cannot be blank")
+            if (command.isBlank()) throw IOException("command cannot be blank")
+            command.toFile().let { cmd ->
+                if (!cmd.isAbsolute()) return@let
+                if (!cmd.exists()) throw FileNotFoundException("$cmd")
             }
 
-            val args = args.toImmutableList()
-            val env = platform.env.toImmutableMap()
             val stdio = stdio.build()
 
-            stdio.forEach {
+            stdio.iterator().forEach { (isInput, it) ->
                 if (it !is Stdio.File) return@forEach
                 if (it.file == STDIO_NULL) return@forEach
+
+                if (isInput) {
+                    if (!it.file.exists()) throw FileNotFoundException("stdin: $it")
+                    return@forEach
+                }
+
+                // output
                 val parent = it.file
                     .parentFile
                     ?: return@forEach
+
                 if (!parent.exists() && !parent.mkdirs()) {
                     throw IOException("Failed to mkdirs for $parent")
                 }
             }
+
+            val args = args.toImmutableList()
+            val env = platform.env.toImmutableMap()
 
             return platform.build(command, args, env, stdio)
         }

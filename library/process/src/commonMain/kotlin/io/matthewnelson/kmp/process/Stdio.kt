@@ -51,7 +51,7 @@ public sealed class Stdio private constructor() {
          * */
         @JvmStatic
         @get:JvmName("Null")
-        public val Null: File get() = File.Companion.of(STDIO_NULL)
+        public val Null: File get() = File.of(STDIO_NULL)
     }
 
     /**
@@ -113,9 +113,15 @@ public sealed class Stdio private constructor() {
         public val stdout: Stdio,
         @JvmField
         public val stderr: Stdio,
-    ): Iterable<Stdio> {
+    ) {
 
-        override fun iterator(): Iterator<Stdio> = immutableListOf(stdin, stdout, stderr).iterator()
+        /* isInput, Stdio */
+        @JvmSynthetic
+        internal fun iterator(): Iterator<Pair<Boolean, Stdio>> = immutableListOf(
+            Pair(true, stdin),
+            Pair(false, stdout),
+            Pair(false, stderr),
+        ).iterator()
 
         internal class Builder private constructor() {
 
