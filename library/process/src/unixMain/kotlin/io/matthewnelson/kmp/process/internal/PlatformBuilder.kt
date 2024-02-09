@@ -19,6 +19,7 @@ package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.process.Process
+import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.Stdio
 import io.matthewnelson.kmp.process.internal.PosixSpawnAttrs.Companion.posixSpawnAttrInit
 import io.matthewnelson.kmp.process.internal.PosixSpawnFileActions.Companion.posixSpawnFileActionsInit
@@ -39,6 +40,7 @@ internal actual class PlatformBuilder internal actual constructor() {
         args: List<String>,
         env: Map<String, String>,
         stdio: Stdio.Config,
+        destroy: Signal,
     ): Process = memScoped {
 
         // TODO: pipes Issue #2
@@ -86,6 +88,6 @@ internal actual class PlatformBuilder internal actual constructor() {
         // TODO: close things
         result.check()
 
-        NativeProcess(pid.value, command, args, env, stdio)
+        NativeProcess(pid.value, command, args, env, stdio, destroy)
     }
 }

@@ -17,6 +17,7 @@ package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.InterruptedException
 import io.matthewnelson.kmp.process.Process
+import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.Stdio
 import kotlin.time.Duration
 
@@ -25,8 +26,27 @@ internal class JvmProcess private constructor(
     args: List<String>,
     env: Map<String, String>,
     stdio: Stdio.Config,
+    destroy: Signal,
     private val jProcess: java.lang.Process,
-): Process(command, args, env, stdio) {
+): Process(command, args, env, stdio, destroy) {
+
+    override fun destroy(): Process {
+        when (destroySignal) {
+            Signal.SIGTERM -> jProcess.destroy()
+            Signal.SIGKILL -> {
+                ANDROID_SDK_INT?.let { sdkInt ->
+                    // Android runtime, check API version
+                    if (sdkInt >= 26) {
+                        jProcess.destroyForcibly()
+                    } else {
+                        jProcess.destroy()
+                    }
+                } ?: jProcess.destroyForcibly()
+            }
+        }
+
+        return this
+    }
 
     @Throws(IllegalStateException::class)
     override fun exitCode(): Int {
@@ -37,23 +57,6 @@ internal class JvmProcess private constructor(
         }
 
         return result ?: throw IllegalStateException("Process hasn't exited")
-    }
-
-    override fun sigterm(): Process {
-        jProcess.destroy()
-        return this
-    }
-
-    override fun sigkill(): Process {
-        ANDROID_SDK_INT?.let { sdkInt ->
-            // Android runtime, check API version
-            if (sdkInt >= 26) {
-                jProcess.destroyForcibly()
-            } else {
-                jProcess.destroy()
-            }
-        } ?: jProcess.destroyForcibly()
-        return this
     }
 
     @Throws(InterruptedException::class)
@@ -69,12 +72,14 @@ internal class JvmProcess private constructor(
             args: List<String>,
             env: Map<String, String>,
             stdio: Stdio.Config,
+            destroy: Signal,
             jProcess: java.lang.Process
         ): JvmProcess = JvmProcess(
             command,
             args,
             env,
             stdio,
+            destroy,
             jProcess,
         )
 

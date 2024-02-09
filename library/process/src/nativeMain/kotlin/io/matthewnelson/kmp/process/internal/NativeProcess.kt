@@ -18,6 +18,7 @@ package io.matthewnelson.kmp.process.internal
 import io.matthewnelson.kmp.file.InterruptedException
 import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.process.Process
+import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.Stdio
 import kotlinx.cinterop.*
 import platform.posix.*
@@ -31,8 +32,9 @@ internal constructor(
     command: String,
     args: List<String>,
     env: Map<String, String>,
-    stdio: Stdio.Config
-): Process(command, args, env, stdio) {
+    stdio: Stdio.Config,
+    destroy: Signal,
+): Process(command, args, env, stdio, destroy) {
 
     init {
         if (pid <= 0) {
@@ -42,6 +44,24 @@ internal constructor(
     }
 
     private val _exitCode = AtomicReference<Int?>(null)
+
+    override fun destroy(): Process {
+        if (isAlive) {
+            val s = when (destroySignal) {
+                Signal.SIGTERM -> SIGTERM
+                Signal.SIGKILL -> SIGKILL
+            }
+
+            kill(pid, s)
+
+            // TODO: https://man7.org/linux/man-pages/man7/signal.7.html
+            // TODO, wait
+        }
+
+        // TODO: Close streams
+
+        return this
+    }
 
     @Throws(IllegalStateException::class)
     override fun exitCode(): Int {
@@ -56,7 +76,6 @@ internal constructor(
                 pid -> {
                     val code = statLoc.value shr 8 and 0x000000FF
                     _exitCode.compareAndSet(null, code)
-                    // TODO: Close Pipes Issue #2
                 }
                 else -> {
                     val message = strerror(errno)?.toKString() ?: "errno: $errno"
@@ -84,17 +103,5 @@ internal constructor(
                 throw InterruptedException()
             }
         }
-    }
-
-    override fun sigterm(): Process {
-        // TODO: https://man7.org/linux/man-pages/man7/signal.7.html
-        if (isAlive) kill(pid, SIGTERM)
-        return this
-    }
-
-    override fun sigkill(): Process {
-        // TODO: https://man7.org/linux/man-pages/man7/signal.7.html
-        if (isAlive) kill(pid, SIGKILL)
-        return this
     }
 }

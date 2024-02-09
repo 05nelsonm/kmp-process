@@ -39,7 +39,22 @@ public abstract class Process internal constructor(
     public val environment: Map<String, String>,
     @JvmField
     public val stdio: Stdio.Config,
-) {
+    @JvmField
+    public val destroySignal: Signal,
+)/*: AutoCloseable */ {
+
+    /**
+     * Destroys the [Process] by:
+     *  - Sending it [destroySignal] (if it has not completed yet)
+     *  - Closes all input/output streams
+     *
+     * This should **always** be called after you are done with
+     * the [Process] to ensure resource closure occurs.
+     *
+     * @see [Signal]
+     * @return this [Process] instance
+     * */
+    public abstract fun destroy(): Process
 
     /**
      * Returns the exit code for which the process
@@ -51,9 +66,9 @@ public abstract class Process internal constructor(
     @Throws(IllegalStateException::class)
     public abstract fun exitCode(): Int
 
-    // java.lang.Process.isAlive() is only available for
-    // Android API 26+. This provides the functionality
-    // w/o conflicting with java.lang.Process' function.
+    /**
+     * Checks if the [Process] is still running
+     * */
     @get:JvmName("isAlive")
     public val isAlive: Boolean get() = try {
         exitCode()
@@ -142,27 +157,14 @@ public abstract class Process internal constructor(
     }
 
     /**
-     * Kills the [Process] via signal SIGTERM.
-     * */
-    public abstract fun sigterm(): Process
-
-    /**
-     * Kills the [Process] via signal SIGKILL.
-     *
-     * Note that for Android API < 26, [sigterm] is utilized
-     * under the hood as java.lang.Process.destroyForcibly is
-     * not available.
-     * */
-    public abstract fun sigkill(): Process
-
-    /**
      * Creates a new [Process].
      *
-     * e.g. (shell commands)
+     * e.g. (Shell commands on a Unix system)
      *
      *     val p = Process.Builder("sh")
      *         .args("-c")
      *         .args("sleep 1; exit 5")
+     *         .destroySignal(Signal.SIGKILL)
      *         .environment("HOME", appDir.absolutePath)
      *         .stdin(Stdio.Null)
      *         .stdout(Stdio.Inherit)
@@ -171,17 +173,17 @@ public abstract class Process internal constructor(
      *
      * e.g. (Executable file)
      *
-     *     val p = Process.Builder(myExecutable.absolutePath)
+     *     val p = Process.Builder(myExecutableFile.absolutePath)
      *         .args("--some-flag")
      *         .args("someValue")
      *         .args("--another-flag", "anotherValue")
-     *         .withEnvironment {
+     *         .environment {
      *             remove("HOME")
      *             // ...
      *         }
      *         .stdin(Stdio.Null)
-     *         .stdout(Stdio.File.of("myProgram.log", append = true))
-     *         .stderr(Stdio.File.of("myProgram.err"))
+     *         .stdout(Stdio.File.of("logs/myExecutable.log", append = true))
+     *         .stderr(Stdio.File.of("logs/myExecutable.err"))
      *         .spawn()
      *
      * @param [command] The command to run. On Native `Linux`, `macOS` and
@@ -196,13 +198,14 @@ public abstract class Process internal constructor(
 
         /**
          * Alternate constructor for an executable [File]. Will take the
-         * normalized path to use for [command].
+         * absolute + normalized path to use for [command].
          * */
-        public constructor(executable: File): this(executable.normalize().path)
+        public constructor(executable: File): this(executable.absoluteFile.normalize().path)
 
         private val platform = PlatformBuilder()
         private val args = mutableListOf<String>()
         private val stdio = Stdio.Config.Builder.get()
+        private var destroy: Signal = Signal.SIGTERM
 
         /**
          * Add a single argument
@@ -224,6 +227,14 @@ public abstract class Process internal constructor(
         public fun args(
             args: List<String>,
         ): Builder = apply { args.forEach { this.args.add(it) } }
+
+        /**
+         * Set the [Signal] to use when [Process.destroy]
+         * is called.
+         * */
+        public fun destroySignal(
+            signal: Signal,
+        ): Builder = apply { destroy = signal }
 
         /**
          * Set/overwrite an environment variable
@@ -274,7 +285,7 @@ public abstract class Process internal constructor(
         ): Builder = apply { stdio.stderr = destination }
 
         /**
-         * Spawn a new [Process]
+         * Spawns the [Process]
          *
          * @throws [IOException] if [Process] creation failed
          * */
@@ -310,7 +321,7 @@ public abstract class Process internal constructor(
             val args = args.toImmutableList()
             val env = platform.env.toImmutableMap()
 
-            return platform.build(command, args, env, stdio)
+            return platform.build(command, args, env, stdio, destroy)
         }
     }
 

@@ -1,12 +1,12 @@
 public abstract class io/matthewnelson/kmp/process/Process {
 	public final field args Ljava/util/List;
 	public final field command Ljava/lang/String;
+	public final field destroySignal Lio/matthewnelson/kmp/process/Signal;
 	public final field environment Ljava/util/Map;
 	public final field stdio Lio/matthewnelson/kmp/process/Stdio$Config;
+	public abstract fun destroy ()Lio/matthewnelson/kmp/process/Process;
 	public abstract fun exitCode ()I
 	public final fun isAlive ()Z
-	public abstract fun sigkill ()Lio/matthewnelson/kmp/process/Process;
-	public abstract fun sigterm ()Lio/matthewnelson/kmp/process/Process;
 	public abstract fun waitFor ()I
 	public abstract fun waitFor-LRDsOJo (J)Ljava/lang/Integer;
 	public final fun waitForAsync (Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
@@ -20,12 +20,21 @@ public final class io/matthewnelson/kmp/process/Process$Builder {
 	public final fun args (Ljava/lang/String;)Lio/matthewnelson/kmp/process/Process$Builder;
 	public final fun args (Ljava/util/List;)Lio/matthewnelson/kmp/process/Process$Builder;
 	public final fun args ([Ljava/lang/String;)Lio/matthewnelson/kmp/process/Process$Builder;
+	public final fun destroySignal (Lio/matthewnelson/kmp/process/Signal;)Lio/matthewnelson/kmp/process/Process$Builder;
 	public final fun environment (Ljava/lang/String;Ljava/lang/String;)Lio/matthewnelson/kmp/process/Process$Builder;
 	public final fun environment (Lkotlin/jvm/functions/Function1;)Lio/matthewnelson/kmp/process/Process$Builder;
 	public final fun spawn ()Lio/matthewnelson/kmp/process/Process;
 	public final fun stderr (Lio/matthewnelson/kmp/process/Stdio;)Lio/matthewnelson/kmp/process/Process$Builder;
 	public final fun stdin (Lio/matthewnelson/kmp/process/Stdio;)Lio/matthewnelson/kmp/process/Process$Builder;
 	public final fun stdout (Lio/matthewnelson/kmp/process/Stdio;)Lio/matthewnelson/kmp/process/Process$Builder;
+}
+
+public final class io/matthewnelson/kmp/process/Signal : java/lang/Enum {
+	public static final field SIGKILL Lio/matthewnelson/kmp/process/Signal;
+	public static final field SIGTERM Lio/matthewnelson/kmp/process/Signal;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/matthewnelson/kmp/process/Signal;
+	public static fun values ()[Lio/matthewnelson/kmp/process/Signal;
 }
 
 public abstract class io/matthewnelson/kmp/process/Stdio {
