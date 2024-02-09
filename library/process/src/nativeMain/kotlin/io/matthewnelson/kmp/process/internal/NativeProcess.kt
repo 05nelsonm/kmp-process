@@ -87,6 +87,8 @@ internal constructor(
         return _exitCode.value ?: throw IllegalStateException("Process hasn't exited")
     }
 
+    override fun pid(): Int = pid
+
     override fun waitFor(): Int {
         var exitCode: Int? = null
         while (exitCode == null) {

@@ -187,6 +187,7 @@ abstract class ProcessBaseTest {
 
         destroyOnCompletion(p)
 
+        println("PID[${p.pid()}]")
         println("CMD[${p.command}]")
         p.args.forEach { arg -> println("ARG[$arg]") }
 

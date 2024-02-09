@@ -57,6 +57,32 @@ internal class JvmProcess private constructor(
         return result ?: throw IllegalStateException("Process hasn't exited")
     }
 
+    override fun pid(): Int {
+        // First try parsing toString output
+        jProcess.toString()
+            // Process[pid=1754008, exitValue="not exited"]
+            .substringAfter("pid=")
+            .substringBefore(']')
+            .substringBefore(',')
+            // "Bug" in Android may add a space after the pid value
+            // before the comma if there are more than 2 arguments.
+            .trim()
+            .toIntOrNull()
+            ?.let { return it }
+
+        // Lastly try reflection
+        return try {
+            val id = java.lang.Process::class.java
+                .getDeclaredMethod("pid")
+                .invoke(jProcess) as Long
+
+            id.toInt()
+        } catch (t: Throwable) {
+            if (t is UnsupportedOperationException) throw t
+            throw UnsupportedOperationException("pid is not supported", t)
+        }
+    }
+
     @Throws(InterruptedException::class)
     override fun waitFor(): Int = jProcess.waitFor()
     @Throws(InterruptedException::class)
