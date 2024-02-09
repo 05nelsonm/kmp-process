@@ -7,6 +7,8 @@ public abstract class io/matthewnelson/kmp/process/Process {
 	public abstract fun destroy ()Lio/matthewnelson/kmp/process/Process;
 	public abstract fun exitCode ()I
 	public final fun isAlive ()Z
+	public abstract fun pid ()I
+	public final fun pidOrNull ()Ljava/lang/Integer;
 	public abstract fun waitFor ()I
 	public abstract fun waitFor-LRDsOJo (J)Ljava/lang/Integer;
 	public final fun waitForAsync (Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;

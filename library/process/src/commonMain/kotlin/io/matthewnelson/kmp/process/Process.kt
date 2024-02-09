@@ -78,6 +78,23 @@ public abstract class Process internal constructor(
     }
 
     /**
+     * Returns the [Process] id.
+     *
+     * @see [pidOrNull]
+     * @throws [UnsupportedOperationException] on Jvm if:
+     *  - Unable to retrieve via `java.lang.Process.toString` output
+     *  - `java.lang.Process.pid` method unavailable (Java 8 or Android Runtime)
+     * */
+    @Throws(UnsupportedOperationException::class)
+    public abstract fun pid(): Int
+
+    public fun pidOrNull(): Int? = try {
+        pid()
+    } catch (_: UnsupportedOperationException) {
+        null
+    }
+
+    /**
      * Blocks the current thread until [Process] completion.
      *
      * @return The [Process.exitCode]
