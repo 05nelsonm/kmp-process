@@ -161,9 +161,7 @@ public abstract class Process internal constructor(
     public suspend fun waitForAsync(
         duration: Duration,
         delay: suspend (duration: Duration) -> Unit,
-    ): Int? {
-        return commonWaitFor(duration) { delay(it) }
-    }
+    ): Int? = commonWaitFor(duration) { delay(it) }
 
     /**
      * Creates a new [Process].
@@ -334,7 +332,45 @@ public abstract class Process internal constructor(
         }
     }
 
-    // TODO: equals
-    // TODO: hashCode
-    // TODO: toString
+    public final override fun toString(): String = buildString {
+        appendLine("Process: [")
+        append("    pid: ")
+        appendLine(pid())
+
+        val exitCode = try {
+            exitCode().toString()
+        } catch (_: IllegalStateException) {
+            "not exited"
+        }
+
+        append("    exitCode: ")
+        appendLine(exitCode)
+
+        append("    command: ")
+        appendLine(command)
+
+        append("    args: [")
+        if (args.isEmpty()) {
+            appendLine(']')
+        } else {
+            args.joinTo(
+                this,
+                separator = "\n        ",
+                prefix = "\n        ",
+                postfix = "\n    ]\n"
+            )
+        }
+
+        appendLine("    stdio: [")
+        stdio.toString().lines().let { lines ->
+            for (i in 1 until lines.size) {
+                append("    ")
+                appendLine(lines[i])
+            }
+        }
+
+        append("    destroySignal: ")
+        appendLine(destroySignal)
+        append(']')
+    }
 }
