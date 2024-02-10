@@ -8,6 +8,7 @@
 
 ![badge-platform-android]
 ![badge-platform-jvm]
+![badge-platform-js-node]
 ![badge-platform-linux]
 ![badge-platform-ios]
 ![badge-platform-macos]
@@ -21,12 +22,13 @@ and `Rust` [Command][url-rust-command]
 
 ## Info
 
-|         | Process Creation Method Used                                     |
-|---------|------------------------------------------------------------------|
-| `Jvm`   | `java.lang.ProcessBuilder`                                       |
-| `Linux` | [posix_spawn][url-posix-spawn] & [posix_spawnp][url-posix-spawn] |
-| `macOS` | [posix_spawn][url-posix-spawn] & [posix_spawnp][url-posix-spawn] |
-| `iOS`   | [posix_spawn][url-posix-spawn] & [posix_spawnp][url-posix-spawn] |
+|           | Process Creation Method Used                                     |
+|-----------|------------------------------------------------------------------|
+| `Jvm`     | `java.lang.ProcessBuilder`                                       |
+| `Node.js` | [child_process][url-node-child_process]                          |
+| `Linux`   | [posix_spawn][url-posix-spawn] & [posix_spawnp][url-posix-spawn] |
+| `macOS`   | [posix_spawn][url-posix-spawn] & [posix_spawnp][url-posix-spawn] |
+| `iOS`     | [posix_spawn][url-posix-spawn] & [posix_spawnp][url-posix-spawn] |
 
 ## Example
 
