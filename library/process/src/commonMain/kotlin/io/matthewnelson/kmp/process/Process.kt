@@ -80,19 +80,11 @@ public abstract class Process internal constructor(
     /**
      * Returns the [Process] id.
      *
-     * @see [pidOrNull]
-     * @throws [UnsupportedOperationException] on Jvm if:
+     * **NOTE:** On Jvm this can return -1 (Unknown) if:
      *  - Unable to retrieve via `java.lang.Process.toString` output
      *  - `java.lang.Process.pid` method unavailable (Java 8 or Android Runtime)
      * */
-    @Throws(UnsupportedOperationException::class)
     public abstract fun pid(): Int
-
-    public fun pidOrNull(): Int? = try {
-        pid()
-    } catch (_: UnsupportedOperationException) {
-        null
-    }
 
     /**
      * Blocks the current thread until [Process] completion.
@@ -190,7 +182,7 @@ public abstract class Process internal constructor(
      *
      * e.g. (Executable file)
      *
-     *     val p = Process.Builder(myExecutableFile.absolutePath)
+     *     val p = Process.Builder(myExecutableFile)
      *         .args("--some-flag")
      *         .args("someValue")
      *         .args("--another-flag", "anotherValue")

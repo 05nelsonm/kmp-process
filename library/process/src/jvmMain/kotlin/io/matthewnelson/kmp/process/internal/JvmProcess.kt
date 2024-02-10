@@ -30,6 +30,32 @@ internal class JvmProcess private constructor(
     private val jProcess: java.lang.Process,
 ): Process(command, args, env, stdio, destroy) {
 
+    private val _pid: Int by lazy {
+        // First try parsing toString output
+        jProcess.toString()
+            // Process[pid=1754008, exitValue="not exited"]
+            .substringAfter("pid=")
+            .substringBefore(']')
+            .substringBefore(',')
+            // "Bug" in Android may add a space after the pid value
+            // before the comma if there are more than 2 arguments.
+            .trim()
+            .toIntOrNull()
+            ?.let { return@lazy it }
+
+        // Lastly try reflection
+        try {
+            val id = java.lang.Process::class.java
+                .getDeclaredMethod("pid")
+                .invoke(jProcess) as Long
+
+            return@lazy id.toInt()
+        } catch (_: Throwable) {}
+
+        // Unknown
+        -1
+    }
+
     override fun destroy(): Process {
         when (destroySignal) {
             Signal.SIGTERM -> jProcess.destroy()
@@ -57,31 +83,7 @@ internal class JvmProcess private constructor(
         return result ?: throw IllegalStateException("Process hasn't exited")
     }
 
-    override fun pid(): Int {
-        // First try parsing toString output
-        jProcess.toString()
-            // Process[pid=1754008, exitValue="not exited"]
-            .substringAfter("pid=")
-            .substringBefore(']')
-            .substringBefore(',')
-            // "Bug" in Android may add a space after the pid value
-            // before the comma if there are more than 2 arguments.
-            .trim()
-            .toIntOrNull()
-            ?.let { return it }
-
-        // Lastly try reflection
-        return try {
-            val id = java.lang.Process::class.java
-                .getDeclaredMethod("pid")
-                .invoke(jProcess) as Long
-
-            id.toInt()
-        } catch (t: Throwable) {
-            if (t is UnsupportedOperationException) throw t
-            throw UnsupportedOperationException("pid is not supported", t)
-        }
-    }
+    override fun pid(): Int = _pid
 
     @Throws(InterruptedException::class)
     override fun waitFor(): Int = jProcess.waitFor()
