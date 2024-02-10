@@ -50,13 +50,22 @@ internal actual class PlatformBuilder internal actual constructor() {
 
         val jProcess = jProcessBuilder.start()
 
+        val destroySignal = when {
+            destroy == Signal.SIGTERM -> destroy
+            else -> ANDROID_SDK_INT?.let { sdkInt ->
+                // destroyForcibly only available on
+                // Android Runtime for API 26+
+                if (sdkInt < 26) Signal.SIGTERM else null
+            } ?: destroy
+        }
+
         return JvmProcess.of(
             jProcess,
             command,
             args,
             env,
             stdio,
-            destroy,
+            destroySignal,
         )
     }
 
@@ -97,6 +106,29 @@ internal actual class PlatformBuilder internal actual constructor() {
             if (discard != null) return@lazy discard
 
             ProcessBuilder.Redirect.to(STDIO_NULL)
+        }
+
+        private val ANDROID_SDK_INT: Int? by lazy {
+
+            if (
+                System.getProperty("java.runtime.name")
+                    ?.contains("android", ignoreCase = true) != true
+            ) {
+                // Not Android runtime
+                return@lazy null
+            }
+
+            try {
+                val clazz = Class.forName("android.os.Build\$VERSION")
+
+                try {
+                    clazz?.getField("SDK_INT")?.getInt(null)
+                } catch (_: Throwable) {
+                    clazz?.getField("SDK")?.get(null)?.toString()?.toIntOrNull()
+                }
+            } catch (_: Throwable) {
+                null
+            }
         }
     }
 }

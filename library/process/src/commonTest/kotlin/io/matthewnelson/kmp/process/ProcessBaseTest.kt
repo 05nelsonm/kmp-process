@@ -159,7 +159,7 @@ abstract class ProcessBaseTest {
         withContext(Dispatchers.Default) { delay(250.milliseconds) }
 
         // TODO: Fix Native exitCode
-        if (!isWindows && (isJvm || isNodeJS)) {
+        if (isJvm || isNodeJS) {
             assertEquals(Signal.SIGTERM.code, pTerm.exitCode())
             assertEquals(Signal.SIGKILL.code, pKill.exitCode())
         } else {
@@ -246,8 +246,7 @@ abstract class ProcessBaseTest {
         // tor should have handled SIGTERM gracefully
         val expected = when {
             isWindows -> when {
-                isJvm -> 1
-                isNodeJS -> Signal.SIGTERM.code
+                isJvm || isNodeJS -> Signal.SIGTERM.code
                 else -> 0
             }
             else -> 0
