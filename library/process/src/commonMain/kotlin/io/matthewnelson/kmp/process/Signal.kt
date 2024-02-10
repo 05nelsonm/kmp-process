@@ -38,5 +38,5 @@ public enum class Signal(
      * Note that on Android API 25 and below, SIGTERM is always utilized
      * as `java.lang.Process.destroyForcibly` is unavailable.
      * */
-    SIGKILL(147),
+    SIGKILL(137),
 }
