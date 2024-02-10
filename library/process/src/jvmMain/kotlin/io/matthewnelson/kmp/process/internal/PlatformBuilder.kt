@@ -50,7 +50,14 @@ internal actual class PlatformBuilder internal actual constructor() {
 
         val jProcess = jProcessBuilder.start()
 
-        return JvmProcess.of(command, args, env, stdio, destroy, jProcess)
+        return JvmProcess.of(
+            jProcess,
+            command,
+            args,
+            env,
+            stdio,
+            destroy,
+        )
     }
 
     private companion object {

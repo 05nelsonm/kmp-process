@@ -15,28 +15,11 @@
  **/
 package io.matthewnelson.kmp.process
 
-import kotlin.jvm.JvmField
+import io.matthewnelson.kmp.file.SysPathSep
 
-/**
- * The signal to send when [Process.destroy] is called.
- * */
-public enum class Signal(
-    @JvmField
-    public val code: Int,
-) {
+class JsProcessUnitTest: ProcessBaseTest() {
 
-    /**
-     * The default
-     *
-     * On Jvm, this is the same as calling `java.lang.Process.destroy`
-     * */
-    SIGTERM(143),
-
-    /**
-     * On Jvm, this is the same as calling `java.lang.Process.destroyForcibly`.
-     *
-     * Note that on Android API 25 and below, SIGTERM is always utilized
-     * as `java.lang.Process.destroyForcibly` is unavailable.
-     * */
-    SIGKILL(147),
+    override val isUnixDesktop: Boolean = SysPathSep == '/'
+    override val isNodeJS: Boolean = true
+    override val isDarwinMobile: Boolean = false
 }

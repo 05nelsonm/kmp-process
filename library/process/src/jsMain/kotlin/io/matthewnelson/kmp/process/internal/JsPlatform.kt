@@ -13,30 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-package io.matthewnelson.kmp.process
+package io.matthewnelson.kmp.process.internal
 
-import kotlin.jvm.JvmField
+import io.matthewnelson.kmp.file.File
+import io.matthewnelson.kmp.file.SysPathSep
+import io.matthewnelson.kmp.file.toFile
 
-/**
- * The signal to send when [Process.destroy] is called.
- * */
-public enum class Signal(
-    @JvmField
-    public val code: Int,
-) {
+internal actual val STDIO_NULL: File by lazy {
+    val isWindows = try {
+        os_platform() == "win32"
+    } catch (_: Throwable) {
+        SysPathSep == '\\'
+    }
 
-    /**
-     * The default
-     *
-     * On Jvm, this is the same as calling `java.lang.Process.destroy`
-     * */
-    SIGTERM(143),
-
-    /**
-     * On Jvm, this is the same as calling `java.lang.Process.destroyForcibly`.
-     *
-     * Note that on Android API 25 and below, SIGTERM is always utilized
-     * as `java.lang.Process.destroyForcibly` is unavailable.
-     * */
-    SIGKILL(147),
+    (if (isWindows) "NUL" else "/dev/null").toFile()
 }

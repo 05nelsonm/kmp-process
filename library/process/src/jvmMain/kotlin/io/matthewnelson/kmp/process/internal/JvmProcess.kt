@@ -22,12 +22,12 @@ import io.matthewnelson.kmp.process.Stdio
 import kotlin.time.Duration
 
 internal class JvmProcess private constructor(
+    private val jProcess: java.lang.Process,
     command: String,
     args: List<String>,
     env: Map<String, String>,
     stdio: Stdio.Config,
     destroy: Signal,
-    private val jProcess: java.lang.Process,
 ): Process(command, args, env, stdio, destroy) {
 
     private val _pid: Int by lazy {
@@ -94,19 +94,19 @@ internal class JvmProcess private constructor(
 
         @JvmSynthetic
         internal fun of(
+            jProcess: java.lang.Process,
             command: String,
             args: List<String>,
             env: Map<String, String>,
             stdio: Stdio.Config,
             destroy: Signal,
-            jProcess: java.lang.Process
         ): JvmProcess = JvmProcess(
+            jProcess,
             command,
             args,
             env,
             stdio,
             destroy,
-            jProcess,
         )
 
         private val ANDROID_SDK_INT: Int? by lazy {

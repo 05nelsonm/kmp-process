@@ -187,11 +187,19 @@ abstract class ProcessBaseTest {
 
         destroyOnCompletion(p)
 
-        println(p.toString())
+        println(p)
 
         withContext(Dispatchers.Default) {
             p.waitForAsync(5.seconds, ::delay)
         }
+
+        p.destroy()
+
+        withContext(Dispatchers.Default) {
+            delay(1.seconds)
+        }
+
+        assertFalse(p.isAlive)
     }
 
     protected fun TestScope.destroyOnCompletion(p: Process) {

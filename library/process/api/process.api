@@ -1,3 +1,6 @@
+public abstract interface annotation class io/matthewnelson/kmp/process/InternalProcessApi : java/lang/annotation/Annotation {
+}
+
 public abstract class io/matthewnelson/kmp/process/Process {
 	public final field args Ljava/util/List;
 	public final field command Ljava/lang/String;
@@ -34,6 +37,7 @@ public final class io/matthewnelson/kmp/process/Process$Builder {
 public final class io/matthewnelson/kmp/process/Signal : java/lang/Enum {
 	public static final field SIGKILL Lio/matthewnelson/kmp/process/Signal;
 	public static final field SIGTERM Lio/matthewnelson/kmp/process/Signal;
+	public final field code I
 	public static fun getEntries ()Lkotlin/enums/EnumEntries;
 	public static fun valueOf (Ljava/lang/String;)Lio/matthewnelson/kmp/process/Signal;
 	public static fun values ()[Lio/matthewnelson/kmp/process/Signal;
