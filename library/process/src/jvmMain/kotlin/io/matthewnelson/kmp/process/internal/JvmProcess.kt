@@ -22,12 +22,12 @@ import io.matthewnelson.kmp.process.Stdio
 import kotlin.time.Duration
 
 internal class JvmProcess private constructor(
+    private val jProcess: java.lang.Process,
     command: String,
     args: List<String>,
     env: Map<String, String>,
     stdio: Stdio.Config,
     destroy: Signal,
-    private val jProcess: java.lang.Process,
 ): Process(command, args, env, stdio, destroy) {
 
     private val _pid: Int by lazy {
@@ -56,17 +56,15 @@ internal class JvmProcess private constructor(
         -1
     }
 
+    @Volatile
+    private var destroyCalled = false
+
     override fun destroy(): Process {
+        destroyCalled = true
+
         when (destroySignal) {
             Signal.SIGTERM -> jProcess.destroy()
-            Signal.SIGKILL -> ANDROID_SDK_INT?.let { sdkInt ->
-                // Android runtime, check API version
-                if (sdkInt >= 26) {
-                    jProcess.destroyForcibly()
-                } else {
-                    jProcess.destroy()
-                }
-            } ?: jProcess.destroyForcibly()
+            Signal.SIGKILL -> jProcess.destroyForcibly()
         }
 
         return this
@@ -74,10 +72,16 @@ internal class JvmProcess private constructor(
 
     @Throws(IllegalStateException::class)
     override fun exitCode(): Int {
-        val result: Int? = try {
+        var result: Int? = try {
             jProcess.exitValue()
         } catch (_: IllegalThreadStateException) {
             null
+        }
+
+        // On Windows it's either 0 or 1, 1 indicating
+        // termination. Swap it out with the correct code
+        if (result != null && destroyCalled && STDIO_NULL.path == "NUL") {
+            if (result == 1) result = destroySignal.code
         }
 
         return result ?: throw IllegalStateException("Process hasn't exited")
@@ -94,42 +98,19 @@ internal class JvmProcess private constructor(
 
         @JvmSynthetic
         internal fun of(
+            jProcess: java.lang.Process,
             command: String,
             args: List<String>,
             env: Map<String, String>,
             stdio: Stdio.Config,
             destroy: Signal,
-            jProcess: java.lang.Process
         ): JvmProcess = JvmProcess(
+            jProcess,
             command,
             args,
             env,
             stdio,
             destroy,
-            jProcess,
         )
-
-        private val ANDROID_SDK_INT: Int? by lazy {
-
-            if (
-                System.getProperty("java.runtime.name")
-                    ?.contains("android", ignoreCase = true) != true
-            ) {
-                // Not Android runtime
-                return@lazy null
-            }
-
-            try {
-                val clazz = Class.forName("android.os.Build\$VERSION")
-
-                try {
-                    clazz?.getField("SDK_INT")?.getInt(null)
-                } catch (_: Throwable) {
-                    clazz?.getField("SDK")?.get(null)?.toString()?.toIntOrNull()
-                }
-            } catch (_: Throwable) {
-                null
-            }
-        }
     }
 }

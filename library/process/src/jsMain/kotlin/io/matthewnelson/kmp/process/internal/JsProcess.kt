@@ -13,30 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-package io.matthewnelson.kmp.process
+@file:JsModule("process")
+@file:JsNonModule
 
-import kotlin.jvm.JvmField
+package io.matthewnelson.kmp.process.internal
 
-/**
- * The signal to send when [Process.destroy] is called.
- * */
-public enum class Signal(
-    @JvmField
-    public val code: Int,
-) {
+import io.matthewnelson.kmp.process.InternalProcessApi
 
-    /**
-     * The default
-     *
-     * On Jvm, this is the same as calling `java.lang.Process.destroy`
-     * */
-    SIGTERM(143),
-
-    /**
-     * On Jvm, this is the same as calling `java.lang.Process.destroyForcibly`.
-     *
-     * Note that on Android API 25 and below, SIGTERM is always utilized
-     * as `java.lang.Process.destroyForcibly` is unavailable.
-     * */
-    SIGKILL(137),
-}
+/** [docs](https://nodejs.org/api/process.html#processpid) */
+@InternalProcessApi
+@Suppress("unused")
+@JsName("pid")
+public external val process_pid: Int

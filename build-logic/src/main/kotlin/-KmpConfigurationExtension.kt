@@ -31,6 +31,17 @@ fun KmpConfigurationExtension.configureShared(
             compileTargetCompatibility = JavaVersion.VERSION_1_8
         }
 
+        js {
+            target {
+                nodejs {
+                    @Suppress("RedundantSamConstructor")
+                    testTask(Action {
+                        useMocha { timeout = "30s" }
+                    })
+                }
+            }
+        }
+
 //        androidNativeAll()
         iosAll()
         linuxAll()

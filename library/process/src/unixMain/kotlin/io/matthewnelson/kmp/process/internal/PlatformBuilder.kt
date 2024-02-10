@@ -88,6 +88,13 @@ internal actual class PlatformBuilder internal actual constructor() {
         // TODO: close things
         result.check()
 
-        NativeProcess(pid.value, command, args, env, stdio, destroy)
+        NativeProcess(
+            pid.value,
+            command,
+            args,
+            env,
+            stdio,
+            destroy,
+        )
     }
 }

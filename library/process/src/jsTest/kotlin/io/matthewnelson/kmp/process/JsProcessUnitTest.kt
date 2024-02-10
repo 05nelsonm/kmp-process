@@ -15,23 +15,12 @@
  **/
 package io.matthewnelson.kmp.process
 
-import kotlin.experimental.ExperimentalNativeApi
+import io.matthewnelson.kmp.file.SysPathSep
 
-class NativeProcessUnitTest: ProcessBaseTest() {
+class JsProcessUnitTest: ProcessBaseTest() {
 
-    @OptIn(ExperimentalNativeApi::class)
-    override val isDarwinMobile: Boolean = when (Platform.osFamily) {
-        OsFamily.IOS,
-        OsFamily.TVOS,
-        OsFamily.WATCHOS -> true
-        else -> false
-    }
+    override val isDarwinMobile: Boolean = false
     override val isJvm: Boolean = false
-    override val isNodeJS: Boolean = false
-    @OptIn(ExperimentalNativeApi::class)
-    override val isUnixDesktop: Boolean = when (Platform.osFamily) {
-        OsFamily.MACOSX,
-        OsFamily.LINUX -> true
-        else -> false
-    }
+    override val isNodeJS: Boolean = true
+    override val isUnixDesktop: Boolean = SysPathSep == '/'
 }
