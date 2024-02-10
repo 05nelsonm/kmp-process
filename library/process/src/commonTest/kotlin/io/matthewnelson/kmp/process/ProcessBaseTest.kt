@@ -37,9 +37,10 @@ abstract class ProcessBaseTest {
         private val installer = TorResources(installationDir = SysTempDir.resolve("kmp_process"))
     }
 
-    protected abstract val isUnixDesktop: Boolean
-    protected abstract val isNodeJS: Boolean
     protected abstract val isDarwinMobile: Boolean
+    protected abstract val isJvm: Boolean
+    protected abstract val isNodeJS: Boolean
+    protected abstract val isUnixDesktop: Boolean
 
     @Test
     fun givenWaitFor_whenProcessExits_thenWaitForReturnsEarly() {
@@ -125,6 +126,47 @@ abstract class ProcessBaseTest {
     }
 
     @Test
+    fun givenDestroy_whenSigTERMorKILL_thenReturnsCorrectExitCode() = runTest {
+        if (isDarwinMobile) {
+            println("Skipping...")
+            return@runTest
+        }
+
+        val (pTerm, pKill) = try {
+            val b = Process.Builder("sleep")
+                .args("3")
+
+            Pair(b.spawn(), b.destroySignal(Signal.SIGKILL).spawn())
+        } catch (e: IOException) {
+            // Host (Window) did not have sleep available
+            if (!isUnixDesktop) {
+                println("Skipping...")
+                return@runTest
+            }
+            throw e
+        }
+
+        destroyOnCompletion(pTerm)
+        destroyOnCompletion(pKill)
+
+        withContext(Dispatchers.Default) { delay(250.milliseconds) }
+
+        pTerm.destroy()
+        pKill.destroy()
+
+        withContext(Dispatchers.Default) { delay(250.milliseconds) }
+
+        // TODO: Fix Native exitCode
+        if (isJvm || isNodeJS) {
+            assertEquals(Signal.SIGTERM.code, pTerm.exitCode())
+            assertEquals(Signal.SIGKILL.code, pKill.exitCode())
+        } else {
+            println("TERM: ${pTerm.exitCode()}")
+            println("KILL: ${pKill.exitCode()}")
+        }
+    }
+
+    @Test
     fun givenWaitForAsync_whenCompletion_thenReturnsExitCode() = runTest {
         if (isDarwinMobile) {
             println("Skipping...")
@@ -195,11 +237,12 @@ abstract class ProcessBaseTest {
 
         p.destroy()
 
-        withContext(Dispatchers.Default) {
-            delay(1.seconds)
-        }
+        withContext(Dispatchers.Default) { delay(250.milliseconds) }
 
         assertFalse(p.isAlive)
+
+        // tor should have handled SIGTERM gracefully
+        assertEquals(0, p.exitCode())
     }
 
     protected fun TestScope.destroyOnCompletion(p: Process) {

@@ -19,7 +19,8 @@ import io.matthewnelson.kmp.file.SysPathSep
 
 class JsProcessUnitTest: ProcessBaseTest() {
 
-    override val isUnixDesktop: Boolean = SysPathSep == '/'
-    override val isNodeJS: Boolean = true
     override val isDarwinMobile: Boolean = false
+    override val isJvm: Boolean = false
+    override val isNodeJS: Boolean = true
+    override val isUnixDesktop: Boolean = SysPathSep == '/'
 }
