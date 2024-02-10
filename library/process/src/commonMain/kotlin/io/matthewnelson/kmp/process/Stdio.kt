@@ -179,7 +179,7 @@ public sealed class Stdio private constructor() {
             is File -> {
                 append("File[file=")
                 append(file)
-                append(",append=")
+                append(", append=")
                 append(append)
                 append(']')
             }
