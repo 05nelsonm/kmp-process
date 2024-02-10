@@ -19,6 +19,7 @@ import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.file.SysTempDir
 import io.matthewnelson.kmp.file.path
 import io.matthewnelson.kmp.file.resolve
+import io.matthewnelson.kmp.process.internal.STDIO_NULL
 import io.matthewnelson.kmp.tor.resource.tor.TorResources
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -41,6 +42,7 @@ abstract class ProcessBaseTest {
     protected abstract val isJvm: Boolean
     protected abstract val isNodeJS: Boolean
     protected abstract val isUnixDesktop: Boolean
+    protected val isWindows: Boolean = STDIO_NULL.path == "NUL"
 
     @Test
     fun givenWaitFor_whenProcessExits_thenWaitForReturnsEarly() {
@@ -157,7 +159,7 @@ abstract class ProcessBaseTest {
         withContext(Dispatchers.Default) { delay(250.milliseconds) }
 
         // TODO: Fix Native exitCode
-        if (isJvm || isNodeJS) {
+        if (!isWindows && (isJvm || isNodeJS)) {
             assertEquals(Signal.SIGTERM.code, pTerm.exitCode())
             assertEquals(Signal.SIGKILL.code, pKill.exitCode())
         } else {
@@ -242,7 +244,15 @@ abstract class ProcessBaseTest {
         assertFalse(p.isAlive)
 
         // tor should have handled SIGTERM gracefully
-        assertEquals(0, p.exitCode())
+        val expected = when {
+            isWindows -> when {
+                isJvm -> 1
+                isNodeJS -> Signal.SIGTERM.code
+                else -> 0
+            }
+            else -> 0
+        }
+        assertEquals(expected, p.exitCode())
     }
 
     protected fun TestScope.destroyOnCompletion(p: Process) {
