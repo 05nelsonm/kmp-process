@@ -90,7 +90,22 @@ internal class JvmProcess private constructor(
     override fun pid(): Int = _pid
 
     @Throws(InterruptedException::class)
-    override fun waitFor(): Int = jProcess.waitFor()
+    override fun waitFor(): Int {
+        var code = jProcess.waitFor()
+
+        // non-zero exit value, check exitCode() to see if
+        // it was a windows termination thing.
+        if (code == 1) {
+           code = try {
+               exitCode()
+           } catch (_: IllegalStateException) {
+               code
+           }
+        }
+
+        return code
+    }
+
     @Throws(InterruptedException::class)
     override fun waitFor(duration: Duration): Int? = commonWaitFor(duration) { Thread.sleep(it.inWholeMilliseconds) }
 

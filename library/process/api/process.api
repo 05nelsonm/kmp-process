@@ -1,6 +1,36 @@
 public abstract interface annotation class io/matthewnelson/kmp/process/InternalProcessApi : java/lang/annotation/Annotation {
 }
 
+public final class io/matthewnelson/kmp/process/Output {
+	public final field processError Ljava/lang/String;
+	public final field processInfo Lio/matthewnelson/kmp/process/Output$ProcessInfo;
+	public final field stderr Ljava/lang/String;
+	public final field stdout Ljava/lang/String;
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/matthewnelson/kmp/process/Output$ProcessInfo;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/matthewnelson/kmp/process/Output$Options {
+	public synthetic fun <init> (IJLkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+
+public final class io/matthewnelson/kmp/process/Output$Options$Builder {
+	public field maxBuffer I
+	public field timeoutMillis I
+}
+
+public final class io/matthewnelson/kmp/process/Output$ProcessInfo {
+	public final field args Ljava/util/List;
+	public final field command Ljava/lang/String;
+	public final field destroySignal Lio/matthewnelson/kmp/process/Signal;
+	public final field environment Ljava/util/Map;
+	public final field exitCode I
+	public final field pid I
+	public final field stdio Lio/matthewnelson/kmp/process/Stdio$Config;
+	public synthetic fun <init> (IILjava/lang/String;Ljava/util/List;Ljava/util/Map;Lio/matthewnelson/kmp/process/Stdio$Config;Lio/matthewnelson/kmp/process/Signal;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun toString ()Ljava/lang/String;
+}
+
 public abstract class io/matthewnelson/kmp/process/Process {
 	public final field args Ljava/util/List;
 	public final field command Ljava/lang/String;
@@ -28,6 +58,8 @@ public final class io/matthewnelson/kmp/process/Process$Builder {
 	public final fun destroySignal (Lio/matthewnelson/kmp/process/Signal;)Lio/matthewnelson/kmp/process/Process$Builder;
 	public final fun environment (Ljava/lang/String;Ljava/lang/String;)Lio/matthewnelson/kmp/process/Process$Builder;
 	public final fun environment (Lkotlin/jvm/functions/Function1;)Lio/matthewnelson/kmp/process/Process$Builder;
+	public final fun output ()Lio/matthewnelson/kmp/process/Output;
+	public final fun output (Lkotlin/jvm/functions/Function1;)Lio/matthewnelson/kmp/process/Output;
 	public final fun spawn ()Lio/matthewnelson/kmp/process/Process;
 	public final fun stderr (Lio/matthewnelson/kmp/process/Stdio;)Lio/matthewnelson/kmp/process/Process$Builder;
 	public final fun stdin (Lio/matthewnelson/kmp/process/Stdio;)Lio/matthewnelson/kmp/process/Process$Builder;

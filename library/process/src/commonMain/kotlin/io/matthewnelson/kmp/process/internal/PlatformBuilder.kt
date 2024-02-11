@@ -18,6 +18,7 @@
 package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.IOException
+import io.matthewnelson.kmp.process.Output
 import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.Stdio
@@ -27,7 +28,17 @@ internal expect class PlatformBuilder internal constructor() {
     internal val env: MutableMap<String, String>
 
     @Throws(IOException::class)
-    internal fun build(
+    internal fun output(
+        command: String,
+        args: List<String>,
+        env: Map<String, String>,
+        stdio: Stdio.Config,
+        options: Output.Options,
+        destroy: Signal,
+    ): Output
+
+    @Throws(IOException::class)
+    internal fun spawn(
         command: String,
         args: List<String>,
         env: Map<String, String>,

@@ -29,6 +29,14 @@ internal external fun child_process_spawn(
     options: dynamic,
 ): child_process_ChildProcess
 
+/** [docs](https://nodejs.org/api/child_process.html#child_processspawnsynccommand-args-options) */
+@JsName("spawnSync")
+internal external fun child_process_spawnSync(
+    command: String,
+    args: Array<String>,
+    options: dynamic,
+): dynamic
+
 /** [docs](https://nodejs.org/api/child_process.html#class-childprocess) */
 @JsName("ChildProcess")
 @OptIn(InternalProcessApi::class)
