@@ -16,5 +16,53 @@
 package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.File
+import io.matthewnelson.kmp.process.Signal
+import io.matthewnelson.kmp.process.Stdio
 
 internal expect val STDIO_NULL: File
+
+internal fun StringBuilder.appendProcessInfo(
+    className: String,
+    pid: Int,
+    exitCode: String,
+    command: String,
+    args: List<String>,
+    stdio: Stdio.Config,
+    destroySignal: Signal,
+) {
+    append(className)
+    appendLine(": [")
+
+    append("    pid: ")
+    appendLine(pid)
+
+    append("    exitCode: ")
+    appendLine(exitCode)
+
+    append("    command: ")
+    appendLine(command)
+
+    append("    args: [")
+    if (args.isEmpty()) {
+        appendLine(']')
+    } else {
+        args.joinTo(
+            this,
+            separator = "\n        ",
+            prefix = "\n        ",
+            postfix = "\n    ]\n"
+        )
+    }
+
+    appendLine("    stdio: [")
+    stdio.toString().lines().let { lines ->
+        for (i in 1 until lines.size) {
+            append("    ")
+            appendLine(lines[i])
+        }
+    }
+
+    append("    destroySignal: ")
+    appendLine(destroySignal)
+    append(']')
+}

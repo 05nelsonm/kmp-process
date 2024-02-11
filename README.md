@@ -33,7 +33,7 @@ and `Rust` [Command][url-rust-command]
 ## Example
 
 ```kotlin
-val b = Process.Builder(command = "cat")
+val builder = Process.Builder(command = "cat")
     // Optional arguments
     .args("--show-ends")
     // Also accepts vararg and List<String>
@@ -61,11 +61,14 @@ val b = Process.Builder(command = "cat")
     // variable
     .environment("HOME", myApplicationDir.path)
 
-// Spawn the process
-b.spawn().let { p ->
+// Spawned process
+builder.spawn().let { p ->
 
     try {
-        // Blocking APIs (Jvm & Native)
+        // Blocking APIs (Jvm & Native).
+        //
+        // Alternatively, waitForAsync is available for all
+        // platforms
         val code: Int? = p.waitFor(250.milliseconds)
 
         if (code == null) {
@@ -77,7 +80,13 @@ b.spawn().let { p ->
     }
 }
 
-// TODO: output example
+// Direct output
+builder.output { timeoutMillis = 500 }.let { output ->
+    println(output.stdout)
+    println(output.stderr)
+    println(output.processError ?: "no errors")
+    println(output.processInfo)
+}
 ```
 
 ## Get Started

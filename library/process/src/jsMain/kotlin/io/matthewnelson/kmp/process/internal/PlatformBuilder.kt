@@ -17,9 +17,8 @@
 
 package io.matthewnelson.kmp.process.internal
 
-import io.matthewnelson.kmp.file.DelicateFileApi
-import io.matthewnelson.kmp.file.path
-import io.matthewnelson.kmp.file.toIOException
+import io.matthewnelson.kmp.file.*
+import io.matthewnelson.kmp.process.Output
 import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.Stdio
@@ -44,64 +43,111 @@ internal actual class PlatformBuilder actual constructor() {
     }
 
     // @Throws(IOException::class)
-    internal actual fun build(
+    internal actual fun output(
+        command: String,
+        args: List<String>,
+        env: Map<String, String>,
+        stdio: Stdio.Config,
+        options: Output.Options,
+        destroy: Signal,
+    ): Output {
+        val jsEnv = env.toJsEnv()
+        val (jsStdio, descriptors) = stdio.toJsStdio()
+
+        val opts = js("{}")
+//        options.input?.let { opts["input"] = it }
+        opts["stdio"] = jsStdio
+        opts["env"] = jsEnv
+        opts["timeout"] = options.timeout.inWholeMilliseconds.toInt()
+        opts["killSignal"] = destroy.name
+        opts["maxBuffer"] = options.maxBuffer
+        opts["shell"] = false
+        opts["windowsVerbatimArguments"] = false
+        opts["windowsHide"] = true
+
+        val output = descriptors.withDescriptors {
+            child_process_spawnSync(command, args.toTypedArray(), opts)
+        }
+
+        val pid = output["pid"] as Int
+
+        @OptIn(DelicateFileApi::class)
+        val stdout = try {
+            val buf = Buffer.wrap(output["stdout"])
+            val utf8 = buf.toUtf8()
+            buf.fill()
+            utf8
+        } catch (_: IOException) {
+            // TODO: Fix in kmp-file
+            //  "Attempt to access memory outside buffer bounds"
+            ""
+        }
+
+        @OptIn(DelicateFileApi::class)
+        val stderr = try {
+            val buf = Buffer.wrap(output["stderr"])
+            val utf8 = buf.toUtf8()
+            buf.fill()
+            utf8
+        } catch (e: IOException) {
+            // TODO: Fix in kmp-file
+            //  "Attempt to access memory outside buffer bounds"
+            ""
+        }
+
+        val code: Int = (output["status"] as? Number)?.toInt().let {
+            if (it != null) return@let it
+
+            val signal = output["signal"] as? String
+            try {
+                Signal.valueOf(signal!!)
+            } catch (_: Throwable) {
+                destroy
+            }.code
+        }
+
+        val processError: String? = try {
+            output["error"].message as? String
+        } catch (_: Throwable) {
+            null
+        }
+
+        return Output.ProcessInfo.createOutput(
+            stdout,
+            stderr,
+            processError,
+            pid,
+            code,
+            command,
+            args,
+            env,
+            stdio,
+            destroy,
+        )
+    }
+
+    // @Throws(IOException::class)
+    internal actual fun spawn(
         command: String,
         args: List<String>,
         env: Map<String, String>,
         stdio: Stdio.Config,
         destroy: Signal
     ): Process {
-        val jsEnv = js("{}")
-        env.entries.forEach { entry ->
-            jsEnv[entry.key] = entry.value
-        }
+        val jsEnv = env.toJsEnv()
+        val (jsStdio, descriptors) = stdio.toJsStdio()
 
-        val descriptors = Array<Number?>(3) { null }
+        val opts = js("{}")
+        opts["env"] = jsEnv
+        opts["stdio"] = jsStdio
+        opts["detached"] = false
+        opts["shell"] = false
+        opts["windowsVerbatimArguments"] = false
+        opts["windowsHide"] = true
+        opts["killSignal"] = destroy.name
 
-        val jsStdio = try {
-            val jsStdin = stdio.stdin.toJsStdio(isStdin = true)
-            descriptors[0] = jsStdin as? Number
-
-            val jsStdout = stdio.stdout.toJsStdio(isStdin = false)
-            descriptors[1] = jsStdout as? Number
-
-            val jsStderr = stdio.stderr.toJsStdio(isStdin = false)
-            descriptors[2] = jsStderr as? Number
-
-            arrayOf(jsStdin, jsStdout, jsStderr)
-        } catch (t: Throwable) {
-            descriptors.forEach {
-                if (it == null) return@forEach
-                try {
-                    fs_closeSync(it)
-                } catch (_: Throwable) {}
-            }
-
-            @OptIn(DelicateFileApi::class)
-            throw t.toIOException()
-        }
-
-        val options = js("{}")
-        options["env"] = jsEnv
-        options["stdio"] = jsStdio
-        options["detached"] = false
-        options["shell"] = false
-        options["windowsVerbatimArguments"] = false
-        options["windowsHide"] = true
-        options["killSignal"] = destroy.name
-
-        val jsProcess = try {
-            child_process_spawn(command, args.toTypedArray(), options)
-        } catch (t: Throwable) {
-            descriptors.forEach {
-                if (it == null) return@forEach
-                try {
-                    fs_closeSync(it)
-                } catch (_: Throwable) {}
-            }
-
-            @OptIn(DelicateFileApi::class)
-            throw t.toIOException()
+        val jsProcess = descriptors.withDescriptors {
+            child_process_spawn(command, args.toTypedArray(), opts)
         }
 
         return NodeJsProcess(
@@ -115,6 +161,44 @@ internal actual class PlatformBuilder actual constructor() {
     }
 
     private companion object {
+
+        private fun Map<String, String>.toJsEnv(): dynamic {
+            val jsEnv = js("{}")
+            entries.forEach { entry ->
+                jsEnv[entry.key] = entry.value
+            }
+            return jsEnv
+        }
+
+        // @Throws(IOException::class)
+        private fun Stdio.Config.toJsStdio(): Pair<Array<Any>, Array<Number?>> {
+            val descriptors = Array<Number?>(3) { null }
+
+            val jsStdio = try {
+                val jsStdin = stdin.toJsStdio(isStdin = true)
+                descriptors[0] = jsStdin as? Number
+
+                val jsStdout = stdout.toJsStdio(isStdin = false)
+                descriptors[1] = jsStdout as? Number
+
+                val jsStderr = stderr.toJsStdio(isStdin = false)
+                descriptors[2] = jsStderr as? Number
+
+                arrayOf(jsStdin, jsStdout, jsStderr)
+            } catch (t: Throwable) {
+                descriptors.forEach {
+                    if (it == null) return@forEach
+                    try {
+                        fs_closeSync(it)
+                    } catch (_: Throwable) {}
+                }
+
+                @OptIn(DelicateFileApi::class)
+                throw t.toIOException()
+            }
+
+            return Pair(jsStdio, descriptors)
+        }
 
         // @Throw(Exception::class)
         private fun Stdio.toJsStdio(
@@ -130,6 +214,27 @@ internal actual class PlatformBuilder actual constructor() {
                     else -> fs_openSync(file.path, "w")
                 }
             }
+        }
+
+        // @Throws(IOException::class)
+        private inline fun <T: Any> Array<Number?>.withDescriptors(
+            block: () -> T
+        ): T {
+            val result = try {
+                block()
+            } catch (t: Throwable) {
+                forEach { fd ->
+                    if (fd == null) return@forEach
+                    try {
+                        fs_closeSync(fd)
+                    } catch (_: Throwable) {}
+                }
+
+                @OptIn(DelicateFileApi::class)
+                throw t.toIOException()
+            }
+
+            return result
         }
     }
 }

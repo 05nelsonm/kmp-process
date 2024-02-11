@@ -37,6 +37,7 @@ internal class NodeJsProcess internal constructor(
         return this
     }
 
+    // @Throws(IllegalStateException::class)
     override fun exitCode(): Int {
         jsProcess.exitCode?.toInt()?.let { return it }
 
@@ -51,9 +52,21 @@ internal class NodeJsProcess internal constructor(
         throw IllegalStateException("Process hasn't exited")
     }
 
-    override fun pid(): Int = jsProcess.pid?.toInt() ?: -1
+    override fun pid(): Int {
+        val result = try {
+            // can be undefined if called before the
+            // underlying process has not spawned yet.
+            jsProcess.pid?.toInt()
+        } catch (_: Throwable) {
+            null
+        }
 
+        return result ?: -1
+    }
+
+    // @Throws(UnsupportedOperationException::class)
     override fun waitFor(): Int = throw UnsupportedOperationException(WAIT_FOR_ERR)
+    // @Throws(UnsupportedOperationException::class)
     override fun waitFor(duration: Duration): Int = throw UnsupportedOperationException(WAIT_FOR_ERR)
 
     private companion object {

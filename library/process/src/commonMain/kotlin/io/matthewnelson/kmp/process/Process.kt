@@ -18,8 +18,8 @@ package io.matthewnelson.kmp.process
 import io.matthewnelson.immutable.collections.toImmutableList
 import io.matthewnelson.immutable.collections.toImmutableMap
 import io.matthewnelson.kmp.file.*
-import io.matthewnelson.kmp.process.internal.STDIO_NULL
 import io.matthewnelson.kmp.process.internal.PlatformBuilder
+import io.matthewnelson.kmp.process.internal.appendProcessInfo
 import io.matthewnelson.kmp.process.internal.commonWaitFor
 import kotlin.jvm.JvmField
 import kotlin.jvm.JvmName
@@ -78,11 +78,15 @@ public abstract class Process internal constructor(
     }
 
     /**
-     * Returns the [Process] id.
+     * Returns the [Process] identifier (PID).
      *
      * **NOTE:** On Jvm this can return -1 (Unknown) if:
      *  - Unable to retrieve via `java.lang.Process.toString` output
      *  - `java.lang.Process.pid` method unavailable (Java 8 or Android Runtime)
+     *
+     * **NOTE:** On Js this can return -1 (Unknown) if called
+     * immediately after [Process] creation and the underlying
+     * child process has not spawned yet.
      * */
     public abstract fun pid(): Int
 
@@ -236,8 +240,7 @@ public abstract class Process internal constructor(
         ): Builder = apply { args.forEach { this.args.add(it) } }
 
         /**
-         * Set the [Signal] to use when [Process.destroy]
-         * is called.
+         * Set the [Signal] to use when [Process.destroy] is called.
          * */
         public fun destroySignal(
             signal: Signal,
@@ -246,8 +249,8 @@ public abstract class Process internal constructor(
         /**
          * Set/overwrite an environment variable
          *
-         * By default, the new [Process] will inherit all
-         * environment variables from the current one.
+         * By default, the new [Process] will inherit all environment
+         * variables from the current one.
          * */
         public fun environment(
             key: String,
@@ -257,8 +260,8 @@ public abstract class Process internal constructor(
         /**
          * Modify the environment via lambda
          *
-         * By default, the new [Process] will inherit all
-         * environment variables from the current one.
+         * By default, the new [Process] will inherit all environment
+         * variables from the current one.
          * */
         public fun environment(
             block: MutableMap<String, String>.() -> Unit,
@@ -292,85 +295,92 @@ public abstract class Process internal constructor(
         ): Builder = apply { stdio.stderr = destination }
 
         /**
+         * Blocks the current thread until [Process] completion,
+         * [Output.Options.Builder.timeoutMillis] is exceeded,
+         * or [Output.Options.Builder.maxBuffer] is exceeded.
+         *
+         * Utilizes the default [Output.Options]
+         *
+         * For a long-running [Process], [spawn] should be utilized.
+         *
+         * @return [Output]
+         * @throws [IOException] if [Process] creation failed
+         * */
+        @Throws(IOException::class)
+        public fun output(): Output = output { /* defaults */ }
+
+        /**
+         * Blocks the current thread until [Process] completion,
+         * [Output.Options.Builder.timeoutMillis] is exceeded,
+         * or [Output.Options.Builder.maxBuffer] is exceeded.
+         *
+         * For a long-running [Process], [spawn] should be utilized.
+         *
+         * @param [block] lambda to configure [Output.Options]
+         * @return [Output]
+         * @see [Output.Options.Builder]
+         * @throws [IOException] if [Process] creation failed
+         * */
+        @Throws(IOException::class)
+        public fun output(
+            block: Output.Options.Builder.() -> Unit,
+        ): Output {
+            checkCommand(command)
+
+            val options = Output.Options.Builder.build(block)
+            val stdio = stdio.build(outputOptions = options)
+
+            val args = args.toImmutableList()
+            val env = platform.env.toImmutableMap()
+
+            return platform.output(command, args, env, stdio, options, destroy)
+        }
+
+        /**
          * Spawns the [Process]
          *
          * @throws [IOException] if [Process] creation failed
          * */
         @Throws(IOException::class)
         public fun spawn(): Process {
-            if (command.isBlank()) throw IOException("command cannot be blank")
-            command.toFile().let { cmd ->
-                if (!cmd.isAbsolute()) return@let
-                if (!cmd.exists()) throw FileNotFoundException("command: $cmd")
-            }
+            checkCommand(command)
 
-            val stdio = stdio.build()
-
-            stdio.iterator().forEach { (isInput, it) ->
-                if (it !is Stdio.File) return@forEach
-                if (it.file == STDIO_NULL) return@forEach
-
-                if (isInput) {
-                    if (!it.file.exists()) throw FileNotFoundException("stdin: ${it.file}")
-                    return@forEach
-                }
-
-                // output
-                val parent = it.file
-                    .parentFile
-                    ?: return@forEach
-
-                if (!parent.exists() && !parent.mkdirs()) {
-                    throw IOException("Failed to mkdirs for $it")
-                }
-            }
+            val stdio = stdio.build(outputOptions = null)
 
             val args = args.toImmutableList()
             val env = platform.env.toImmutableMap()
 
-            return platform.build(command, args, env, stdio, destroy)
+            return platform.spawn(command, args, env, stdio, destroy)
+        }
+
+        private companion object {
+
+            @Throws(IOException::class)
+            private fun checkCommand(command: String) {
+                if (command.isBlank()) throw IOException("command cannot be blank")
+                command.toFile().let { cmd ->
+                    if (!cmd.isAbsolute()) return@let
+                    if (!cmd.exists()) throw FileNotFoundException("command: $cmd")
+                }
+            }
         }
     }
 
     public final override fun toString(): String = buildString {
-        appendLine("Process: [")
-        append("    pid: ")
-        appendLine(pid())
-
         val exitCode = try {
             exitCode().toString()
         } catch (_: IllegalStateException) {
             "not exited"
         }
 
-        append("    exitCode: ")
-        appendLine(exitCode)
-
-        append("    command: ")
-        appendLine(command)
-
-        append("    args: [")
-        if (args.isEmpty()) {
-            appendLine(']')
-        } else {
-            args.joinTo(
-                this,
-                separator = "\n        ",
-                prefix = "\n        ",
-                postfix = "\n    ]\n"
-            )
-        }
-
-        appendLine("    stdio: [")
-        stdio.toString().lines().let { lines ->
-            for (i in 1 until lines.size) {
-                append("    ")
-                appendLine(lines[i])
-            }
-        }
-
-        append("    destroySignal: ")
-        appendLine(destroySignal)
-        append(']')
+        appendProcessInfo(
+            "Process",
+            pid(),
+            exitCode,
+            command,
+            args,
+            stdio,
+            destroySignal
+        )
     }
 }

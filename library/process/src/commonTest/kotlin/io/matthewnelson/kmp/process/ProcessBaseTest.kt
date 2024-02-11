@@ -199,10 +199,10 @@ abstract class ProcessBaseTest {
     }
 
     @Test
-    fun givenExecutableFile_whenExecuteAsProcess_thenIsSuccessful() = runTest(timeout = 25.seconds) {
+    fun givenExecutableFile_whenExecuteAsProcess_thenIsSuccessful() = runTest(timeout = 45.seconds) {
         val paths = installer.install()
 
-        val p = Process.Builder(paths.tor)
+        val b = Process.Builder(paths.tor)
             .args("--DataDirectory")
             .args(installer.installationDir.resolve("data").path)
             .args("--CacheDirectory")
@@ -227,7 +227,8 @@ abstract class ProcessBaseTest {
             .stderr(Stdio.Inherit)
 //            .stdout(Stdio.File.of(installer.installationDir.resolve("tor.log")))
 //            .stderr(Stdio.File.of(installer.installationDir.resolve("tor.err")))
-            .spawn()
+
+        val p = b.spawn()
 
         destroyOnCompletion(p)
 
@@ -252,6 +253,18 @@ abstract class ProcessBaseTest {
             else -> 0
         }
         assertEquals(expected, p.exitCode())
+
+        if (isNodeJS) {
+            val out = b.output {
+                timeoutMillis = 5_000
+            }
+
+            assertEquals(expected, out.processInfo.exitCode)
+            assertTrue(out.stdout.contains(" [notice] Tor "))
+            assertTrue(out.stderr.isEmpty())
+
+            println(out)
+        }
     }
 
     protected fun TestScope.destroyOnCompletion(p: Process) {

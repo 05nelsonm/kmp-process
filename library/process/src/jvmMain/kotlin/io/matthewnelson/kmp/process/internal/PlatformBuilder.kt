@@ -18,6 +18,7 @@
 package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.IOException
+import io.matthewnelson.kmp.process.Output
 import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.Stdio
@@ -31,7 +32,19 @@ internal actual class PlatformBuilder internal actual constructor() {
     }
 
     @Throws(IOException::class)
-    internal actual fun build(
+    internal actual fun output(
+        command: String,
+        args: List<String>,
+        env: Map<String, String>,
+        stdio: Stdio.Config,
+        options: Output.Options,
+        destroy: Signal,
+    ): Output {
+        throw IOException("Not yet implemented")
+    }
+
+    @Throws(IOException::class)
+    internal actual fun spawn(
         command: String,
         args: List<String>,
         env: Map<String, String>,

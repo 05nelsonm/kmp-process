@@ -15,7 +15,9 @@
  **/
 package io.matthewnelson.kmp.process
 
-import io.matthewnelson.immutable.collections.immutableListOf
+import io.matthewnelson.kmp.file.FileNotFoundException
+import io.matthewnelson.kmp.file.IOException
+import io.matthewnelson.kmp.file.parentFile
 import io.matthewnelson.kmp.file.toFile
 import io.matthewnelson.kmp.process.internal.STDIO_NULL
 import kotlin.jvm.*
@@ -115,28 +117,52 @@ public sealed class Stdio private constructor() {
         public val stderr: Stdio,
     ) {
 
-        /* isInput, Stdio */
-        @JvmSynthetic
-        internal fun iterator(): Iterator<Pair<Boolean, Stdio>> = immutableListOf(
-            Pair(true, stdin),
-            Pair(false, stdout),
-            Pair(false, stderr),
-        ).iterator()
-
         internal class Builder private constructor() {
 
             internal var stdin: Stdio = Pipe
             internal var stdout: Stdio = Pipe
             internal var stderr: Stdio = Pipe
 
-            internal fun build(): Config {
+            @Throws(IOException::class)
+            internal fun build(outputOptions: Output.Options?): Config {
+                val isOutput = outputOptions != null
+//                val hasInput = outputOptions?.input != null
+
                 val stdin = stdin.let {
+//                    if (isOutput && hasInput) return@let Pipe
                     if (it !is File) return@let it
                     if (!it.append) return@let it
                     File.of(it.file, append = false)
                 }
 
-                return Config(stdin, stdout, stderr)
+                val stdout = if (isOutput) Pipe else stdout
+                val stderr = if (isOutput) Pipe else stderr
+
+                val config = Config(stdin, stdout, stderr)
+
+                if (isOutput) {
+                    if (stdin !is File) return config
+                    if (stdin.file == STDIO_NULL) return config
+                    if (!stdin.file.exists()) {
+                        throw FileNotFoundException("stdin: ${stdin.file}")
+                    }
+                    return config
+                }
+
+                listOf(stdout, stderr).forEach { stdio ->
+                    if (stdio !is File) return@forEach
+                    if (stdio.file == STDIO_NULL) return@forEach
+
+                    val parent = stdio.file
+                        .parentFile
+                        ?: return@forEach
+
+                    if (!parent.exists() && !parent.mkdirs()) {
+                        throw IOException("Failed to mkdirs for $stdio")
+                    }
+                }
+
+                return config
             }
 
             internal companion object {
