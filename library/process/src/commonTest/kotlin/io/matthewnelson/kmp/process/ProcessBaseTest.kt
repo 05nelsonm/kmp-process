@@ -254,7 +254,7 @@ abstract class ProcessBaseTest {
         }
         assertEquals(expected, p.exitCode())
 
-        if (isNodeJS) {
+        if (isNodeJS || isJvm) {
             val out = b.output {
                 timeoutMillis = 5_000
             }
