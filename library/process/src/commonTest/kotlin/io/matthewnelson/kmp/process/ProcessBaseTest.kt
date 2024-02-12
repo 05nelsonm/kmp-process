@@ -266,7 +266,7 @@ abstract class ProcessBaseTest {
             }
 
             assertEquals(expected, out.processInfo.exitCode)
-            assertTrue(out.stdout.contains(" [notice] Tor "))
+            assertTrue(out.stdout.lines().first().contains(" [notice] Tor "))
             assertTrue(out.stderr.isEmpty())
 
             println(out)
@@ -298,13 +298,18 @@ abstract class ProcessBaseTest {
 
                 p2.destroy()
 
-                println(stdout.toString())
-                println(stderr.toString())
+                val stdoutString = stdout.toString()
+                val stderrString = stderr.toString()
+                println(stdoutString)
+                println(stderrString)
 
                 withContext(Dispatchers.Default) { delay(250.milliseconds) }
 
                 assertEquals(0, p2.stdoutFeedsSize())
                 assertEquals(0, p2.stderrFeedsSize())
+                assertEquals(expected, p2.exitCode())
+                assertTrue(stdoutString.lines().first().contains(" [notice] Tor "))
+                assertTrue(stderrString.isEmpty())
             }
         }
     }
