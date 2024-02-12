@@ -61,17 +61,13 @@ val builder = Process.Builder(command = "cat")
     // variable
     .environment("HOME", myApplicationDir.path)
 
-// Spawned process
+// Spawned process (Blocking APIs for Jvm/Native)
 builder.spawn().let { p ->
 
     try {
-        // Blocking APIs (Jvm & Native).
-        //
-        // Alternatively, waitForAsync is available for all
-        // platforms
-        val code: Int? = p.waitFor(250.milliseconds)
+        val exitCode: Int? = p.waitFor(250.milliseconds)
 
-        if (code == null) {
+        if (exitCode == null) {
             println("Process did not complete after 250ms")
             // do something
         }
@@ -80,12 +76,65 @@ builder.spawn().let { p ->
     }
 }
 
-// Direct output
-builder.output { timeoutMillis = 500 }.let { output ->
+// Spawned process (Async APIs for all platforms)
+//
+// Note that `kotlinx.coroutines` library is required
+// in order to pass in `kotlinx.coroutines.delay` function.
+// `kmp-process` does **not** depend on coroutines.
+myScope.launch {
+    builder.spawn().let { p ->
+
+        try {
+            val exitCode: Int? = p.waitForAsync(500.milliseconds, ::delay)
+
+            if (exitCode == null) {
+                println("Process did not complete after 500ms")
+                // do something
+            }
+
+            // wait until process completes. If myScope
+            // is cancelled, will automatically pop out.
+            p.waitForAsync(::delay)
+        } finally {
+            p.destroy()
+        }
+    }
+}
+
+// Direct output (Blocking API for all platforms)
+builder.output {
+    maxBuffer = 1024 * 24
+    timeoutMillis = 500
+}.let { output ->
     println(output.stdout)
     println(output.stderr)
     println(output.processError ?: "no errors")
     println(output.processInfo)
+}
+
+// Piping output (feeds are only functional with Stdio.Pipe)
+builder.stdout(Stdio.Pipe).stderr(Stdio.Pipe).spawn().let { p ->
+    try {
+        val exitCode = p.stdoutFeed { line ->
+            // single feed lambda
+
+            // line dispatched from `stdout` bg thread (Jvm/Native) 
+            println(line)
+        }.stderrFeed(
+            // vararg for attaching multiple OutputFeed at once
+            // so no data is missed (reading starts on the first
+            // OutputFeed attachment for that Pipe)
+            OutputFeed { line ->
+                // line dispatched from `stderr` bg thread (Jvm/Native)
+                println(line)
+            },
+            OutputFeed { line ->
+                // do something else
+            },
+        ).waitFor(5.seconds)
+    } finally {
+        p.destroy()
+    }
 }
 ```
 

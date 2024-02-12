@@ -234,6 +234,12 @@ abstract class ProcessBaseTest {
 
         println(p)
 
+        // Should not attach b/c using Stdio.Inherit
+        p.stdoutFeed {}
+        p.stderrFeed {}
+        assertEquals(0, p.stdoutFeedsSize())
+        assertEquals(0, p.stderrFeedsSize())
+
         withContext(Dispatchers.Default) {
             p.waitForAsync(5.seconds, ::delay)
         }

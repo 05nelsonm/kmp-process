@@ -126,10 +126,8 @@ public sealed class Stdio private constructor() {
             @Throws(IOException::class)
             internal fun build(outputOptions: Output.Options?): Config {
                 val isOutput = outputOptions != null
-//                val hasInput = outputOptions?.input != null
 
                 val stdin = stdin.let {
-//                    if (isOutput && hasInput) return@let Pipe
                     if (it !is File) return@let it
                     if (!it.append) return@let it
                     File.of(it.file, append = false)
@@ -138,31 +136,31 @@ public sealed class Stdio private constructor() {
                 val stdout = if (isOutput) Pipe else stdout
                 val stderr = if (isOutput) Pipe else stderr
 
-                val config = Config(stdin, stdout, stderr)
-
-                if (isOutput) {
-                    if (stdin !is File) return config
-                    if (stdin.file == STDIO_NULL) return config
-                    if (!stdin.file.exists()) {
-                        throw FileNotFoundException("stdin: ${stdin.file}")
-                    }
-                    return config
-                }
-
-                listOf(stdout, stderr).forEach { stdio ->
+                listOf(
+                    Pair(true, stdin),
+                    Pair(false, stdout),
+                    Pair(false, stderr),
+                ).forEach { (isStdin, stdio) ->
                     if (stdio !is File) return@forEach
                     if (stdio.file == STDIO_NULL) return@forEach
 
-                    val parent = stdio.file
-                        .parentFile
-                        ?: return@forEach
+                    if (isStdin) {
+                        if (!stdio.file.exists()) {
+                            throw FileNotFoundException("stdin: ${stdio.file}")
+                        }
+                    } else {
+                        // stdout/stderr
+                        val parent = stdio.file
+                            .parentFile
+                            ?: return@forEach
 
-                    if (!parent.exists() && !parent.mkdirs()) {
-                        throw IOException("Failed to mkdirs for $stdio")
+                        if (!parent.exists() && !parent.mkdirs()) {
+                            throw IOException("Failed to mkdirs for $stdio")
+                        }
                     }
                 }
 
-                return config
+                return Config(stdin, stdout, stderr)
             }
 
             internal companion object {

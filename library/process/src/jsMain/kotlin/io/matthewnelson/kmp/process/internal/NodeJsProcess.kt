@@ -30,6 +30,8 @@ internal class NodeJsProcess internal constructor(
 ): Process(command, args, env, stdio, destroy) {
 
     override fun destroy(): Process {
+        isDestroyed = true
+
         if (!jsProcess.killed && isAlive) {
             // TODO: check result. check error
             jsProcess.kill(destroySignal.name)
@@ -68,6 +70,14 @@ internal class NodeJsProcess internal constructor(
     override fun waitFor(): Int = throw UnsupportedOperationException(WAIT_FOR_ERR)
     // @Throws(UnsupportedOperationException::class)
     override fun waitFor(duration: Duration): Int = throw UnsupportedOperationException(WAIT_FOR_ERR)
+
+    override fun startStdout() {
+        // TODO
+    }
+
+    override fun startStderr() {
+        // TODO
+    }
 
     private companion object {
 
