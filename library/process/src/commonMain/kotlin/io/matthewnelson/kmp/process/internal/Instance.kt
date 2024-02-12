@@ -22,12 +22,12 @@ internal class Instance<T: Any?> internal constructor(create: () -> T) {
 
     internal fun getOrCreate(): T = instance.withLock {
         if (isEmpty()) {
-            create?.let { function ->
-                function().also { element ->
-                    create = null
-                    add(element)
-                }
-            } ?: throw IllegalStateException()
+            val create = create ?: throw IllegalStateException()
+
+            create().also { element ->
+                this@Instance.create = null
+                add(element)
+            }
         } else {
             first()
         }

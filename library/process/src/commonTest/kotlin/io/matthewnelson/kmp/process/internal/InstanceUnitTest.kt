@@ -16,6 +16,7 @@
 package io.matthewnelson.kmp.process.internal
 
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
@@ -28,5 +29,20 @@ class InstanceUnitTest {
         assertNull(i.getOrNull())
         assertNotNull(i.getOrCreate())
         assertNotNull(i.getOrNull())
+    }
+
+    @Test
+    fun givenNullInstance_whenGetOrCreate_thenReturnsNull() {
+        var invocations = 0
+        val i = Instance<Any?> { invocations++; null }
+        i.getOrNull()
+        assertEquals(0, invocations)
+
+        i.getOrCreate()
+        assertEquals(1, invocations)
+        i.getOrCreate()
+        assertEquals(1, invocations)
+        i.getOrNull()
+        assertEquals(1, invocations)
     }
 }
