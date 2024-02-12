@@ -55,6 +55,20 @@ kmpConfiguration {
                     findByName("jvmTest")?.apply { dependsOn(nonJsTest) }
                     findByName("nativeTest")?.apply { dependsOn(nonJsTest) }
                 }
+
+                val linuxMain = findByName("linuxMain")
+                val macosMain = findByName("macosMain")
+                if (linuxMain != null || macosMain != null) {
+                    val forkExecMain = maybeCreate("forkExecMain")
+                    forkExecMain.dependsOn(getByName("nativeMain"))
+                    linuxMain?.apply { dependsOn(forkExecMain) }
+                    macosMain?.apply { dependsOn(forkExecMain) }
+
+                    val forkExecTest = maybeCreate("forkExecTest")
+                    forkExecTest.dependsOn(getByName("nativeTest"))
+                    findByName("linuxTest")?.apply { dependsOn(forkExecTest) }
+                    findByName("macosTest")?.apply { dependsOn(forkExecTest) }
+                }
             }
             targets.filterIsInstance<KotlinNativeTarget>().spawnCInterop()
         }

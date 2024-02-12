@@ -21,7 +21,10 @@ import io.matthewnelson.kmp.file.DelicateFileApi
 import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.file.InterruptedException
 import io.matthewnelson.kmp.file.errnoToIOException
+import io.matthewnelson.kmp.process.Signal
+import io.matthewnelson.kmp.process.Stdio
 import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.MemScope
 import platform.posix.errno
 import platform.posix.usleep
 import kotlin.contracts.ExperimentalContracts
@@ -29,8 +32,25 @@ import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
 import kotlin.time.Duration
 
-@Suppress("NOTHING_TO_INLINE")
-internal expect inline fun PlatformBuilder.parentEnvironment(): MutableMap<String, String>
+@OptIn(ExperimentalForeignApi::class)
+@Throws(IOException::class, UnsupportedOperationException::class)
+internal expect fun MemScope.posixSpawn(
+    command: String,
+    args: List<String>,
+    env: Map<String, String>,
+    stdio: Stdio.Config,
+    destroy: Signal,
+): NativeProcess
+
+@OptIn(ExperimentalForeignApi::class)
+@Throws(IOException::class, UnsupportedOperationException::class)
+internal expect fun MemScope.forkExec(
+    command: String,
+    args: List<String>,
+    env: Map<String, String>,
+    stdio: Stdio.Config,
+    destroy: Signal,
+): NativeProcess
 
 @Suppress("NOTHING_TO_INLINE")
 @Throws(InterruptedException::class)
