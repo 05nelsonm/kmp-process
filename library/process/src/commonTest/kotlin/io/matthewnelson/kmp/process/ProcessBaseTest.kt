@@ -301,7 +301,7 @@ abstract class ProcessBaseTest {
                 println(stdout.toString())
                 println(stderr.toString())
 
-                p2.waitForAsync(::delay)
+                withContext(Dispatchers.Default) { delay(250.milliseconds) }
 
                 assertEquals(0, p2.stdoutFeedsSize())
                 assertEquals(0, p2.stderrFeedsSize())

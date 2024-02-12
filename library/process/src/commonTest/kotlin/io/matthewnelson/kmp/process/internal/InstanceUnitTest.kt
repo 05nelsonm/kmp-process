@@ -15,23 +15,18 @@
  **/
 package io.matthewnelson.kmp.process.internal
 
-internal class Instance<T: Any?> internal constructor(create: () -> T) {
+import kotlin.test.Test
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 
-    private var create: (() -> T)? = create
-    private val instance = SynchronizedSet<T>()
+class InstanceUnitTest {
 
-    internal fun getOrCreate(): T = instance.withLock {
-        if (isEmpty()) {
-            create?.let { function ->
-                function().also { element ->
-                    create = null
-                    add(element)
-                }
-            } ?: throw IllegalStateException()
-        } else {
-            first()
-        }
+    @Test
+    fun givenNullableType_whenGetOrCreate_thenReturnsAsExpected() {
+        val i = Instance<Any?> { Any() }
+
+        assertNull(i.getOrNull())
+        assertNotNull(i.getOrCreate())
+        assertNotNull(i.getOrNull())
     }
-
-    internal fun getOrNull(): T? = instance.withLock { firstOrNull() }
 }
