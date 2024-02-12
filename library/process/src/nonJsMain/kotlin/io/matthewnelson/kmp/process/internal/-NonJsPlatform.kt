@@ -40,8 +40,8 @@ internal fun PlatformBuilder.blockingOutput(
 
     val p = spawn(command, args, env, stdio, destroy)
 
-    val stdoutBuffer = OutputFeedBuffer(options)
-    val stderrBuffer = OutputFeedBuffer(options)
+    val stdoutBuffer = OutputFeedBuffer.of(options)
+    val stderrBuffer = OutputFeedBuffer.of(options)
 
     var waitForCode: Int? = null
 

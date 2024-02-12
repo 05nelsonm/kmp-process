@@ -19,14 +19,9 @@ import io.matthewnelson.kmp.process.Output
 import io.matthewnelson.kmp.process.OutputFeed
 import kotlin.concurrent.Volatile
 import kotlin.jvm.JvmName
+import kotlin.jvm.JvmSynthetic
 
-internal class OutputFeedBuffer(
-    maxSize: Int,
-): OutputFeed {
-
-    internal constructor(
-        options: Output.Options
-    ): this(options.maxBuffer)
+internal class OutputFeedBuffer private constructor(maxSize: Int): OutputFeed {
 
     private val maxSize = maxSize.takeIf { it > 1 } ?: 1
     private val lines = mutableListOf<String>()
@@ -79,5 +74,14 @@ internal class OutputFeedBuffer(
         size = 0
         maxSizeExceeded = false
         return s
+    }
+
+    internal companion object {
+
+        @JvmSynthetic
+        internal fun of(maxSize: Int) = OutputFeedBuffer(maxSize)
+
+        @JvmSynthetic
+        internal fun of(options: Output.Options) = OutputFeedBuffer(options.maxBuffer)
     }
 }

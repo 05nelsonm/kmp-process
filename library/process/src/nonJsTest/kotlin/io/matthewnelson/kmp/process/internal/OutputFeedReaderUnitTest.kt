@@ -25,7 +25,7 @@ class OutputFeedReaderUnitTest {
     @Test
     fun givenReader_whenMaxSizeSet_thenReturnsExpected() {
         val expectedSize = 20
-        val r = OutputFeedBuffer(expectedSize)
+        val r = OutputFeedBuffer.of(expectedSize)
         r.onOutput("          ")
         r.onOutput("       ")
         assertFalse(r.maxSizeExceeded)
