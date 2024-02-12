@@ -29,6 +29,7 @@ import kotlin.time.Duration
  * A Process.
  *
  * @see [Builder]
+ * @see [OutputFeed.Handler]
  * */
 public abstract class Process internal constructor(
     @JvmField
@@ -41,7 +42,7 @@ public abstract class Process internal constructor(
     public val stdio: Stdio.Config,
     @JvmField
     public val destroySignal: Signal,
-)/*: AutoCloseable */ {
+): OutputFeed.Handler(stdio) {
 
     /**
      * Destroys the [Process] by:

@@ -13,23 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
+@file:Suppress("ClassName")
+@file:JsModule("stream")
+@file:JsNonModule
+
 package io.matthewnelson.kmp.process.internal
 
-import io.matthewnelson.kmp.file.File
-import io.matthewnelson.kmp.file.InterruptedException
-import io.matthewnelson.kmp.file.SysPathSep
-import io.matthewnelson.kmp.file.toFile
-import kotlin.time.Duration
+/** [docs](https://nodejs.org/api/stream.html#class-streamreadable) */
+@JsName("Readable")
+internal open external class stream_Readable {
 
-internal actual val STDIO_NULL: File = (System.getProperty("os.name")
-    ?.ifBlank { null }
-    ?.contains("windows", ignoreCase = true)
-    ?: (SysPathSep == '\\'))
-    .let { isWindows -> if (isWindows) "NUL" else "/dev/null" }
-    .toFile()
-
-@Suppress("NOTHING_TO_INLINE")
-@Throws(InterruptedException::class)
-internal actual inline fun Duration.threadSleep() {
-    Thread.sleep(inWholeMilliseconds)
+    internal fun <R> on(
+        eventName: String,
+        listener: Function<R>,
+    ): stream_Readable
 }
+
+///** [docs](https://nodejs.org/api/stream.html#class-streamwritable) */
+//@JsName("Writable")
+//internal open external class stream_Writable {
+//
+//    internal fun <R> on(
+//        eventName: String,
+//        listener: Function<R>,
+//    ): stream_Readable
+//}

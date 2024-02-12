@@ -40,6 +40,22 @@ kmpConfiguration {
         }
 
         kotlin {
+            with(sourceSets) {
+                val jvmMain = findByName("jvmMain")
+                val nativeMain = findByName("nativeMain")
+
+                if (nativeMain != null || jvmMain != null) {
+                    val nonJsMain = maybeCreate("nonJsMain")
+                    nonJsMain.dependsOn(getByName("commonMain"))
+                    jvmMain?.apply { dependsOn(nonJsMain) }
+                    nativeMain?.apply { dependsOn(nonJsMain) }
+
+                    val nonJsTest = maybeCreate("nonJsTest")
+                    nonJsTest.dependsOn(getByName("commonTest"))
+                    findByName("jvmTest")?.apply { dependsOn(nonJsTest) }
+                    findByName("nativeTest")?.apply { dependsOn(nonJsTest) }
+                }
+            }
             targets.filterIsInstance<KotlinNativeTarget>().spawnCInterop()
         }
     }

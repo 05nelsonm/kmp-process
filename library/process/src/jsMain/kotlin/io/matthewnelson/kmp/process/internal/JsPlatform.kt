@@ -15,9 +15,7 @@
  **/
 package io.matthewnelson.kmp.process.internal
 
-import io.matthewnelson.kmp.file.File
-import io.matthewnelson.kmp.file.SysPathSep
-import io.matthewnelson.kmp.file.toFile
+import io.matthewnelson.kmp.file.*
 
 internal actual val STDIO_NULL: File by lazy {
     val isWindows = try {
@@ -27,4 +25,39 @@ internal actual val STDIO_NULL: File by lazy {
     }
 
     (if (isWindows) "NUL" else "/dev/null").toFile()
+}
+
+internal fun stream_Readable.onClose(
+    block: () -> Unit,
+): stream_Readable {
+    on("close", block)
+    return this
+}
+
+internal fun stream_Readable.onData(
+    block: (data: String) -> Unit,
+): stream_Readable {
+    val cb: (chunk: dynamic) -> Unit = { chunk ->
+        // can be either a String or a Buffer (fucking stupid...)
+
+        val result = try {
+            // TODO: might be HUGE, need to parse the chunk
+            @OptIn(DelicateFileApi::class)
+            Buffer.wrap(chunk).toUtf8()
+        } catch (_: IOException) {
+            try {
+                chunk as String
+            } catch (_: ClassCastException) {
+                // Could have been an empty buffer and wrap threw exception.
+                // See https://github.com/05nelsonm/kmp-file/issues/41
+                ""
+            }
+        }
+
+        block(result)
+    }
+
+    on("data", cb)
+
+    return this
 }

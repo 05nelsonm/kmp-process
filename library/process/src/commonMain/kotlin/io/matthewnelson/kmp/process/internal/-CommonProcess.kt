@@ -18,6 +18,7 @@
 package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.process.Process
+import io.matthewnelson.kmp.process.Stdio
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract

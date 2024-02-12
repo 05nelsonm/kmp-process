@@ -31,7 +31,26 @@ public final class io/matthewnelson/kmp/process/Output$ProcessInfo {
 	public fun toString ()Ljava/lang/String;
 }
 
-public abstract class io/matthewnelson/kmp/process/Process {
+public abstract interface class io/matthewnelson/kmp/process/OutputFeed {
+	public abstract fun onOutput (Ljava/lang/String;)V
+}
+
+public abstract class io/matthewnelson/kmp/process/OutputFeed$Handler {
+	protected field isDestroyed Z
+	public synthetic fun <init> (Lio/matthewnelson/kmp/process/Stdio$Config;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	protected final fun dispatchStderr (Ljava/lang/String;)V
+	protected final fun dispatchStdout (Ljava/lang/String;)V
+	protected final fun onStderrStopped ()V
+	protected final fun onStdoutStopped ()V
+	protected abstract fun startStderr ()V
+	protected abstract fun startStdout ()V
+	public final fun stderrFeed (Lio/matthewnelson/kmp/process/OutputFeed;)Lio/matthewnelson/kmp/process/Process;
+	public final fun stderrFeed ([Lio/matthewnelson/kmp/process/OutputFeed;)Lio/matthewnelson/kmp/process/Process;
+	public final fun stdoutFeed (Lio/matthewnelson/kmp/process/OutputFeed;)Lio/matthewnelson/kmp/process/Process;
+	public final fun stdoutFeed ([Lio/matthewnelson/kmp/process/OutputFeed;)Lio/matthewnelson/kmp/process/Process;
+}
+
+public abstract class io/matthewnelson/kmp/process/Process : io/matthewnelson/kmp/process/OutputFeed$Handler {
 	public final field args Ljava/util/List;
 	public final field command Ljava/lang/String;
 	public final field destroySignal Lio/matthewnelson/kmp/process/Signal;

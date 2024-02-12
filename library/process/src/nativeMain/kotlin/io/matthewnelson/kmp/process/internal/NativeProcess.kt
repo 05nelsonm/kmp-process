@@ -15,7 +15,6 @@
  **/
 package io.matthewnelson.kmp.process.internal
 
-import io.matthewnelson.kmp.file.InterruptedException
 import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.Signal
@@ -46,6 +45,8 @@ internal constructor(
     private val _exitCode = AtomicReference<Int?>(null)
 
     override fun destroy(): Process {
+        isDestroyed = true
+
         if (isAlive) {
             val s = when (destroySignal) {
                 Signal.SIGTERM -> SIGTERM
@@ -98,12 +99,14 @@ internal constructor(
     }
 
     override fun waitFor(duration: Duration): Int? {
-        return commonWaitFor(duration) {
-            if (usleep(it.inWholeMicroseconds.toUInt()) == -1) {
-                // EINVAL will never happen b/c duration is
-                // max 100 millis. Must be EINTR
-                throw InterruptedException()
-            }
-        }
+        return commonWaitFor(duration) { it.threadSleep() }
+    }
+
+    override fun startStdout() {
+        // TODO
+    }
+
+    override fun startStderr() {
+        // TODO
     }
 }

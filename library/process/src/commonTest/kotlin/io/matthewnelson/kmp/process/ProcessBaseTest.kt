@@ -234,6 +234,12 @@ abstract class ProcessBaseTest {
 
         println(p)
 
+        // Should not attach b/c using Stdio.Inherit
+        p.stdoutFeed {}
+        p.stderrFeed {}
+        assertEquals(0, p.stdoutFeedsSize())
+        assertEquals(0, p.stderrFeedsSize())
+
         withContext(Dispatchers.Default) {
             p.waitForAsync(5.seconds, ::delay)
         }
@@ -260,10 +266,51 @@ abstract class ProcessBaseTest {
             }
 
             assertEquals(expected, out.processInfo.exitCode)
-            assertTrue(out.stdout.contains(" [notice] Tor "))
+            assertTrue(out.stdout.lines().first().contains(" [notice] Tor "))
             assertTrue(out.stderr.isEmpty())
 
             println(out)
+
+            b.stdout(Stdio.Pipe).stderr(Stdio.Pipe).spawn().let { p2 ->
+                destroyOnCompletion(p2)
+
+                val stdout = StringBuilder()
+                val stderr = StringBuilder()
+
+                p2.stdoutFeed { line ->
+                    with(stdout) {
+                        if (isNotEmpty()) appendLine()
+                        append(line)
+                    }
+                }.stderrFeed { line ->
+                    with(stderr) {
+                        if (isNotEmpty()) appendLine()
+                        append(line)
+                    }
+                }
+
+                assertEquals(1, p2.stdoutFeedsSize())
+                assertEquals(1, p2.stderrFeedsSize())
+
+                withContext(Dispatchers.Default) {
+                    p2.waitForAsync(2.seconds, ::delay)
+                }
+
+                p2.destroy()
+
+                val stdoutString = stdout.toString()
+                val stderrString = stderr.toString()
+                println(stdoutString)
+                println(stderrString)
+
+                withContext(Dispatchers.Default) { delay(250.milliseconds) }
+
+                assertEquals(0, p2.stdoutFeedsSize())
+                assertEquals(0, p2.stderrFeedsSize())
+                assertEquals(expected, p2.exitCode())
+                assertTrue(stdoutString.lines().first().contains(" [notice] Tor "))
+                assertTrue(stderrString.isEmpty())
+            }
         }
     }
 

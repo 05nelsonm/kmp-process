@@ -15,21 +15,23 @@
  **/
 package io.matthewnelson.kmp.process.internal
 
-import io.matthewnelson.kmp.file.File
-import io.matthewnelson.kmp.file.InterruptedException
-import io.matthewnelson.kmp.file.SysPathSep
-import io.matthewnelson.kmp.file.toFile
-import kotlin.time.Duration
+internal class Instance<T: Any?> internal constructor(create: () -> T) {
 
-internal actual val STDIO_NULL: File = (System.getProperty("os.name")
-    ?.ifBlank { null }
-    ?.contains("windows", ignoreCase = true)
-    ?: (SysPathSep == '\\'))
-    .let { isWindows -> if (isWindows) "NUL" else "/dev/null" }
-    .toFile()
+    private var create: (() -> T)? = create
+    private val instance = SynchronizedSet<T>()
 
-@Suppress("NOTHING_TO_INLINE")
-@Throws(InterruptedException::class)
-internal actual inline fun Duration.threadSleep() {
-    Thread.sleep(inWholeMilliseconds)
+    internal fun getOrCreate(): T = instance.withLock {
+        if (isEmpty()) {
+            val create = create ?: throw IllegalStateException()
+
+            create().also { element ->
+                this@Instance.create = null
+                add(element)
+            }
+        } else {
+            first()
+        }
+    }
+
+    internal fun getOrNull(): T? = instance.withLock { firstOrNull() }
 }

@@ -59,17 +59,13 @@ public class Output private constructor(
      * @see [Builder]
      * */
     public class Options private constructor(
-//        internal val input: String?,
         internal val maxBuffer: Int,
         internal val timeout: Duration,
     ) {
 
         public class Builder private constructor() {
 
-            // TODO: Need to think on this. May want to use
-            //  a Buffer or some dedicated input class.
-            //@JvmField
-//            private var input: String? = null
+            // TODO: input
 
             /**
              * Maximum number of bytes that can be buffered
@@ -111,7 +107,7 @@ public class Output private constructor(
                         (if (millis < MIN_TIMEOUT) MIN_TIMEOUT else millis)
                     }
 
-                    return Options(/*b.input, */maxBuffer, timeout.milliseconds)
+                    return Options(maxBuffer, timeout.milliseconds)
                 }
             }
         }

@@ -18,7 +18,6 @@
 package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.IOException
-import io.matthewnelson.kmp.file.InterruptedException
 import io.matthewnelson.kmp.process.Output
 import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.Signal
@@ -40,76 +39,7 @@ internal actual class PlatformBuilder internal actual constructor() {
         stdio: Stdio.Config,
         options: Output.Options,
         destroy: Signal,
-    ): Output {
-
-        val (jProcess, process) = spawnJvm(command, args, env, stdio, destroy)
-
-        val result: Output = try {
-            StdioOutputEater.of(
-                maxBuffer = options.maxBuffer,
-                stdout = jProcess.inputStream,
-                stderr = jProcess.errorStream,
-            ).use { eater ->
-
-                var waitForCode: Int? = null
-                try {
-                    waitForCode = process.commonWaitFor(options.timeout) {
-                        if (eater.maxBufferExceeded) {
-                            throw IllegalStateException()
-                        }
-
-                        Thread.sleep(it.inWholeMilliseconds)
-                    }
-                } catch (e: InterruptedException) {
-                    throw IOException("Underlying thread interrupted", e)
-                } catch (e: IllegalStateException) {
-                    // maxBuffer was exceeded and it hopped out of waitFor
-                } finally {
-                    // whether timed out or not, always destroy
-                    // so that streams are closed
-                    process.destroy()
-                }
-
-                val pErr = StringBuilder()
-                if (waitForCode == null) {
-                    pErr.append("waitFor timed out")
-                }
-
-                val exitCode = waitForCode ?: try {
-                    // await for final closure if not ready yet
-                    process.waitFor()
-                } catch (e: InterruptedException) {
-                    throw IOException("Underlying thread interrupted", e)
-                }
-
-                val (stdout, stderr) = eater.doFinal()
-
-                if (eater.maxBufferExceeded) {
-                    if (pErr.isNotEmpty()) {
-                        pErr.append(". ")
-                    }
-                    pErr.append("maxBuffer[${options.maxBuffer}] exceeded")
-                }
-
-                Output.ProcessInfo.createOutput(
-                    stdout,
-                    stderr,
-                    if (pErr.isEmpty()) null else pErr.toString(),
-                    process.pid(),
-                    exitCode,
-                    process.command,
-                    process.args,
-                    process.environment,
-                    process.stdio,
-                    process.destroySignal
-                )
-            }
-        } finally {
-            process.destroy()
-        }
-
-        return result
-    }
+    ): Output = blockingOutput(command, args, env, stdio, options, destroy)
 
     @Throws(IOException::class)
     internal actual fun spawn(
@@ -118,16 +48,7 @@ internal actual class PlatformBuilder internal actual constructor() {
         env: Map<String, String>,
         stdio: Stdio.Config,
         destroy: Signal,
-    ): Process = spawnJvm(command, args, env, stdio, destroy).second
-
-    @Throws(IOException::class)
-    private fun spawnJvm(
-        command: String,
-        args: List<String>,
-        env: Map<String, String>,
-        stdio: Stdio.Config,
-        destroy: Signal,
-    ): Pair<java.lang.Process, JvmProcess> {
+    ): Process {
 
         val jCommands = ArrayList<String>(args.size + 1)
         jCommands.add(command)
@@ -139,8 +60,6 @@ internal actual class PlatformBuilder internal actual constructor() {
         jProcessBuilder.redirectOutput(stdio.stdout.toRedirect(isStdin = false))
         jProcessBuilder.redirectError(stdio.stderr.toRedirect(isStdin = false))
 
-        val jProcess = jProcessBuilder.start()
-
         val destroySignal = when {
             destroy == Signal.SIGTERM -> destroy
             else -> ANDROID_SDK_INT?.let { sdkInt ->
@@ -150,7 +69,9 @@ internal actual class PlatformBuilder internal actual constructor() {
             } ?: destroy
         }
 
-        return jProcess to JvmProcess.of(
+        val jProcess = jProcessBuilder.start()
+
+        return JvmProcess.of(
             jProcess,
             command,
             args,

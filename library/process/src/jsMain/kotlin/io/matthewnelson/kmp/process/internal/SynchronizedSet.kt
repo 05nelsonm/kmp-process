@@ -13,23 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
+@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
+
 package io.matthewnelson.kmp.process.internal
 
-import io.matthewnelson.kmp.file.File
-import io.matthewnelson.kmp.file.InterruptedException
-import io.matthewnelson.kmp.file.SysPathSep
-import io.matthewnelson.kmp.file.toFile
-import kotlin.time.Duration
+internal actual class SynchronizedSet<E: Any?> internal actual constructor() {
 
-internal actual val STDIO_NULL: File = (System.getProperty("os.name")
-    ?.ifBlank { null }
-    ?.contains("windows", ignoreCase = true)
-    ?: (SysPathSep == '\\'))
-    .let { isWindows -> if (isWindows) "NUL" else "/dev/null" }
-    .toFile()
+    private val set = LinkedHashSet<E>(1, 1.0F)
 
-@Suppress("NOTHING_TO_INLINE")
-@Throws(InterruptedException::class)
-internal actual inline fun Duration.threadSleep() {
-    Thread.sleep(inWholeMilliseconds)
+    internal actual fun <T: Any?> withLock(
+        block: MutableSet<E>.() -> T
+    ): T = block(set)
 }
