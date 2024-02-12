@@ -270,6 +270,42 @@ abstract class ProcessBaseTest {
             assertTrue(out.stderr.isEmpty())
 
             println(out)
+
+            b.stdout(Stdio.Pipe).stderr(Stdio.Pipe).spawn().let { p2 ->
+                destroyOnCompletion(p2)
+
+                val stdout = StringBuilder()
+                val stderr = StringBuilder()
+
+                p2.stdoutFeed { line ->
+                    with(stdout) {
+                        if (isNotEmpty()) appendLine()
+                        append(line)
+                    }
+                }.stderrFeed { line ->
+                    with(stderr) {
+                        if (isNotEmpty()) appendLine()
+                        append(line)
+                    }
+                }
+
+                assertEquals(1, p2.stdoutFeedsSize())
+                assertEquals(1, p2.stderrFeedsSize())
+
+                withContext(Dispatchers.Default) {
+                    p2.waitForAsync(2.seconds, ::delay)
+                }
+
+                p2.destroy()
+
+                println(stdout.toString())
+                println(stderr.toString())
+
+                p2.waitForAsync(::delay)
+
+                assertEquals(0, p2.stdoutFeedsSize())
+                assertEquals(0, p2.stderrFeedsSize())
+            }
         }
     }
 
