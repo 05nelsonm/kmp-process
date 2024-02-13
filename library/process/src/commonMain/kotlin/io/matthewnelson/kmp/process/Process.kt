@@ -214,7 +214,7 @@ public abstract class Process internal constructor(
          * */
         public constructor(executable: File): this(executable.absoluteFile.normalize().path)
 
-        private val platform = PlatformBuilder()
+        private val platform = PlatformBuilder.get()
         private val args = mutableListOf<String>()
         private val stdio = Stdio.Config.Builder.get()
         private var destroy: Signal = Signal.SIGTERM

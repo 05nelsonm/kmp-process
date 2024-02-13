@@ -23,7 +23,8 @@ import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.Stdio
 
-internal actual class PlatformBuilder actual constructor() {
+// jsMain
+internal actual class PlatformBuilder private actual constructor() {
 
     internal actual val env: MutableMap<String, String> by lazy {
         try {
@@ -160,7 +161,9 @@ internal actual class PlatformBuilder actual constructor() {
         )
     }
 
-    private companion object {
+    internal actual companion object {
+
+        internal actual fun get(): PlatformBuilder = PlatformBuilder()
 
         private fun Map<String, String>.toJsEnv(): dynamic {
             val jsEnv = js("{}")

@@ -23,7 +23,7 @@ import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.Stdio
 
-internal expect class PlatformBuilder internal constructor() {
+internal expect class PlatformBuilder private constructor() {
 
     internal val env: MutableMap<String, String>
 
@@ -45,4 +45,8 @@ internal expect class PlatformBuilder internal constructor() {
         stdio: Stdio.Config,
         destroy: Signal,
     ): Process
+
+    internal companion object {
+        internal fun get(): PlatformBuilder
+    }
 }

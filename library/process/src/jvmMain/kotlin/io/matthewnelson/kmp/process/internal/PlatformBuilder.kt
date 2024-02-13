@@ -24,7 +24,7 @@ import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.Stdio
 
 // jvmMain
-internal actual class PlatformBuilder internal actual constructor() {
+internal actual class PlatformBuilder private actual constructor() {
 
     private val jProcessBuilder = ProcessBuilder(emptyList())
     internal actual val env: MutableMap<String, String> by lazy {
@@ -56,6 +56,12 @@ internal actual class PlatformBuilder internal actual constructor() {
 
         jProcessBuilder.command(jCommands)
 
+        // NOTE: do not modify jProcessBuilder environment.
+        //  The env value passed here is what is currently set
+        //  for jProcessBuilder (which is Mutable). The immutable
+        //  env value passed here is simply what gets used for
+        //  Process.environment.
+
         jProcessBuilder.redirectInput(stdio.stdin.toRedirect(isStdin = true))
         jProcessBuilder.redirectOutput(stdio.stdout.toRedirect(isStdin = false))
         jProcessBuilder.redirectError(stdio.stderr.toRedirect(isStdin = false))
@@ -81,7 +87,10 @@ internal actual class PlatformBuilder internal actual constructor() {
         )
     }
 
-    private companion object {
+    internal actual companion object {
+
+        @JvmSynthetic
+        internal actual fun get(): PlatformBuilder = PlatformBuilder()
 
         private fun Stdio.toRedirect(
             isStdin: Boolean,
