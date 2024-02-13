@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
+@file:Suppress("KotlinRedundantDiagnosticSuppress")
+
 package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.*
@@ -27,15 +29,17 @@ internal actual val STDIO_NULL: File by lazy {
     (if (isWindows) "NUL" else "/dev/null").toFile()
 }
 
-internal fun stream_Readable.onClose(
-    block: () -> Unit,
+@Suppress("NOTHING_TO_INLINE")
+internal inline fun stream_Readable.onClose(
+    noinline block: () -> Unit,
 ): stream_Readable {
     on("close", block)
     return this
 }
 
-internal fun stream_Readable.onData(
-    block: (data: String) -> Unit,
+@Suppress("NOTHING_TO_INLINE")
+internal inline fun stream_Readable.onData(
+    noinline block: (data: String) -> Unit,
 ): stream_Readable {
     val cb: (chunk: dynamic) -> Unit = { chunk ->
         // can be either a String or a Buffer (fucking stupid...)
@@ -50,11 +54,11 @@ internal fun stream_Readable.onData(
             } catch (_: ClassCastException) {
                 // Could have been an empty buffer and wrap threw exception.
                 // See https://github.com/05nelsonm/kmp-file/issues/41
-                ""
+                null
             }
         }
 
-        block(result)
+        if (!result.isNullOrEmpty()) block(result)
     }
 
     on("data", cb)
