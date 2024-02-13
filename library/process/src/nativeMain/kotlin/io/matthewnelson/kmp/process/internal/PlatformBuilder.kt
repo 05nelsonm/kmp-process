@@ -30,7 +30,7 @@ import kotlinx.cinterop.memScoped
 internal expect inline fun PlatformBuilder.parentEnvironment(): MutableMap<String, String>
 
 // nativeMain
-internal actual class PlatformBuilder actual constructor() {
+internal actual class PlatformBuilder private actual constructor() {
 
     internal actual val env: MutableMap<String, String> by lazy {
         parentEnvironment()
@@ -68,10 +68,14 @@ internal actual class PlatformBuilder actual constructor() {
             val p: NativeProcess = memScoped {
                 forkExec(command, args, env, stdio, destroy)
             }
-
             return p
         } catch (e: UnsupportedOperationException) {
-            throw e.wrapIOException { "Neither posix_spawn or fork/exec were supported" }
+            // should never be the case, but have to handle.
+            throw e.wrapIOException { "Neither posix_spawn or fork/exec are supported" }
         }
+    }
+
+    internal actual companion object {
+        internal actual fun get(): PlatformBuilder = PlatformBuilder()
     }
 }
