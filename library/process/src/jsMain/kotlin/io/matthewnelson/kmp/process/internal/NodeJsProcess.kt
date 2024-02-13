@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
+@file:Suppress("KotlinRedundantDiagnosticSuppress")
+
 package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.process.Process
@@ -75,10 +77,7 @@ internal class NodeJsProcess internal constructor(
         jsProcess.stdout
             ?.onClose(::onStdoutStopped)
             ?.onData { data ->
-                data.lines().forEach { line ->
-                    if (line.isBlank()) return@forEach
-                    dispatchStdout(line)
-                }
+                data.dispatchLinesTo(::dispatchStdout)
             }
     }
 
@@ -86,11 +85,25 @@ internal class NodeJsProcess internal constructor(
         jsProcess.stderr
             ?.onClose(::onStderrStopped)
             ?.onData { data ->
-                data.lines().forEach { line ->
-                    if (line.isBlank()) return@forEach
-                    dispatchStderr(line)
-                }
+                data.dispatchLinesTo(::dispatchStderr)
             }
+    }
+
+    @Suppress("NOTHING_TO_INLINE")
+    private inline fun String.dispatchLinesTo(
+        dispatch: (line: String) -> Unit,
+    ) {
+        val lines = lines()
+        val iLast = lines.lastIndex
+        for (i in lines.indices) {
+            val line = lines[i]
+            if (i == iLast && line.isEmpty()) {
+                // If data ended with a return, skip it
+                continue
+            } else {
+                dispatch(line)
+            }
+        }
     }
 
     private companion object {
