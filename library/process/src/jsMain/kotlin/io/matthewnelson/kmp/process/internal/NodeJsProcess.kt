@@ -98,7 +98,7 @@ internal class NodeJsProcess internal constructor(
         for (i in lines.indices) {
             val line = lines[i]
             if (i == iLast && line.isEmpty()) {
-                // If line ended with a return, skip it
+                // If data ended with a return, skip it
                 continue
             } else {
                 dispatch(line)
