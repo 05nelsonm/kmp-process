@@ -18,6 +18,7 @@ package io.matthewnelson.kmp.process
 import io.matthewnelson.immutable.collections.toImmutableList
 import io.matthewnelson.immutable.collections.toImmutableMap
 import io.matthewnelson.kmp.file.*
+import io.matthewnelson.kmp.process.internal.SyntheticAccess
 import io.matthewnelson.kmp.process.internal.PlatformBuilder
 import io.matthewnelson.kmp.process.internal.appendProcessInfo
 import io.matthewnelson.kmp.process.internal.commonWaitFor
@@ -42,6 +43,8 @@ public abstract class Process internal constructor(
     public val stdio: Stdio.Config,
     @JvmField
     public val destroySignal: Signal,
+
+    init: SyntheticAccess
 ): OutputFeed.Handler(stdio) {
 
     /**
@@ -383,5 +386,9 @@ public abstract class Process internal constructor(
             stdio,
             destroySignal
         )
+    }
+
+    init {
+        check(init == SyntheticAccess.get()) { "Process cannot be extended. Use Process.Builder" }
     }
 }

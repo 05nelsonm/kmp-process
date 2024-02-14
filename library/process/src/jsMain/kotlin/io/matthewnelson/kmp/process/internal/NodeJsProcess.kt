@@ -29,7 +29,7 @@ internal class NodeJsProcess internal constructor(
     env: Map<String, String>,
     stdio: Stdio.Config,
     destroy: Signal,
-): Process(command, args, env, stdio, destroy) {
+): Process(command, args, env, stdio, destroy, SyntheticAccess.get()) {
 
     override fun destroy(): Process {
         isDestroyed = true

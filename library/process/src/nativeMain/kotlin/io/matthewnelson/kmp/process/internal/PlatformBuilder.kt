@@ -71,7 +71,7 @@ internal actual class PlatformBuilder private actual constructor() {
             return p
         } catch (e: UnsupportedOperationException) {
             // should never be the case, but have to handle.
-            throw e.wrapIOException { "Neither posix_spawn or fork/exec are supported" }
+            throw IOException("Neither posix_spawn or fork/exec are supported", e)
         }
     }
 

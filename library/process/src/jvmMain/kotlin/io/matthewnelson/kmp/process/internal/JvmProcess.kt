@@ -21,7 +21,6 @@ import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.Stdio
 import java.io.InputStream
 import java.util.Scanner
-import java.util.concurrent.Executors
 import kotlin.time.Duration
 
 internal class JvmProcess private constructor(
@@ -31,7 +30,7 @@ internal class JvmProcess private constructor(
     env: Map<String, String>,
     stdio: Stdio.Config,
     destroy: Signal,
-): Process(command, args, env, stdio, destroy) {
+): Process(command, args, env, stdio, destroy, SyntheticAccess.get()) {
 
     private val _pid: Int by lazy {
         // First try parsing toString output
@@ -59,16 +58,6 @@ internal class JvmProcess private constructor(
         -1
     }
 
-    private val executors = numStdioOutputThreads()?.let { numThreads ->
-        Instance(create = {
-            if (isDestroyed) return@Instance null
-
-            Executors.newFixedThreadPool(numThreads) { runnable ->
-                Thread(runnable).apply { isDaemon = true }
-            }
-        })
-    }
-
     override fun destroy(): Process {
         isDestroyed = true
 
@@ -76,8 +65,6 @@ internal class JvmProcess private constructor(
             Signal.SIGTERM -> jProcess.destroy()
             Signal.SIGKILL -> jProcess.destroyForcibly()
         }
-
-        executors?.getOrNull()?.shutdown()
 
         return this
     }
@@ -121,22 +108,29 @@ internal class JvmProcess private constructor(
     @Throws(InterruptedException::class)
     override fun waitFor(duration: Duration): Int? = commonWaitFor(duration) { it.threadSleep() }
 
-    protected override fun startStdout() {
-        val executors = executors?.getOrCreate() ?: return
-        executors.execute(Eater(
+    override fun startStdout() {
+        StreamEater(
             jProcess.inputStream,
             ::dispatchStdout,
-            ::onStdoutStopped
-        ))
+            ::onStdoutStopped,
+        ).start("stdout")
     }
 
-    protected override fun startStderr() {
-        val executors = executors?.getOrCreate() ?: return
-        executors.execute(Eater(
+    override fun startStderr() {
+        StreamEater(
             jProcess.errorStream,
             ::dispatchStderr,
-            ::onStderrStopped
-        ))
+            ::onStderrStopped,
+        ).start("stderr")
+    }
+
+    @Suppress("NOTHING_TO_INLINE")
+    private inline fun StreamEater.start(name: String) {
+        val t = Thread(this, "Process[pid=$_pid, stdio=$name]")
+        t.isDaemon = true
+        try {
+            t.start()
+        } catch (_: IllegalThreadStateException) {}
     }
 
     internal companion object {
@@ -159,20 +153,10 @@ internal class JvmProcess private constructor(
         )
     }
 
-    @Suppress("NOTHING_TO_INLINE")
-    private inline fun numStdioOutputThreads(): Int? {
-        var num = 0
-        if (stdio.stdout is Stdio.Pipe) num++
-        if (stdio.stderr is Stdio.Pipe) num++
-
-        if (num == 0) return null
-        return num
-    }
-
-    private inner class Eater(
+    private class StreamEater(
         stream: InputStream,
         private val dispatch: (line: String) -> Unit,
-        private val stopped: () -> Unit,
+        private val onStopped: () -> Unit,
     ): Runnable {
 
         private val scanner = Scanner(stream.bufferedReader())
@@ -182,7 +166,7 @@ internal class JvmProcess private constructor(
                 val line = scanner.nextLine()
                 dispatch(line)
             }
-            stopped()
+            onStopped()
         }
     }
 }

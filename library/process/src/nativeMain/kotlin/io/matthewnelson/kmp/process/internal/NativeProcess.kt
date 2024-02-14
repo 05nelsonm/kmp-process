@@ -33,7 +33,7 @@ internal constructor(
     env: Map<String, String>,
     stdio: Stdio.Config,
     destroy: Signal,
-): Process(command, args, env, stdio, destroy) {
+): Process(command, args, env, stdio, destroy, SyntheticAccess.get()) {
 
     init {
         if (pid <= 0) {
