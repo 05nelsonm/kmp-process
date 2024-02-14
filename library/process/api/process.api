@@ -51,6 +51,7 @@ public abstract class io/matthewnelson/kmp/process/OutputFeed$Handler {
 }
 
 public abstract class io/matthewnelson/kmp/process/Process : io/matthewnelson/kmp/process/OutputFeed$Handler {
+	protected static final field Companion Lio/matthewnelson/kmp/process/Process$Companion;
 	public final field args Ljava/util/List;
 	public final field command Ljava/lang/String;
 	public final field destroySignal Lio/matthewnelson/kmp/process/Signal;
@@ -83,6 +84,9 @@ public final class io/matthewnelson/kmp/process/Process$Builder {
 	public final fun stderr (Lio/matthewnelson/kmp/process/Stdio;)Lio/matthewnelson/kmp/process/Process$Builder;
 	public final fun stdin (Lio/matthewnelson/kmp/process/Stdio;)Lio/matthewnelson/kmp/process/Process$Builder;
 	public final fun stdout (Lio/matthewnelson/kmp/process/Stdio;)Lio/matthewnelson/kmp/process/Process$Builder;
+}
+
+protected final class io/matthewnelson/kmp/process/Process$Companion {
 }
 
 public final class io/matthewnelson/kmp/process/Signal : java/lang/Enum {

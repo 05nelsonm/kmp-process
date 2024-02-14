@@ -22,16 +22,12 @@ import kotlin.jvm.JvmSynthetic
 // internal constructor compiles to public.
 //
 // This is an "attempt" to inhibit Java only
-// consumers from being able to extend Process
-// as the only way to obtain is through
-// synthetic access via get().
+// consumers from being able to extend Process.
 internal class SyntheticAccess private constructor() {
 
     internal companion object {
 
-        private val instance = SyntheticAccess()
-
         @JvmSynthetic
-        internal fun get(): SyntheticAccess = instance
+        internal fun new(): SyntheticAccess = SyntheticAccess()
     }
 }

@@ -178,7 +178,7 @@ public fun interface OutputFeed {
             val start = withLock {
                 if (isDestroyed) return@withLock false
                 val wasEmpty = isEmpty()
-                addAll(feeds)
+                feeds.forEach { add(it) }
                 wasEmpty && isNotEmpty()
             }
 
