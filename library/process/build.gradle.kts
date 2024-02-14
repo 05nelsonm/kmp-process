@@ -43,7 +43,6 @@ kmpConfiguration {
             with(sourceSets) {
                 val jvmMain = findByName("jvmMain")
                 val nativeMain = findByName("nativeMain")
-
                 if (nativeMain != null || jvmMain != null) {
                     val nonJsMain = maybeCreate("nonJsMain")
                     nonJsMain.dependsOn(getByName("commonMain"))
@@ -58,6 +57,7 @@ kmpConfiguration {
 
                 val linuxMain = findByName("linuxMain")
                 val macosMain = findByName("macosMain")
+//                val androidNative = findByName("androidNativeMain")
                 if (linuxMain != null || macosMain != null) {
                     val forkExecMain = maybeCreate("forkExecMain")
                     forkExecMain.dependsOn(getByName("nativeMain"))
@@ -70,6 +70,7 @@ kmpConfiguration {
                     findByName("macosTest")?.apply { dependsOn(forkExecTest) }
                 }
             }
+
             targets.filterIsInstance<KotlinNativeTarget>().spawnCInterop()
         }
     }

@@ -39,7 +39,6 @@ internal actual fun MemScope.posixSpawn(
     destroy: Signal,
 ): NativeProcess {
     val fileActions = posixSpawnFileActionsInit()
-    val attrs = posixSpawnAttrInit()
 
     // TODO: try chg dir first
     //  - Linux glibc < 2.24 throw UnsupportedOperationException
@@ -47,6 +46,8 @@ internal actual fun MemScope.posixSpawn(
     //  - iOS throw IOException (it's not supported, but we want
     //    to stop early w/o trying fork & exec b/c that is not
     //    supported on iOS either.
+
+    val attrs = posixSpawnAttrInit()
 
     // TODO: streams Issue #2
 
