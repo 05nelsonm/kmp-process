@@ -44,8 +44,7 @@ public abstract class Process internal constructor(
     @JvmField
     public val destroySignal: Signal,
 
-    @Suppress("UNUSED_PARAMETER")
-    lock: SyntheticAccess
+    init: SyntheticAccess
 ): OutputFeed.Handler(stdio) {
 
     /**
@@ -387,5 +386,9 @@ public abstract class Process internal constructor(
             stdio,
             destroySignal
         )
+    }
+
+    init {
+        check(init == SyntheticAccess.get()) { "Process cannot be extended. Use Process.Builder" }
     }
 }
