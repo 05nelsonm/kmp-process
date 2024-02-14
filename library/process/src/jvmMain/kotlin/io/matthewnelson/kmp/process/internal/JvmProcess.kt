@@ -30,7 +30,7 @@ internal class JvmProcess private constructor(
     env: Map<String, String>,
     stdio: Stdio.Config,
     destroy: Signal,
-): Process(command, args, env, stdio, destroy) {
+): Process(command, args, env, stdio, destroy, SyntheticAccess.get()) {
 
     private val _pid: Int by lazy {
         // First try parsing toString output
