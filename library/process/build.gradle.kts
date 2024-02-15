@@ -73,23 +73,24 @@ kmpConfiguration {
             }
 
             targets.filterIsInstance<KotlinNativeTarget>()
-                .libcVersionCInterop()
+                .glibc_versionCInterop()
                 .spawnCInterop()
 
         }
     }
 }
 
-fun List<KotlinNativeTarget>.libcVersionCInterop(): List<KotlinNativeTarget> {
+@Suppress("FunctionName")
+fun List<KotlinNativeTarget>.glibc_versionCInterop(): List<KotlinNativeTarget> {
     forEach { target ->
         if (target.konanTarget.family != Family.LINUX) return@forEach
 
-        target.compilations["main"].cinterops.create("libc_version").apply {
+        target.compilations["main"].cinterops.create("glibc_version").apply {
             defFile = projectDir
                 .resolve("src")
                 .resolve("nativeInterop")
                 .resolve("cinterop")
-                .resolve("libc_version.def")
+                .resolve("glibc_version.def")
         }
     }
 
