@@ -20,14 +20,16 @@ import kotlin.test.*
 class GnuLibcVersionUnitTest {
 
     @Test
-    fun givenGetOrNull_whenInvoked_thenReturnsNonNull() {
+    fun givenCheck_whenCalled_thenLambdaIsActuallyInvoked() {
+        // need to ensure that on Linux, the lambda is actually invoked
+        // with the version class.
         var invocations = 0
         GnuLibcVersion.check { invocations++; println(this) }
         assertEquals(1, invocations)
     }
 
     @Test
-    fun givenVersion_whenIsLessThan_thenReturnsExpected() {
+    fun givenVersion_whenIsAtLeast_thenReturnsExpected() {
         with(GnuLibcVersion(major = 2u, minor = 24u)) {
             assertTrue(isAtLeast(1u, 19u))
             assertTrue(isAtLeast(1u, 45u))
