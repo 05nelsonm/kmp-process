@@ -26,9 +26,9 @@ internal expect class GnuLibcVersion {
 
     internal companion object {
 
-        // Returns null on non-Linux. Throws if
-        // gnu_get_libc_version returned null
+        // Throws if gnu_get_libc_version returned null on Linux.
+        // Is a no-op if not Linux
         @Throws(NullPointerException::class)
-        internal fun getOrNull(): GnuLibcVersion?
+        internal fun check(block: GnuLibcVersion.() -> Unit)
     }
 }

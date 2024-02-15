@@ -37,7 +37,7 @@ internal actual class GnuLibcVersion internal constructor(
     internal actual companion object {
 
         @Throws(NullPointerException::class)
-        internal actual fun getOrNull(): GnuLibcVersion? {
+        internal actual fun check(block: GnuLibcVersion.() -> Unit) {
             @OptIn(ExperimentalForeignApi::class)
             val version = gnu_get_libc_version()
                 ?.toKString()
@@ -50,7 +50,7 @@ internal actual class GnuLibcVersion internal constructor(
                 .elementAtOrNull(1)
                 ?.toUByteOrNull()!!
 
-            return GnuLibcVersion(major, minor)
+            block(GnuLibcVersion(major, minor))
         }
     }
 

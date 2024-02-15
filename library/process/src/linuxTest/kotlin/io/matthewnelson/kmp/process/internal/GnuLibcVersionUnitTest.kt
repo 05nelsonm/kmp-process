@@ -15,18 +15,15 @@
  **/
 package io.matthewnelson.kmp.process.internal
 
-import kotlin.test.Test
-import kotlin.test.assertFalse
-import kotlin.test.assertNotNull
-import kotlin.test.assertTrue
+import kotlin.test.*
 
 class GnuLibcVersionUnitTest {
 
     @Test
     fun givenGetOrNull_whenInvoked_thenReturnsNonNull() {
-        val v = GnuLibcVersion.getOrNull()
-        assertNotNull(v)
-        println(v)
+        var invocations = 0
+        GnuLibcVersion.check { invocations++; println(this) }
+        assertEquals(1, invocations)
     }
 
     @Test

@@ -41,11 +41,11 @@ internal actual fun MemScope.posixSpawn(
 ): NativeProcess {
 
     try {
-        GnuLibcVersion.getOrNull()?.let { version ->
-            if (!version.isAtLeast(major = 2u, minor = 24u)) {
+        GnuLibcVersion.check {
+            if (!isAtLeast(major = 2u, minor = 24u)) {
                 // Only Linux glibc 2.24+ posix_spawn supports returning ENOENT
                 // fall back to fork & exec
-                throw UnsupportedOperationException("Unsupported Linux $version")
+                throw UnsupportedOperationException("Unsupported Linux $this")
             }
             // TODO: if addchdir_np needed, glibc 2.29+ required
             //  Issue #15

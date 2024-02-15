@@ -29,6 +29,6 @@ internal actual class GnuLibcVersion private constructor() {
     internal actual companion object {
 
         @Suppress("ACTUAL_ANNOTATIONS_NOT_MATCH_EXPECT")
-        internal actual fun getOrNull(): GnuLibcVersion? = null
+        internal actual fun check(block: GnuLibcVersion.() -> Unit) { /* no-op */ }
     }
 }
