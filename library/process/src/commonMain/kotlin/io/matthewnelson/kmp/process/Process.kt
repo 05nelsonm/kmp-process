@@ -24,6 +24,7 @@ import io.matthewnelson.kmp.process.internal.appendProcessInfo
 import io.matthewnelson.kmp.process.internal.commonWaitFor
 import kotlin.jvm.JvmField
 import kotlin.jvm.JvmName
+import kotlin.jvm.JvmSynthetic
 import kotlin.time.Duration
 
 /**
@@ -362,10 +363,10 @@ public abstract class Process internal constructor(
             @Throws(IOException::class)
             private fun checkCommand(command: String) {
                 if (command.isBlank()) throw IOException("command cannot be blank")
-                command.toFile().let { cmd ->
-                    if (!cmd.isAbsolute()) return@let
-                    if (!cmd.exists()) throw FileNotFoundException("command: $cmd")
-                }
+
+                val commandFile = command.toFile()
+                if (!commandFile.isAbsolute()) return
+                if (!commandFile.exists()) throw FileNotFoundException("command: $command")
             }
         }
     }
@@ -388,7 +389,13 @@ public abstract class Process internal constructor(
         )
     }
 
+    protected companion object {
+
+        @JvmSynthetic
+        internal val INIT = SyntheticAccess.new()
+    }
+
     init {
-        check(init == SyntheticAccess.get()) { "Process cannot be extended. Use Process.Builder" }
+        check(init == INIT) { "Process cannot be extended. Use Process.Builder" }
     }
 }

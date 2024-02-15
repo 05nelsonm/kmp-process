@@ -13,21 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
+@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
+
 package io.matthewnelson.kmp.process.internal
 
-import kotlin.jvm.JvmSynthetic
+internal expect class GnuLibcVersion {
 
-// Because Process is an abstract class, it
-// could be extended from Java land as the
-// internal constructor compiles to public.
-//
-// This is an "attempt" to inhibit Java only
-// consumers from being able to extend Process.
-internal class SyntheticAccess private constructor() {
+    internal fun isAtLeast(
+        major: UByte,
+        minor: UByte,
+    ): Boolean
 
     internal companion object {
 
-        @JvmSynthetic
-        internal fun new(): SyntheticAccess = SyntheticAccess()
+        // Throws if gnu_get_libc_version returned null on Linux.
+        // Is a no-op if not Linux
+        @Throws(NullPointerException::class)
+        internal fun check(block: GnuLibcVersion.() -> Unit)
     }
 }
