@@ -14,6 +14,7 @@
  * limitations under the License.
  **/
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
+import org.jetbrains.kotlin.konan.target.Family
 import org.jetbrains.kotlin.konan.target.HostManager
 import org.jetbrains.kotlin.konan.target.KonanTarget
 import org.jetbrains.kotlin.konan.target.Xcode
@@ -71,13 +72,32 @@ kmpConfiguration {
                 }
             }
 
-            targets.filterIsInstance<KotlinNativeTarget>().spawnCInterop()
+            targets.filterIsInstance<KotlinNativeTarget>()
+                .libcVersionCInterop()
+                .spawnCInterop()
+
         }
     }
 }
 
-fun List<KotlinNativeTarget>.spawnCInterop() {
-    if (!HostManager.hostIsMac) return
+fun List<KotlinNativeTarget>.libcVersionCInterop(): List<KotlinNativeTarget> {
+    forEach { target ->
+        if (target.konanTarget.family != Family.LINUX) return@forEach
+
+        target.compilations["main"].cinterops.create("libc_version").apply {
+            defFile = projectDir
+                .resolve("src")
+                .resolve("nativeInterop")
+                .resolve("cinterop")
+                .resolve("libc_version.def")
+        }
+    }
+
+    return this
+}
+
+fun List<KotlinNativeTarget>.spawnCInterop(): List<KotlinNativeTarget> {
+    if (!HostManager.hostIsMac) return this
     val xcode = Xcode.findCurrent()
 
     forEach { target ->
@@ -114,4 +134,6 @@ fun List<KotlinNativeTarget>.spawnCInterop() {
                 .resolve("spawn.def")
         }
     }
+
+    return this
 }

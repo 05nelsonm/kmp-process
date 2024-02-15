@@ -19,6 +19,7 @@ package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.file.IOException
+import io.matthewnelson.kmp.file.SysPathSep
 import io.matthewnelson.kmp.file.toFile
 import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.Stdio
@@ -38,14 +39,26 @@ internal actual fun MemScope.posixSpawn(
     stdio: Stdio.Config,
     destroy: Signal,
 ): NativeProcess {
+
+    try {
+        GnuLibcVersion.getOrNull()?.let { version ->
+            if (!version.isAtLeast(major = 2u, minor = 24u)) {
+                // Only Linux glibc 2.24+ posix_spawn supports returning ENOENT
+                // fall back to fork & exec
+                throw UnsupportedOperationException("Unsupported Linux $version")
+            }
+            // TODO: if addchdir_np needed, glibc 2.29+ required
+            //  Issue #15
+        }
+    } catch (e: NullPointerException) {
+        // gnu_get_libc_version on Linux returned null
+        throw UnsupportedOperationException("Failed to retrieve glibc version", e)
+    }
+
     val fileActions = posixSpawnFileActionsInit()
 
-    // TODO: try chg dir first
-    //  - Linux glibc < 2.24 throw UnsupportedOperationException
-    //  .
-    //  - iOS throw IOException (it's not supported, but we want
-    //    to stop early w/o trying fork & exec b/c that is not
-    //    supported on iOS either.
+    // TODO: try addchdir_np (iOS/Linux throws IOException)
+    //  Issue #15
 
     val attrs = posixSpawnAttrInit()
 
@@ -80,7 +93,13 @@ internal actual fun MemScope.posixSpawn(
         this[i] = null
     }
 
-    val result = if (command.startsWith('/')) {
+    // TODO: Check relative paths like ../program and how
+    //  posix_spawnp functions with that. It "should" work,
+    //  but darwin seems like there is a bug if utilized with
+    //  addchdir_np. May be necessary to always convert to
+    //  absolute file path if command.contains(SysPathSep) is
+    //  true?
+    val result = if (command.startsWith(SysPathSep)) {
         // Absolute path, utilize posix_spawn
         posixSpawn(command, pid.ptr, fileActions, attrs, argv, envp)
     } else {
