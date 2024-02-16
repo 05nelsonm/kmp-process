@@ -22,6 +22,7 @@ import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.file.path
 import io.matthewnelson.kmp.process.Stdio
 import platform.posix.*
+import platform.posix.close as posix_close
 import kotlin.concurrent.Volatile
 
 @OptIn(ExperimentalStdlibApi::class)
@@ -71,13 +72,13 @@ internal class StdioHandle private constructor(
     private fun closeNoLock() {
         // Only close if NOT Stdio.Inherit
         if (!stdio.stdin.isInherit) {
-            platform.posix.close(stdinFD)
+            posix_close(stdinFD)
         }
         if (!stdio.stdout.isInherit) {
-            platform.posix.close(stdoutFD)
+            posix_close(stdoutFD)
         }
         if (!stdio.stderr.isInherit) {
-            platform.posix.close(stderrFD)
+            posix_close(stderrFD)
         }
 
         // TODO: Close Reader/Writer(s)
@@ -112,8 +113,7 @@ internal class StdioHandle private constructor(
         private fun Stdio.File.openFD(isStdin: Boolean): Int {
             var mode = 0
             var flags = if (isStdin) O_RDONLY else O_WRONLY
-
-            // O_CLOEXEC??
+            flags = flags or O_CLOEXEC
 
             if (file != STDIO_NULL && !isStdin) {
                 mode = S_IRUSR or S_IWUSR or S_IRGRP or S_IWGRP or S_IROTH
