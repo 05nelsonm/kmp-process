@@ -32,6 +32,12 @@ import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
 import kotlin.time.Duration
 
+@Throws(IOException::class)
+internal expect fun Stdio.File.openFD(isStdin: Boolean): Int
+
+@Throws(IOException::class)
+internal expect fun Stdio.Pipe.openFD(isStdin: Boolean): Int
+
 @OptIn(ExperimentalForeignApi::class)
 @Throws(IOException::class, UnsupportedOperationException::class)
 internal expect fun MemScope.posixSpawn(

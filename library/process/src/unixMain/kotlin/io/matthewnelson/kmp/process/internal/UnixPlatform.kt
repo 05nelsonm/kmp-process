@@ -30,6 +30,16 @@ import platform.posix.*
 
 internal actual val STDIO_NULL: File = "/dev/null".toFile()
 
+@Throws(IOException::class)
+internal actual fun Stdio.File.openFD(isStdin: Boolean): Int {
+    throw IOException("TODO")
+}
+
+@Throws(IOException::class)
+internal actual fun Stdio.Pipe.openFD(isStdin: Boolean): Int {
+    throw IOException("TODO")
+}
+
 @OptIn(ExperimentalForeignApi::class)
 @Throws(IOException::class, UnsupportedOperationException::class)
 internal actual fun MemScope.posixSpawn(
