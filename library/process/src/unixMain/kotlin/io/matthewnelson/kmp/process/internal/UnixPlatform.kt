@@ -17,10 +17,7 @@
 
 package io.matthewnelson.kmp.process.internal
 
-import io.matthewnelson.kmp.file.File
-import io.matthewnelson.kmp.file.IOException
-import io.matthewnelson.kmp.file.SysPathSep
-import io.matthewnelson.kmp.file.toFile
+import io.matthewnelson.kmp.file.*
 import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.Stdio
 import io.matthewnelson.kmp.process.internal.PosixSpawnAttrs.Companion.posixSpawnAttrInit
@@ -29,11 +26,6 @@ import kotlinx.cinterop.*
 import platform.posix.*
 
 internal actual val STDIO_NULL: File = "/dev/null".toFile()
-
-@Throws(IOException::class)
-internal actual fun Stdio.File.openFD(isStdin: Boolean): Int {
-    throw IOException("TODO")
-}
 
 @Throws(IOException::class)
 internal actual fun Stdio.Pipe.openFD(isStdin: Boolean): Int {
@@ -46,7 +38,7 @@ internal actual fun MemScope.posixSpawn(
     command: String,
     args: List<String>,
     env: Map<String, String>,
-    stdio: Stdio.Config,
+    handle: StdioHandle,
     destroy: Signal,
 ): NativeProcess {
 
@@ -71,6 +63,16 @@ internal actual fun MemScope.posixSpawn(
     //  Issue #15
 
     val attrs = posixSpawnAttrInit()
+
+    handle.dup2 { fd, newFd ->
+        // posix_spawn_file_actions_adddup2 returns a negative
+        // value as the error instead of setting errno.
+        @OptIn(DelicateFileApi::class, ExperimentalForeignApi::class)
+        when (val result = fileActions.adddup2(fd, newFd)) {
+            0 -> null
+            else -> errnoToIOException(result)
+        }
+    }
 
     // TODO: streams Issue #2
 
@@ -109,23 +111,20 @@ internal actual fun MemScope.posixSpawn(
     //  addchdir_np. May be necessary to always convert to
     //  absolute file path if command.contains(SysPathSep) is
     //  true?
-    val result = if (command.startsWith(SysPathSep)) {
+    if (command.startsWith(SysPathSep)) {
         // Absolute path, utilize posix_spawn
         posixSpawn(command, pid.ptr, fileActions, attrs, argv, envp)
     } else {
         // relative path or program name, utilize posix_spawnp
         posixSpawnP(command, pid.ptr, fileActions, attrs, argv, envp)
-    }
-
-    // TODO: close things
-    result.check()
+    }.check()
 
     return NativeProcess(
         pid.value,
+        handle,
         command,
         args,
         env,
-        stdio,
         destroy,
     )
 }

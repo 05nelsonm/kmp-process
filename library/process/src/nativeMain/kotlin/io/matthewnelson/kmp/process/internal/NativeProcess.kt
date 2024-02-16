@@ -28,16 +28,16 @@ internal class NativeProcess
 @Throws(IOException::class)
 internal constructor(
     private val pid: Int,
+    private val handle: StdioHandle,
     command: String,
     args: List<String>,
     env: Map<String, String>,
-    stdio: Stdio.Config,
     destroy: Signal,
-): Process(command, args, env, stdio, destroy, INIT) {
+): Process(command, args, env, handle.stdio, destroy, INIT) {
 
     init {
         if (pid <= 0) {
-            // TODO: Close pipes #Issue 2
+            handle.close()
             throw IOException("pid[$pid] must be greater than 0")
         }
     }
@@ -59,7 +59,7 @@ internal constructor(
             // TODO, wait
         }
 
-        // TODO: Close streams
+        handle.close()
 
         return this
     }

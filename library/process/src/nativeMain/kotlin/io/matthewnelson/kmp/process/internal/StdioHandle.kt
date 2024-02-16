@@ -19,10 +19,9 @@
 package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.IOException
+import io.matthewnelson.kmp.file.path
 import io.matthewnelson.kmp.process.Stdio
-import platform.posix.STDERR_FILENO
-import platform.posix.STDIN_FILENO
-import platform.posix.STDOUT_FILENO
+import platform.posix.*
 import kotlin.concurrent.Volatile
 
 @OptIn(ExperimentalStdlibApi::class)
@@ -107,6 +106,24 @@ internal class StdioHandle private constructor(
             }
 
             return StdioHandle(this, stdinFd, stdoutFd, stderrFd)
+        }
+
+        @Throws(IOException::class)
+        private fun Stdio.File.openFD(isStdin: Boolean): Int {
+            var mode = 0
+            var flags = if (isStdin) O_RDONLY else O_WRONLY
+
+            // O_CLOEXEC??
+
+            if (file != STDIO_NULL && !isStdin) {
+                mode = S_IRUSR or S_IWUSR or S_IRGRP or S_IWGRP or S_IROTH
+                flags = flags or O_CREAT
+            }
+            if (!isStdin && append) {
+                flags = flags or O_APPEND
+            }
+
+            return open(file.path, flags, mode).check()
         }
     }
 

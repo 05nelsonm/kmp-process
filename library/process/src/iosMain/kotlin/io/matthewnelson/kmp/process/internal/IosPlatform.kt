@@ -27,7 +27,7 @@ internal actual fun MemScope.forkExec(
     command: String,
     args: List<String>,
     env: Map<String, String>,
-    stdio: Stdio.Config,
+    handle: StdioHandle,
     destroy: Signal,
 ): NativeProcess {
     throw UnsupportedOperationException("Fork & Exec is not supported on iOS")

@@ -33,9 +33,6 @@ import kotlin.contracts.contract
 import kotlin.time.Duration
 
 @Throws(IOException::class)
-internal expect fun Stdio.File.openFD(isStdin: Boolean): Int
-
-@Throws(IOException::class)
 internal expect fun Stdio.Pipe.openFD(isStdin: Boolean): Int
 
 @OptIn(ExperimentalForeignApi::class)
@@ -44,7 +41,7 @@ internal expect fun MemScope.posixSpawn(
     command: String,
     args: List<String>,
     env: Map<String, String>,
-    stdio: Stdio.Config,
+    handle: StdioHandle,
     destroy: Signal,
 ): NativeProcess
 
@@ -54,7 +51,7 @@ internal expect fun MemScope.forkExec(
     command: String,
     args: List<String>,
     env: Map<String, String>,
-    stdio: Stdio.Config,
+    handle: StdioHandle,
     destroy: Signal,
 ): NativeProcess
 
