@@ -13,16 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
-
 package io.matthewnelson.kmp.process.internal
 
-internal actual class SynchronizedSet<E: Any?> internal actual constructor() {
+import kotlin.concurrent.AtomicReference
 
-    private val set = LinkedHashSet<E>(1, 1.0F)
-    private val lock = Lock()
+internal class Lock {
 
-    internal actual fun <T: Any?> withLock(
-        block: MutableSet<E>.() -> T
-    ): T = lock.withLock { block(set) }
+    private val ref = AtomicReference<Int?>(null)
+
+    internal fun <T: Any?> withLock(block: () -> T): T {
+        val hc = Any().hashCode()
+
+        val result = try {
+            while (true) {
+                if (ref.compareAndSet(null, hc)) {
+                    break
+                }
+            }
+
+            block()
+        } finally {
+            ref.value = null
+        }
+
+        return result
+    }
 }
