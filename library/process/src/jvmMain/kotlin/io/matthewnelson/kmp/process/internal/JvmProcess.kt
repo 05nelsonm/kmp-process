@@ -35,6 +35,7 @@ internal class JvmProcess private constructor(
     private val _pid: Int by lazy {
         // First try parsing toString output
         jProcess.toString()
+            // Process[pid=1754008]
             // Process[pid=1754008, exitValue="not exited"]
             .substringAfter("pid=")
             .substringBefore(']')
@@ -46,13 +47,12 @@ internal class JvmProcess private constructor(
             ?.let { return@lazy it }
 
         // Lastly try reflection
-        try {
-            val id = java.lang.Process::class.java
-                .getDeclaredMethod("pid")
-                .invoke(jProcess) as Long
-
-            return@lazy id.toInt()
-        } catch (_: Throwable) {}
+        PidMethod?.let { method ->
+            try {
+                val id = method.invoke(jProcess) as Long
+                return@lazy id.toInt()
+            } catch (_: Throwable) {}
+        }
 
         // Unknown
         -1
@@ -79,7 +79,7 @@ internal class JvmProcess private constructor(
 
         // On Windows it's either 0 or 1, 1 indicating
         // termination. Swap it out with the correct code
-        if (result != null && isDestroyed && STDIO_NULL.path == "NUL") {
+        if (result != null && isDestroyed && isWindows) {
             if (result == 1) result = destroySignal.code
         }
 
@@ -151,6 +151,15 @@ internal class JvmProcess private constructor(
             stdio,
             destroy,
         )
+
+        private val PidMethod by lazy {
+            try {
+                java.lang.Process::class.java
+                    .getDeclaredMethod("pid")
+            } catch (_: Throwable) {
+                null
+            }
+        }
     }
 
     private class StreamEater(

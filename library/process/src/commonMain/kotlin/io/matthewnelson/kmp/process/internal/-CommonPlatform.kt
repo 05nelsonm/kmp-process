@@ -13,13 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
+@file:Suppress("KotlinRedundantDiagnosticSuppress")
+
 package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.File
+import io.matthewnelson.kmp.file.path
 import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.Stdio
 
 internal expect val STDIO_NULL: File
+
+@Suppress("NOTHING_TO_INLINE")
+internal inline val isWindows: Boolean get() = STDIO_NULL.path == "NUL"
 
 internal fun StringBuilder.appendProcessInfo(
     className: String,
