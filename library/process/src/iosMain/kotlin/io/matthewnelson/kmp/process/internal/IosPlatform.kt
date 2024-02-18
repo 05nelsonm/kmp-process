@@ -17,7 +17,7 @@ package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.process.Signal
-import io.matthewnelson.kmp.process.Stdio
+import io.matthewnelson.kmp.process.internal.stdio.StdioHandle
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.MemScope
 

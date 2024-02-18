@@ -18,7 +18,7 @@ package io.matthewnelson.kmp.process.internal
 import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.Signal
-import io.matthewnelson.kmp.process.Stdio
+import io.matthewnelson.kmp.process.internal.stdio.StdioHandle
 import kotlinx.cinterop.*
 import platform.posix.*
 import kotlin.concurrent.AtomicReference
@@ -98,9 +98,7 @@ internal constructor(
         return exitCode
     }
 
-    override fun waitFor(duration: Duration): Int? {
-        return commonWaitFor(duration) { it.threadSleep() }
-    }
+    override fun waitFor(duration: Duration): Int? = commonWaitFor(duration) { it.threadSleep() }
 
     override fun startStdout() {
         // TODO

@@ -13,22 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-package io.matthewnelson.kmp.process.internal
+@file:Suppress("KotlinRedundantDiagnosticSuppress")
 
-import io.matthewnelson.kmp.file.IOException
-import io.matthewnelson.kmp.process.Signal
-import io.matthewnelson.kmp.process.Stdio
+package io.matthewnelson.kmp.process.internal.stdio
+
+import kotlinx.cinterop.CPointer
 import kotlinx.cinterop.ExperimentalForeignApi
-import kotlinx.cinterop.MemScope
+import kotlinx.cinterop.IntVar
+import kotlinx.cinterop.convert
+import platform.linux.SYS_pipe2
+import platform.posix.syscall
 
+@Suppress("NOTHING_TO_INLINE")
 @OptIn(ExperimentalForeignApi::class)
-@Throws(IOException::class, UnsupportedOperationException::class)
-internal actual fun MemScope.forkExec(
-    command: String,
-    args: List<String>,
-    env: Map<String, String>,
-    handle: StdioHandle,
-    destroy: Signal,
-): NativeProcess {
-    throw IOException("Not yet implemented")
+internal actual inline fun CPointer<IntVar>.pipe2(flags: Int): Int {
+    return syscall(SYS_pipe2.convert(), this, flags).convert()
 }

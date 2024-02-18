@@ -15,11 +15,9 @@
  **/
 package io.matthewnelson.kmp.process
 
-import io.matthewnelson.kmp.file.IOException
-import io.matthewnelson.kmp.file.SysTempDir
-import io.matthewnelson.kmp.file.path
-import io.matthewnelson.kmp.file.resolve
+import io.matthewnelson.kmp.file.*
 import io.matthewnelson.kmp.process.internal.STDIO_NULL
+import io.matthewnelson.kmp.process.internal.isWindows
 import io.matthewnelson.kmp.tor.resource.tor.TorResources
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -42,7 +40,6 @@ abstract class ProcessBaseTest {
     protected abstract val isJvm: Boolean
     protected abstract val isNodeJS: Boolean
     protected abstract val isUnixDesktop: Boolean
-    protected val isWindows: Boolean = STDIO_NULL.path == "NUL"
 
     @Test
     fun givenWaitFor_whenProcessExits_thenWaitForReturnsEarly() {
@@ -202,6 +199,12 @@ abstract class ProcessBaseTest {
     fun givenExecutableFile_whenExecuteAsProcess_thenIsSuccessful() = runTest(timeout = 45.seconds) {
         val paths = installer.install()
 
+        val stdout = installer.installationDir.resolve("tor.log")
+        val stderr = installer.installationDir.resolve("tor.err")
+
+        stdout.delete()
+        stderr.delete()
+
         val b = Process.Builder(paths.tor)
             .args("--DataDirectory")
             .args(installer.installationDir.resolve("data").path)
@@ -223,10 +226,8 @@ abstract class ProcessBaseTest {
             .args("0")
             .environment("HOME", installer.installationDir.path)
             .stdin(Stdio.Null)
-            .stdout(Stdio.Inherit)
-            .stderr(Stdio.Inherit)
-//            .stdout(Stdio.File.of(installer.installationDir.resolve("tor.log")))
-//            .stderr(Stdio.File.of(installer.installationDir.resolve("tor.err")))
+            .stdout(Stdio.File.of(stdout))
+            .stderr(Stdio.File.of(stderr))
 
         val p = b.spawn()
 
@@ -234,11 +235,14 @@ abstract class ProcessBaseTest {
 
         println(p)
 
-        // Should not attach b/c using Stdio.Inherit
+        // Should not attach b/c using Stdio.File
         p.stdoutFeed {}
         p.stderrFeed {}
         assertEquals(0, p.stdoutFeedsSize())
         assertEquals(0, p.stderrFeedsSize())
+
+        assertTrue(stdout.exists())
+        assertTrue(stderr.exists())
 
         withContext(Dispatchers.Default) {
             p.waitForAsync(5.seconds, ::delay)
@@ -260,6 +264,9 @@ abstract class ProcessBaseTest {
         }
         assertEquals(expected, p.exitCode())
 
+        assertTrue(stdout.readUtf8().lines().first().contains(" [notice] Tor "))
+        assertTrue(stderr.readUtf8().isEmpty())
+
         if (isNodeJS || isJvm) {
             val out = b.output {
                 timeoutMillis = 5_000
@@ -274,16 +281,16 @@ abstract class ProcessBaseTest {
             b.stdout(Stdio.Pipe).stderr(Stdio.Pipe).spawn().let { p2 ->
                 destroyOnCompletion(p2)
 
-                val stdout = StringBuilder()
-                val stderr = StringBuilder()
+                val stdoutBuilder = StringBuilder()
+                val stderrBuilder = StringBuilder()
 
                 p2.stdoutFeed { line ->
-                    with(stdout) {
+                    with(stdoutBuilder) {
                         if (isNotEmpty()) appendLine()
                         append(line)
                     }
                 }.stderrFeed { line ->
-                    with(stderr) {
+                    with(stderrBuilder) {
                         if (isNotEmpty()) appendLine()
                         append(line)
                     }
@@ -298,8 +305,8 @@ abstract class ProcessBaseTest {
 
                 p2.destroy()
 
-                val stdoutString = stdout.toString()
-                val stderrString = stderr.toString()
+                val stdoutString = stdoutBuilder.toString()
+                val stderrString = stderrBuilder.toString()
                 println(stdoutString)
                 println(stderrString)
 

@@ -13,22 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
+@file:Suppress("KotlinRedundantDiagnosticSuppress")
 
-package io.matthewnelson.kmp.process.internal
+package io.matthewnelson.kmp.process.internal.stdio
 
-internal actual class GnuLibcVersion private constructor() {
+import kotlinx.cinterop.CPointer
+import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.IntVar
 
-    internal actual fun isAtLeast(
-        major: UByte,
-        minor: UByte,
-    ): Boolean {
-        throw UnsupportedOperationException()
-    }
-
-    internal actual companion object {
-
-        @Suppress("ACTUAL_ANNOTATIONS_NOT_MATCH_EXPECT")
-        internal actual fun check(block: GnuLibcVersion.() -> Unit) { /* no-op */ }
-    }
-}
+@Suppress("NOTHING_TO_INLINE")
+@OptIn(ExperimentalForeignApi::class)
+internal actual inline fun CPointer<IntVar>.pipe2(flags: Int): Int = -1

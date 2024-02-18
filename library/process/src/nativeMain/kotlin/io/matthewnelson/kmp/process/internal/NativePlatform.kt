@@ -22,7 +22,7 @@ import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.file.InterruptedException
 import io.matthewnelson.kmp.file.errnoToIOException
 import io.matthewnelson.kmp.process.Signal
-import io.matthewnelson.kmp.process.Stdio
+import io.matthewnelson.kmp.process.internal.stdio.StdioHandle
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.MemScope
 import platform.posix.errno
@@ -31,9 +31,6 @@ import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
 import kotlin.time.Duration
-
-@Throws(IOException::class)
-internal expect fun Stdio.Pipe.openFD(isStdin: Boolean): Int
 
 @OptIn(ExperimentalForeignApi::class)
 @Throws(IOException::class, UnsupportedOperationException::class)

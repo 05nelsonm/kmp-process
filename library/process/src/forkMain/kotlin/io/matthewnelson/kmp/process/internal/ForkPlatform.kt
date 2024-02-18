@@ -13,22 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
-
 package io.matthewnelson.kmp.process.internal
 
-internal actual class GnuLibcVersion private constructor() {
+import io.matthewnelson.kmp.file.IOException
+import io.matthewnelson.kmp.process.Signal
+import io.matthewnelson.kmp.process.internal.stdio.StdioHandle
+import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.MemScope
 
-    internal actual fun isAtLeast(
-        major: UByte,
-        minor: UByte,
-    ): Boolean {
-        throw UnsupportedOperationException()
-    }
-
-    internal actual companion object {
-
-        @Suppress("ACTUAL_ANNOTATIONS_NOT_MATCH_EXPECT")
-        internal actual fun check(block: GnuLibcVersion.() -> Unit) { /* no-op */ }
-    }
+@OptIn(ExperimentalForeignApi::class)
+@Throws(IOException::class, UnsupportedOperationException::class)
+internal actual fun MemScope.forkExec(
+    command: String,
+    args: List<String>,
+    env: Map<String, String>,
+    handle: StdioHandle,
+    destroy: Signal,
+): NativeProcess {
+    throw IOException("Not yet implemented")
 }
