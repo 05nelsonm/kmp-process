@@ -78,7 +78,7 @@ internal actual class PlatformBuilder private actual constructor() {
             return p
         } catch (e: Exception) {
             handle.close()
-            throw e.wrapIOException { "Neither posix_spawn or for/exec are supported" }
+            throw e.wrapIOException { "Neither posix_spawn or fork/exec are supported" }
         }
     }
 

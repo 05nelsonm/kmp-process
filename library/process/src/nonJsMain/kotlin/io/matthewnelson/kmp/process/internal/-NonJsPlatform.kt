@@ -64,11 +64,6 @@ internal fun PlatformBuilder.blockingOutput(
         p.destroy()
     }
 
-    val pErr = StringBuilder()
-    if (waitForCode == null) {
-        pErr.append("waitFor timed out")
-    }
-
     val exitCode = waitForCode ?: try {
         // await for final closure if not ready yet
         p.waitFor()
@@ -76,9 +71,14 @@ internal fun PlatformBuilder.blockingOutput(
         throw IOException("Underlying thread interrupted", e)
     }
 
-    if (stdoutBuffer.maxSizeExceeded || stderrBuffer.maxSizeExceeded) {
-        if (pErr.isNotEmpty()) pErr.append(". ")
-        pErr.append("maxBuffer[${options.maxBuffer}] exceeded")
+    val pErr = when {
+        stdoutBuffer.maxSizeExceeded || stderrBuffer.maxSizeExceeded -> {
+            "maxBuffer[${options.maxBuffer}] exceeded"
+        }
+        waitForCode == null -> {
+            "waitFor timed out"
+        }
+        else -> null
     }
 
     val stdout = stdoutBuffer.doFinal()
@@ -87,7 +87,7 @@ internal fun PlatformBuilder.blockingOutput(
     return Output.ProcessInfo.createOutput(
         stdout,
         stderr,
-        pErr.toString().ifBlank { null },
+        pErr,
         p.pid(),
         exitCode,
         p.command,

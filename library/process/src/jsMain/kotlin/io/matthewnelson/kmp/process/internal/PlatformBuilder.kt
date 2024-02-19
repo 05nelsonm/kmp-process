@@ -56,7 +56,6 @@ internal actual class PlatformBuilder private actual constructor() {
         val (jsStdio, descriptors) = stdio.toJsStdio()
 
         val opts = js("{}")
-//        options.input?.let { opts["input"] = it }
         opts["stdio"] = jsStdio
         opts["env"] = jsEnv
         opts["timeout"] = options.timeout.inWholeMilliseconds.toInt()
@@ -90,7 +89,7 @@ internal actual class PlatformBuilder private actual constructor() {
             val utf8 = buf.toUtf8()
             buf.fill()
             utf8
-        } catch (e: IOException) {
+        } catch (_: IOException) {
             // TODO: Fix in kmp-file
             //  "Attempt to access memory outside buffer bounds"
             ""
@@ -203,25 +202,23 @@ internal actual class PlatformBuilder private actual constructor() {
             return Pair(jsStdio, descriptors)
         }
 
-        // @Throw(Exception::class)
+        // @Throw(Throwable::class)
         private fun Stdio.toJsStdio(
-            isStdin: Boolean
+            isStdin: Boolean,
         ): Any = when (this) {
             is Stdio.Inherit -> "inherit"
             is Stdio.Pipe -> "pipe"
-            is Stdio.File -> {
-                when {
-                    file == STDIO_NULL -> "ignore"
-                    isStdin -> fs_openSync(file.path, "r")
-                    append -> fs_openSync(file.path, "a")
-                    else -> fs_openSync(file.path, "w")
-                }
+            is Stdio.File -> when {
+                file == STDIO_NULL -> "ignore"
+                isStdin -> fs_openSync(file.path, "r")
+                append -> fs_openSync(file.path, "a")
+                else -> fs_openSync(file.path, "w")
             }
         }
 
         // @Throws(IOException::class)
         private inline fun <T: Any> Array<Number?>.withDescriptors(
-            block: () -> T
+            block: () -> T,
         ): T {
             val result = try {
                 block()
