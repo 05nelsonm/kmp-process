@@ -26,6 +26,6 @@ import platform.posix.syscall
 
 @Suppress("NOTHING_TO_INLINE")
 @OptIn(ExperimentalForeignApi::class)
-internal actual inline fun CPointer<IntVar>.pipe2(flags: Int): Int {
-    return syscall(SYS_pipe2.convert(), this, flags).convert()
-}
+internal actual inline fun CPointer<IntVar>.pipe2(
+    flags: Int
+): Int = syscall(SYS_pipe2.convert(), this, flags).convert()

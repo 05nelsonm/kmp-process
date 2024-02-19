@@ -72,4 +72,6 @@ internal actual fun ((fdRead: Int, fdWrite: Int) -> StdioDescriptor.Pair).fdOpen
 // returns 0 for success, -1 for failure
 @Suppress("NOTHING_TO_INLINE")
 @OptIn(ExperimentalForeignApi::class)
-internal expect inline fun CPointer<IntVar>.pipe2(flags: Int): Int
+internal expect inline fun CPointer<IntVar>.pipe2(
+    flags: Int,
+): Int

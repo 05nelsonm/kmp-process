@@ -23,4 +23,17 @@ import kotlinx.cinterop.IntVar
 
 @Suppress("NOTHING_TO_INLINE")
 @OptIn(ExperimentalForeignApi::class)
-internal actual inline fun CPointer<IntVar>.pipe2(flags: Int): Int = -1
+internal actual inline fun CPointer<IntVar>.pipe2(
+    flags: Int,
+): Int {
+    // SYS_pipe2 is currently undefined for darwin SDKs
+    // This can be checked for periodically by looking in
+    // the respective SDK's usr/include/sys/syscall.h
+    // e.g.
+    //
+    //     $ cat "$(xcrun --sdk iphoneos --show-sdk-path)/usr/include/sys/syscall.h" | grep "pipe2"
+    //
+    // Until then, -1 (failure) is returned  such that flags can
+    // then be set non-atomically via pipe1 & fcntl
+    return -1
+}
