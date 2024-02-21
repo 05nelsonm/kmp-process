@@ -27,6 +27,7 @@ import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
 import kotlin.jvm.JvmField
 import kotlin.jvm.JvmName
+import kotlin.jvm.JvmStatic
 import kotlin.jvm.JvmSynthetic
 import kotlin.time.Duration
 
@@ -34,6 +35,7 @@ import kotlin.time.Duration
  * A Process.
  *
  * @see [Builder]
+ * @see [Current]
  * @see [OutputFeed.Handler]
  * */
 public abstract class Process internal constructor(
@@ -50,6 +52,18 @@ public abstract class Process internal constructor(
 
     init: SyntheticAccess
 ): OutputFeed.Handler(stdio) {
+
+    /**
+     * Information about the currently running process
+     * */
+    public object Current {
+
+        @JvmStatic
+        public fun environment(): Map<String, String> = PlatformBuilder.get().env.toImmutableMap()
+
+        @JvmStatic
+        public fun pid(): Int = PlatformBuilder.myPid()
+    }
 
     /**
      * Destroys the [Process] by:

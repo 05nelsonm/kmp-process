@@ -47,6 +47,9 @@ internal expect class PlatformBuilder private constructor() {
     ): Process
 
     internal companion object {
+
         internal fun get(): PlatformBuilder
+
+        internal fun myPid(): Int
     }
 }

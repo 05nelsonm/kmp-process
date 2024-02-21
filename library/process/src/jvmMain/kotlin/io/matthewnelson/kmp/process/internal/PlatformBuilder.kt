@@ -92,6 +92,26 @@ internal actual class PlatformBuilder private actual constructor() {
         @JvmSynthetic
         internal actual fun get(): PlatformBuilder = PlatformBuilder()
 
+        @JvmSynthetic
+        internal actual fun myPid(): Int {
+            val pid = try {
+                if (ANDROID_SDK_INT != null) {
+                    // Android Runtime, call android.os.Process.myPid()
+                    AndroidPidMethod?.invoke(null) as? Int
+                } else {
+                    java.lang.management.ManagementFactory
+                        .getRuntimeMXBean()
+                        .name
+                        .split('@')[0]
+                        .toInt()
+                }
+            } catch (_: Throwable) {
+                null
+            }
+
+            return pid ?: -1
+        }
+
         private fun Stdio.toRedirect(
             isStdin: Boolean,
         ): ProcessBuilder.Redirect = when (this) {
@@ -145,6 +165,15 @@ internal actual class PlatformBuilder private actual constructor() {
                 } catch (_: Throwable) {
                     clazz?.getField("SDK")?.get(null)?.toString()?.toIntOrNull()
                 }
+            } catch (_: Throwable) {
+                null
+            }
+        }
+
+        private val AndroidPidMethod by lazy {
+            try {
+                Class.forName("android.os.Process")
+                    .getMethod("myPid")
             } catch (_: Throwable) {
                 null
             }

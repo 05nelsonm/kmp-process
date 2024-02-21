@@ -18,10 +18,6 @@
 
 package io.matthewnelson.kmp.process.internal
 
-import io.matthewnelson.kmp.process.InternalProcessApi
-
 /** [docs](https://nodejs.org/api/process.html#processpid) */
-@InternalProcessApi
-@Suppress("unused")
 @JsName("pid")
-public external val process_pid: Int
+internal external val process_pid: Int

@@ -26,6 +26,7 @@ import io.matthewnelson.kmp.process.Stdio
 import io.matthewnelson.kmp.process.internal.stdio.StdioHandle.Companion.openHandle
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.memScoped
+import platform.posix.getpid
 
 @Suppress("NOTHING_TO_INLINE")
 internal expect inline fun PlatformBuilder.parentEnvironment(): MutableMap<String, String>
@@ -83,6 +84,9 @@ internal actual class PlatformBuilder private actual constructor() {
     }
 
     internal actual companion object {
+
         internal actual fun get(): PlatformBuilder = PlatformBuilder()
+
+        internal actual fun myPid(): Int = getpid()
     }
 }
