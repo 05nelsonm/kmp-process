@@ -16,7 +16,6 @@
 package io.matthewnelson.kmp.process
 
 import io.matthewnelson.kmp.file.*
-import io.matthewnelson.kmp.process.internal.STDIO_NULL
 import io.matthewnelson.kmp.process.internal.isWindows
 import io.matthewnelson.kmp.tor.resource.tor.TorResources
 import kotlinx.coroutines.Dispatchers
@@ -229,55 +228,53 @@ abstract class ProcessBaseTest {
             .stdout(Stdio.File.of(stdout))
             .stderr(Stdio.File.of(stderr))
 
-        val p = b.spawn()
-
-        destroyOnCompletion(p)
-
-        println(p)
-
-        // Should not attach b/c using Stdio.File
-        p.stdoutFeed {}
-        p.stderrFeed {}
-        assertEquals(0, p.stdoutFeedsSize())
-        assertEquals(0, p.stderrFeedsSize())
-
-        assertTrue(stdout.exists())
-        assertTrue(stderr.exists())
-
-        withContext(Dispatchers.Default) {
-            p.waitForAsync(5.seconds, ::delay)
-        }
-
-        p.destroy()
-
-        withContext(Dispatchers.Default) { delay(250.milliseconds) }
-
-        assertFalse(p.isAlive)
-
-        // tor should have handled SIGTERM gracefully
-        val expected = when {
+        // tor should handle SIGTERM gracefully
+        val expectedExitCode = when {
             isWindows -> when {
                 isJvm || isNodeJS -> Signal.SIGTERM.code
                 else -> 0
             }
             else -> 0
         }
-        assertEquals(expected, p.exitCode())
+
+        b.spawn { p ->
+            println(p)
+
+            // Should not attach b/c using Stdio.File
+            p.stdoutFeed {}
+            p.stderrFeed {}
+            assertEquals(0, p.stdoutFeedsSize())
+            assertEquals(0, p.stderrFeedsSize())
+
+            assertTrue(stdout.exists())
+            assertTrue(stderr.exists())
+
+            withContext(Dispatchers.Default) {
+                p.waitForAsync(5.seconds, ::delay)
+            }
+
+            p
+        }.let { p ->
+            // destroy was called
+
+            withContext(Dispatchers.Default) { delay(250.milliseconds) }
+
+            assertFalse(p.isAlive)
+            assertEquals(expectedExitCode, p.exitCode())
+        }
 
         assertTrue(stdout.readUtf8().lines().first().contains(" [notice] Tor "))
         assertTrue(stderr.readUtf8().isEmpty())
 
-        val out = b.output { timeoutMillis = 5_000 }
+        b.output { timeoutMillis = 5_000 }.let { out ->
+            assertEquals(expectedExitCode, out.processInfo.exitCode)
+            assertTrue(out.stdout.lines().first().contains(" [notice] Tor "))
+            assertTrue(out.stderr.isEmpty())
 
-        assertEquals(expected, out.processInfo.exitCode)
-        assertTrue(out.stdout.lines().first().contains(" [notice] Tor "))
-        assertTrue(out.stderr.isEmpty())
+            println(out)
+        }
 
-        println(out)
-
-        b.stdout(Stdio.Pipe).stderr(Stdio.Pipe).spawn().let { p2 ->
-            destroyOnCompletion(p2)
-
+        b.stdout(Stdio.Pipe).stderr(Stdio.Pipe).spawn { p2 ->
             val stdoutBuilder = StringBuilder()
             val stderrBuilder = StringBuilder()
 
@@ -311,7 +308,7 @@ abstract class ProcessBaseTest {
 
             assertEquals(0, p2.stdoutFeedsSize())
             assertEquals(0, p2.stderrFeedsSize())
-            assertEquals(expected, p2.exitCode())
+            assertEquals(expectedExitCode, p2.exitCode())
             assertTrue(stdoutString.lines().first().contains(" [notice] Tor "))
             assertTrue(stderrString.isEmpty())
         }

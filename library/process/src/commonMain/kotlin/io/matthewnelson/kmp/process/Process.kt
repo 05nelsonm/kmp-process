@@ -22,6 +22,9 @@ import io.matthewnelson.kmp.process.internal.SyntheticAccess
 import io.matthewnelson.kmp.process.internal.PlatformBuilder
 import io.matthewnelson.kmp.process.internal.appendProcessInfo
 import io.matthewnelson.kmp.process.internal.commonWaitFor
+import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.InvocationKind
+import kotlin.contracts.contract
 import kotlin.jvm.JvmField
 import kotlin.jvm.JvmName
 import kotlin.jvm.JvmSynthetic
@@ -344,6 +347,11 @@ public abstract class Process internal constructor(
         /**
          * Spawns the [Process]
          *
+         * **NOTE:** [Process.destroy] **MUST** be called before de-referencing
+         * the [Process] instance in order to close resources. This is best done
+         * via try/finally, or utilizing the other [spawn] function which handles
+         * it automatically for you.
+         *
          * @throws [IOException] if [Process] creation failed
          * */
         @Throws(IOException::class)
@@ -356,6 +364,31 @@ public abstract class Process internal constructor(
             val env = platform.env.toImmutableMap()
 
             return platform.spawn(command, args, env, stdio, destroy)
+        }
+
+        /**
+         * Spawns the [Process] and calls [destroy] upon [block] closure.
+         *
+         * @throws [IOException] if [Process] creation failed
+         * */
+        @Throws(IOException::class)
+        @OptIn(ExperimentalContracts::class)
+        public inline fun <T: Any?> spawn(
+            block: (process: Process) -> T,
+        ): T {
+            contract {
+                callsInPlace(block, InvocationKind.AT_MOST_ONCE)
+            }
+
+            val p = spawn()
+
+            val result = try {
+                block(p)
+            } finally {
+                p.destroy()
+            }
+
+            return result
         }
 
         private companion object {
