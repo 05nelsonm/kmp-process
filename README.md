@@ -82,22 +82,21 @@ builder.spawn().let { p ->
 // in order to pass in `kotlinx.coroutines.delay` function.
 // `kmp-process` does **not** depend on coroutines.
 myScope.launch {
-    builder.spawn().let { p ->
 
-        try {
-            val exitCode: Int? = p.waitForAsync(500.milliseconds, ::delay)
+    // Use spawn {} (with lambda) which will automatically call destroy
+    // upon lambda closure, instead of needing the try/finally block.
+    builder.spawn { p ->
 
-            if (exitCode == null) {
-                println("Process did not complete after 500ms")
-                // do something
-            }
+        val exitCode: Int? = p.waitForAsync(500.milliseconds, ::delay)
 
-            // wait until process completes. If myScope
-            // is cancelled, will automatically pop out.
-            p.waitForAsync(::delay)
-        } finally {
-            p.destroy()
+        if (exitCode == null) {
+            println("Process did not complete after 500ms")
+            // do something
         }
+
+        // wait until process completes. If myScope
+        // is cancelled, will automatically pop out.
+        p.waitForAsync(::delay)
     }
 }
 
@@ -113,29 +112,28 @@ builder.output {
 }
 
 // Piping output (feeds are only functional with Stdio.Pipe)
-builder.stdout(Stdio.Pipe).stderr(Stdio.Pipe).spawn().let { p ->
-    try {
-        val exitCode = p.stdoutFeed { line ->
-            // single feed lambda
+builder.stdout(Stdio.Pipe).stderr(Stdio.Pipe).spawn { p ->
 
-            // line dispatched from `stdout` bg thread (Jvm/Native) 
+    val exitCode = p.stdoutFeed { line ->
+        // single feed lambda
+
+        // line dispatched from `stdout` bg thread (Jvm/Native) 
+        println(line)
+    }.stderrFeed(
+        // vararg for attaching multiple OutputFeed at once
+        // so no data is missed (reading starts on the first
+        // OutputFeed attachment for that Pipe)
+        OutputFeed { line ->
+            // line dispatched from `stderr` bg thread (Jvm/Native)
             println(line)
-        }.stderrFeed(
-            // vararg for attaching multiple OutputFeed at once
-            // so no data is missed (reading starts on the first
-            // OutputFeed attachment for that Pipe)
-            OutputFeed { line ->
-                // line dispatched from `stderr` bg thread (Jvm/Native)
-                println(line)
-            },
-            OutputFeed { line ->
-                // do something else
-            },
-        ).waitFor(5.seconds)
-    } finally {
-        p.destroy()
-    }
-}
+        },
+        OutputFeed { line ->
+            // do something else
+        },
+    ).waitFor(5.seconds)
+
+    println("EXIT_CODE[$exitCode]")
+} // << destroy automatically called on closure
 ```
 
 ## Get Started

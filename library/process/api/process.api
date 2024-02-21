@@ -81,6 +81,7 @@ public final class io/matthewnelson/kmp/process/Process$Builder {
 	public final fun output ()Lio/matthewnelson/kmp/process/Output;
 	public final fun output (Lkotlin/jvm/functions/Function1;)Lio/matthewnelson/kmp/process/Output;
 	public final fun spawn ()Lio/matthewnelson/kmp/process/Process;
+	public final fun spawn (Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
 	public final fun stderr (Lio/matthewnelson/kmp/process/Stdio;)Lio/matthewnelson/kmp/process/Process$Builder;
 	public final fun stdin (Lio/matthewnelson/kmp/process/Stdio;)Lio/matthewnelson/kmp/process/Process$Builder;
 	public final fun stdout (Lio/matthewnelson/kmp/process/Stdio;)Lio/matthewnelson/kmp/process/Process$Builder;
