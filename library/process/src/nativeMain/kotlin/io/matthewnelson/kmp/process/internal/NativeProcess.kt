@@ -19,11 +19,16 @@ import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.internal.stdio.StdioHandle
+import io.matthewnelson.kmp.process.internal.stdio.StdioReader
 import kotlinx.cinterop.*
 import platform.posix.*
 import kotlin.concurrent.AtomicReference
+import kotlin.native.concurrent.ObsoleteWorkersApi
+import kotlin.native.concurrent.TransferMode
+import kotlin.native.concurrent.Worker
 import kotlin.time.Duration
 
+@OptIn(ObsoleteWorkersApi::class)
 internal class NativeProcess
 @Throws(IOException::class)
 internal constructor(
@@ -44,6 +49,22 @@ internal constructor(
 
     private val _exitCode = AtomicReference<Int?>(null)
 
+    private val stdoutWorker = Instance {
+        if (isDestroyed) return@Instance null
+        val stdout = handle.stdoutReader() ?: return@Instance null
+
+        Worker.start(name = "Process[pid=$pid, stdio=stdout]")
+            .execute(stdout, ::dispatchStdout, ::onStdoutStopped)
+    }
+
+    private val stderrWorker = Instance {
+        if (isDestroyed) return@Instance null
+        val stderr = handle.stderrReader() ?: return@Instance null
+
+        Worker.start(name = "Process[pid=$pid, stdio=stderr]")
+            .execute(stderr, ::dispatchStderr, ::onStderrStopped)
+    }
+
     override fun destroy(): Process {
         isDestroyed = true
 
@@ -55,11 +76,26 @@ internal constructor(
 
             kill(pid, s)
 
+            isAlive
             // TODO: https://man7.org/linux/man-pages/man7/signal.7.html
             // TODO, wait
         }
 
+        val hasBeenClosed = handle.isClosed
+
         handle.close()
+
+        if (!hasBeenClosed) {
+            stdoutWorker
+                .getOrNull()
+                ?.requestTermination(processScheduledJobs = false)
+                ?.result
+
+            stderrWorker
+                .getOrNull()
+                ?.requestTermination(processScheduledJobs = false)
+                ?.result
+        }
 
         return this
     }
@@ -100,11 +136,40 @@ internal constructor(
 
     override fun waitFor(duration: Duration): Int? = commonWaitFor(duration) { it.threadSleep() }
 
-    override fun startStdout() {
-        // TODO
-    }
+    override fun startStdout() { stdoutWorker.getOrCreate() }
+    override fun startStderr() { stderrWorker.getOrCreate() }
 
-    override fun startStderr() {
-        // TODO
+    private fun Worker.execute(
+        r: StdioReader,
+        d: (line: String) -> Unit,
+        s: () -> Unit,
+    ): Worker {
+        execute(TransferMode.SAFE, { Triple(r, d, s) }) { (reader, dispatch, onStopped) ->
+            val buf = ByteArray(1024 * 8)
+            var overflow: ByteArray? = null
+
+            while (true) {
+                val read = try {
+                    reader.read(buf)
+                } catch (e: IOException) {
+                    break
+                }
+
+                val (lines, _overflow) = StdioReader.parseLines(buf, overflow, read)
+                overflow = _overflow
+                lines.forEach(dispatch)
+            }
+
+            if (overflow != null) {
+                dispatch(overflow.decodeToString())
+            }
+
+            buf.fill(0)
+            overflow?.fill(0)
+
+            onStopped()
+        }
+
+        return this
     }
 }
