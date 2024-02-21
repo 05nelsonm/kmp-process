@@ -164,6 +164,8 @@ internal actual class PlatformBuilder private actual constructor() {
 
         internal actual fun get(): PlatformBuilder = PlatformBuilder()
 
+        internal actual fun myPid(): Int = process_pid
+
         private fun Map<String, String>.toJsEnv(): dynamic {
             val jsEnv = js("{}")
             entries.forEach { entry ->

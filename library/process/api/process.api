@@ -90,6 +90,12 @@ public final class io/matthewnelson/kmp/process/Process$Builder {
 protected final class io/matthewnelson/kmp/process/Process$Companion {
 }
 
+public final class io/matthewnelson/kmp/process/Process$Current {
+	public static final field INSTANCE Lio/matthewnelson/kmp/process/Process$Current;
+	public static final fun environment ()Ljava/util/Map;
+	public static final fun pid ()I
+}
+
 public final class io/matthewnelson/kmp/process/Signal : java/lang/Enum {
 	public static final field SIGKILL Lio/matthewnelson/kmp/process/Signal;
 	public static final field SIGTERM Lio/matthewnelson/kmp/process/Signal;
