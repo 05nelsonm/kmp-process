@@ -23,6 +23,7 @@ import io.matthewnelson.kmp.process.Output
 import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.Stdio
+import io.matthewnelson.kmp.process.internal.stdio.StdioHandle.Companion.openHandle
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.memScoped
 
@@ -55,23 +56,29 @@ internal actual class PlatformBuilder private actual constructor() {
         stdio: Stdio.Config,
         destroy: Signal,
     ): Process {
+
+        val handle = stdio.openHandle()
+
         try {
             val p: NativeProcess = memScoped {
-                posixSpawn(command, args, env, stdio, destroy)
+                posixSpawn(command, args, env, handle, destroy)
             }
             return p
         } catch (_: UnsupportedOperationException) {
             /* ignore and try fork/exec */
+        } catch (e: IOException) {
+            handle.close()
+            throw e
         }
 
         try {
             val p: NativeProcess = memScoped {
-                forkExec(command, args, env, stdio, destroy)
+                forkExec(command, args, env, handle, destroy)
             }
             return p
-        } catch (e: UnsupportedOperationException) {
-            // should never be the case, but have to handle.
-            throw IOException("Neither posix_spawn or fork/exec are supported", e)
+        } catch (e: Exception) {
+            handle.close()
+            throw e.wrapIOException { "Neither posix_spawn or fork/exec are supported" }
         }
     }
 

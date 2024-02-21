@@ -22,7 +22,7 @@ import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.file.InterruptedException
 import io.matthewnelson.kmp.file.errnoToIOException
 import io.matthewnelson.kmp.process.Signal
-import io.matthewnelson.kmp.process.Stdio
+import io.matthewnelson.kmp.process.internal.stdio.StdioHandle
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.MemScope
 import platform.posix.errno
@@ -38,7 +38,7 @@ internal expect fun MemScope.posixSpawn(
     command: String,
     args: List<String>,
     env: Map<String, String>,
-    stdio: Stdio.Config,
+    handle: StdioHandle,
     destroy: Signal,
 ): NativeProcess
 
@@ -48,7 +48,7 @@ internal expect fun MemScope.forkExec(
     command: String,
     args: List<String>,
     env: Map<String, String>,
-    stdio: Stdio.Config,
+    handle: StdioHandle,
     destroy: Signal,
 ): NativeProcess
 
@@ -78,4 +78,11 @@ internal inline fun Int.check(
     }
 
     return this
+}
+
+@Suppress("NOTHING_TO_INLINE")
+@Throws(IllegalArgumentException::class, IndexOutOfBoundsException::class)
+internal inline fun ByteArray.checkBounds(offset: Int, len: Int) {
+    if (size - offset < len) throw IllegalArgumentException("Input too short")
+    if (offset < 0 || len < 0 || offset > size - len) throw IndexOutOfBoundsException()
 }

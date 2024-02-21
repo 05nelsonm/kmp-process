@@ -46,7 +46,7 @@ import kotlin.jvm.JvmSynthetic
  *             },
  *             OutputFeed { line ->
  *                 // do something
- *             },
+ *             }
  *         )
  *
  * @see [Handler.stdoutFeed]
@@ -87,13 +87,13 @@ public fun interface OutputFeed {
          * does nothing.
          * */
         public fun stdoutFeed(feed: OutputFeed): Process {
-            return stdoutFeed(*arrayOf(feed))
+            return stdoutFeed(*Array(1) { feed })
         }
 
         /**
          * Attaches multiple [OutputFeed] to obtain `stdout` output.
          * This is handy at [Process] startup such that no data is
-         * missed if there are multiple feeds needing to being attached.
+         * missed if there are multiple feeds needing to be attached.
          *
          * [Process] will begin outputting data to all [OutputFeed]
          * for `stdout` upon the first attachment of [OutputFeed].
@@ -117,13 +117,13 @@ public fun interface OutputFeed {
          * does nothing.
          * */
         public fun stderrFeed(feed: OutputFeed): Process {
-            return stderrFeed(*arrayOf(feed))
+            return stderrFeed(*Array(1) { feed })
         }
 
         /**
          * Attaches multiple [OutputFeed] to obtain `stderr` output.
          * This is handy at [Process] startup such that no data is
-         * missed if there are multiple feeds needing to being attached.
+         * missed if there are multiple feeds needing to be attached.
          *
          * [Process] will begin outputting data to all [OutputFeed]
          * for `stderr` upon the first attachment of [OutputFeed].
@@ -171,8 +171,8 @@ public fun interface OutputFeed {
             stdio: Stdio,
             startStdio: () -> Unit
         ): Process {
-            if (feeds.isEmpty()) return This
             if (isDestroyed) return This
+            if (feeds.isEmpty()) return This
             if (stdio !is Stdio.Pipe) return This
 
             val start = withLock {

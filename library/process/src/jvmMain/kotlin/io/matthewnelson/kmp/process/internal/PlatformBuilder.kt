@@ -97,17 +97,15 @@ internal actual class PlatformBuilder private actual constructor() {
         ): ProcessBuilder.Redirect = when (this) {
             is Stdio.Inherit -> ProcessBuilder.Redirect.INHERIT
             is Stdio.Pipe -> ProcessBuilder.Redirect.PIPE
-            is Stdio.File -> {
-                when {
-                    file == STDIO_NULL -> if (isStdin) {
-                        REDIRECT_NULL_READ
-                    } else {
-                        REDIRECT_NULL_WRITE
-                    }
-                    isStdin -> ProcessBuilder.Redirect.from(file)
-                    append -> ProcessBuilder.Redirect.appendTo(file)
-                    else -> ProcessBuilder.Redirect.to(file)
+            is Stdio.File -> when {
+                file == STDIO_NULL -> if (isStdin) {
+                    REDIRECT_NULL_READ
+                } else {
+                    REDIRECT_NULL_WRITE
                 }
+                isStdin -> ProcessBuilder.Redirect.from(file)
+                append -> ProcessBuilder.Redirect.appendTo(file)
+                else -> ProcessBuilder.Redirect.to(file)
             }
         }
 

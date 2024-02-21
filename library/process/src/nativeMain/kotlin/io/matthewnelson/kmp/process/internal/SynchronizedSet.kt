@@ -17,30 +17,12 @@
 
 package io.matthewnelson.kmp.process.internal
 
-import kotlin.concurrent.AtomicReference
-
 internal actual class SynchronizedSet<E: Any?> internal actual constructor() {
 
     private val set = LinkedHashSet<E>(1, 1.0F)
-    private val lock = AtomicReference<Int?>(null)
+    private val lock = Lock()
 
     internal actual fun <T: Any?> withLock(
         block: MutableSet<E>.() -> T
-    ): T {
-        val hc = Any().hashCode()
-
-        val result = try {
-            while (true) {
-                if (lock.compareAndSet(null, hc)) {
-                    break
-                }
-            }
-
-            block(set)
-        } finally {
-            lock.value = null
-        }
-
-        return result
-    }
+    ): T = lock.withLock { block(set) }
 }

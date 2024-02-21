@@ -60,15 +60,28 @@ kmpConfiguration {
                 val macosMain = findByName("macosMain")
 //                val androidNative = findByName("androidNativeMain")
                 if (linuxMain != null || macosMain != null) {
-                    val forkExecMain = maybeCreate("forkExecMain")
-                    forkExecMain.dependsOn(getByName("nativeMain"))
-                    linuxMain?.apply { dependsOn(forkExecMain) }
-                    macosMain?.apply { dependsOn(forkExecMain) }
+                    val forkMain = maybeCreate("forkMain")
+                    forkMain.dependsOn(getByName("nativeMain"))
+                    linuxMain?.apply { dependsOn(forkMain) }
+                    macosMain?.apply { dependsOn(forkMain) }
 
-                    val forkExecTest = maybeCreate("forkExecTest")
+                    val forkExecTest = maybeCreate("forkTest")
                     forkExecTest.dependsOn(getByName("nativeTest"))
                     findByName("linuxTest")?.apply { dependsOn(forkExecTest) }
                     findByName("macosTest")?.apply { dependsOn(forkExecTest) }
+                }
+
+                val darwinMain = findByName("darwinMain")
+                if (linuxMain != null || darwinMain != null) {
+                    val spawnMain = maybeCreate("spawnMain")
+                    spawnMain.dependsOn(getByName("unixMain"))
+                    linuxMain?.apply { dependsOn(spawnMain) }
+                    darwinMain?.apply { dependsOn(spawnMain) }
+
+                    val spawnTest = maybeCreate("spawnTest")
+                    spawnTest.dependsOn(getByName("unixTest"))
+                    findByName("linuxTest")?.apply { dependsOn(spawnTest) }
+                    findByName("darwinTest")?.apply { dependsOn(spawnTest) }
                 }
             }
 

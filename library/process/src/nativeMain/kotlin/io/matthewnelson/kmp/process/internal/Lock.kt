@@ -15,7 +15,27 @@
  **/
 package io.matthewnelson.kmp.process.internal
 
-import io.matthewnelson.kmp.file.File
-import io.matthewnelson.kmp.file.toFile
+import kotlin.concurrent.AtomicReference
 
-internal actual val STDIO_NULL: File = "/dev/null".toFile()
+internal class Lock {
+
+    private val ref = AtomicReference<Int?>(null)
+
+    internal fun <T: Any?> withLock(block: () -> T): T {
+        val hc = Any().hashCode()
+
+        val result = try {
+            while (true) {
+                if (ref.compareAndSet(null, hc)) {
+                    break
+                }
+            }
+
+            block()
+        } finally {
+            ref.value = null
+        }
+
+        return result
+    }
+}
