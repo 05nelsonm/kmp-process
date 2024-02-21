@@ -20,6 +20,7 @@ package io.matthewnelson.kmp.process.internal.stdio
 
 import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.process.Stdio
+import io.matthewnelson.kmp.process.internal.Instance
 import io.matthewnelson.kmp.process.internal.Lock
 import io.matthewnelson.kmp.process.internal.stdio.StdioDescriptor.Pair.Companion.fdOpen
 import io.matthewnelson.kmp.process.internal.stdio.StdioDescriptor.Single.Companion.fdOpen
@@ -36,12 +37,27 @@ internal class StdioHandle private constructor(
 ) {
 
     @Volatile
-    private var isClosed = false
+    internal var isClosed = false
+        private set
     private val lock = Lock()
 
-    // TODO: internal val stdin: Writer?
-    // TODO: internal val stdout: Reader?
-    // TODO: internal val stderr: Reader?
+    private val stdin: Instance<StdioWriter?> = Instance(create = {
+        if (isClosed) return@Instance null
+        if (stdinFD !is StdioDescriptor.Pair) return@Instance null
+        StdioWriter(stdinFD)
+    })
+
+    private val stdout: Instance<StdioReader?> = Instance(create = {
+        if (isClosed) return@Instance null
+        if (stdoutFD !is StdioDescriptor.Pair) return@Instance null
+        StdioReader(stdoutFD)
+    })
+
+    private val stderr: Instance<StdioReader?> = Instance(create = {
+        if (isClosed) return@Instance null
+        if (stderrFD !is StdioDescriptor.Pair) return@Instance null
+        StdioReader(stderrFD)
+    })
 
     @Throws(IOException::class)
     internal fun dup2(action: (fd: Int, newFd: Int) -> IOException?) {
@@ -56,17 +72,14 @@ internal class StdioHandle private constructor(
                 closeNoLock()
                 throw e
             }
-
-            // TODO: Issue #6
-            //  If isWindows (using fork), close pipe read or write ends.
-            //  Unix always opens descriptors with O_CLOEXEC/FD_CLOEXEC, and
-            //  posix_spawn is never used on Windows. dup2 is invoked from the
-            //  child process after fork (pid 0), so StdioHandle.close is never
-            //  called b/c after exec, the child process exits.
         }
     }
 
-    fun close() {
+    internal fun stdinWriter(): StdioWriter? = lock.withLock { stdin.getOrCreate() }
+    internal fun stdoutReader(): StdioReader? = lock.withLock { stdout.getOrCreate() }
+    internal fun stderrReader(): StdioReader? = lock.withLock { stderr.getOrCreate() }
+
+    internal fun close() {
         // subsequent calls to close will do nothing, as
         // we do not want to call close on potentially
         // recycled descriptors.
@@ -84,8 +97,6 @@ internal class StdioHandle private constructor(
         stdinFD.close()
         stdoutFD.close()
         stderrFD.close()
-
-        // TODO: Close Reader/Writer(s)
     }
 
     internal companion object {

@@ -23,12 +23,17 @@ import io.matthewnelson.kmp.process.Stdio
 import io.matthewnelson.kmp.process.internal.STDIO_NULL
 import io.matthewnelson.kmp.process.internal.check
 import platform.posix.*
+import kotlin.concurrent.Volatile
 
 internal sealed class StdioDescriptor private constructor() {
 
-    // Does not track if descriptors have been closed
-    // already. That is done in bulk by StdioHandle
+    @Volatile
+    internal var isClosed: Boolean = false
+        private set
+
     internal fun close() {
+        if (isClosed) return
+
         when (this) {
             is Single -> listOf(fd)
             is Pair -> listOf(fdRead, fdWrite)
@@ -40,6 +45,8 @@ internal sealed class StdioDescriptor private constructor() {
                 else -> close(fd)
             }
         }
+
+        isClosed = true
     }
 
     internal class Single private constructor(
