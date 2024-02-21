@@ -35,14 +35,15 @@ internal sealed class StdioDescriptor private constructor() {
         if (isClosed) return
 
         when (this) {
-            is Single -> listOf(fd)
-            is Pair -> listOf(fdRead, fdWrite)
-        }.forEach { fd ->
-            when (fd) {
+            is Single -> when (fd) {
                 STDIN_FILENO,
                 STDOUT_FILENO,
-                STDERR_FILENO -> return@forEach
+                STDERR_FILENO -> { /* do not close */ }
                 else -> close(fd)
+            }
+            is Pair -> {
+                close(fdRead)
+                close(fdWrite)
             }
         }
 
