@@ -75,8 +75,6 @@ internal constructor(
             kill(pid, s)
 
             isAlive
-            // TODO: https://man7.org/linux/man-pages/man7/signal.7.html
-            // TODO, wait
         }
 
         val hasBeenClosed = handle.isClosed
@@ -115,7 +113,7 @@ internal constructor(
                         val status = code shr 8 and 0x000000FF
 
                         if (status != 0) {
-                            // exited with a non-0 value, e.g. exit 42
+                            // exited with a non-zero value, e.g. exit 42
                             code = status
                         } else {
                             // signal stopped the process

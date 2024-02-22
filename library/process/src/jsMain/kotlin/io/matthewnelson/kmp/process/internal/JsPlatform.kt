@@ -32,10 +32,7 @@ internal actual val STDIO_NULL: File by lazy {
 @Suppress("NOTHING_TO_INLINE")
 internal inline fun stream_Readable.onClose(
     noinline block: () -> Unit,
-): stream_Readable {
-    on("close", block)
-    return this
-}
+): stream_Readable = on("close", block)
 
 @Suppress("NOTHING_TO_INLINE")
 internal inline fun stream_Readable.onData(
@@ -44,10 +41,12 @@ internal inline fun stream_Readable.onData(
     val cb: (chunk: dynamic) -> Unit = { chunk ->
         // can be either a String or a Buffer (fucking stupid...)
 
+        @OptIn(DelicateFileApi::class)
         val result = try {
-            // TODO: might be HUGE, need to parse the chunk
-            @OptIn(DelicateFileApi::class)
-            Buffer.wrap(chunk).toUtf8()
+            val buf = Buffer.wrap(chunk)
+            val utf8 = buf.toUtf8()
+            buf.fill()
+            utf8
         } catch (_: IOException) {
             try {
                 chunk as String
@@ -61,7 +60,5 @@ internal inline fun stream_Readable.onData(
         if (!result.isNullOrEmpty()) block(result)
     }
 
-    on("data", cb)
-
-    return this
+    return on("data", cb)
 }

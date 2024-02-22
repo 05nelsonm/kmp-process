@@ -18,14 +18,11 @@
 package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.IOException
-import io.matthewnelson.kmp.file.wrapIOException
 import io.matthewnelson.kmp.process.Output
 import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.Stdio
 import io.matthewnelson.kmp.process.internal.stdio.StdioHandle.Companion.openHandle
-import kotlinx.cinterop.ExperimentalForeignApi
-import kotlinx.cinterop.memScoped
 import platform.posix.getpid
 
 @Suppress("NOTHING_TO_INLINE")
@@ -49,7 +46,6 @@ internal actual class PlatformBuilder private actual constructor() {
     ): Output = blockingOutput(command, args, env, stdio, options, destroy)
 
     @Throws(IOException::class)
-    @OptIn(ExperimentalForeignApi::class)
     internal actual fun spawn(
         command: String,
         args: List<String>,
@@ -61,10 +57,7 @@ internal actual class PlatformBuilder private actual constructor() {
         val handle = stdio.openHandle()
 
         try {
-            val p: NativeProcess = memScoped {
-                posixSpawn(command, args, env, handle, destroy)
-            }
-            return p
+            return posixSpawn(command, args, env, handle, destroy)
         } catch (_: UnsupportedOperationException) {
             /* ignore and try fork/exec */
         } catch (e: IOException) {
@@ -73,13 +66,10 @@ internal actual class PlatformBuilder private actual constructor() {
         }
 
         try {
-            val p: NativeProcess = memScoped {
-                forkExec(command, args, env, handle, destroy)
-            }
-            return p
-        } catch (e: Exception) {
+            return forkExec(command, args, env, handle, destroy)
+        } catch (e: IOException) {
             handle.close()
-            throw e.wrapIOException { "Neither posix_spawn or fork/exec are supported" }
+            throw e
         }
     }
 
