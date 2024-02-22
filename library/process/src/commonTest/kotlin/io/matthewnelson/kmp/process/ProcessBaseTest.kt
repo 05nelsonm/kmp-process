@@ -77,24 +77,43 @@ abstract class ProcessBaseTest {
     }
 
     @Test
-    fun givenExitCode_whenCompleted_thenIsAsExpected() {
-        if (!isUnixDesktop || isNodeJS) {
+    fun givenExitCode_whenCompleted_thenIsStatusCode() {
+        if (!isUnixDesktop) {
             println("Skipping...")
             return
         }
 
         val expected = 42
-        val p = Process.Builder("sh")
+        val actual = Process.Builder("sh")
             .args("-c")
             .args("sleep 0.25; exit $expected")
             .destroySignal(Signal.SIGKILL)
-            .spawn()
+            // Should complete and exit before timing out
+            .output { timeoutMillis = 1_000 }
+            .processInfo
+            .exitCode
 
-        try {
-            assertEquals(expected, p.waitFor(1.seconds))
-        } finally {
-            p.destroy()
+        assertEquals(expected, actual)
+    }
+
+    @Test
+    fun givenExitCode_whenTerminated_thenIsSignalCode() {
+        if (!isUnixDesktop) {
+            println("Skipping...")
+            return
         }
+
+        val expected = Signal.SIGKILL
+        val actual = Process.Builder("sh")
+            .args("-c")
+            .args("sleep 1; exit 42")
+            .destroySignal(expected)
+            // Should be killed before completing via signal
+            .output{ timeoutMillis = 250 }
+            .processInfo
+            .exitCode
+
+        assertEquals(expected.code, actual)
     }
 
     @Test
@@ -154,14 +173,8 @@ abstract class ProcessBaseTest {
 
         withContext(Dispatchers.Default) { delay(250.milliseconds) }
 
-        // TODO: Fix Native exitCode
-        if (isJvm || isNodeJS) {
-            assertEquals(Signal.SIGTERM.code, pTerm.exitCode())
-            assertEquals(Signal.SIGKILL.code, pKill.exitCode())
-        } else {
-            println("TERM: ${pTerm.exitCode()}")
-            println("KILL: ${pKill.exitCode()}")
-        }
+        assertEquals(Signal.SIGTERM.code, pTerm.exitCode())
+        assertEquals(Signal.SIGKILL.code, pKill.exitCode())
     }
 
     @Test
@@ -230,10 +243,7 @@ abstract class ProcessBaseTest {
 
         // tor should handle SIGTERM gracefully
         val expectedExitCode = when {
-            isWindows -> when {
-                isJvm || isNodeJS -> Signal.SIGTERM.code
-                else -> 0
-            }
+            isWindows -> Signal.SIGTERM.code
             else -> 0
         }
 
