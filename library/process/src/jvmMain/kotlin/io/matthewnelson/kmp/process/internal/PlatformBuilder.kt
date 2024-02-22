@@ -94,22 +94,15 @@ internal actual class PlatformBuilder private actual constructor() {
 
         @JvmSynthetic
         internal actual fun myPid(): Int {
-            val pid = try {
-                if (ANDROID_SDK_INT != null) {
-                    // Android Runtime, call android.os.Process.myPid()
-                    AndroidPidMethod?.invoke(null) as? Int
-                } else {
-                    java.lang.management.ManagementFactory
-                        .getRuntimeMXBean()
-                        .name
-                        .split('@')[0]
-                        .toInt()
-                }
-            } catch (_: Throwable) {
-                null
+            AndroidMyPidMethod?.let { myPid ->
+                return myPid.invoke(null) as Int
             }
 
-            return pid ?: -1
+            return java.lang.management.ManagementFactory
+                .getRuntimeMXBean()
+                .name
+                .split('@')[0]
+                .toInt()
         }
 
         private fun Stdio.toRedirect(
@@ -170,13 +163,13 @@ internal actual class PlatformBuilder private actual constructor() {
             }
         }
 
-        private val AndroidPidMethod by lazy {
-            try {
-                Class.forName("android.os.Process")
-                    .getMethod("myPid")
-            } catch (_: Throwable) {
-                null
-            }
+        private val AndroidMyPidMethod by lazy {
+            // Not Android Runtime
+            if (ANDROID_SDK_INT == null) return@lazy null
+
+            // Android runtime
+            Class.forName("android.os.Process")
+                .getMethod("myPid")
         }
     }
 }
