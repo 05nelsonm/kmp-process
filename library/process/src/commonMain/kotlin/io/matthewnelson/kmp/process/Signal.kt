@@ -30,7 +30,7 @@ public enum class Signal(
      *
      * On Jvm, this is the same as calling `java.lang.Process.destroy`
      * */
-    SIGTERM(143),
+    SIGTERM(128 + 15),
 
     /**
      * On Jvm, this is the same as calling `java.lang.Process.destroyForcibly`.
@@ -38,5 +38,5 @@ public enum class Signal(
      * Note that on Android API 25 and below, SIGTERM is always utilized
      * as `java.lang.Process.destroyForcibly` is unavailable.
      * */
-    SIGKILL(137),
+    SIGKILL(128 + 9),
 }
