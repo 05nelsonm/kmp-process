@@ -49,21 +49,19 @@ internal constructor(
 
     private val _exitCode = AtomicReference<Int?>(null)
 
-    private val stdoutWorker = Instance {
+    private val stdoutWorker = Instance(create = {
         if (isDestroyed) return@Instance null
-        val stdout = handle.stdoutReader() ?: return@Instance null
+        val reader = handle.stdoutReader() ?: return@Instance null
 
-        Worker.start(name = "Process[pid=$pid, stdio=stdout]")
-            .execute(stdout, ::dispatchStdout, ::onStdoutStopped)
-    }
+        Worker.start("stdout", reader, ::dispatchStdout, ::onStdoutStopped)
+    })
 
-    private val stderrWorker = Instance {
+    private val stderrWorker = Instance(create = {
         if (isDestroyed) return@Instance null
-        val stderr = handle.stderrReader() ?: return@Instance null
+        val reader = handle.stderrReader() ?: return@Instance null
 
-        Worker.start(name = "Process[pid=$pid, stdio=stderr]")
-            .execute(stderr, ::dispatchStderr, ::onStderrStopped)
-    }
+        Worker.start("stderr", reader, ::dispatchStderr, ::onStderrStopped)
+    })
 
     override fun destroy(): Process {
         isDestroyed = true
@@ -139,12 +137,15 @@ internal constructor(
     override fun startStdout() { stdoutWorker.getOrCreate() }
     override fun startStderr() { stderrWorker.getOrCreate() }
 
-    private fun Worker.execute(
+    private fun Worker.Companion.start(
+        name: String,
         r: StdioReader,
         d: (line: String) -> Unit,
         s: () -> Unit,
     ): Worker {
-        execute(TransferMode.SAFE, { Triple(r, d, s) }) { (reader, dispatch, onStopped) ->
+        val w = start(name = "Process[pid=$pid, stdio=$name]")
+
+        w.execute(TransferMode.SAFE, { Triple(r, d, s) }) { (reader, dispatch, onStopped) ->
             val buf = ByteArray(1024 * 8)
             var overflow: ByteArray? = null
 
@@ -170,6 +171,6 @@ internal constructor(
             onStopped()
         }
 
-        return this
+        return w
     }
 }
