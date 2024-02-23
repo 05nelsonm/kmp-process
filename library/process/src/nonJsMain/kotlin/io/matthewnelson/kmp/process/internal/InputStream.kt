@@ -17,24 +17,13 @@
 
 package io.matthewnelson.kmp.process.internal
 
-import io.matthewnelson.kmp.file.File
-import io.matthewnelson.kmp.file.InterruptedException
-import io.matthewnelson.kmp.file.SysPathSep
-import io.matthewnelson.kmp.file.toFile
-import kotlin.time.Duration
+import io.matthewnelson.kmp.file.IOException
 
-internal actual val STDIO_NULL: File = (System.getProperty("os.name")
-    ?.ifBlank { null }
-    ?.contains("windows", ignoreCase = true)
-    ?: (SysPathSep == '\\'))
-    .let { isWindows -> if (isWindows) "NUL" else "/dev/null" }
-    .toFile()
+internal expect abstract class InputStream internal constructor() {
 
-@Suppress("NOTHING_TO_INLINE")
-@Throws(InterruptedException::class)
-internal actual inline fun Duration.threadSleep() {
-    Thread.sleep(inWholeMilliseconds)
+    @Throws(IllegalArgumentException::class, IndexOutOfBoundsException::class, IOException::class)
+    internal open fun read(buf: ByteArray, offset: Int, len: Int): Int
+
+    @Throws(IOException::class)
+    internal fun read(buf: ByteArray): Int
 }
-
-@Suppress("ACTUAL_WITHOUT_EXPECT")
-internal actual typealias InputStream = java.io.InputStream
