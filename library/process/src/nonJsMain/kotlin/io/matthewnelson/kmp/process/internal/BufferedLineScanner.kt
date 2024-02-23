@@ -60,7 +60,8 @@ internal class BufferedLineScanner private constructor(
                 break
             }
 
-            if (read <= 0) continue
+            if (read == 0) continue
+            if (read == -1) break
 
             var iNext = 0
             for (i in 0 until read) {
