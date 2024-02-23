@@ -27,7 +27,7 @@ import platform.posix.*
 
 @OptIn(ExperimentalForeignApi::class)
 @Throws(IOException::class, UnsupportedOperationException::class)
-internal actual fun MemScope.posixSpawn(
+internal actual fun posixSpawn(
     command: String,
     args: List<String>,
     env: Map<String, String>,
@@ -50,72 +50,55 @@ internal actual fun MemScope.posixSpawn(
         throw UnsupportedOperationException("Failed to retrieve glibc version", e)
     }
 
-    val fileActions = posixSpawnFileActionsInit()
+    val pid = memScoped {
+        val fileActions = posixSpawnFileActionsInit()
 
-    // TODO: Issue #15
-    //  try addchdir_np (iOS/Linux throws IOException)
+        // TODO: Issue #15
+        //  try addchdir_np (iOS/Linux throws IOException)
 
-    val attrs = posixSpawnAttrInit()
+        val attrs = posixSpawnAttrInit()
 
-    handle.dup2(action = { fd, newFd ->
-        // posix_spawn_file_actions_adddup2 returns a negative
-        // value as the error instead of setting errno.
-        @OptIn(DelicateFileApi::class, ExperimentalForeignApi::class)
-        when (val result = fileActions.adddup2(fd, newFd)) {
-            0 -> null
-            else -> errnoToIOException(result)
-        }
-    })
+        handle.dup2(action = { fd, newFd ->
+            // posix_spawn_file_actions_adddup2 returns a non-zero
+            // value to indicate the error.
+            @OptIn(DelicateFileApi::class, ExperimentalForeignApi::class)
+            when (val result = fileActions.adddup2(fd, newFd)) {
+                0 -> null
+                else -> errnoToIOException(result)
+            }
+        })
 
-    val pid = alloc<pid_tVar>()
+        val pid = alloc<pid_tVar>()
 
-    // TODO: Issue #40
-    //  move to nativeMain.PlatformBuilder.Companion
-    // null terminated c-string array
-    val argv = allocArray<CPointerVar<ByteVar>>(args.size + 2).apply {
-        // First argument for posix_spawn's argv should be the executable name.
-        // If command is the absolute path to the executable, take the final
-        // path argument after last separator.
-        this[0] = command.substringAfterLast('/').cstr.ptr
+        val argv = args.toArgv(
+            // First argument for posix_spawn's argv should be the executable name.
+            // If command is the absolute path to the executable, take the final
+            // path argument after last separator.
+            argv0 = command.substringAfterLast(SysPathSep),
+            scope = this,
+        )
 
-        var i = 1
-        val iterator = args.iterator()
-        while (iterator.hasNext()) {
-            this[i++] = iterator.next().cstr.ptr
-        }
+        val envp = env.toEnvp(scope = this)
 
-        this[i] = null
+        // TODO: Check relative paths like ../program and how
+        //  posix_spawnp functions with that. It "should" work,
+        //  but darwin seems like there is a bug if utilized with
+        //  addchdir_np. May be necessary to always convert to
+        //  absolute file path if command.contains(SysPathSep) is
+        //  true?
+        if (command.startsWith(SysPathSep)) {
+            // Absolute path, utilize posix_spawn
+            posixSpawn(command, pid.ptr, fileActions, attrs, argv, envp)
+        } else {
+            // relative path or program name, utilize posix_spawnp
+            posixSpawnP(command, pid.ptr, fileActions, attrs, argv, envp)
+        }.check()
+
+        pid.value
     }
-
-    // TODO: Issue #40
-    //  move to nativeMain.PlatformBuilder.Companion
-    // null terminated c-string array
-    val envp = allocArray<CPointerVar<ByteVar>>(env.size + 1).apply {
-        var i = 0
-        val iterator = env.entries.iterator()
-        while (iterator.hasNext()) {
-            this[i++] = iterator.next().toString().cstr.ptr
-        }
-
-        this[i] = null
-    }
-
-    // TODO: Check relative paths like ../program and how
-    //  posix_spawnp functions with that. It "should" work,
-    //  but darwin seems like there is a bug if utilized with
-    //  addchdir_np. May be necessary to always convert to
-    //  absolute file path if command.contains(SysPathSep) is
-    //  true?
-    if (command.startsWith(SysPathSep)) {
-        // Absolute path, utilize posix_spawn
-        posixSpawn(command, pid.ptr, fileActions, attrs, argv, envp)
-    } else {
-        // relative path or program name, utilize posix_spawnp
-        posixSpawnP(command, pid.ptr, fileActions, attrs, argv, envp)
-    }.check()
 
     return NativeProcess(
-        pid.value,
+        pid,
         handle,
         command,
         args,

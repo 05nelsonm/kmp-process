@@ -23,8 +23,7 @@ import io.matthewnelson.kmp.file.InterruptedException
 import io.matthewnelson.kmp.file.errnoToIOException
 import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.internal.stdio.StdioHandle
-import kotlinx.cinterop.ExperimentalForeignApi
-import kotlinx.cinterop.MemScope
+import kotlinx.cinterop.*
 import platform.posix.errno
 import platform.posix.usleep
 import kotlin.contracts.ExperimentalContracts
@@ -32,9 +31,17 @@ import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
 import kotlin.time.Duration
 
-@OptIn(ExperimentalForeignApi::class)
 @Throws(IOException::class, UnsupportedOperationException::class)
-internal expect fun MemScope.posixSpawn(
+internal expect fun posixSpawn(
+    command: String,
+    args: List<String>,
+    env: Map<String, String>,
+    handle: StdioHandle,
+    destroy: Signal,
+): NativeProcess
+
+@Throws(IOException::class)
+internal expect fun forkExec(
     command: String,
     args: List<String>,
     env: Map<String, String>,
@@ -43,14 +50,41 @@ internal expect fun MemScope.posixSpawn(
 ): NativeProcess
 
 @OptIn(ExperimentalForeignApi::class)
-@Throws(IOException::class, UnsupportedOperationException::class)
-internal expect fun MemScope.forkExec(
-    command: String,
-    args: List<String>,
-    env: Map<String, String>,
-    handle: StdioHandle,
-    destroy: Signal,
-): NativeProcess
+internal fun List<String>.toArgv(
+    argv0: String,
+    scope: MemScope,
+): CArrayPointer<CPointerVar<ByteVar>> = with(scope) {
+    val argv = allocArray<CPointerVar<ByteVar>>(size + 2)
+
+    argv[0] = argv0.cstr.ptr
+
+    var i = 1
+    val iterator = iterator()
+    while (iterator.hasNext()) {
+        argv[i++] = iterator.next().cstr.ptr
+    }
+
+    argv[i] = null
+
+    argv
+}
+
+@OptIn(ExperimentalForeignApi::class)
+internal fun Map<String, String>.toEnvp(
+    scope: MemScope,
+): CArrayPointer<CPointerVar<ByteVar>> = with(scope) {
+    val envp = allocArray<CPointerVar<ByteVar>>(size + 1)
+
+    var i = 0
+    val iterator = entries.iterator()
+    while (iterator.hasNext()) {
+        envp[i++] = iterator.next().toString().cstr.ptr
+    }
+
+    envp[i] = null
+
+    envp
+}
 
 @Suppress("NOTHING_TO_INLINE")
 @Throws(InterruptedException::class)

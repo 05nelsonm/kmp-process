@@ -18,6 +18,7 @@ package io.matthewnelson.kmp.process.internal
 import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.Signal
+import io.matthewnelson.kmp.process.internal.BufferedLineScanner.Companion.scanLines
 import io.matthewnelson.kmp.process.internal.stdio.StdioHandle
 import io.matthewnelson.kmp.process.internal.stdio.StdioReader
 import kotlinx.cinterop.*
@@ -75,8 +76,6 @@ internal constructor(
             kill(pid, s)
 
             isAlive
-            // TODO: https://man7.org/linux/man-pages/man7/signal.7.html
-            // TODO, wait
         }
 
         val hasBeenClosed = handle.isClosed
@@ -115,7 +114,7 @@ internal constructor(
                         val status = code shr 8 and 0x000000FF
 
                         if (status != 0) {
-                            // exited with a non-0 value, e.g. exit 42
+                            // exited with a non-zero value, e.g. exit 42
                             code = status
                         } else {
                             // signal stopped the process
@@ -159,29 +158,7 @@ internal constructor(
         val w = start(name = "Process[pid=$pid, stdio=$name]")
 
         w.execute(TransferMode.SAFE, { Triple(r, d, s) }) { (reader, dispatch, onStopped) ->
-            val buf = ByteArray(1024 * 8)
-            var overflow: ByteArray? = null
-
-            while (true) {
-                val read = try {
-                    reader.read(buf)
-                } catch (e: IOException) {
-                    break
-                }
-
-                val (lines, _overflow) = StdioReader.parseLines(buf, overflow, read)
-                overflow = _overflow
-                lines.forEach(dispatch)
-            }
-
-            if (overflow != null) {
-                dispatch(overflow.decodeToString())
-            }
-
-            buf.fill(0)
-            overflow?.fill(0)
-
-            onStopped()
+            reader.scanLines(dispatch, onStopped)
         }
 
         return w

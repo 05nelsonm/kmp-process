@@ -18,17 +18,12 @@ package io.matthewnelson.kmp.process.internal
 import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.internal.stdio.StdioHandle
-import kotlinx.cinterop.ExperimentalForeignApi
-import kotlinx.cinterop.MemScope
 
-@OptIn(ExperimentalForeignApi::class)
-@Throws(IOException::class, UnsupportedOperationException::class)
-internal actual fun MemScope.forkExec(
+@Throws(IOException::class)
+internal actual fun forkExec(
     command: String,
     args: List<String>,
     env: Map<String, String>,
     handle: StdioHandle,
     destroy: Signal,
-): NativeProcess {
-    throw UnsupportedOperationException("Fork & Exec is not supported on iOS")
-}
+): NativeProcess = throw IOException("fork/exec is not supported on iOS")

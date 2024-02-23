@@ -65,7 +65,7 @@ internal actual class PlatformBuilder private actual constructor() {
         opts["windowsVerbatimArguments"] = false
         opts["windowsHide"] = true
 
-        val output = descriptors.withDescriptors {
+        val output = descriptors.closeOnFailure {
             child_process_spawnSync(command, args.toTypedArray(), opts)
         }
 
@@ -146,7 +146,7 @@ internal actual class PlatformBuilder private actual constructor() {
         opts["windowsHide"] = true
         opts["killSignal"] = destroy.name
 
-        val jsProcess = descriptors.withDescriptors {
+        val jsProcess = descriptors.closeOnFailure {
             child_process_spawn(command, args.toTypedArray(), opts)
         }
 
@@ -178,7 +178,7 @@ internal actual class PlatformBuilder private actual constructor() {
         private fun Stdio.Config.toJsStdio(): Pair<Array<Any>, Array<Number?>> {
             val descriptors = Array<Number?>(3) { null }
 
-            val jsStdio = try {
+            return descriptors.closeOnFailure {
                 val jsStdin = stdin.toJsStdio(isStdin = true)
                 descriptors[0] = jsStdin as? Number
 
@@ -189,19 +189,7 @@ internal actual class PlatformBuilder private actual constructor() {
                 descriptors[2] = jsStderr as? Number
 
                 arrayOf(jsStdin, jsStdout, jsStderr)
-            } catch (t: Throwable) {
-                descriptors.forEach {
-                    if (it == null) return@forEach
-                    try {
-                        fs_closeSync(it)
-                    } catch (_: Throwable) {}
-                }
-
-                @OptIn(DelicateFileApi::class)
-                throw t.toIOException()
-            }
-
-            return Pair(jsStdio, descriptors)
+            } to descriptors
         }
 
         // @Throw(Throwable::class)
@@ -219,7 +207,7 @@ internal actual class PlatformBuilder private actual constructor() {
         }
 
         // @Throws(IOException::class)
-        private inline fun <T: Any> Array<Number?>.withDescriptors(
+        private inline fun <T: Any> Array<Number?>.closeOnFailure(
             block: () -> T,
         ): T {
             val result = try {
