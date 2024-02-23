@@ -58,7 +58,7 @@ internal sealed class StdioDescriptor private constructor() {
 
             internal val Stdin: Single get() = Single(STDIN_FILENO)
             internal val Stdout: Single get() = Single(STDOUT_FILENO)
-            internal val Stderr: Single get() = Single(STDOUT_FILENO)
+            internal val Stderr: Single get() = Single(STDERR_FILENO)
 
             @Throws(IOException::class)
             internal fun Stdio.File.fdOpen(isStdin: Boolean): Single {
