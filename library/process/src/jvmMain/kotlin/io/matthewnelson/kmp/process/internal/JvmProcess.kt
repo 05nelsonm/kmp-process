@@ -16,11 +16,11 @@
 package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.InterruptedException
+import io.matthewnelson.kmp.process.internal.BufferedLineScanner.Companion.scanLines
 import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.Stdio
 import java.io.InputStream
-import java.util.Scanner
 import kotlin.time.Duration
 
 internal class JvmProcess private constructor(
@@ -163,19 +163,12 @@ internal class JvmProcess private constructor(
     }
 
     private class StreamEater(
-        stream: InputStream,
+        private val stream: InputStream,
         private val dispatch: (line: String) -> Unit,
         private val onStopped: () -> Unit,
     ): Runnable {
-
-        private val scanner = Scanner(stream.bufferedReader())
-
         override fun run() {
-            while (scanner.hasNextLine()) {
-                val line = scanner.nextLine()
-                dispatch(line)
-            }
-            onStopped()
+            stream.scanLines(dispatch, onStopped)
         }
     }
 }
