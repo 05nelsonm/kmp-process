@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Matthew Nelson
+ * Copyright (c) 2024 Matthew Nelson
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,16 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-plugins {
-    `kotlin-dsl`
-}
+package io.matthewnelson.kmp.process
 
-dependencies {
-    implementation(libs.gradle.android)
-    implementation(libs.gradle.kmp.configuration)
-    implementation(libs.gradle.kotlin)
-    implementation(libs.gradle.publish.maven)
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.time.Duration.Companion.milliseconds
 
-    // https://github.com/gradle/gradle/issues/15383#issuecomment-779893192
-    implementation(files(libs.javaClass.superclass.protectionDomain.codeSource.location))
+class OutputOptionsUnitTest {
+
+    @Test
+    fun givenBuilder_whenOptionsLessThanMin_thenOptionsUseMinValues() {
+        val o = Output.Options.Builder.build {
+            timeoutMillis = 2
+            maxBuffer = 5
+        }
+
+        assertEquals(250.milliseconds, o.timeout)
+        assertEquals(1024 * 16, o.maxBuffer)
+    }
 }

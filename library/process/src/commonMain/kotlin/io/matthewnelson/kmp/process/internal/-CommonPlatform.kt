@@ -25,7 +25,7 @@ import io.matthewnelson.kmp.process.Stdio
 internal expect val STDIO_NULL: File
 
 @Suppress("NOTHING_TO_INLINE")
-internal inline val isWindows: Boolean get() = STDIO_NULL.path == "NUL"
+internal inline val IsWindows: Boolean get() = STDIO_NULL.path == "NUL"
 
 internal fun StringBuilder.appendProcessInfo(
     className: String,

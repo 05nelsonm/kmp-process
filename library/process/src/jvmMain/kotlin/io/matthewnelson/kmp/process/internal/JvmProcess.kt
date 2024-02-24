@@ -21,6 +21,7 @@ import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.Stdio
 import java.io.InputStream
+import kotlin.concurrent.Volatile
 import kotlin.time.Duration
 
 internal class JvmProcess private constructor(
@@ -58,52 +59,41 @@ internal class JvmProcess private constructor(
         -1
     }
 
+    @Volatile
+    private var _exitCode: Int? = null
+
     override fun destroy(): Process {
         isDestroyed = true
 
-        when (destroySignal) {
-            Signal.SIGTERM -> jProcess.destroy()
-            Signal.SIGKILL -> jProcess.destroyForcibly()
+        @Suppress("NewApi")
+        when {
+            // java.lang.Process.destroyForcibly on Android
+            // (when available) does absolutely fuck all but
+            // call destroy under the hood. Very sad that there
+            // is no choice in the termination signal which is
+            // what destroyForcibly was intended for.
+            ANDROID_SDK_INT != null -> jProcess.destroy()
+
+            else -> when (destroySignal) {
+                Signal.SIGTERM -> jProcess.destroy()
+                Signal.SIGKILL -> jProcess.destroyForcibly()
+            }
         }
 
         return this
     }
 
     @Throws(IllegalStateException::class)
-    override fun exitCode(): Int {
-        var result: Int? = try {
-            jProcess.exitValue()
-        } catch (_: IllegalThreadStateException) {
-            null
-        }
-
-        // On Windows it's either 0 or 1, 1 indicating
-        // termination. Swap it out with the correct code
-        if (result != null && isDestroyed && isWindows) {
-            if (result == 1) result = destroySignal.code
-        }
-
-        return result ?: throw IllegalStateException("Process hasn't exited")
+    override fun exitCode(): Int = try {
+        jProcess.exitValue().correctExitCode()
+    } catch (_: IllegalThreadStateException) {
+        throw IllegalStateException("Process hasn't exited")
     }
 
     override fun pid(): Int = _pid
 
     @Throws(InterruptedException::class)
-    override fun waitFor(): Int {
-        var code = jProcess.waitFor()
-
-        // non-zero exit value, check exitCode() to see if
-        // it was a windows termination thing.
-        if (code == 1) {
-           code = try {
-               exitCode()
-           } catch (_: IllegalStateException) {
-               code
-           }
-        }
-
-        return code
-    }
+    override fun waitFor(): Int = jProcess.waitFor().correctExitCode()
 
     @Throws(InterruptedException::class)
     override fun waitFor(duration: Duration): Int? = commonWaitFor(duration) { it.threadSleep() }
@@ -133,6 +123,54 @@ internal class JvmProcess private constructor(
         } catch (_: IllegalThreadStateException) {}
     }
 
+    private class StreamEater(
+        private val stream: InputStream,
+        private val dispatch: (line: String) -> Unit,
+        private val onStopped: () -> Unit,
+    ): Runnable {
+        override fun run() {
+            stream.scanLines(dispatch, onStopped)
+        }
+    }
+
+    private fun Int.correctExitCode(): Int {
+        _exitCode?.let { return it }
+
+        if (!isDestroyed) {
+            // Want to preserve the status code
+            // if destroy was not invoked yet and
+            // the program exited
+            _exitCode = this
+            return this
+        }
+
+        // Process.destroy was invoked
+
+        ANDROID_SDK_INT?.let { sdkInt ->
+            // Android 23 and below uses SIGKILL when
+            // destroy is invoked, but fails to add 128
+            // the value like newer versions do.
+            val code = if (sdkInt < 24 && this == 9) {
+                this + 128
+            } else {
+                this
+            }
+
+            _exitCode = code
+            return code
+        }
+
+        // On Windows it's either 0 or 1, 1 indicating termination. Swap
+        // it out with the correct code if destroy was called
+        if (this == 1 && IsWindows) {
+            _exitCode = destroySignal.code
+            return destroySignal.code
+        }
+
+        _exitCode = this
+        return this
+    }
+
     internal companion object {
 
         @JvmSynthetic
@@ -159,16 +197,6 @@ internal class JvmProcess private constructor(
             } catch (_: Throwable) {
                 null
             }
-        }
-    }
-
-    private class StreamEater(
-        private val stream: InputStream,
-        private val dispatch: (line: String) -> Unit,
-        private val onStopped: () -> Unit,
-    ): Runnable {
-        override fun run() {
-            stream.scanLines(dispatch, onStopped)
         }
     }
 }

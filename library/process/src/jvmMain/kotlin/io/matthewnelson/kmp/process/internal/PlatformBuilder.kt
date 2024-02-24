@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
+@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING", "NewApi")
 
 package io.matthewnelson.kmp.process.internal
 
@@ -62,18 +62,27 @@ internal actual class PlatformBuilder private actual constructor() {
         //  env value passed here is simply what gets used for
         //  Process.environment.
 
-        jProcessBuilder.redirectInput(stdio.stdin.toRedirect(isStdin = true))
-        jProcessBuilder.redirectOutput(stdio.stdout.toRedirect(isStdin = false))
-        jProcessBuilder.redirectError(stdio.stderr.toRedirect(isStdin = false))
-
-        val destroySignal = when {
-            destroy == Signal.SIGTERM -> destroy
-            else -> ANDROID_SDK_INT?.let { sdkInt ->
-                // destroyForcibly only available on
-                // Android Runtime for API 26+
-                if (sdkInt < 26) Signal.SIGTERM else null
-            } ?: destroy
+        if (ANDROID_SDK_INT?.let { sdkInt -> sdkInt >= 24 } != false) {
+            // Only available on Android Runtime 24+ & Java 8+
+            jProcessBuilder.redirectInput(stdio.stdin.toRedirect(isStdin = true))
+            jProcessBuilder.redirectOutput(stdio.stdout.toRedirect(isStdin = false))
+            jProcessBuilder.redirectError(stdio.stderr.toRedirect(isStdin = false))
+        } else {
+            // TODO: Issue #50
+            //  Supplement Stdio behavior for Android API < 24
         }
+
+        val destroySignal = ANDROID_SDK_INT?.let { sdkInt ->
+            when {
+                // API < 24 always utilizes SIGKILL
+                // when destroy is called. This reflects that.
+                sdkInt < 24 -> Signal.SIGKILL
+                // API 24+ always uses SIGTERM as
+                // destroyForcibly does nothing but call
+                // destroy under the hood.
+                else -> Signal.SIGTERM
+            }
+        } ?: destroy
 
         val jProcess = jProcessBuilder.start()
 
@@ -103,6 +112,15 @@ internal actual class PlatformBuilder private actual constructor() {
                 .name
                 .split('@')[0]
                 .toInt()
+        }
+
+        private val AndroidMyPidMethod by lazy {
+            // Not Android Runtime
+            if (ANDROID_SDK_INT == null) return@lazy null
+
+            // Android runtime
+            Class.forName("android.os.Process")
+                .getMethod("myPid")
         }
 
         private fun Stdio.toRedirect(
@@ -138,38 +156,6 @@ internal actual class PlatformBuilder private actual constructor() {
             if (discard != null) return@lazy discard
 
             ProcessBuilder.Redirect.to(STDIO_NULL)
-        }
-
-        private val ANDROID_SDK_INT: Int? by lazy {
-
-            if (
-                System.getProperty("java.runtime.name")
-                    ?.contains("android", ignoreCase = true) != true
-            ) {
-                // Not Android runtime
-                return@lazy null
-            }
-
-            try {
-                val clazz = Class.forName("android.os.Build\$VERSION")
-
-                try {
-                    clazz?.getField("SDK_INT")?.getInt(null)
-                } catch (_: Throwable) {
-                    clazz?.getField("SDK")?.get(null)?.toString()?.toIntOrNull()
-                }
-            } catch (_: Throwable) {
-                null
-            }
-        }
-
-        private val AndroidMyPidMethod by lazy {
-            // Not Android Runtime
-            if (ANDROID_SDK_INT == null) return@lazy null
-
-            // Android runtime
-            Class.forName("android.os.Process")
-                .getMethod("myPid")
         }
     }
 }

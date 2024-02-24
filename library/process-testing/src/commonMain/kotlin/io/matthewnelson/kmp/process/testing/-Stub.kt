@@ -13,14 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-package io.matthewnelson.kmp.process
+package io.matthewnelson.kmp.process.testing
 
-import io.matthewnelson.kmp.file.SysPathSep
-
-class JsProcessUnitTest: ProcessBaseTest() {
-
-    override val isDarwinMobile: Boolean = false
-    override val isJvm: Boolean = false
-    override val isNodeJS: Boolean = true
-    override val isUnixDesktop: Boolean = SysPathSep == '/'
-}
+internal fun stub() { /* no-op */ }
