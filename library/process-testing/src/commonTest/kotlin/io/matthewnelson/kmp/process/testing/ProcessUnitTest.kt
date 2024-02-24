@@ -62,10 +62,16 @@ open class ProcessUnitTest {
     protected open val cacheDir by lazy { homeDir.resolve("cache") }
     protected open val dataDir by lazy { homeDir.resolve("data") }
 
-    private val expectedTorExitCode = when {
-        IsWindows -> Signal.SIGTERM.code
-        isAndroidRuntime -> 1
-        else -> 0
+    private val expectedTorExitCode by lazy {
+        when {
+            IsWindows -> Signal.SIGTERM.code
+
+            // Android API 23 and below ALWAYS uses SIGKILL when destroy called
+            (androidSdkInt?.let { it < 24 } ?: false) -> Signal.SIGKILL.code
+
+            // SIGTERM intercepted by tor
+            else -> 0
+        }
     }
 
     @Test
@@ -133,6 +139,8 @@ open class ProcessUnitTest {
             .output { timeoutMillis = 2_000 }
 
         println(out)
+        println(out.stdout)
+        println(out.stderr)
 
         assertEquals(expectedTorExitCode, out.processInfo.exitCode)
         assertTrue(out.stdout.lines().first().contains(" [notice] Tor "))
@@ -194,25 +202,22 @@ open class ProcessUnitTest {
     private fun ResourceInstaller.Paths.Tor.toProcessBuilder(): Process.Builder {
         return Process.Builder(executable = tor)
             .args("--DataDirectory")
-            .args(dataDir.path)
+            .args(dataDir.also { it.mkdirs() }.path)
             .args("--CacheDirectory")
-            .args(cacheDir.path)
+            .args(cacheDir.also { it.mkdirs() }.path)
             .args("--GeoIPFile")
             .args(geoip.path)
             .args("--GeoIPv6File")
             .args(geoip6.path)
-            .args("--CookieAuthFile")
-            .args(homeDir.resolve("control_auth_cookie").path)
             .args("--DormantCanceledByStartup")
             .args("1")
-            .args("--ControlPort")
-            .args("auto")
             .args("--SocksPort")
             .args("auto")
             .args("--DisableNetwork")
             .args("1")
             .args("--RunAsDaemon")
             .args("0")
+            .destroySignal(Signal.SIGTERM)
             .envHome()
             .stdin(Stdio.Null)
             .stdout(Stdio.Pipe)

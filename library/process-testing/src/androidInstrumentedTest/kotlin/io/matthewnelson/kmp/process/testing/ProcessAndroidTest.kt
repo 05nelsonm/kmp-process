@@ -40,5 +40,4 @@ class ProcessAndroidTest: ProcessUnitTest() {
         assertEquals(expected, Process.Current.pid())
     }
 
-    // TODO: API unit test for SIGKILL
 }

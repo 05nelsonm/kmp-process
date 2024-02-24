@@ -72,14 +72,18 @@ internal actual class PlatformBuilder private actual constructor() {
             //  Supplement Stdio behavior for Android API < 24
         }
 
-        val destroySignal = when {
-            destroy == Signal.SIGTERM -> destroy
-            else -> ANDROID_SDK_INT?.let { sdkInt ->
-                // destroyForcibly only available on
-                // Android Runtime for API 26+
-                if (sdkInt < 26) Signal.SIGTERM else null
-            } ?: destroy
-        }
+        val destroySignal = ANDROID_SDK_INT?.let { sdkInt ->
+            when {
+                // Android API < 24 always utilizes SIGKILL
+                // when destroy is called. This reflects that.
+                sdkInt < 24 -> Signal.SIGKILL
+                // Android API < 26 destroyForcibly is not
+                // available, so it is always SIGTERM.
+                sdkInt < 26 -> Signal.SIGTERM
+                // Android API 26+ can be either or
+                else -> destroy
+            }
+        } ?: destroy
 
         val jProcess = jProcessBuilder.start()
 
@@ -146,7 +150,7 @@ internal actual class PlatformBuilder private actual constructor() {
             ProcessBuilder.Redirect.to(STDIO_NULL)
         }
 
-        private val ANDROID_SDK_INT: Int? by lazy {
+        internal val ANDROID_SDK_INT: Int? by lazy {
 
             if (
                 System.getProperty("java.runtime.name")

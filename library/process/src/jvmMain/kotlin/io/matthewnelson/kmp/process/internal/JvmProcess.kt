@@ -20,6 +20,7 @@ import io.matthewnelson.kmp.process.internal.BufferedLineScanner.Companion.scanL
 import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.Stdio
+import io.matthewnelson.kmp.process.internal.PlatformBuilder.Companion.ANDROID_SDK_INT
 import java.io.InputStream
 import kotlin.time.Duration
 
@@ -64,47 +65,29 @@ internal class JvmProcess private constructor(
         @Suppress("NewApi")
         when (destroySignal) {
             Signal.SIGTERM -> jProcess.destroy()
-            Signal.SIGKILL -> jProcess.destroyForcibly()
+            Signal.SIGKILL -> ANDROID_SDK_INT?.let { sdkInt ->
+                if (sdkInt >= 26) {
+                    jProcess.destroyForcibly()
+                } else {
+                    jProcess.destroy()
+                }
+            } ?: jProcess.destroyForcibly()
         }
 
         return this
     }
 
     @Throws(IllegalStateException::class)
-    override fun exitCode(): Int {
-        var result: Int? = try {
-            jProcess.exitValue()
-        } catch (_: IllegalThreadStateException) {
-            null
-        }
-
-        // On Windows it's either 0 or 1, 1 indicating
-        // termination. Swap it out with the correct code
-        if (result != null && isDestroyed && IsWindows) {
-            if (result == 1) result = destroySignal.code
-        }
-
-        return result ?: throw IllegalStateException("Process hasn't exited")
+    override fun exitCode(): Int = try {
+        jProcess.exitValue().correctExitCode()
+    } catch (_: IllegalThreadStateException) {
+        throw IllegalStateException("Process hasn't exited")
     }
 
     override fun pid(): Int = _pid
 
     @Throws(InterruptedException::class)
-    override fun waitFor(): Int {
-        var code = jProcess.waitFor()
-
-        // non-zero exit value, check exitCode() to see if
-        // it was a windows termination thing.
-        if (code == 1) {
-           code = try {
-               exitCode()
-           } catch (_: IllegalStateException) {
-               code
-           }
-        }
-
-        return code
-    }
+    override fun waitFor(): Int = jProcess.waitFor().correctExitCode()
 
     @Throws(InterruptedException::class)
     override fun waitFor(duration: Duration): Int? = commonWaitFor(duration) { it.threadSleep() }
@@ -134,6 +117,41 @@ internal class JvmProcess private constructor(
         } catch (_: IllegalThreadStateException) {}
     }
 
+    private class StreamEater(
+        private val stream: InputStream,
+        private val dispatch: (line: String) -> Unit,
+        private val onStopped: () -> Unit,
+    ): Runnable {
+        override fun run() {
+            stream.scanLines(dispatch, onStopped)
+        }
+    }
+
+    private fun Int.correctExitCode(): Int {
+        if (!isDestroyed) return this
+
+        // Process.destroy was invoked
+
+        ANDROID_SDK_INT?.let { sdkInt ->
+            // Android 23 and below uses SIGKILL when
+            // destroy is invoked, but fails to add 128
+            // the value like newer versions do.
+            return if (sdkInt < 24 && this == 9) {
+                this + 128
+            } else {
+                this
+            }
+        }
+
+        // On Windows it's either 0 or 1, 1 indicating termination. Swap
+        // it out with the correct code if destroy was called
+        if (this == 1 && IsWindows) {
+            return destroySignal.code
+        }
+
+        return this
+    }
+
     internal companion object {
 
         @JvmSynthetic
@@ -160,16 +178,6 @@ internal class JvmProcess private constructor(
             } catch (_: Throwable) {
                 null
             }
-        }
-    }
-
-    private class StreamEater(
-        private val stream: InputStream,
-        private val dispatch: (line: String) -> Unit,
-        private val onStopped: () -> Unit,
-    ): Runnable {
-        override fun run() {
-            stream.scanLines(dispatch, onStopped)
         }
     }
 }
