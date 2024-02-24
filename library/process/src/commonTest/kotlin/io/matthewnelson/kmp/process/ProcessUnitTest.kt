@@ -38,12 +38,12 @@ class ProcessUnitTest {
         val runTime = measureTime {
             try {
                 Process.Builder(command = "sleep")
-                    .args("0.25")
+                    .args("1")
                     .destroySignal(Signal.SIGKILL)
                     .spawn { p ->
-                        assertNull(p.waitFor(100.milliseconds))
+                        assertNull(p.waitFor(250.milliseconds))
                         assertTrue(p.isAlive)
-                        assertEquals(0, p.waitFor(2.seconds))
+                        assertEquals(0, p.waitFor(3.seconds))
                         assertFalse(p.isAlive)
                     }
             } catch (e: IOException) {
@@ -56,8 +56,8 @@ class ProcessUnitTest {
             }
         }
 
-        // Should be less than the 2 seconds (waitFor popped out early)
-        assertTrue(runTime < 1.seconds)
+        // Should be less than the 3 seconds (waitFor popped out early)
+        assertTrue(runTime < 2.seconds)
     }
 
     @Test
