@@ -26,16 +26,15 @@ import kotlinx.coroutines.test.TestResult
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class ProcessAndroidTest: ProcessUnitTest() {
+class ProcessAndroidTest: ProcessBaseTest() {
 
     private val ctx = ApplicationProvider.getApplicationContext<Application>().applicationContext
 
-    private val androidSdkInt: Int get() = android.os.Build.VERSION.SDK_INT
     override val homeDir: File get() = ctx.getDir("torservice", Context.MODE_PRIVATE)
     override val cacheDir: File get() = SysTempDir.resolve("torservice").resolve("cache")
 
     override fun assertExitCode(code: Int) {
-        val expected = if (androidSdkInt < 24) Signal.SIGKILL.code else 0
+        val expected = if (android.os.Build.VERSION.SDK_INT < 24) Signal.SIGKILL.code else 0
         assertEquals(expected, code)
     }
 
@@ -48,24 +47,29 @@ class ProcessAndroidTest: ProcessUnitTest() {
     }
 
     @Test
+    override fun givenCurrentProcess_whenEnvironment_thenIsNotEmpty() {
+        super.givenCurrentProcess_whenEnvironment_thenIsNotEmpty()
+    }
+
+    @Test
     override fun givenExecutable_whenOutputToFile_thenIsAsExpected(): TestResult {
         // TODO: Issue #50
         //  Reduce to API 21
-        if (androidSdkInt < 24) return
+        if (android.os.Build.VERSION.SDK_INT < 24) return
 
         return super.givenExecutable_whenOutputToFile_thenIsAsExpected()
     }
 
     @Test
     override fun givenExecutable_whenOutput_thenIsAsExpected() {
-        if (androidSdkInt < 21) return
+        if (android.os.Build.VERSION.SDK_INT < 21) return
 
         super.givenExecutable_whenOutput_thenIsAsExpected()
     }
 
     @Test
     override fun givenExecutable_whenPipeOutputFeeds_thenIsAsExpected(): TestResult {
-        if (androidSdkInt < 21) return
+        if (android.os.Build.VERSION.SDK_INT < 21) return
 
         return super.givenExecutable_whenPipeOutputFeeds_thenIsAsExpected()
     }
