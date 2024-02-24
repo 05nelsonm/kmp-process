@@ -74,14 +74,13 @@ internal actual class PlatformBuilder private actual constructor() {
 
         val destroySignal = ANDROID_SDK_INT?.let { sdkInt ->
             when {
-                // Android API < 24 always utilizes SIGKILL
+                // API < 24 always utilizes SIGKILL
                 // when destroy is called. This reflects that.
                 sdkInt < 24 -> Signal.SIGKILL
-                // Android API < 26 destroyForcibly is not
-                // available, so it is always SIGTERM.
-                sdkInt < 26 -> Signal.SIGTERM
-                // Android API 26+ can be either or
-                else -> destroy
+                // API 24+ always uses SIGTERM as
+                // destroyForcibly does nothing but call
+                // destroy under the hood.
+                else -> Signal.SIGTERM
             }
         } ?: destroy
 

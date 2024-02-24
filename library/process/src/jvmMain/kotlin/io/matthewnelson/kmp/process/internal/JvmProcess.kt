@@ -21,6 +21,7 @@ import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.Stdio
 import java.io.InputStream
+import kotlin.concurrent.Volatile
 import kotlin.time.Duration
 
 internal class JvmProcess private constructor(
@@ -58,21 +59,25 @@ internal class JvmProcess private constructor(
         -1
     }
 
+    @Volatile
+    private var _exitCode: Int? = null
+
     override fun destroy(): Process {
         isDestroyed = true
 
         @Suppress("NewApi")
-        when (destroySignal) {
-            Signal.SIGTERM -> jProcess.destroy()
-            Signal.SIGKILL -> ANDROID_SDK_INT?.let { sdkInt ->
-                if (sdkInt >= 26) {
-                    jProcess.destroyForcibly()
-                } else {
-                    jProcess.destroy()
-                }
+        when {
+            // java.lang.Process.destroyForcibly on Android
+            // (when available) does absolutely fuck all but
+            // call destroy under the hood. Very sad that there
+            // is no choice in the termination signal which is
+            // what destroyForcibly was intended for.
+            ANDROID_SDK_INT != null -> jProcess.destroy()
 
-                Unit
-            } ?: jProcess.destroyForcibly()
+            else -> when (destroySignal) {
+                Signal.SIGTERM -> jProcess.destroy()
+                Signal.SIGKILL -> jProcess.destroyForcibly()
+            }
         }
 
         return this
@@ -129,7 +134,15 @@ internal class JvmProcess private constructor(
     }
 
     private fun Int.correctExitCode(): Int {
-        if (!isDestroyed) return this
+        _exitCode?.let { return it }
+
+        if (!isDestroyed) {
+            // Want to preserve the status code
+            // if destroy was not invoked yet and
+            // the program exited
+            _exitCode = this
+            return this
+        }
 
         // Process.destroy was invoked
 
@@ -137,19 +150,24 @@ internal class JvmProcess private constructor(
             // Android 23 and below uses SIGKILL when
             // destroy is invoked, but fails to add 128
             // the value like newer versions do.
-            return if (sdkInt < 24 && this == 9) {
+            val code = if (sdkInt < 24 && this == 9) {
                 this + 128
             } else {
                 this
             }
+
+            _exitCode = code
+            return code
         }
 
         // On Windows it's either 0 or 1, 1 indicating termination. Swap
         // it out with the correct code if destroy was called
         if (this == 1 && IsWindows) {
+            _exitCode = destroySignal.code
             return destroySignal.code
         }
 
+        _exitCode = this
         return this
     }
 

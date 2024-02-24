@@ -21,6 +21,7 @@ import androidx.test.core.app.ApplicationProvider
 import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.file.SysTempDir
 import io.matthewnelson.kmp.process.Process
+import io.matthewnelson.kmp.process.Signal
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -40,4 +41,39 @@ class ProcessAndroidTest: ProcessUnitTest() {
         assertEquals(expected, Process.Current.pid())
     }
 
+    @Test
+    fun givenExitCode_whenCompleted_thenIsStatusCode() {
+        val expected = 42
+        val actual = Process.Builder(command = "sh")
+            .args("-c")
+            .args("sleep 0.25; exit $expected")
+            .destroySignal(Signal.SIGKILL)
+            // Should complete and exit before timing out
+            .output { timeoutMillis = 1_000 }
+            .processInfo
+            .exitCode
+
+        assertEquals(expected, actual)
+    }
+
+    @Test
+    fun givenExitCode_whenTerminated_thenIsSignalCode() {
+        val output = Process.Builder(command = "sh")
+            .args("-c")
+            .args("sleep 1; exit 42")
+            .destroySignal(Signal.SIGKILL)
+            // Should be killed before completing via signal
+            .output{ timeoutMillis = 250 }
+
+        val actual = output
+            .processInfo
+            .exitCode
+
+        val expected = output
+            .processInfo
+            .destroySignal
+            .code
+
+        assertEquals(expected, actual)
+    }
 }

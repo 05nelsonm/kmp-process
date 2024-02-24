@@ -64,7 +64,6 @@ internal fun PlatformBuilder.blockingOutput(
         p.destroy()
     }
 
-    println("WAIT_FOR_CODE[$waitForCode]")
     val exitCode = waitForCode ?: try {
         // await for final closure if not ready yet
         p.waitFor()
