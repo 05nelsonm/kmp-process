@@ -63,3 +63,35 @@ jobs:
         run: >
           ./gradlew check --stacktrace
           -PKMP_TARGETS="JVM,JS,MINGW_X64,WASM_JS,WASM_WASI"
+
+  emulator:
+    runs-on: macos-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        api-level: [ 17, 21, 24, 29 ]
+        arch: [ x86_64 ]
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v3
+
+      - name: Validate Gradle Wrapper
+        uses: gradle/wrapper-validation-action@v1
+
+      - name: Setup JDK
+        uses: actions/setup-java@v3.11.0
+        with:
+          distribution: 'zulu'
+          java-version: 17
+
+      - name: Build
+        uses: gradle/gradle-build-action@v2
+
+      - name: Run Android Instrumented Tests
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          emulator-boot-timeout: 300 # 5 minutes
+          api-level: ${{ matrix.api-level }}
+          arch: ${{ matrix.arch }}
+          script: ./gradlew connectedCheck -PKMP_TARGETS="ANDROID,JVM"
