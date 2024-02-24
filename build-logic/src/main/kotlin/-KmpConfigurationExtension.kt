@@ -17,6 +17,7 @@ import io.matthewnelson.kmp.configuration.extension.KmpConfigurationExtension
 import io.matthewnelson.kmp.configuration.extension.container.target.KmpConfigurationContainerDsl
 import org.gradle.api.Action
 import org.gradle.api.JavaVersion
+import java.io.File
 
 fun KmpConfigurationExtension.configureShared(
     publish: Boolean = false,
@@ -63,7 +64,40 @@ fun KmpConfigurationExtension.configureShared(
             }
         }
 
-        kotlin { explicitApi() }
+        kotlin {
+            explicitApi()
+
+            val project = targets.first().project
+
+            val kotlinSrc = project
+                .layout
+                .buildDirectory
+                .get()
+                .asFile
+                .resolve("generated")
+                .resolve("sources")
+                .resolve("testConfig")
+                .resolve("commonTest")
+                .resolve("kotlin")
+
+            val process = kotlinSrc.resolve("io")
+                .resolve("matthewnelson")
+                .resolve("kmp")
+                .resolve(project.name.replace('-', File.pathSeparatorChar))
+
+            process.mkdirs()
+
+            process.resolve("TestConfig.kt").writeText("""
+                package io.matthewnelson.kmp.${project.name.replace('-', '.')}
+                
+                internal const val PROJECT_DIR_PATH: String = "${project.projectDir.canonicalPath.replace("\\", "\\\\")}"
+
+            """.trimIndent())
+
+            with(sourceSets) {
+                commonTest.get().kotlin.srcDir(kotlinSrc)
+            }
+        }
 
         action.execute(this)
     }
