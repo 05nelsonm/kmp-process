@@ -47,11 +47,6 @@ class ProcessAndroidTest: ProcessBaseTest() {
     }
 
     @Test
-    override fun givenCurrentProcess_whenEnvironment_thenIsNotEmpty() {
-        super.givenCurrentProcess_whenEnvironment_thenIsNotEmpty()
-    }
-
-    @Test
     override fun givenExecutable_whenOutputToFile_thenIsAsExpected(): TestResult {
         // TODO: Issue #50
         //  Reduce to API 21

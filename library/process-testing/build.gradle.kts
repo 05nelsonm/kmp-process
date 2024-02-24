@@ -37,11 +37,6 @@ kmpConfiguration {
             compileSourceCompatibility = JavaVersion.VERSION_1_8
             compileTargetCompatibility = JavaVersion.VERSION_1_8
 
-            sourceSetTest {
-                dependencies {
-                    implementation(libs.kmp.tor.resource.android.unit.test)
-                }
-            }
             sourceSetTestInstrumented {
                 dependencies {
                     implementation(libs.androidx.test.core)

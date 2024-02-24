@@ -28,6 +28,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
+import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
@@ -54,15 +55,18 @@ abstract class ProcessBaseTest {
         assertEquals(expected, code)
     }
 
+    @Test
     open fun givenCurrentProcess_whenPid_thenSucceeds() {
         // Really just testing Jvm/Android Runtime
         assertTrue(Process.Current.pid() > 0)
     }
 
-    open fun givenCurrentProcess_whenEnvironment_thenIsNotEmpty() {
+    @Test
+    fun givenCurrentProcess_whenEnvironment_thenIsNotEmpty() {
         assertTrue(Process.Current.environment().isNotEmpty())
     }
 
+    @Test
     open fun givenExecutable_whenOutputToFile_thenIsAsExpected() = runTest(timeout = 25.seconds) {
         val logsDir = homeDir.resolve("logs")
         val stdoutFile = logsDir.resolve("tor.log")
@@ -100,6 +104,7 @@ abstract class ProcessBaseTest {
         stdoutFile.readUtf8().assertTorRan()
     }
 
+    @Test
     open fun givenExecutable_whenOutput_thenIsAsExpected() = runTest(timeout = 25.seconds) {
         val out = installer.install().toProcessBuilder()
             .output { timeoutMillis = 2_000 }
@@ -116,6 +121,7 @@ abstract class ProcessBaseTest {
         out.stdout.assertTorRan()
     }
 
+    @Test
     open fun givenExecutable_whenPipeOutputFeeds_thenIsAsExpected() = runTest(timeout = 25.seconds) {
         installer.install().toProcessBuilder().spawn { p2 ->
             val stdoutBuilder = StringBuilder()

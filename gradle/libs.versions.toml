@@ -27,7 +27,6 @@ immutable-collections = { module = "io.matthewnelson.immutable:collections", ver
 
 kmp-file = { module = "io.matthewnelson.kmp-file:file", version.ref = "kmp-file" }
 kmp-tor-resource-tor = { module = "io.matthewnelson.kmp-tor:resource-tor", version.ref = "kmp-tor-resource" }
-kmp-tor-resource-android-unit-test = { module = "io.matthewnelson.kmp-tor:resource-android-unit-test", version.ref = "kmp-tor-resource" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
 
 [plugins]
