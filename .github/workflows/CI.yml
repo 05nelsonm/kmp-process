@@ -71,7 +71,6 @@ jobs:
       fail-fast: false
       matrix:
         api-level: [ 17, 21, 24, 29 ]
-        arch: [ x86_64 ]
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v3
@@ -93,5 +92,4 @@ jobs:
         with:
           emulator-boot-timeout: 300 # 5 minutes
           api-level: ${{ matrix.api-level }}
-          arch: ${{ matrix.arch }}
-          script: ./gradlew connectedCheck -PKMP_TARGETS="ANDROID,JVM"
+          script: ./gradlew :library:process-testing:connectedCheck -PKMP_TARGETS="ANDROID,JVM"
