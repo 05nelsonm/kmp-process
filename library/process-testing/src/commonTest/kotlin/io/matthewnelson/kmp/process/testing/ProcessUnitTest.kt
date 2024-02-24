@@ -36,8 +36,8 @@ class ProcessUnitTest: ProcessBaseTest() {
     }
 
     @Test
-    override fun givenExecutable_whenOutput_thenIsAsExpected() {
-        super.givenExecutable_whenOutput_thenIsAsExpected()
+    override fun givenExecutable_whenOutput_thenIsAsExpected(): TestResult {
+        return super.givenExecutable_whenOutput_thenIsAsExpected()
     }
 
     @Test

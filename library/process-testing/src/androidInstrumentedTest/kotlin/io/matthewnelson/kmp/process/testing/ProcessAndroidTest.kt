@@ -61,10 +61,10 @@ class ProcessAndroidTest: ProcessBaseTest() {
     }
 
     @Test
-    override fun givenExecutable_whenOutput_thenIsAsExpected() {
+    override fun givenExecutable_whenOutput_thenIsAsExpected(): TestResult {
         if (android.os.Build.VERSION.SDK_INT < 21) return
 
-        super.givenExecutable_whenOutput_thenIsAsExpected()
+        return super.givenExecutable_whenOutput_thenIsAsExpected()
     }
 
     @Test

@@ -93,16 +93,24 @@ abstract class ProcessBaseTest {
                 }
             }
 
+        withContext(Dispatchers.Default) {
+            delay(250.milliseconds)
+        }
+
         stdoutFile.readUtf8().assertTorRan()
     }
 
-    open fun givenExecutable_whenOutput_thenIsAsExpected() {
+    open fun givenExecutable_whenOutput_thenIsAsExpected() = runTest(timeout = 25.seconds) {
         val out = installer.install().toProcessBuilder()
             .output { timeoutMillis = 2_000 }
 
         println(out)
         println(out.stdout)
         println(out.stderr)
+
+        withContext(Dispatchers.Default) {
+            delay(250.milliseconds)
+        }
 
         assertExitCode(out.processInfo.exitCode)
         out.stdout.assertTorRan()
@@ -142,6 +150,10 @@ abstract class ProcessBaseTest {
 
             assertExitCode(p2.exitCode())
             stdoutString.assertTorRan()
+        }
+
+        withContext(Dispatchers.Default) {
+            delay(250.milliseconds)
         }
     }
 
