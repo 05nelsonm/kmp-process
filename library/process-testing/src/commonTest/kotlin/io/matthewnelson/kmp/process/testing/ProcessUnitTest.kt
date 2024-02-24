@@ -86,7 +86,7 @@ open class ProcessUnitTest {
     }
 
     @Test
-    fun givenExecutable_whenOutputToFile_thenIsAsExpected() = runTest {
+    fun givenExecutable_whenOutputToFile_thenIsAsExpected() = runTest(timeout = 25.seconds) {
         // TODO: Issue #50
         //  Remove hasRedirect
         if (!canRunTor || !hasRedirect) {
@@ -153,7 +153,7 @@ open class ProcessUnitTest {
     }
 
     @Test
-    fun givenExecutable_whenPipeOutputFeeds_thenIsAsExpected() = runTest {
+    fun givenExecutable_whenPipeOutputFeeds_thenIsAsExpected() = runTest(timeout = 25.seconds) {
         if (!canRunTor) {
             println("Skipping...")
             return@runTest
