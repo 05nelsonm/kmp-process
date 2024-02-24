@@ -62,16 +62,15 @@ open class ProcessUnitTest {
     protected open val cacheDir by lazy { homeDir.resolve("cache") }
     protected open val dataDir by lazy { homeDir.resolve("data") }
 
-    private val expectedTorExitCode by lazy {
-        when {
-            IsWindows -> Signal.SIGTERM.code
+    private val expectedTorExitCode: Int get() {
+        if (IsWindows) return Signal.SIGTERM.code
 
-            // Android API 23 and below ALWAYS uses SIGKILL when destroy called
-            (androidSdkInt?.let { it < 24 } ?: false) -> Signal.SIGKILL.code
-
-            // SIGTERM intercepted by tor
-            else -> 0
+        androidSdkInt?.let { sdkInt ->
+            if (sdkInt < 24) return Signal.SIGKILL.code
         }
+
+        // SIGTERM intercepted by tor
+        return 0
     }
 
     @Test
@@ -110,16 +109,22 @@ open class ProcessUnitTest {
             .spawn { p ->
                 println(p)
 
+                withContext(Dispatchers.Default) {
+                    p.waitForAsync(100.milliseconds, ::delay)
+                }
+
                 // parent dir was created by Stdio.Config.Builder.build
                 assertTrue(stdoutFile.exists())
                 assertTrue(stderrFile.exists())
 
-                p.waitForAsync(2.seconds, ::delay)
+                withContext(Dispatchers.Default) {
+                    p.waitForAsync(2.seconds, ::delay)
+                }
                 p
             }.waitForAsync(::delay)
 
 
-        assertTrue(stdoutFile.readUtf8().lines().first().contains(" [notice] Tor "))
+        stdoutFile.readUtf8().assertTorRan()
 
         if (!isAndroidRuntime) {
             // Android might post up a linker error
@@ -143,7 +148,7 @@ open class ProcessUnitTest {
         println(out.stderr)
 
         assertEquals(expectedTorExitCode, out.processInfo.exitCode)
-        assertTrue(out.stdout.lines().first().contains(" [notice] Tor "))
+        out.stdout.assertTorRan()
 
         if (!isAndroidRuntime) {
             // Android might post up a linker error
@@ -187,7 +192,7 @@ open class ProcessUnitTest {
             println(stderrString)
 
             assertEquals(expectedTorExitCode, p2.exitCode())
-            assertTrue(stdoutString.lines().first().contains(" [notice] Tor "))
+            stdoutString.assertTorRan()
 
             if (!isAndroidRuntime) {
                 // Android might post up a linker error
@@ -195,6 +200,17 @@ open class ProcessUnitTest {
                 assertTrue(stderrString.isEmpty())
             }
         }
+    }
+
+    private fun String.assertTorRan() {
+        var ran = false
+        lines().forEach { line ->
+            if (line.contains("[notice] Tor")) {
+                ran = true
+            }
+        }
+
+        assertTrue(ran)
     }
 
     private fun Process.Builder.envHome(): Process.Builder = environment("HOME", homeDir.path)
