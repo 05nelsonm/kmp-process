@@ -30,6 +30,29 @@ internal actual val STDIO_NULL: File = (System.getProperty("os.name")
     .let { isWindows -> if (isWindows) "NUL" else "/dev/null" }
     .toFile()
 
+internal val ANDROID_SDK_INT: Int? by lazy {
+
+    if (
+        System.getProperty("java.runtime.name")
+            ?.contains("android", ignoreCase = true) != true
+    ) {
+        // Not Android runtime
+        return@lazy null
+    }
+
+    try {
+        val clazz = Class.forName("android.os.Build\$VERSION")
+
+        try {
+            clazz?.getField("SDK_INT")?.getInt(null)
+        } catch (_: Throwable) {
+            clazz?.getField("SDK")?.get(null)?.toString()?.toIntOrNull()
+        }
+    } catch (_: Throwable) {
+        null
+    }
+}
+
 @Suppress("NOTHING_TO_INLINE")
 @Throws(InterruptedException::class)
 internal actual inline fun Duration.threadSleep() {

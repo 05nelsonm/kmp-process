@@ -115,6 +115,15 @@ internal actual class PlatformBuilder private actual constructor() {
                 .toInt()
         }
 
+        private val AndroidMyPidMethod by lazy {
+            // Not Android Runtime
+            if (ANDROID_SDK_INT == null) return@lazy null
+
+            // Android runtime
+            Class.forName("android.os.Process")
+                .getMethod("myPid")
+        }
+
         private fun Stdio.toRedirect(
             isStdin: Boolean,
         ): ProcessBuilder.Redirect = when (this) {
@@ -148,38 +157,6 @@ internal actual class PlatformBuilder private actual constructor() {
             if (discard != null) return@lazy discard
 
             ProcessBuilder.Redirect.to(STDIO_NULL)
-        }
-
-        internal val ANDROID_SDK_INT: Int? by lazy {
-
-            if (
-                System.getProperty("java.runtime.name")
-                    ?.contains("android", ignoreCase = true) != true
-            ) {
-                // Not Android runtime
-                return@lazy null
-            }
-
-            try {
-                val clazz = Class.forName("android.os.Build\$VERSION")
-
-                try {
-                    clazz?.getField("SDK_INT")?.getInt(null)
-                } catch (_: Throwable) {
-                    clazz?.getField("SDK")?.get(null)?.toString()?.toIntOrNull()
-                }
-            } catch (_: Throwable) {
-                null
-            }
-        }
-
-        private val AndroidMyPidMethod by lazy {
-            // Not Android Runtime
-            if (ANDROID_SDK_INT == null) return@lazy null
-
-            // Android runtime
-            Class.forName("android.os.Process")
-                .getMethod("myPid")
         }
     }
 }

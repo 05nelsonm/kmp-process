@@ -20,7 +20,6 @@ import io.matthewnelson.kmp.process.internal.BufferedLineScanner.Companion.scanL
 import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.Stdio
-import io.matthewnelson.kmp.process.internal.PlatformBuilder.Companion.ANDROID_SDK_INT
 import java.io.InputStream
 import kotlin.time.Duration
 
@@ -71,6 +70,8 @@ internal class JvmProcess private constructor(
                 } else {
                     jProcess.destroy()
                 }
+
+                Unit
             } ?: jProcess.destroyForcibly()
         }
 
