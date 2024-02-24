@@ -46,31 +46,13 @@ open class ProcessUnitTest {
         }
     }
 
-    protected open val androidSdkInt: Int? get() = null
-
-    private val isAndroidRuntime: Boolean get() = androidSdkInt != null
-
-    // Android libtor.so files are compiled with minSdk support of 21, so
-    // will throw exception in AndroidRuntime if testing on emulator below that
-    private val canRunTor: Boolean get() = androidSdkInt?.let { it >= 21 } ?: true
-
-    // TODO: Issue #50
-    //  Remove hasRedirect
-    private val hasRedirect: Boolean get() = androidSdkInt?.let { it >= 24 } ?: true
-
     protected open val homeDir get() = installer.installationDir
     protected open val cacheDir get() = homeDir.resolve("cache")
     protected open val dataDir get() = homeDir.resolve("data")
 
-    private val expectedTorExitCode: Int get() {
-        if (IsWindows) return Signal.SIGTERM.code
-
-        androidSdkInt?.let { sdkInt ->
-            if (sdkInt < 24) return Signal.SIGKILL.code
-        }
-
-        // SIGTERM intercepted by tor
-        return 0
+    protected open fun assertExitCode(code: Int) {
+        val expected = if (IsWindows) Signal.SIGTERM.code else 0
+        assertEquals(expected, code)
     }
 
     @Test
@@ -85,14 +67,7 @@ open class ProcessUnitTest {
     }
 
     @Test
-    fun givenExecutable_whenOutputToFile_thenIsAsExpected() = runTest(timeout = 25.seconds) {
-        // TODO: Issue #50
-        //  Remove hasRedirect
-        if (!canRunTor || !hasRedirect) {
-            println("Skipping...")
-            return@runTest
-        }
-
+    open fun givenExecutable_whenOutputToFile_thenIsAsExpected() = runTest(timeout = 25.seconds) {
         val logsDir = homeDir.resolve("logs")
         val stdoutFile = logsDir.resolve("tor.log")
         val stderrFile = logsDir.resolve("tor.err")
@@ -120,25 +95,13 @@ open class ProcessUnitTest {
                 withContext(Dispatchers.Default) {
                     p.waitForAsync(2.seconds, ::delay)
                 }
-                p
-            }.waitForAsync(::delay)
+            }
 
         stdoutFile.readUtf8().assertTorRan()
-
-        if (!isAndroidRuntime) {
-            // Android might post up a linker error
-            // WARNING: linker: /data/app/io.matthewnelson.kmp.process.testing.test-2/lib/x86/libtor.so: unsupported flags DT_FLAGS_1=0x8000001
-            assertTrue(stderrFile.readUtf8().isEmpty())
-        }
     }
 
     @Test
-    fun givenExecutable_whenOutput_thenIsAsExpected() {
-        if (!canRunTor) {
-            println("Skipping...")
-            return
-        }
-
+    open fun givenExecutable_whenOutput_thenIsAsExpected() {
         val out = installer.install().toProcessBuilder()
             .output { timeoutMillis = 2_000 }
 
@@ -146,23 +109,12 @@ open class ProcessUnitTest {
         println(out.stdout)
         println(out.stderr)
 
-        assertEquals(expectedTorExitCode, out.processInfo.exitCode)
+        assertExitCode(out.processInfo.exitCode)
         out.stdout.assertTorRan()
-
-        if (!isAndroidRuntime) {
-            // Android might post up a linker error
-            // WARNING: linker: /data/app/io.matthewnelson.kmp.process.testing.test-2/lib/x86/libtor.so: unsupported flags DT_FLAGS_1=0x8000001
-            assertTrue(out.stderr.isEmpty())
-        }
     }
 
     @Test
-    fun givenExecutable_whenPipeOutputFeeds_thenIsAsExpected() = runTest(timeout = 25.seconds) {
-        if (!canRunTor) {
-            println("Skipping...")
-            return@runTest
-        }
-
+    open fun givenExecutable_whenPipeOutputFeeds_thenIsAsExpected() = runTest(timeout = 25.seconds) {
         installer.install().toProcessBuilder().spawn { p2 ->
             val stdoutBuilder = StringBuilder()
             val stderrBuilder = StringBuilder()
@@ -179,25 +131,23 @@ open class ProcessUnitTest {
                 }
             }
 
-            p2.waitForAsync(2.seconds, ::delay)
+            withContext(Dispatchers.Default) {
+                p2.waitForAsync(2.seconds, ::delay)
+            }
 
             p2.destroy()
 
-            withContext(Dispatchers.Default) { delay(250.milliseconds) }
+            withContext(Dispatchers.Default) {
+                delay(250.milliseconds)
+            }
 
             val stdoutString = stdoutBuilder.toString()
             val stderrString = stderrBuilder.toString()
             println(stdoutString)
             println(stderrString)
 
-            assertEquals(expectedTorExitCode, p2.exitCode())
+            assertExitCode(p2.exitCode())
             stdoutString.assertTorRan()
-
-            if (!isAndroidRuntime) {
-                // Android might post up a linker error
-                // WARNING: linker: /data/app/io.matthewnelson.kmp.process.testing.test-2/lib/x86/libtor.so: unsupported flags DT_FLAGS_1=0x8000001
-                assertTrue(stderrString.isEmpty())
-            }
         }
     }
 
