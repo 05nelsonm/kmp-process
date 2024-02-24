@@ -3,6 +3,7 @@ rootProject.name = "kmp-process"
 pluginManagement {
     repositories {
         mavenCentral()
+        google()
         gradlePluginPortal()
     }
 }
@@ -17,6 +18,7 @@ if (CHECK_PUBLICATION != null) {
 } else {
     listOf(
         "process",
+        "process-testing",
     ).forEach { module ->
         include(":library:$module")
     }

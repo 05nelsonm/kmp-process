@@ -17,6 +17,7 @@ import org.jetbrains.kotlin.gradle.targets.js.yarn.YarnPlugin
 import org.jetbrains.kotlin.gradle.targets.js.yarn.YarnRootExtension
 
 plugins {
+    alias(libs.plugins.android.library) apply(false)
     alias(libs.plugins.binary.compat)
     alias(libs.plugins.kotlin.multiplatform) apply(false)
 }
@@ -29,6 +30,7 @@ allprojects {
 
     repositories {
         mavenCentral()
+        google()
         gradlePluginPortal()
 
         maven("https://s01.oss.sonatype.org/content/repositories/snapshots")

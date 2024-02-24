@@ -25,8 +25,6 @@ fun KmpConfigurationExtension.configureShared(
 ) {
     configure {
         jvm {
-            target { withJava() }
-
             kotlinJvmTarget = JavaVersion.VERSION_1_8
             compileSourceCompatibility = JavaVersion.VERSION_1_8
             compileTargetCompatibility = JavaVersion.VERSION_1_8
@@ -80,14 +78,14 @@ fun KmpConfigurationExtension.configureShared(
                 .resolve("commonTest")
                 .resolve("kotlin")
 
-            val process = kotlinSrc.resolve("io")
+            val pkgDir = kotlinSrc.resolve("io")
                 .resolve("matthewnelson")
                 .resolve("kmp")
-                .resolve(project.name.replace('-', File.pathSeparatorChar))
+                .resolve(project.name.replace('-', File.separatorChar))
 
-            process.mkdirs()
+            pkgDir.mkdirs()
 
-            process.resolve("TestConfig.kt").writeText("""
+            pkgDir.resolve("TestConfig.kt").writeText("""
                 package io.matthewnelson.kmp.${project.name.replace('-', '.')}
                 
                 internal const val PROJECT_DIR_PATH: String = "${project.projectDir.canonicalPath.replace("\\", "\\\\")}"

@@ -61,6 +61,7 @@ internal class JvmProcess private constructor(
     override fun destroy(): Process {
         isDestroyed = true
 
+        @Suppress("NewApi")
         when (destroySignal) {
             Signal.SIGTERM -> jProcess.destroy()
             Signal.SIGKILL -> jProcess.destroyForcibly()
@@ -79,7 +80,7 @@ internal class JvmProcess private constructor(
 
         // On Windows it's either 0 or 1, 1 indicating
         // termination. Swap it out with the correct code
-        if (result != null && isDestroyed && isWindows) {
+        if (result != null && isDestroyed && IsWindows) {
             if (result == 1) result = destroySignal.code
         }
 

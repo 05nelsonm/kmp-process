@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Matthew Nelson
+ * Copyright (c) 2024 Matthew Nelson
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,16 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-plugins {
-    `kotlin-dsl`
-}
+package io.matthewnelson.kmp.process
 
-dependencies {
-    implementation(libs.gradle.android)
-    implementation(libs.gradle.kmp.configuration)
-    implementation(libs.gradle.kotlin)
-    implementation(libs.gradle.publish.maven)
+internal actual val IsDarwinMobile: Boolean = false
 
-    // https://github.com/gradle/gradle/issues/15383#issuecomment-779893192
-    implementation(files(libs.javaClass.superclass.protectionDomain.codeSource.location))
-}
+internal actual val IsNodeJs: Boolean = false

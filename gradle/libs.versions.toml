@@ -1,4 +1,8 @@
 [versions]
+androidx-test-core = "1.5.0"
+androidx-test-runner = "1.5.2"
+
+gradle-android = "8.1.4"
 gradle-binary-compat = "0.13.2"
 gradle-kmp-configuration = "0.1.7"
 gradle-kotlin = "1.9.21"
@@ -11,6 +15,10 @@ kmp-tor-resource = "408.10.0-SNAPSHOT"
 kotlinx-coroutines = "1.7.3"
 
 [libraries]
+androidx-test-core = { module = "androidx.test:core", version.ref = "androidx-test-core" }
+androidx-test-runner = { module = "androidx.test:runner", version.ref = "androidx-test-runner" }
+
+gradle-android = { module = "com.android.tools.build:gradle", version.ref = "gradle-android" }
 gradle-kmp-configuration = { module = "io.matthewnelson:gradle-kmp-configuration-plugin", version.ref = "gradle-kmp-configuration" }
 gradle-kotlin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "gradle-kotlin" }
 gradle-publish-maven = { module = "com.vanniktech:gradle-maven-publish-plugin", version.ref = "gradle-publish-maven" }
@@ -19,8 +27,10 @@ immutable-collections = { module = "io.matthewnelson.immutable:collections", ver
 
 kmp-file = { module = "io.matthewnelson.kmp-file:file", version.ref = "kmp-file" }
 kmp-tor-resource-tor = { module = "io.matthewnelson.kmp-tor:resource-tor", version.ref = "kmp-tor-resource" }
+kmp-tor-resource-android-unit-test = { module = "io.matthewnelson.kmp-tor:resource-android-unit-test", version.ref = "kmp-tor-resource" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
 
 [plugins]
+android-library = { id = "com.android.library", version.ref = "gradle-android" }
 binary-compat = { id = "org.jetbrains.kotlinx.binary-compatibility-validator", version.ref = "gradle-binary-compat" }
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "gradle-kotlin" }

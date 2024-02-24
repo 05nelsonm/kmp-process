@@ -15,12 +15,6 @@
  **/
 package io.matthewnelson.kmp.process
 
-import io.matthewnelson.kmp.file.SysPathSep
+internal expect val IsDarwinMobile: Boolean
 
-class JvmProcessUnitTest: ProcessBaseTest() {
-
-    override val isDarwinMobile: Boolean = false
-    override val isJvm: Boolean = true
-    override val isNodeJS: Boolean = false
-    override val isUnixDesktop: Boolean = SysPathSep == '/'
-}
+internal expect val IsNodeJs: Boolean
