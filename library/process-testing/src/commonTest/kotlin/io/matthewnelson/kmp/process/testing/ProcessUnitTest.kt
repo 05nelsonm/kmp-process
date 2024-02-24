@@ -46,7 +46,7 @@ open class ProcessUnitTest {
         }
     }
 
-    protected open val androidSdkInt: Int? = null
+    protected open val androidSdkInt: Int? get() = null
 
     private val isAndroidRuntime: Boolean get() = androidSdkInt != null
 
@@ -58,9 +58,9 @@ open class ProcessUnitTest {
     //  Remove hasRedirect
     private val hasRedirect: Boolean get() = androidSdkInt?.let { it >= 24 } ?: true
 
-    protected open val homeDir by lazy { installer.installationDir }
-    protected open val cacheDir by lazy { homeDir.resolve("cache") }
-    protected open val dataDir by lazy { homeDir.resolve("data") }
+    protected open val homeDir get() = installer.installationDir
+    protected open val cacheDir get() = homeDir.resolve("cache")
+    protected open val dataDir get() = homeDir.resolve("data")
 
     private val expectedTorExitCode: Int get() {
         if (IsWindows) return Signal.SIGTERM.code
@@ -122,7 +122,6 @@ open class ProcessUnitTest {
                 }
                 p
             }.waitForAsync(::delay)
-
 
         stdoutFile.readUtf8().assertTorRan()
 

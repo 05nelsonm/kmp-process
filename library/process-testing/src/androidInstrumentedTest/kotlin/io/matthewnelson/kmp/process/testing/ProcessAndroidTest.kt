@@ -29,9 +29,9 @@ class ProcessAndroidTest: ProcessUnitTest() {
 
     private val ctx = ApplicationProvider.getApplicationContext<Application>().applicationContext
 
-    override val androidSdkInt: Int = android.os.Build.VERSION.SDK_INT
-    override val homeDir: File by lazy { ctx.getDir("torservice", Context.MODE_PRIVATE) }
-    override val cacheDir: File = SysTempDir.resolve("torservice").resolve("cache")
+    override val androidSdkInt: Int get() = android.os.Build.VERSION.SDK_INT
+    override val homeDir: File get() = ctx.getDir("torservice", Context.MODE_PRIVATE)
+    override val cacheDir: File get() = SysTempDir.resolve("torservice").resolve("cache")
 
     @Test
     override fun givenCurrentProcess_whenPid_thenSucceeds() {
