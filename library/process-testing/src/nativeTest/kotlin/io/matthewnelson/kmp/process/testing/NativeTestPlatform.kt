@@ -15,9 +15,12 @@
  **/
 package io.matthewnelson.kmp.process.testing
 
-import io.matthewnelson.kmp.file.path
-import io.matthewnelson.kmp.process.Stdio
+import kotlin.experimental.ExperimentalNativeApi
 
-internal val IsWindows = Stdio.Null.file.path == "NUL"
-
-internal expect val IsDarwinMobile: Boolean
+@OptIn(ExperimentalNativeApi::class)
+internal actual val IsDarwinMobile: Boolean = when (Platform.osFamily) {
+    OsFamily.IOS,
+    OsFamily.TVOS,
+    OsFamily.WATCHOS -> true
+    else -> false
+}

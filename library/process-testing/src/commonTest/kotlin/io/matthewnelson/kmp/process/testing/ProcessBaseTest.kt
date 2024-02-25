@@ -15,10 +15,7 @@
  **/
 package io.matthewnelson.kmp.process.testing
 
-import io.matthewnelson.kmp.file.SysTempDir
-import io.matthewnelson.kmp.file.path
-import io.matthewnelson.kmp.file.readUtf8
-import io.matthewnelson.kmp.file.resolve
+import io.matthewnelson.kmp.file.*
 import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.Stdio
@@ -28,10 +25,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertTrue
+import kotlin.test.*
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
@@ -64,6 +58,89 @@ abstract class ProcessBaseTest {
     @Test
     fun givenCurrentProcess_whenEnvironment_thenIsNotEmpty() {
         assertTrue(Process.Current.environment().isNotEmpty())
+    }
+
+    @Test
+    fun givenStdin_whenFile_thenOutputIsAsExpected() {
+        if (IsDarwinMobile || IsWindows) {
+            println("Skipping...")
+            return
+        }
+
+        val testCat = SysTempDir
+            .resolve("kmp_process")
+            .resolve("test.cat")
+
+        testCat.delete()
+        testCat.parentFile?.mkdirs()
+
+        val expected = """
+            abc
+            123
+            def
+            456
+        """.trimIndent()
+
+        testCat.writeUtf8(expected)
+
+        val out = Process.Builder(command = "cat")
+            .args("-")
+            .stdin(Stdio.File.of(testCat))
+            .output()
+
+        assertEquals(expected, out.stdout)
+        assertEquals("", out.stderr)
+        assertNull(out.processError)
+        assertEquals(0, out.processInfo.exitCode)
+    }
+
+    @Test
+    fun givenExitCode_whenCompleted_thenIsStatusCode() {
+        if (IsDarwinMobile || IsWindows) {
+            println("Skipping...")
+            return
+        }
+
+        val expected = 42
+        val actual = Process.Builder(command = "sh")
+            .args("-c")
+            .args("sleep 0.25; exit $expected")
+            .destroySignal(Signal.SIGKILL)
+            // Should complete and exit before timing out
+            .output { timeoutMillis = 1_000 }
+            .processInfo
+            .exitCode
+
+        assertEquals(expected, actual)
+    }
+
+    @Test
+    fun givenExitCode_whenTerminated_thenIsSignalCode() {
+        if (IsDarwinMobile || IsWindows) {
+            println("Skipping...")
+            return
+        }
+
+        val output = Process.Builder(command = "sh")
+            .args("-c")
+            .args("sleep 1; exit 42")
+            .destroySignal(Signal.SIGKILL)
+            // Should be killed before completing via signal
+            .output{ timeoutMillis = 250 }
+
+        val actual = output
+            .processInfo
+            .exitCode
+
+        // Depending on Android API, destroySignal is modified
+        // at build time to reflect the underlying kill signal
+        // used when destroy is invoked.
+        val expected = output
+            .processInfo
+            .destroySignal
+            .code
+
+        assertEquals(expected, actual)
     }
 
     @Test
