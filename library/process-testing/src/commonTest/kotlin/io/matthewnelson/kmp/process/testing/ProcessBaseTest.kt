@@ -121,11 +121,11 @@ abstract class ProcessBaseTest {
 
     @Test
     open fun givenExecutable_whenPipeOutputFeeds_thenIsAsExpected() = runTest(timeout = 25.seconds) {
-        installer.install().toProcessBuilder().spawn { p2 ->
+        installer.install().toProcessBuilder().spawn { p ->
             val stdoutBuilder = StringBuilder()
             val stderrBuilder = StringBuilder()
 
-            p2.stdoutFeed { line ->
+            p.stdoutFeed { line ->
                 with(stdoutBuilder) {
                     if (isNotEmpty()) appendLine()
                     append(line)
@@ -138,10 +138,10 @@ abstract class ProcessBaseTest {
             }
 
             withContext(Dispatchers.Default) {
-                p2.waitForAsync(2.seconds, ::delay)
+                p.waitForAsync(2.seconds, ::delay)
             }
 
-            p2.destroy()
+            p.destroy()
 
             withContext(Dispatchers.Default) {
                 delay(250.milliseconds)
@@ -152,7 +152,7 @@ abstract class ProcessBaseTest {
             println(stdoutString)
             println(stderrString)
 
-            assertExitCode(p2.exitCode())
+            assertExitCode(p.exitCode())
             stdoutString.assertTorRan()
         }
 
