@@ -22,9 +22,11 @@ import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.file.SysTempDir
 import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.Signal
+import io.matthewnelson.kmp.process.Stdio
 import kotlinx.coroutines.test.TestResult
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 
 class ProcessAndroidTest: ProcessBaseTest() {
 
@@ -48,9 +50,7 @@ class ProcessAndroidTest: ProcessBaseTest() {
 
     @Test
     override fun givenExecutable_whenOutputToFile_thenIsAsExpected(): TestResult {
-        // TODO: Issue #50
-        //  Reduce to API 21
-        if (android.os.Build.VERSION.SDK_INT < 24) return
+        if (android.os.Build.VERSION.SDK_INT < 21) return
 
         return super.givenExecutable_whenOutputToFile_thenIsAsExpected()
     }
@@ -103,5 +103,50 @@ class ProcessAndroidTest: ProcessBaseTest() {
             .code
 
         assertEquals(expected, actual)
+    }
+
+    @Test
+    fun givenStdin_whenFile_thenOutputIsAsExpected() {
+        val testCat = SysTempDir.resolve("test.cat")
+        testCat.delete()
+        testCat.parentFile?.mkdirs()
+
+        val expected = """
+            abc
+            123
+            def
+            456
+        """.trimIndent()
+        testCat.writeText(expected)
+
+        val b = Process.Builder(command = "cat")
+            .args("-")
+            .stdin(Stdio.File.of(testCat))
+            .stdout(Stdio.Pipe)
+            .stderr(Stdio.Pipe)
+
+        b.output().let { out ->
+            assertEquals(expected, out.stdout)
+            assertEquals("", out.stderr)
+            assertNull(out.processError)
+            assertEquals(0, out.processInfo.exitCode)
+        }
+
+        b.spawn { p ->
+            val lines = mutableListOf<String>()
+
+            p.stdoutFeed { line ->
+                lines.add(line)
+            }
+
+            p.waitFor()
+
+            Thread.sleep(250)
+
+            lines
+        }.let { lines ->
+            val actual = lines.joinToString("\n")
+            assertEquals(expected, actual)
+        }
     }
 }

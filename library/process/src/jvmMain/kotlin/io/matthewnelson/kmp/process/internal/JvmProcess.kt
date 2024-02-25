@@ -20,9 +20,11 @@ import io.matthewnelson.kmp.process.internal.BufferedLineScanner.Companion.scanL
 import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.Stdio
-import java.io.InputStream
+import java.io.FileOutputStream
+import java.io.PrintStream
 import kotlin.concurrent.Volatile
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 
 internal class JvmProcess private constructor(
     private val jProcess: java.lang.Process,
@@ -61,6 +63,8 @@ internal class JvmProcess private constructor(
 
     @Volatile
     private var _exitCode: Int? = null
+    @Volatile
+    private var _stdinThread: Thread? = null
 
     override fun destroy(): Process {
         isDestroyed = true
@@ -78,6 +82,11 @@ internal class JvmProcess private constructor(
                 Signal.SIGTERM -> jProcess.destroy()
                 Signal.SIGKILL -> jProcess.destroyForcibly()
             }
+        }
+
+        _stdinThread?.let { thread ->
+            if (thread.isInterrupted) return@let
+            thread.interrupt()
         }
 
         return this
@@ -115,12 +124,13 @@ internal class JvmProcess private constructor(
     }
 
     @Suppress("NOTHING_TO_INLINE")
-    private inline fun StreamEater.start(name: String) {
+    private inline fun Runnable.start(name: String): Thread {
         val t = Thread(this, "Process[pid=$_pid, stdio=$name]")
         t.isDaemon = true
         try {
             t.start()
         } catch (_: IllegalThreadStateException) {}
+        return t
     }
 
     private class StreamEater(
@@ -169,6 +179,91 @@ internal class JvmProcess private constructor(
 
         _exitCode = this
         return this
+    }
+
+    init {
+        ANDROID_SDK_INT?.let { sdkInt ->
+            if (sdkInt >= 24) return@let
+
+            // Android API 23 and below does not have redirect
+            // capabilities. Below is a supplemental implementation
+
+            when (val s = stdio.stdin) {
+                is Stdio.File -> {
+                    if (s.file == STDIO_NULL) {
+                        try {
+                            jProcess.outputStream.close()
+                        } catch (_: Throwable) {}
+                    } else {
+                        _stdinThread = Runnable {
+                            try {
+                                s.file.inputStream().use { iStream ->
+                                    jProcess.outputStream.use { oStream ->
+                                        val buf = ByteArray(4096)
+
+                                        while (true) {
+                                            val read = iStream.read(buf)
+                                            if (read == -1) break
+                                            oStream.write(buf, 0, read)
+                                        }
+                                    }
+                                }
+                            } catch (_: Throwable) {}
+                        }.start("stdin")
+                    }
+                }
+                is Stdio.Inherit -> {
+                    // TODO: Need to think about...
+                }
+                is Stdio.Pipe -> { /* do nothing */ }
+            }
+
+            fun InputStream.redirectTo(name: String, stdio: Stdio.File) {
+                Runnable {
+                    try {
+                        use { iStream ->
+                            FileOutputStream(stdio.file, stdio.append).use { oStream ->
+                                val buf = ByteArray(4096)
+
+                                while (true) {
+                                    val read = iStream.read(buf)
+                                    if (read == -1) break
+                                    oStream.write(buf, 0, read)
+                                }
+                            }
+                        }
+                    } catch (_: Throwable) {}
+                }.start(name)
+            }
+
+            fun InputStream.redirectTo(name: String, stream: PrintStream) {
+                Runnable {
+                    try {
+                        use { iStream ->
+                            val buf = ByteArray(4096)
+
+                            while (true) {
+                                val read = iStream.read(buf)
+                                if (read == -1) break
+                                stream.write(buf, 0, read)
+                            }
+                        }
+                    } catch (_: Throwable) {}
+                }.start(name)
+            }
+
+            when (val o = stdio.stdout) {
+                is Stdio.File -> jProcess.inputStream.redirectTo("stdout", o)
+                is Stdio.Inherit -> jProcess.inputStream.redirectTo("stdout", System.out)
+                is Stdio.Pipe -> { /* do nothing */ }
+            }
+
+            when (val o = stdio.stderr) {
+                is Stdio.File -> jProcess.errorStream.redirectTo("stderr", o)
+                is Stdio.Inherit -> jProcess.errorStream.redirectTo("stderr", System.err)
+                is Stdio.Pipe -> { /* do nothing */ }
+            }
+        }
     }
 
     internal companion object {

@@ -23,6 +23,7 @@ import io.matthewnelson.kmp.process.Output
 import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.Stdio
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 
 @Suppress("NOTHING_TO_INLINE")
 @Throws(InterruptedException::class)
@@ -49,6 +50,10 @@ internal fun PlatformBuilder.blockingOutput(
         p.stdoutFeed(stdoutBuffer)
         p.stderrFeed(stderrBuffer)
 
+        try {
+            5.milliseconds.threadSleep()
+        } catch (_: InterruptedException) {}
+
         waitForCode = p.commonWaitFor(options.timeout) {
             if (stdoutBuffer.maxSizeExceeded || stderrBuffer.maxSizeExceeded) {
                 throw IllegalStateException()
@@ -64,7 +69,7 @@ internal fun PlatformBuilder.blockingOutput(
         p.destroy()
     }
 
-    val exitCode = waitForCode ?: try {
+    val exitCode = try {
         // await for final closure if not ready yet
         p.waitFor()
     } catch (e: InterruptedException) {
