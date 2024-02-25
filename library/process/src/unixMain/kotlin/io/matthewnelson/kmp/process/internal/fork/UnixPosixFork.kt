@@ -15,25 +15,30 @@
  **/
 @file:Suppress("KotlinRedundantDiagnosticSuppress")
 
-package io.matthewnelson.kmp.process.internal
+package io.matthewnelson.kmp.process.internal.fork
 
-
+import io.matthewnelson.kmp.process.internal.PlatformBuilder
+import kotlinx.cinterop.ByteVar
+import kotlinx.cinterop.CPointerVar
+import kotlinx.cinterop.CValuesRef
 import kotlinx.cinterop.ExperimentalForeignApi
-import kotlinx.cinterop.get
-import kotlinx.cinterop.toKString
-import platform.posix.__environ
+
+@Suppress("NOTHING_TO_INLINE")
+@Throws(UnsupportedOperationException::class)
+internal expect inline fun PlatformBuilder.fork(): Int
+
+@Suppress("NOTHING_TO_INLINE")
+@Throws(UnsupportedOperationException::class)
+internal expect inline fun PlatformBuilder.dup2(
+    fd: Int,
+    newFd: Int,
+): Int
 
 @Suppress("NOTHING_TO_INLINE")
 @OptIn(ExperimentalForeignApi::class)
-internal actual inline fun PlatformBuilder.parentEnvironment(): MutableMap<String, String> {
-    val map = LinkedHashMap<String, String>(10, 1.0F)
-    val env = __environ ?: return map
-    var i = 0
-    while (true) {
-        val arg = env[i++]?.toKString() ?: break
-        val key = arg.substringBefore('=')
-        val value = arg.substringAfter('=')
-        map[key] = value
-    }
-    return map
-}
+@Throws(UnsupportedOperationException::class)
+internal expect inline fun PlatformBuilder.execve(
+    command: String,
+    argv: CValuesRef<CPointerVar<ByteVar>>,
+    envp: CValuesRef<CPointerVar<ByteVar>>,
+): Int

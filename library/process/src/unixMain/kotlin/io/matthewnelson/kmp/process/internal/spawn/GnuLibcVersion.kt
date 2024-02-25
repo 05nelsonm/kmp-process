@@ -13,19 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-package io.matthewnelson.kmp.process.internal
+@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
 
-import io.matthewnelson.kmp.file.IOException
-import io.matthewnelson.kmp.process.Signal
-import io.matthewnelson.kmp.process.internal.stdio.StdioHandle
+package io.matthewnelson.kmp.process.internal.spawn
 
-@Throws(IOException::class)
-internal actual fun forkExec(
-    command: String,
-    args: List<String>,
-    env: Map<String, String>,
-    handle: StdioHandle,
-    destroy: Signal,
-): NativeProcess {
-    throw IOException("Not yet implemented")
+internal expect class GnuLibcVersion {
+
+    internal fun isAtLeast(
+        major: UByte,
+        minor: UByte,
+    ): Boolean
+
+    internal companion object {
+
+        // Throws if gnu_get_libc_version returned null on Linux.
+        // Is a no-op if not Linux
+        @Throws(NullPointerException::class)
+        internal fun check(block: GnuLibcVersion.() -> Unit)
+    }
 }

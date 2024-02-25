@@ -15,20 +15,20 @@
  **/
 @file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
 
-package io.matthewnelson.kmp.process.internal
+package io.matthewnelson.kmp.process.internal.spawn
 
-internal expect class GnuLibcVersion {
+internal actual class GnuLibcVersion private constructor() {
 
-    internal fun isAtLeast(
+    internal actual fun isAtLeast(
         major: UByte,
         minor: UByte,
-    ): Boolean
+    ): Boolean {
+        throw UnsupportedOperationException()
+    }
 
-    internal companion object {
+    internal actual companion object {
 
-        // Throws if gnu_get_libc_version returned null on Linux.
-        // Is a no-op if not Linux
-        @Throws(NullPointerException::class)
-        internal fun check(block: GnuLibcVersion.() -> Unit)
+        @Suppress("ACTUAL_ANNOTATIONS_NOT_MATCH_EXPECT")
+        internal actual fun check(block: GnuLibcVersion.() -> Unit) { /* no-op */ }
     }
 }

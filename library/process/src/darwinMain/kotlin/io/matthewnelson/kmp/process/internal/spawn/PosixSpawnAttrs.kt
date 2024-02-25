@@ -15,10 +15,15 @@
  **/
 @file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
 
-package io.matthewnelson.kmp.process.internal
+package io.matthewnelson.kmp.process.internal.spawn
 
 import io.matthewnelson.kmp.file.IOException
-import kotlinx.cinterop.*
+import io.matthewnelson.kmp.process.internal.check
+import kotlinx.cinterop.CValuesRef
+import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.MemScope
+import kotlinx.cinterop.alloc
+import kotlinx.cinterop.ptr
 
 @OptIn(ExperimentalForeignApi::class)
 internal actual value class PosixSpawnAttrs private actual constructor(

@@ -15,25 +15,29 @@
  **/
 @file:Suppress("KotlinRedundantDiagnosticSuppress")
 
-package io.matthewnelson.kmp.process.internal
+package io.matthewnelson.kmp.process.internal.spawn
 
-
-import kotlinx.cinterop.ExperimentalForeignApi
-import kotlinx.cinterop.get
-import kotlinx.cinterop.toKString
-import platform.posix.__environ
+import kotlinx.cinterop.*
+import platform.posix.pid_tVar
 
 @Suppress("NOTHING_TO_INLINE")
 @OptIn(ExperimentalForeignApi::class)
-internal actual inline fun PlatformBuilder.parentEnvironment(): MutableMap<String, String> {
-    val map = LinkedHashMap<String, String>(10, 1.0F)
-    val env = __environ ?: return map
-    var i = 0
-    while (true) {
-        val arg = env[i++]?.toKString() ?: break
-        val key = arg.substringBefore('=')
-        val value = arg.substringAfter('=')
-        map[key] = value
-    }
-    return map
-}
+internal expect inline fun MemScope.posixSpawn(
+    command: String,
+    pid: CValuesRef<pid_tVar>,
+    fileActions: PosixSpawnFileActions,
+    attrs: PosixSpawnAttrs,
+    argv: CValuesRef<CPointerVar<ByteVar>>,
+    envp: CValuesRef<CPointerVar<ByteVar>>,
+): Int
+
+@Suppress("NOTHING_TO_INLINE")
+@OptIn(ExperimentalForeignApi::class)
+internal expect inline fun MemScope.posixSpawnP(
+    command: String,
+    pid: CValuesRef<pid_tVar>,
+    fileActions: PosixSpawnFileActions,
+    attrs: PosixSpawnAttrs,
+    argv: CValuesRef<CPointerVar<ByteVar>>,
+    envp: CValuesRef<CPointerVar<ByteVar>>,
+): Int

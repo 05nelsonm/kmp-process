@@ -17,9 +17,7 @@
 
 package io.matthewnelson.kmp.process.internal
 
-import kotlinx.cinterop.*
 import platform.Foundation.NSProcessInfo
-import platform.posix.pid_tVar
 
 @Suppress("NOTHING_TO_INLINE")
 internal actual inline fun PlatformBuilder.parentEnvironment(): MutableMap<String, String> {
@@ -33,25 +31,3 @@ internal actual inline fun PlatformBuilder.parentEnvironment(): MutableMap<Strin
     }
     return map
 }
-
-@Suppress("NOTHING_TO_INLINE")
-@OptIn(ExperimentalForeignApi::class)
-internal actual inline fun MemScope.posixSpawn(
-    command: String,
-    pid: CValuesRef<pid_tVar>,
-    fileActions: PosixSpawnFileActions,
-    attrs: PosixSpawnAttrs,
-    argv: CValuesRef<CPointerVar<ByteVar>>,
-    envp: CValuesRef<CPointerVar<ByteVar>>,
-): Int = posix_spawn(pid, command, fileActions.ref, attrs.ref, argv, envp)
-
-@Suppress("NOTHING_TO_INLINE")
-@OptIn(ExperimentalForeignApi::class)
-internal actual inline fun MemScope.posixSpawnP(
-    command: String,
-    pid: CValuesRef<pid_tVar>,
-    fileActions: PosixSpawnFileActions,
-    attrs: PosixSpawnAttrs,
-    argv: CValuesRef<CPointerVar<ByteVar>>,
-    envp: CValuesRef<CPointerVar<ByteVar>>,
-): Int = posix_spawnp(pid, command, fileActions.ref, attrs.ref, argv, envp)

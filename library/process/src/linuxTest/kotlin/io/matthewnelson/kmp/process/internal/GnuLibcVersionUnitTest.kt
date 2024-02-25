@@ -15,6 +15,7 @@
  **/
 package io.matthewnelson.kmp.process.internal
 
+import io.matthewnelson.kmp.process.internal.spawn.GnuLibcVersion
 import kotlin.test.*
 
 class GnuLibcVersionUnitTest {

@@ -13,17 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-package io.matthewnelson.kmp.process.internal
+@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
+
+package io.matthewnelson.kmp.process.internal.spawn
 
 import io.matthewnelson.kmp.file.IOException
-import io.matthewnelson.kmp.process.Signal
-import io.matthewnelson.kmp.process.internal.stdio.StdioHandle
+import kotlinx.cinterop.CValuesRef
+import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.MemScope
 
-@Throws(IOException::class)
-internal actual fun forkExec(
-    command: String,
-    args: List<String>,
-    env: Map<String, String>,
-    handle: StdioHandle,
-    destroy: Signal,
-): NativeProcess = throw IOException("fork/exec is not supported on iOS")
+@OptIn(ExperimentalForeignApi::class)
+internal expect value class PosixSpawnAttrs private constructor(
+    private val _ref: CValuesRef<*>,
+) {
+
+    internal companion object {
+
+        @Throws(IOException::class)
+        internal fun MemScope.posixSpawnAttrInit(): PosixSpawnAttrs
+    }
+}

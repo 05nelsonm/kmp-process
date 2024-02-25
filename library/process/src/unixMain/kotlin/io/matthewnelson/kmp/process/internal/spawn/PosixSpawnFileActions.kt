@@ -15,7 +15,7 @@
  **/
 @file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
 
-package io.matthewnelson.kmp.process.internal
+package io.matthewnelson.kmp.process.internal.spawn
 
 import io.matthewnelson.kmp.file.IOException
 import kotlinx.cinterop.CValuesRef

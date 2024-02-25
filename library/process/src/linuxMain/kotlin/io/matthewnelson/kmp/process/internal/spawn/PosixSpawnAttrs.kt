@@ -15,33 +15,33 @@
  **/
 @file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
 
-package io.matthewnelson.kmp.process.internal
+package io.matthewnelson.kmp.process.internal.spawn
 
 import io.matthewnelson.kmp.file.IOException
+import io.matthewnelson.kmp.process.internal.check
 import kotlinx.cinterop.*
+import platform.linux.posix_spawnattr_destroy
+import platform.linux.posix_spawnattr_init
+import platform.linux.posix_spawnattr_t
 
 @OptIn(ExperimentalForeignApi::class)
-internal actual value class PosixSpawnFileActions private actual constructor(
+internal actual value class PosixSpawnAttrs private actual constructor(
     private val _ref: CValuesRef<*>,
 ) {
 
-    internal val ref: CValuesRef<posix_spawnattr_tVar> get() {
+    internal val ref: CValuesRef<posix_spawnattr_t> get() {
         @Suppress("UNCHECKED_CAST")
-        return _ref as CValuesRef<posix_spawn_file_actions_tVar>
-    }
-
-    internal actual fun adddup2(fd: Int, newFd: Int): Int {
-        return posix_spawn_file_actions_adddup2(ref, fd, newFd)
+        return _ref as CValuesRef<posix_spawnattr_t>
     }
 
     internal actual companion object {
 
         @Throws(IOException::class)
-        internal actual fun MemScope.posixSpawnFileActionsInit(): PosixSpawnFileActions {
-            val fileActions = alloc<posix_spawn_file_actions_tVar>()
-            posix_spawn_file_actions_init(fileActions.ptr).check()
-            defer { posix_spawn_file_actions_destroy(fileActions.ptr) }
-            return PosixSpawnFileActions(fileActions.ptr)
+        internal actual fun MemScope.posixSpawnAttrInit(): PosixSpawnAttrs {
+            val attrs = alloc<posix_spawnattr_t>()
+            posix_spawnattr_init(attrs.ptr).check()
+            defer { posix_spawnattr_destroy(attrs.ptr) }
+            return PosixSpawnAttrs(attrs.ptr)
         }
     }
 }

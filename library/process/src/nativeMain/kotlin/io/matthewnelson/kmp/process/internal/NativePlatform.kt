@@ -21,8 +21,7 @@ import io.matthewnelson.kmp.file.DelicateFileApi
 import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.file.InterruptedException
 import io.matthewnelson.kmp.file.errnoToIOException
-import io.matthewnelson.kmp.process.Signal
-import io.matthewnelson.kmp.process.internal.stdio.StdioHandle
+import io.matthewnelson.kmp.file.SysPathSep
 import kotlinx.cinterop.*
 import platform.posix.errno
 import platform.posix.usleep
@@ -31,32 +30,14 @@ import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
 import kotlin.time.Duration
 
-@Throws(IOException::class, UnsupportedOperationException::class)
-internal expect fun posixSpawn(
-    command: String,
-    args: List<String>,
-    env: Map<String, String>,
-    handle: StdioHandle,
-    destroy: Signal,
-): NativeProcess
-
-@Throws(IOException::class)
-internal expect fun forkExec(
-    command: String,
-    args: List<String>,
-    env: Map<String, String>,
-    handle: StdioHandle,
-    destroy: Signal,
-): NativeProcess
-
 @OptIn(ExperimentalForeignApi::class)
 internal fun List<String>.toArgv(
-    argv0: String,
+    command: String,
     scope: MemScope,
 ): CArrayPointer<CPointerVar<ByteVar>> = with(scope) {
     val argv = allocArray<CPointerVar<ByteVar>>(size + 2)
 
-    argv[0] = argv0.cstr.ptr
+    argv[0] = command.substringAfterLast(SysPathSep).cstr.ptr
 
     var i = 1
     val iterator = iterator()
@@ -78,7 +59,8 @@ internal fun Map<String, String>.toEnvp(
     var i = 0
     val iterator = entries.iterator()
     while (iterator.hasNext()) {
-        envp[i++] = iterator.next().toString().cstr.ptr
+        val (k, v) = iterator.next()
+        envp[i++] = "$k=$v".cstr.ptr
     }
 
     envp[i] = null
