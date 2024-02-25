@@ -36,9 +36,9 @@ internal sealed class StdioDescriptor private constructor() {
 
         when (this) {
             is Single -> when (fd) {
-                STDIN_FILENO,
-                STDOUT_FILENO,
-                STDERR_FILENO -> { /* do not close */ }
+                Single.Stdin.fd,
+                Single.Stdout.fd,
+                Single.Stderr.fd -> { /* do not close */ }
                 else -> close(fd)
             }
             is Pair -> {
@@ -56,9 +56,9 @@ internal sealed class StdioDescriptor private constructor() {
 
         internal companion object {
 
-            internal val Stdin: Single get() = Single(STDIN_FILENO)
-            internal val Stdout: Single get() = Single(STDOUT_FILENO)
-            internal val Stderr: Single get() = Single(STDERR_FILENO)
+            internal val Stdin: Single = Single(STDIN_FILENO)
+            internal val Stdout: Single = Single(STDOUT_FILENO)
+            internal val Stderr: Single = Single(STDERR_FILENO)
 
             @Throws(IOException::class)
             internal fun Stdio.File.fdOpen(isStdin: Boolean): Single {

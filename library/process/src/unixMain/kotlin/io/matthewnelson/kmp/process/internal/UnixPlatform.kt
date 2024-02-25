@@ -13,9 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
+@file:Suppress("KotlinRedundantDiagnosticSuppress")
+
 package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.file.toFile
 
 internal actual val STDIO_NULL: File = "/dev/null".toFile()
+
+@Suppress("NOTHING_TO_INLINE")
+internal expect inline fun PlatformBuilder.parentEnvironment(): MutableMap<String, String>

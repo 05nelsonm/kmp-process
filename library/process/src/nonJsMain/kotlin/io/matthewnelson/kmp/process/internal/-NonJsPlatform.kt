@@ -70,6 +70,10 @@ internal fun PlatformBuilder.blockingOutput(
     }
 
     val exitCode = try {
+        try {
+            5.milliseconds.threadSleep()
+        } catch (_: InterruptedException) {}
+
         // await for final closure if not ready yet
         p.waitFor()
     } catch (e: InterruptedException) {

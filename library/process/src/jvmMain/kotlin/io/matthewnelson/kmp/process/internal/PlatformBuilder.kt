@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING", "NewApi")
+@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
 
 package io.matthewnelson.kmp.process.internal
 
@@ -62,6 +62,7 @@ internal actual class PlatformBuilder private actual constructor() {
         //  env value passed here is simply what gets used for
         //  Process.environment.
 
+        @Suppress("NewApi")
         if (ANDROID_SDK_INT?.let { sdkInt -> sdkInt >= 24 } != false) {
             // Only available on Android Runtime 24+ & Java 8+
             jProcessBuilder.redirectInput(stdio.stdin.toRedirect(isStdin = true))
@@ -120,6 +121,7 @@ internal actual class PlatformBuilder private actual constructor() {
                 .getMethod("myPid")
         }
 
+        @Suppress("NewApi")
         private fun Stdio.toRedirect(
             isStdin: Boolean,
         ): ProcessBuilder.Redirect = when (this) {
@@ -137,10 +139,12 @@ internal actual class PlatformBuilder private actual constructor() {
             }
         }
 
+        @Suppress("NewApi")
         private val REDIRECT_NULL_READ: ProcessBuilder.Redirect by lazy {
             ProcessBuilder.Redirect.from(REDIRECT_NULL_WRITE.file())
         }
 
+        @Suppress("NewApi")
         private val REDIRECT_NULL_WRITE: ProcessBuilder.Redirect by lazy {
             val discard = try {
                 Class.forName("java.lang.ProcessBuilder\$Redirect")

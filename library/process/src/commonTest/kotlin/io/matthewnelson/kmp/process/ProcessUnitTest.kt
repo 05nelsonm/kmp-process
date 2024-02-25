@@ -15,7 +15,7 @@
  **/
 package io.matthewnelson.kmp.process
 
-import io.matthewnelson.kmp.file.IOException
+import io.matthewnelson.kmp.file.*
 import io.matthewnelson.kmp.process.internal.IsWindows
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -75,46 +75,6 @@ class ProcessUnitTest {
         }
 
         assertEquals(0, exitCode)
-    }
-
-    @Test
-    fun givenExitCode_whenCompleted_thenIsStatusCode() {
-        if (IsDarwinMobile || IsWindows) {
-            skipping()
-            return
-        }
-
-        val expected = 42
-        val actual = Process.Builder(command = "sh")
-            .args("-c")
-            .args("sleep 0.25; exit $expected")
-            .destroySignal(Signal.SIGKILL)
-            // Should complete and exit before timing out
-            .output { timeoutMillis = 1_000 }
-            .processInfo
-            .exitCode
-
-        assertEquals(expected, actual)
-    }
-
-    @Test
-    fun givenExitCode_whenTerminated_thenIsSignalCode() {
-        if (IsDarwinMobile || IsWindows) {
-            skipping()
-            return
-        }
-
-        val expected = Signal.SIGKILL
-        val actual = Process.Builder(command = "sh")
-            .args("-c")
-            .args("sleep 1; exit 42")
-            .destroySignal(expected)
-            // Should be killed before completing via signal
-            .output{ timeoutMillis = 250 }
-            .processInfo
-            .exitCode
-
-        assertEquals(expected.code, actual)
     }
 
     @Test

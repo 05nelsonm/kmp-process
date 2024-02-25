@@ -21,10 +21,10 @@ import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.Stdio
 import java.io.FileOutputStream
+import java.io.OutputStream
 import java.io.PrintStream
 import kotlin.concurrent.Volatile
 import kotlin.time.Duration
-import kotlin.time.Duration.Companion.milliseconds
 
 internal class JvmProcess private constructor(
     private val jProcess: java.lang.Process,
@@ -108,39 +108,23 @@ internal class JvmProcess private constructor(
     override fun waitFor(duration: Duration): Int? = commonWaitFor(duration) { it.threadSleep() }
 
     override fun startStdout() {
-        StreamEater(
-            jProcess.inputStream,
-            ::dispatchStdout,
-            ::onStdoutStopped,
-        ).start("stdout")
+        Runnable {
+            jProcess.inputStream.scanLines(::dispatchStdout, ::onStdoutStopped)
+        }.execute(stdio = "stdout")
     }
 
     override fun startStderr() {
-        StreamEater(
-            jProcess.errorStream,
-            ::dispatchStderr,
-            ::onStderrStopped,
-        ).start("stderr")
+        Runnable {
+            jProcess.errorStream.scanLines(::dispatchStderr, ::onStderrStopped)
+        }.execute(stdio = "stderr")
     }
 
     @Suppress("NOTHING_TO_INLINE")
-    private inline fun Runnable.start(name: String): Thread {
-        val t = Thread(this, "Process[pid=$_pid, stdio=$name]")
+    private inline fun Runnable.execute(stdio: String): Thread {
+        val t = Thread(this, "Process[pid=$_pid, stdio=$stdio]")
         t.isDaemon = true
-        try {
-            t.start()
-        } catch (_: IllegalThreadStateException) {}
+        t.start()
         return t
-    }
-
-    private class StreamEater(
-        private val stream: InputStream,
-        private val dispatch: (line: String) -> Unit,
-        private val onStopped: () -> Unit,
-    ): Runnable {
-        override fun run() {
-            stream.scanLines(dispatch, onStopped)
-        }
     }
 
     private fun Int.correctExitCode(): Int {
@@ -188,6 +172,19 @@ internal class JvmProcess private constructor(
             // Android API 23 and below does not have redirect
             // capabilities. Below is a supplemental implementation
 
+            fun InputStream.writeTo(oStream: OutputStream) {
+                val iStream = this
+                val buf = ByteArray(4096)
+
+                while (true) {
+                    val read = iStream.read(buf)
+                    if (read == -1) break
+                    oStream.write(buf, 0, read)
+                }
+
+                buf.fill(0)
+            }
+
             when (val s = stdio.stdin) {
                 is Stdio.File -> {
                     if (s.file == STDIO_NULL) {
@@ -199,17 +196,11 @@ internal class JvmProcess private constructor(
                             try {
                                 s.file.inputStream().use { iStream ->
                                     jProcess.outputStream.use { oStream ->
-                                        val buf = ByteArray(4096)
-
-                                        while (true) {
-                                            val read = iStream.read(buf)
-                                            if (read == -1) break
-                                            oStream.write(buf, 0, read)
-                                        }
+                                        iStream.writeTo(oStream)
                                     }
                                 }
                             } catch (_: Throwable) {}
-                        }.start("stdin")
+                        }.execute(stdio = "stdin")
                     }
                 }
                 is Stdio.Inherit -> {
@@ -218,38 +209,26 @@ internal class JvmProcess private constructor(
                 is Stdio.Pipe -> { /* do nothing */ }
             }
 
-            fun InputStream.redirectTo(name: String, stdio: Stdio.File) {
+            fun InputStream.redirectTo(stdio: String, file: Stdio.File) {
                 Runnable {
                     try {
                         use { iStream ->
-                            FileOutputStream(stdio.file, stdio.append).use { oStream ->
-                                val buf = ByteArray(4096)
-
-                                while (true) {
-                                    val read = iStream.read(buf)
-                                    if (read == -1) break
-                                    oStream.write(buf, 0, read)
-                                }
+                            FileOutputStream(file.file, file.append).use { oStream ->
+                                iStream.writeTo(oStream)
                             }
                         }
                     } catch (_: Throwable) {}
-                }.start(name)
+                }.execute(stdio = stdio)
             }
 
-            fun InputStream.redirectTo(name: String, stream: PrintStream) {
+            fun InputStream.redirectTo(stdio: String, oStream: PrintStream) {
                 Runnable {
                     try {
                         use { iStream ->
-                            val buf = ByteArray(4096)
-
-                            while (true) {
-                                val read = iStream.read(buf)
-                                if (read == -1) break
-                                stream.write(buf, 0, read)
-                            }
+                            iStream.writeTo(oStream)
                         }
                     } catch (_: Throwable) {}
-                }.start(name)
+                }.execute(stdio = stdio)
             }
 
             when (val o = stdio.stdout) {
