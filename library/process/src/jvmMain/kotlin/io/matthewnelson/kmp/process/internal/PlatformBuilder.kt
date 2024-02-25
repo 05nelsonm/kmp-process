@@ -67,9 +67,6 @@ internal actual class PlatformBuilder private actual constructor() {
             jProcessBuilder.redirectInput(stdio.stdin.toRedirect(isStdin = true))
             jProcessBuilder.redirectOutput(stdio.stdout.toRedirect(isStdin = false))
             jProcessBuilder.redirectError(stdio.stderr.toRedirect(isStdin = false))
-        } else {
-            // TODO: Issue #50
-            //  Supplement Stdio behavior for Android API < 24
         }
 
         val destroySignal = ANDROID_SDK_INT?.let { sdkInt ->
