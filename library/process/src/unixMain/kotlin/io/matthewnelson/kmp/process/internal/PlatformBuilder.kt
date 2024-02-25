@@ -29,14 +29,10 @@ import io.matthewnelson.kmp.process.internal.spawn.GnuLibcVersion
 import io.matthewnelson.kmp.process.internal.spawn.PosixSpawnAttrs.Companion.posixSpawnAttrInit
 import io.matthewnelson.kmp.process.internal.spawn.PosixSpawnFileActions.Companion.posixSpawnFileActionsInit
 import io.matthewnelson.kmp.process.internal.spawn.posixSpawn
-import io.matthewnelson.kmp.process.internal.spawn.posixSpawnP
 import io.matthewnelson.kmp.process.internal.stdio.StdioHandle
 import io.matthewnelson.kmp.process.internal.stdio.StdioHandle.Companion.openHandle
 import kotlinx.cinterop.*
-import platform.posix.errno
-import platform.posix.exit
-import platform.posix.getpid
-import platform.posix.pid_tVar
+import platform.posix.*
 
 // unixMain
 internal actual class PlatformBuilder private actual constructor() {
@@ -64,10 +60,11 @@ internal actual class PlatformBuilder private actual constructor() {
         destroy: Signal,
     ): Process {
 
+        val program = command.toProgramPath()
         val handle = stdio.openHandle()
 
         try {
-            return posixSpawn(command, args, env, handle, destroy)
+            return posixSpawn(program, args, env, handle, destroy)
         } catch (_: UnsupportedOperationException) {
             /* ignore and try fork/exec */
         } catch (e: IOException) {
@@ -76,7 +73,7 @@ internal actual class PlatformBuilder private actual constructor() {
         }
 
         try {
-            return forkExec(command, args, env, handle, destroy)
+            return forkExec(program, args, env, handle, destroy)
         } catch (e: Exception) {
             handle.close()
             throw e.wrapIOException()
@@ -85,8 +82,8 @@ internal actual class PlatformBuilder private actual constructor() {
 
     @OptIn(DelicateFileApi::class, ExperimentalForeignApi::class)
     @Throws(IOException::class, UnsupportedOperationException::class)
-    internal fun posixSpawn(
-        command: String,
+    private fun posixSpawn(
+        program: File,
         args: List<String>,
         env: Map<String, String>,
         handle: StdioHandle,
@@ -125,23 +122,10 @@ internal actual class PlatformBuilder private actual constructor() {
             })
 
             val pid = alloc<pid_tVar>()
-
-            val argv = args.toArgv(command = command, scope = this)
+            val argv = args.toArgv(program = program, scope = this)
             val envp = env.toEnvp(scope = this)
 
-            // TODO: Check relative paths like ../program and how
-            //  posix_spawnp functions with that. It "should" work,
-            //  but darwin seems like there is a bug if utilized with
-            //  addchdir_np. May be necessary to always convert to
-            //  absolute file path if command.contains(SysPathSep) is
-            //  true?
-            if (command.startsWith(SysPathSep)) {
-                // Absolute path, utilize posix_spawn
-                posixSpawn(command, pid.ptr, fileActions, attrs, argv, envp)
-            } else {
-                // relative path or program name, utilize posix_spawnp
-                posixSpawnP(command, pid.ptr, fileActions, attrs, argv, envp)
-            }.check()
+            posixSpawn(program.path, pid.ptr, fileActions, attrs, argv, envp).check()
 
             pid.value
         }
@@ -149,17 +133,27 @@ internal actual class PlatformBuilder private actual constructor() {
         return NativeProcess(
             pid,
             handle,
-            command,
+            program.path,
             args,
             env,
             destroy,
         )
     }
 
-    @OptIn(DelicateFileApi::class, ExperimentalForeignApi::class)
+    // internal for testing
     @Throws(IOException::class, UnsupportedOperationException::class)
     internal fun forkExec(
         command: String,
+        args: List<String>,
+        env: Map<String, String>,
+        handle: StdioHandle,
+        destroy: Signal,
+    ): NativeProcess = forkExec(command.toProgramPath(), args, env, handle, destroy)
+
+    @OptIn(DelicateFileApi::class, ExperimentalForeignApi::class)
+    @Throws(IOException::class, UnsupportedOperationException::class)
+    private fun forkExec(
+        program: File,
         args: List<String>,
         env: Map<String, String>,
         handle: StdioHandle,
@@ -171,31 +165,29 @@ internal actual class PlatformBuilder private actual constructor() {
             try {
                 handle.dup2 { fd, newFd ->
                     when (dup2(fd, newFd)) {
-                        0 -> null
-                        else -> errnoToIOException(errno)
+                        -1 -> errnoToIOException(errno)
+                        else -> null
                     }
                 }
-            } catch (e: IOException) {
-                // TODO: write errno to output?
-                exit(errno)
+            } catch (_: IOException) {
+                // TODO: Handle error better
+                exit(1)
             }
 
-            val result = memScoped {
-                val argv = args.toArgv(command = command, scope = this)
+            memScoped {
+                val argv = args.toArgv(program = program, scope = this)
                 val envp = env.toEnvp(scope = this)
 
-                execve(command, argv, envp)
+                execve(program.path, argv, envp)
+                // TODO: Handle error better
+                exit(errno)
             }
-
-            val status = if (result == -1) errno else 0
-            // TODO: write errno to output?
-            exit(status)
         }
 
         return NativeProcess(
             pid,
             handle,
-            command,
+            program.path,
             args,
             env,
             destroy,

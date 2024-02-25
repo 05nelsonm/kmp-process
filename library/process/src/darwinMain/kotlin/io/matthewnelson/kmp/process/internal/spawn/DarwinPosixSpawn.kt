@@ -30,14 +30,3 @@ internal actual inline fun MemScope.posixSpawn(
     argv: CValuesRef<CPointerVar<ByteVar>>,
     envp: CValuesRef<CPointerVar<ByteVar>>,
 ): Int = posix_spawn(pid, command, fileActions.ref, attrs.ref, argv, envp)
-
-@Suppress("NOTHING_TO_INLINE")
-@OptIn(ExperimentalForeignApi::class)
-internal actual inline fun MemScope.posixSpawnP(
-    command: String,
-    pid: CValuesRef<pid_tVar>,
-    fileActions: PosixSpawnFileActions,
-    attrs: PosixSpawnAttrs,
-    argv: CValuesRef<CPointerVar<ByteVar>>,
-    envp: CValuesRef<CPointerVar<ByteVar>>,
-): Int = posix_spawnp(pid, command, fileActions.ref, attrs.ref, argv, envp)

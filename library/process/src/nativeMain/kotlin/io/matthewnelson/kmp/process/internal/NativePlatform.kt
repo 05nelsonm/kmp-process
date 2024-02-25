@@ -17,27 +17,59 @@
 
 package io.matthewnelson.kmp.process.internal
 
-import io.matthewnelson.kmp.file.DelicateFileApi
-import io.matthewnelson.kmp.file.IOException
-import io.matthewnelson.kmp.file.InterruptedException
-import io.matthewnelson.kmp.file.errnoToIOException
-import io.matthewnelson.kmp.file.SysPathSep
+import io.matthewnelson.kmp.file.*
 import kotlinx.cinterop.*
 import platform.posix.errno
+import platform.posix.getenv
 import platform.posix.usleep
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
 import kotlin.time.Duration
 
+@Throws(IOException::class)
+internal fun String.toProgramPath(): File {
+    val file = toFile()
+
+    if (file.isAbsolute()) {
+        // Existence was checked by Process.Builder.checkCommand
+        return file
+    }
+
+    // Relative path
+    if (file.path.contains(SysPathSep)) {
+        val a = file.absoluteFile.normalize()
+        if (a.exists()) return a
+
+        throw FileNotFoundException("Failed to find program[$this]")
+    }
+
+    // Try finding via PATH
+    @OptIn(ExperimentalForeignApi::class)
+    val paths = getenv("PATH")
+        ?.toKString()
+        ?.split(if (IsWindows) ';' else ':')
+        ?.iterator()
+        ?: throw IOException("PATH environment variable not found. Unable to find program[$this]")
+
+    var result: File? = null
+    while (result == null && paths.hasNext()) {
+        val r = paths.next().toFile().resolve(file)
+        if (!r.exists()) continue
+        result = r
+    }
+
+    return result ?: throw FileNotFoundException("Failed to find program[$this]")
+}
+
 @OptIn(ExperimentalForeignApi::class)
 internal fun List<String>.toArgv(
-    command: String,
+    program: File,
     scope: MemScope,
 ): CArrayPointer<CPointerVar<ByteVar>> = with(scope) {
     val argv = allocArray<CPointerVar<ByteVar>>(size + 2)
 
-    argv[0] = command.substringAfterLast(SysPathSep).cstr.ptr
+    argv[0] = program.name.cstr.ptr
 
     var i = 1
     val iterator = iterator()

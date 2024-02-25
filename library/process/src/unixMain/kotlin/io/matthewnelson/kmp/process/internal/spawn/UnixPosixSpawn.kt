@@ -30,14 +30,3 @@ internal expect inline fun MemScope.posixSpawn(
     argv: CValuesRef<CPointerVar<ByteVar>>,
     envp: CValuesRef<CPointerVar<ByteVar>>,
 ): Int
-
-@Suppress("NOTHING_TO_INLINE")
-@OptIn(ExperimentalForeignApi::class)
-internal expect inline fun MemScope.posixSpawnP(
-    command: String,
-    pid: CValuesRef<pid_tVar>,
-    fileActions: PosixSpawnFileActions,
-    attrs: PosixSpawnAttrs,
-    argv: CValuesRef<CPointerVar<ByteVar>>,
-    envp: CValuesRef<CPointerVar<ByteVar>>,
-): Int
