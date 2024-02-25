@@ -22,13 +22,16 @@ and `Rust` [Command][url-rust-command]
 
 ## Info
 
-|           | Process Creation Method Used                                     |
-|-----------|------------------------------------------------------------------|
-| `Jvm`     | `java.lang.ProcessBuilder`                                       |
-| `Node.js` | [child_process][url-node-child_process]                          |
-| `Linux`   | [posix_spawn][url-posix-spawn] & [posix_spawnp][url-posix-spawn] |
-| `macOS`   | [posix_spawn][url-posix-spawn] & [posix_spawnp][url-posix-spawn] |
-| `iOS`     | [posix_spawn][url-posix-spawn] & [posix_spawnp][url-posix-spawn] |
+|           | Process Creation Method Used                                                        |
+|-----------|-------------------------------------------------------------------------------------|
+| `Jvm`     | `java.lang.ProcessBuilder`                                                          |
+| `Node.js` | [spawn][url-node-spawn] or [spawnSync][url-node-spawn-sync]                         |
+| `Linux`   | [posix_spawn][url-posix-spawn] or [fork][url-posix-fork]/[execve][url-posix-execve] |
+| `macOS`   | [posix_spawn][url-posix-spawn] or [fork][url-posix-fork]/[execve][url-posix-execve] |
+| `iOS`     | [posix_spawn][url-posix-spawn]                                                      |
+
+**NOTE:** Java 8 `java.lang.ProcessBuilder` and `java.lang.Process` functionality on 
+Android is backported and tested against API 17+.
 
 ## Example
 
@@ -178,5 +181,9 @@ dependencies {
 [url-kmp-file]: https://github.com/05nelsonm/kmp-file
 [url-kotlin]: https://kotlinlang.org
 [url-node-child_process]: https://nodejs.org/api/child_process.html
+[url-node-spawn]: https://nodejs.org/api/child_process.html#child_processspawncommand-args-options
+[url-node-spawn-sync]: https://nodejs.org/api/child_process.html#child_processspawnsynccommand-args-options
+[url-posix-execve]: https://man7.org/linux/man-pages/man2/execve.2.html
+[url-posix-fork]: https://man7.org/linux/man-pages/man2/fork.2.html
 [url-posix-spawn]: https://man7.org/linux/man-pages/man3/posix_spawn.3.html
 [url-rust-command]: https://doc.rust-lang.org/std/process/struct.Command.html

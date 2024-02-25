@@ -171,7 +171,7 @@ internal actual class PlatformBuilder private actual constructor() {
                 }
             } catch (_: IOException) {
                 // TODO: Handle error better
-                exit(1)
+                _exit(1)
             }
 
             memScoped {
@@ -180,7 +180,7 @@ internal actual class PlatformBuilder private actual constructor() {
 
                 execve(program.path, argv, envp)
                 // TODO: Handle error better
-                exit(errno)
+                _exit(errno)
             }
         }
 
