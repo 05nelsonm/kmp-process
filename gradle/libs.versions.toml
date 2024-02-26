@@ -3,14 +3,14 @@ androidx-test-core = "1.5.0"
 androidx-test-runner = "1.5.2"
 
 gradle-android = "8.1.4"
-gradle-binary-compat = "0.13.2"
-gradle-kmp-configuration = "0.1.7"
-gradle-kotlin = "1.9.21"
-gradle-publish-maven = "0.25.3"
+gradle-binary-compat = "0.14.0"
+gradle-kmp-configuration = "0.2.0"
+gradle-kotlin = "1.9.22"
+gradle-publish-maven = "0.27.0"
 
 immutable = "0.1.0"
 
-kmp-file = "0.1.0-alpha06"
+kmp-file = "0.1.0-beta01"
 kmp-tor-resource = "408.10.0-SNAPSHOT"
 kotlinx-coroutines = "1.7.3"
 

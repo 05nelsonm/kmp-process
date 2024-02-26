@@ -23,7 +23,7 @@ internal actual val STDIO_NULL: File by lazy {
     val isWindows = try {
         os_platform() == "win32"
     } catch (_: Throwable) {
-        SysPathSep == '\\'
+        SysDirSep == '\\'
     }
 
     (if (isWindows) "NUL" else "/dev/null").toFile()
