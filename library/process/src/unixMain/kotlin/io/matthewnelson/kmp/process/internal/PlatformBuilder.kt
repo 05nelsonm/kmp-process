@@ -244,8 +244,9 @@ internal actual class PlatformBuilder private actual constructor() {
             destroy,
         )
 
-        // Below is "sort of" like vfork on Linux, but
-        // with error validation and cleanup on our end.
+        // Below is sort of like vfork on Linux, but
+        // with error validation and cleanup on our
+        // end.
         val b = ByteArray(5)
 
         val read = try {
@@ -257,10 +258,12 @@ internal actual class PlatformBuilder private actual constructor() {
             close(pipe.fdRead)
         }
 
-        var err: IOException? = null
-
         when (read) {
-            0 -> { /* execve successful */ }
+            // execve successful and CLOEXEC pipe's write
+            // was closed, resulting in the read end stopping.
+            0 -> null
+
+            // Something happened in the child process
             b.size -> {
                 val type = when (b[4].toInt()) {
                     1 -> "dup2"
@@ -268,7 +271,7 @@ internal actual class PlatformBuilder private actual constructor() {
                     else -> null
                 }
 
-                err = if (type == null) {
+                if (type == null) {
                     IOException("CLOEXEC pipe validation check failure")
                 } else {
                     val errno = BigEndian(b[0], b[1], b[2], b[3]).toInt()
@@ -276,13 +279,12 @@ internal actual class PlatformBuilder private actual constructor() {
                     IOException("Child process $type failure. $msg")
                 }
             }
-            -1 -> err = errnoToIOException(errno)
-            else -> err = IOException("invalid read on CLOEXEC pipe")
-        }
 
-        err?.let { ex ->
+            // Bad read on our pipe (should never really happen?)
+            else -> IOException("invalid read on CLOEXEC pipe")
+        }?.let { e: IOException ->
             p.destroy()
-            throw ex
+            throw e
         }
 
         return p
