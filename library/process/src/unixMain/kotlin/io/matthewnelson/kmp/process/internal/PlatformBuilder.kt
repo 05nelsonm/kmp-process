@@ -166,7 +166,12 @@ internal actual class PlatformBuilder private actual constructor() {
         handle: StdioHandle,
         destroy: Signal,
     ): NativeProcess {
-        val pipe = Stdio.Pipe.fdOpen()
+        val pipe = try {
+            Stdio.Pipe.fdOpen()
+        } catch (e: IOException) {
+            handle.close()
+            throw e
+        }
 
         val pid = try {
             fork().check()
