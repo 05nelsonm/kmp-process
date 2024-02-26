@@ -41,18 +41,15 @@ internal inline fun stream_Readable.onData(
     val cb: (chunk: dynamic) -> Unit = { chunk ->
         // can be either a String or a Buffer (fucking stupid...)
 
-        @OptIn(DelicateFileApi::class)
         val result = try {
             val buf = Buffer.wrap(chunk)
             val utf8 = buf.toUtf8()
             buf.fill()
             utf8
-        } catch (_: IOException) {
+        } catch (_: IllegalArgumentException) {
             try {
                 chunk as String
             } catch (_: ClassCastException) {
-                // Could have been an empty buffer and wrap threw exception.
-                // See https://github.com/05nelsonm/kmp-file/issues/41
                 null
             }
         }

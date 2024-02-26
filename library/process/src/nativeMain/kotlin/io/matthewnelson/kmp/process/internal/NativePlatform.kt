@@ -121,7 +121,7 @@ internal inline fun Int.check(
     }
 
     if (!block(this)) {
-        @OptIn(DelicateFileApi::class, ExperimentalForeignApi::class)
+        @OptIn(ExperimentalForeignApi::class)
         throw errnoToIOException(errno)
     }
 

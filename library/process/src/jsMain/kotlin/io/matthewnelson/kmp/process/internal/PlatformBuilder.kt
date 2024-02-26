@@ -71,32 +71,20 @@ internal actual class PlatformBuilder private actual constructor() {
 
         val pid = output["pid"] as Int
 
-        @OptIn(DelicateFileApi::class)
-        val stdout = try {
-            val buf = Buffer.wrap(output["stdout"])
+        val stdout = Buffer.wrap(output["stdout"]).let { buf ->
             val utf8 = buf.toUtf8()
             buf.fill()
             utf8
-        } catch (_: IOException) {
-            // TODO: Fix in kmp-file
-            //  "Attempt to access memory outside buffer bounds"
-            ""
         }
 
-        @OptIn(DelicateFileApi::class)
-        val stderr = try {
-            val buf = Buffer.wrap(output["stderr"])
+        val stderr = Buffer.wrap(output["stderr"]).let { buf ->
             val utf8 = buf.toUtf8()
             buf.fill()
             utf8
-        } catch (_: IOException) {
-            // TODO: Fix in kmp-file
-            //  "Attempt to access memory outside buffer bounds"
-            ""
         }
 
-        val code: Int = (output["status"] as? Number)?.toInt().let {
-            if (it != null) return@let it
+        val code: Int = (output["status"] as? Number)?.toInt().let { status ->
+            if (status != null) return@let status
 
             val signal = output["signal"] as? String
             try {
@@ -220,7 +208,6 @@ internal actual class PlatformBuilder private actual constructor() {
                     } catch (_: Throwable) {}
                 }
 
-                @OptIn(DelicateFileApi::class)
                 throw t.toIOException()
             }
 

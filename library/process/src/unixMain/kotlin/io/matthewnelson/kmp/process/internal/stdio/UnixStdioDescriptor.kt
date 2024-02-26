@@ -17,7 +17,6 @@
 
 package io.matthewnelson.kmp.process.internal.stdio
 
-import io.matthewnelson.kmp.file.DelicateFileApi
 import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.file.errnoToIOException
 import io.matthewnelson.kmp.process.Stdio
@@ -29,7 +28,7 @@ import platform.posix.*
 internal actual inline fun Int.orOCloExec(): Int = this or O_CLOEXEC
 
 @Throws(IOException::class)
-@OptIn(DelicateFileApi::class, ExperimentalForeignApi::class)
+@OptIn(ExperimentalForeignApi::class)
 internal actual fun ((fdRead: Int, fdWrite: Int) -> StdioDescriptor.Pair).fdOpen(
     stdio: Stdio.Pipe,
 ): StdioDescriptor.Pair {
