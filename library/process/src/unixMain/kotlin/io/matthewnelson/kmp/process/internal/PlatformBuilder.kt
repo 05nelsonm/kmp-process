@@ -232,6 +232,7 @@ internal actual class PlatformBuilder private actual constructor() {
             try {
                 StdioWriter(pipe).write(b)
             } finally {
+                handle.close()
                 close(pipe.fdWrite)
             }
             _exit(1)
