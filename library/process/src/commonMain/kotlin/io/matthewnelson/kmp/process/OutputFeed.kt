@@ -49,6 +49,7 @@ import kotlin.jvm.JvmSynthetic
  *             }
  *         )
  *
+ * @see [Process.destroy]
  * @see [Handler.stdoutFeed]
  * @see [Handler.stderrFeed]
  * */
@@ -86,9 +87,9 @@ public fun interface OutputFeed {
          * does nothing. If the [Process] has been destroyed, this
          * does nothing.
          * */
-        public fun stdoutFeed(feed: OutputFeed): Process {
-            return stdoutFeed(*Array(1) { feed })
-        }
+        public fun stdoutFeed(
+            feed: OutputFeed,
+        ): Process = stdoutFeed(*Array(1) { feed })
 
         /**
          * Attaches multiple [OutputFeed] to obtain `stdout` output.
@@ -102,9 +103,9 @@ public fun interface OutputFeed {
          * does nothing. If the [Process] has been destroyed, this
          * does nothing.
          * */
-        public fun stdoutFeed(vararg feeds: OutputFeed): Process {
-            return stdoutFeeds.addFeeds(feeds, stdio.stdout, ::startStdout)
-        }
+        public fun stdoutFeed(
+            vararg feeds: OutputFeed,
+        ): Process = stdoutFeeds.addFeeds(feeds, stdio.stdout, ::startStdout)
 
         /**
          * Attaches a single [OutputFeed] to obtain `stderr` output.
@@ -116,9 +117,9 @@ public fun interface OutputFeed {
          * does nothing. If the [Process] has been destroyed, this
          * does nothing.
          * */
-        public fun stderrFeed(feed: OutputFeed): Process {
-            return stderrFeed(*Array(1) { feed })
-        }
+        public fun stderrFeed(
+            feed: OutputFeed,
+        ): Process = stderrFeed(*Array(1) { feed })
 
         /**
          * Attaches multiple [OutputFeed] to obtain `stderr` output.
@@ -132,36 +133,15 @@ public fun interface OutputFeed {
          * does nothing. If the [Process] has been destroyed, this
          * does nothing.
          * */
-        public fun stderrFeed(vararg feeds: OutputFeed): Process {
-            return stderrFeeds.addFeeds(feeds, stdio.stderr, ::startStderr)
-        }
+        public fun stderrFeed(
+            vararg feeds: OutputFeed,
+        ): Process = stderrFeeds.addFeeds(feeds, stdio.stderr, ::startStderr)
 
-        protected fun dispatchStdout(line: String) {
-            stdoutFeeds.withLock {
-                forEach { feed ->
-                    try {
-                        feed.onOutput(line)
-                    } catch (_: Throwable) {}
-                }
-            }
-        }
+        protected fun dispatchStdout(line: String) { stdoutFeeds.dispatch(line) }
+        protected fun dispatchStderr(line: String) { stderrFeeds.dispatch(line) }
 
-        protected fun dispatchStderr(line: String) {
-            stderrFeeds.withLock {
-                forEach { feed ->
-                    try {
-                        feed.onOutput(line)
-                    } catch (_: Throwable) {}
-                }
-            }
-        }
-
-        protected fun onStdoutStopped() {
-            stdoutFeeds.withLock { clear() }
-        }
-        protected fun onStderrStopped() {
-            stderrFeeds.withLock { clear() }
-        }
+        protected fun onStdoutStopped() { stdoutFeeds.withLock { clear() } }
+        protected fun onStderrStopped() { stderrFeeds.withLock { clear() } }
 
         protected abstract fun startStdout()
         protected abstract fun startStderr()
@@ -189,6 +169,17 @@ public fun interface OutputFeed {
 
         @Suppress("NOTHING_TO_INLINE", "PrivatePropertyName")
         private inline val This: Process get() = this as Process
+
+        @Suppress("NOTHING_TO_INLINE")
+        private inline fun SynchronizedSet<OutputFeed>.dispatch(line: String) {
+            withLock {
+                forEach { feed ->
+                    try {
+                        feed.onOutput(line)
+                    } catch (_: Throwable) {}
+                }
+            }
+        }
 
         @JvmSynthetic
         internal fun stdoutFeedsSize(): Int = stdoutFeeds.withLock { size }

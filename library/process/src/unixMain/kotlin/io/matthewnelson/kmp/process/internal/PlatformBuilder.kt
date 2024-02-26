@@ -60,11 +60,11 @@ internal actual class PlatformBuilder private actual constructor() {
         destroy: Signal,
     ): Process {
 
-        val program = command.toProgramPath()
+        val program = command.toProgramFile()
         val handle = stdio.openHandle()
 
         try {
-            return posixSpawn(program, args, env, handle, destroy)
+            return posixSpawn(command, program, args, env, handle, destroy)
         } catch (_: UnsupportedOperationException) {
             /* ignore and try fork/exec */
         } catch (e: IOException) {
@@ -73,7 +73,7 @@ internal actual class PlatformBuilder private actual constructor() {
         }
 
         try {
-            return forkExec(program, args, env, handle, destroy)
+            return forkExec(command, program, args, env, handle, destroy)
         } catch (e: Exception) {
             handle.close()
             throw e.wrapIOException()
@@ -83,6 +83,7 @@ internal actual class PlatformBuilder private actual constructor() {
     @OptIn(ExperimentalForeignApi::class)
     @Throws(IOException::class, UnsupportedOperationException::class)
     private fun posixSpawn(
+        command: String,
         program: File,
         args: List<String>,
         env: Map<String, String>,
@@ -125,7 +126,7 @@ internal actual class PlatformBuilder private actual constructor() {
             val argv = args.toArgv(program = program, scope = this)
             val envp = env.toEnvp(scope = this)
 
-            posixSpawn(program.path, pid.ptr, fileActions, attrs, argv, envp).check()
+            posixSpawn(program, pid.ptr, fileActions, attrs, argv, envp).check()
 
             pid.value
         }
@@ -133,7 +134,7 @@ internal actual class PlatformBuilder private actual constructor() {
         return NativeProcess(
             pid,
             handle,
-            program.path,
+            command,
             args,
             env,
             destroy,
@@ -148,11 +149,12 @@ internal actual class PlatformBuilder private actual constructor() {
         env: Map<String, String>,
         handle: StdioHandle,
         destroy: Signal,
-    ): NativeProcess = forkExec(command.toProgramPath(), args, env, handle, destroy)
+    ): NativeProcess = forkExec(command, command.toProgramFile(), args, env, handle, destroy)
 
-    @OptIn(DelicateFileApi::class, ExperimentalForeignApi::class)
+    @OptIn(ExperimentalForeignApi::class)
     @Throws(IOException::class, UnsupportedOperationException::class)
     private fun forkExec(
+        command: String,
         program: File,
         args: List<String>,
         env: Map<String, String>,
@@ -187,7 +189,7 @@ internal actual class PlatformBuilder private actual constructor() {
         return NativeProcess(
             pid,
             handle,
-            program.path,
+            command,
             args,
             env,
             destroy,

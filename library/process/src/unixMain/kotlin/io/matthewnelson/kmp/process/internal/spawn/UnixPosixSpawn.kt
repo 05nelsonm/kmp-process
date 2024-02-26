@@ -17,13 +17,14 @@
 
 package io.matthewnelson.kmp.process.internal.spawn
 
+import io.matthewnelson.kmp.file.File
 import kotlinx.cinterop.*
 import platform.posix.pid_tVar
 
 @Suppress("NOTHING_TO_INLINE")
 @OptIn(ExperimentalForeignApi::class)
 internal expect inline fun MemScope.posixSpawn(
-    command: String,
+    program: File,
     pid: CValuesRef<pid_tVar>,
     fileActions: PosixSpawnFileActions,
     attrs: PosixSpawnAttrs,

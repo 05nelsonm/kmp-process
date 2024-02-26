@@ -28,38 +28,42 @@ import kotlin.contracts.contract
 import kotlin.time.Duration
 
 @Throws(IOException::class)
-internal fun String.toProgramPath(): File {
+internal fun String.toProgramFile(): File {
     val file = toFile()
+    var absolute: File? = null
 
     if (file.isAbsolute()) {
-        // Existence was checked by Process.Builder.checkCommand
-        return file
+        absolute = file
     }
 
     // Relative path
-    if (file.path.contains(SysDirSep)) {
-        val a = file.absoluteFile.normalize()
-        if (a.exists()) return a
-
-        throw FileNotFoundException("Failed to find program[$this]")
+    if (absolute == null && file.path.contains(SysDirSep)) {
+        absolute = file.absoluteFile
     }
 
     // Try finding via PATH
-    @OptIn(ExperimentalForeignApi::class)
-    val paths = getenv("PATH")
-        ?.toKString()
-        ?.split(if (IsWindows) ';' else ':')
-        ?.iterator()
-        ?: throw IOException("PATH environment variable not found. Unable to find program[$this]")
+    if (absolute == null) {
+        @OptIn(ExperimentalForeignApi::class)
+        val paths = getenv("PATH")
+            ?.toKString()
+            ?.split(if (IsWindows) ';' else ':')
+            ?.iterator()
+            ?: throw IOException("PATH environment variable not found. Unable to locate program[$this]")
 
-    var result: File? = null
-    while (result == null && paths.hasNext()) {
-        val r = paths.next().toFile().resolve(file)
-        if (!r.exists()) continue
-        result = r
+        while (absolute == null && paths.hasNext()) {
+            val target = paths.next().toFile().resolve(file)
+
+            // TODO: Check stats for regular file
+            //  and can execute (Unix Only)
+            //  or go to next
+            //  >> https://github.com/05nelsonm/kmp-file/issues/55
+            if (target.exists()) {
+                absolute = target
+            }
+        }
     }
 
-    return result ?: throw FileNotFoundException("Failed to find program[$this]")
+    return absolute?.normalize() ?: throw FileNotFoundException("Failed to locate program[$this]")
 }
 
 @OptIn(ExperimentalForeignApi::class)

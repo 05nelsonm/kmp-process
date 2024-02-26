@@ -69,11 +69,17 @@ public abstract class Process internal constructor(
      * Destroys the [Process] by:
      *  - Sending it [destroySignal] (if it has not completed yet)
      *  - Closes all input/output streams
+     *  - Stops all [OutputFeed] production
+     *      - **NOTE:** This may not be immediate if there is buffered
+     *        data on `stdout` or `stderr`. The contents of what are
+     *        left on the stream(s) will be drained which may stay live
+     *        briefly **after** destruction.
      *
-     * This should **always** be called after you are done with
-     * the [Process] to ensure resource closure occurs.
+     * This **MUST** be called after you are done with the [Process]
+     * to ensure resource closure occurs.
      *
      * @see [Signal]
+     * @see [Builder.spawn]
      * @return this [Process] instance
      * */
     public abstract fun destroy(): Process
@@ -194,15 +200,14 @@ public abstract class Process internal constructor(
      *
      * e.g. (Shell commands on a Unix system)
      *
-     *     val p = Process.Builder("sh")
+     *     val out = Process.Builder("sh")
      *         .args("-c")
      *         .args("sleep 1; exit 5")
      *         .destroySignal(Signal.SIGKILL)
-     *         .environment("HOME", appDir.absolutePath)
      *         .stdin(Stdio.Null)
-     *         .stdout(Stdio.Inherit)
-     *         .stderr(Stdio.Pipe)
-     *         .spawn()
+     *         .output { timeoutMillis = 1_500 }
+     *
+     *     assertEquals(5, out.processInfo.exitCode)
      *
      * e.g. (Executable file)
      *
@@ -347,7 +352,7 @@ public abstract class Process internal constructor(
         public fun output(
             block: Output.Options.Builder.() -> Unit,
         ): Output {
-            checkCommand(command)
+            if (command.isBlank()) throw IOException("command cannot be blank")
 
             val options = Output.Options.Builder.build(block)
             val stdio = stdio.build(outputOptions = options)
@@ -370,7 +375,7 @@ public abstract class Process internal constructor(
          * */
         @Throws(IOException::class)
         public fun spawn(): Process {
-            checkCommand(command)
+            if (command.isBlank()) throw IOException("command cannot be blank")
 
             val stdio = stdio.build(outputOptions = null)
 
@@ -403,18 +408,6 @@ public abstract class Process internal constructor(
             }
 
             return result
-        }
-
-        private companion object {
-
-            @Throws(IOException::class)
-            private fun checkCommand(command: String) {
-                if (command.isBlank()) throw IOException("command cannot be blank")
-
-                val commandFile = command.toFile()
-                if (!commandFile.isAbsolute()) return
-                if (!commandFile.exists()) throw FileNotFoundException("command: $command")
-            }
         }
     }
 
