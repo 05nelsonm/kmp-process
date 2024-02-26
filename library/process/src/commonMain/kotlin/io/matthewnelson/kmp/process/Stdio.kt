@@ -15,7 +15,6 @@
  **/
 package io.matthewnelson.kmp.process
 
-import io.matthewnelson.kmp.file.FileNotFoundException
 import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.file.parentFile
 import io.matthewnelson.kmp.file.toFile
@@ -136,27 +135,16 @@ public sealed class Stdio private constructor() {
                 val stdout = if (isOutput) Pipe else stdout
                 val stderr = if (isOutput) Pipe else stderr
 
-                listOf(
-                    Pair(true, stdin),
-                    Pair(false, stdout),
-                    Pair(false, stderr),
-                ).forEach { (isStdin, stdio) ->
+                listOf(stdout, stderr).forEach { stdio ->
                     if (stdio !is File) return@forEach
                     if (stdio.file == STDIO_NULL) return@forEach
 
-                    if (isStdin) {
-                        if (!stdio.file.exists()) {
-                            throw FileNotFoundException("stdin: ${stdio.file}")
-                        }
-                    } else {
-                        // stdout/stderr
-                        val parent = stdio.file
-                            .parentFile
-                            ?: return@forEach
+                    val parent = stdio.file
+                        .parentFile
+                        ?: return@forEach
 
-                        if (!parent.exists() && !parent.mkdirs()) {
-                            throw IOException("Failed to mkdirs for $stdio")
-                        }
+                    if (!parent.exists() && !parent.mkdirs()) {
+                        throw IOException("Failed to create parent directory for $stdio")
                     }
                 }
 

@@ -15,13 +15,11 @@
  **/
 package io.matthewnelson.kmp.process
 
-import io.matthewnelson.kmp.file.FileNotFoundException
 import io.matthewnelson.kmp.file.resolve
 import io.matthewnelson.kmp.file.toFile
 import io.matthewnelson.kmp.process.internal.STDIO_NULL
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
 
 class StdioConfigUnitTest {
 
@@ -34,14 +32,6 @@ class StdioConfigUnitTest {
 
         val config = b.build(null)
         assertEquals(false, (config.stdin as Stdio.File).append)
-    }
-
-    @Test
-    fun givenBuilder_whenStdinFileDoesNotExist_thenThrowsFileNotFoundException() {
-        val b = Stdio.Config.Builder.get()
-        b.stdin = Stdio.File.of(PROJECT_DIR_PATH.toFile().resolve("does_not_exist.txt"))
-
-        assertFailsWith<FileNotFoundException> { b.build(null) }
     }
 
     @Test
