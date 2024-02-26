@@ -219,7 +219,7 @@ internal actual class PlatformBuilder private actual constructor() {
                 val argv = args.toArgv(program = program, scope = this)
                 val envp = env.toEnvp(scope = this)
 
-                execve(program.path, argv, envp)
+                execve(program, argv, envp)
 
                 // exec failed to replace child process with program
                 errno
