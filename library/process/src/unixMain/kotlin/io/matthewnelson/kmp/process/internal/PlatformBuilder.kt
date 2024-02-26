@@ -80,7 +80,7 @@ internal actual class PlatformBuilder private actual constructor() {
         }
     }
 
-    @OptIn(DelicateFileApi::class, ExperimentalForeignApi::class)
+    @OptIn(ExperimentalForeignApi::class)
     @Throws(IOException::class, UnsupportedOperationException::class)
     private fun posixSpawn(
         program: File,

@@ -24,14 +24,15 @@ and `Rust` [Command][url-rust-command]
 
 |           | Process Creation Method Used                                                        |
 |-----------|-------------------------------------------------------------------------------------|
+| `Android` | `java.lang.ProcessBuilder`                                                          |
 | `Jvm`     | `java.lang.ProcessBuilder`                                                          |
 | `Node.js` | [spawn][url-node-spawn] or [spawnSync][url-node-spawn-sync]                         |
 | `Linux`   | [posix_spawn][url-posix-spawn] or [fork][url-posix-fork]/[execve][url-posix-execve] |
 | `macOS`   | [posix_spawn][url-posix-spawn] or [fork][url-posix-fork]/[execve][url-posix-execve] |
 | `iOS`     | [posix_spawn][url-posix-spawn]                                                      |
 
-**NOTE:** Java 8 `java.lang.ProcessBuilder` and `java.lang.Process` functionality on 
-Android is backported and tested against API 17+.
+**NOTE:** `java.lang.ProcessBuilder` and `java.lang.Process` Java 8 APIs 
+for Android are backported and tested against API 15+.
 
 ## Example
 
@@ -155,8 +156,8 @@ dependencies {
 
 <!-- TAG_DEPENDENCIES -->
 [badge-immutable]: https://img.shields.io/badge/immutable-0.1.0-blue.svg?style=flat
-[badge-kmp-file]: https://img.shields.io/badge/kmp--file-0.1.0--alpha06-blue.svg?style=flat
-[badge-kotlin]: https://img.shields.io/badge/kotlin-1.9.21-blue.svg?logo=kotlin
+[badge-kmp-file]: https://img.shields.io/badge/kmp--file-0.1.0--beta01-blue.svg?style=flat
+[badge-kotlin]: https://img.shields.io/badge/kotlin-1.9.22-blue.svg?logo=kotlin
 
 <!-- TAG_PLATFORMS -->
 [badge-platform-android]: http://img.shields.io/badge/-android-6EDB8D.svg?style=flat

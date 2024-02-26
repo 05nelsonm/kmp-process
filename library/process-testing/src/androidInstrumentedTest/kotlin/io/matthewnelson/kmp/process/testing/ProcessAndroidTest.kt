@@ -32,6 +32,7 @@ class ProcessAndroidTest: ProcessBaseTest() {
 
     override val homeDir: File get() = ctx.getDir("torservice", Context.MODE_PRIVATE)
     override val cacheDir: File get() = SysTempDir.resolve("torservice").resolve("cache")
+    override val tempDir: File get() = ctx.cacheDir
 
     override fun assertExitCode(code: Int) {
         val expected = if (android.os.Build.VERSION.SDK_INT < 24) Signal.SIGKILL.code else 0
