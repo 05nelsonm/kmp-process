@@ -12,6 +12,7 @@ immutable = "0.1.0"
 
 kmp-file = "0.1.0-beta01"
 kmp-tor-resource = "408.10.0-SNAPSHOT"
+kotlincrypto-endians = "0.2.0"
 kotlinx-coroutines = "1.7.3"
 
 [libraries]
@@ -27,6 +28,7 @@ immutable-collections = { module = "io.matthewnelson.immutable:collections", ver
 
 kmp-file = { module = "io.matthewnelson.kmp-file:file", version.ref = "kmp-file" }
 kmp-tor-resource-tor = { module = "io.matthewnelson.kmp-tor:resource-tor", version.ref = "kmp-tor-resource" }
+kotlincrypto-endians = { module = "org.kotlincrypto.endians:endians", version.ref = "kotlincrypto-endians" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
 
 [plugins]
