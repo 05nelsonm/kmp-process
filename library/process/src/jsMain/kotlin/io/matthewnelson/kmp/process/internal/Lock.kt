@@ -17,11 +17,6 @@
 
 package io.matthewnelson.kmp.process.internal
 
-internal actual class SynchronizedSet<E: Any?> internal actual constructor() {
-
-    private val set = LinkedHashSet<E>(1, 1.0F)
-
-    internal actual fun <T: Any?> withLock(
-        block: MutableSet<E>.() -> T
-    ): T = synchronized(this) { block(set) }
+internal actual class Lock internal actual constructor() {
+    internal actual fun <T> withLock(block: () -> T): T = block()
 }

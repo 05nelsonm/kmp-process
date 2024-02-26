@@ -48,6 +48,7 @@ internal constructor(
         }
     }
 
+    private val lock = Lock()
     private val _exitCode = AtomicReference<Int?>(null)
 
     private val stdoutWorker = Instance(create = {
@@ -67,31 +68,33 @@ internal constructor(
     override fun destroy(): Process {
         isDestroyed = true
 
-        if (isAlive) {
-            val s = when (destroySignal) {
-                Signal.SIGTERM -> SIGTERM
-                Signal.SIGKILL -> SIGKILL
+        lock.withLock {
+            if (isAlive) {
+                val s = when (destroySignal) {
+                    Signal.SIGTERM -> SIGTERM
+                    Signal.SIGKILL -> SIGKILL
+                }
+
+                kill(pid, s)
+
+                isAlive
             }
 
-            kill(pid, s)
+            val hasBeenClosed = handle.isClosed
 
-            isAlive
-        }
+            handle.close()
 
-        val hasBeenClosed = handle.isClosed
+            if (!hasBeenClosed) {
+                stdoutWorker
+                    .getOrNull()
+                    ?.requestTermination(processScheduledJobs = false)
+                    ?.result
 
-        handle.close()
-
-        if (!hasBeenClosed) {
-            stdoutWorker
-                .getOrNull()
-                ?.requestTermination(processScheduledJobs = false)
-                ?.result
-
-            stderrWorker
-                .getOrNull()
-                ?.requestTermination(processScheduledJobs = false)
-                ?.result
+                stderrWorker
+                    .getOrNull()
+                    ?.requestTermination(processScheduledJobs = false)
+                    ?.result
+            }
         }
 
         return this

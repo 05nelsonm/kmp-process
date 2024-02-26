@@ -13,13 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
-
 package io.matthewnelson.kmp.process.internal
 
-internal expect class SynchronizedSet<E: Any?> internal constructor() {
+internal class SynchronizedSet<E: Any?> internal constructor() {
+
+    private val set = LinkedHashSet<E>(1, 1.0F)
+    private val lock = Lock()
 
     internal fun <T: Any?> withLock(
         block: MutableSet<E>.() -> T
-    ): T
+    ): T = lock.withLock { block(set) }
 }
