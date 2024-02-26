@@ -29,9 +29,14 @@ import io.matthewnelson.kmp.process.internal.spawn.GnuLibcVersion
 import io.matthewnelson.kmp.process.internal.spawn.PosixSpawnAttrs.Companion.posixSpawnAttrInit
 import io.matthewnelson.kmp.process.internal.spawn.PosixSpawnFileActions.Companion.posixSpawnFileActionsInit
 import io.matthewnelson.kmp.process.internal.spawn.posixSpawn
+import io.matthewnelson.kmp.process.internal.stdio.StdioDescriptor.Pair.Companion.fdOpen
 import io.matthewnelson.kmp.process.internal.stdio.StdioHandle
 import io.matthewnelson.kmp.process.internal.stdio.StdioHandle.Companion.openHandle
+import io.matthewnelson.kmp.process.internal.stdio.StdioReader
+import io.matthewnelson.kmp.process.internal.stdio.StdioWriter
 import kotlinx.cinterop.*
+import org.kotlincrypto.endians.BigEndian
+import org.kotlincrypto.endians.BigEndian.Companion.toBigEndian
 import platform.posix.*
 
 // unixMain
@@ -161,32 +166,82 @@ internal actual class PlatformBuilder private actual constructor() {
         handle: StdioHandle,
         destroy: Signal,
     ): NativeProcess {
-        val pid = fork().check()
+        val pipe = try {
+            Stdio.Pipe.fdOpen()
+        } catch (e: IOException) {
+            handle.close()
+            throw e
+        }
+
+        val pid = try {
+            fork().check()
+        } catch (e: IOException) {
+            handle.close()
+            pipe.close()
+            throw e
+        }
 
         if (pid == 0) {
+            // Child process
+            close(pipe.fdRead)
+
+            var err: Int? = null
+
             try {
                 handle.dup2 { fd, newFd ->
                     when (dup2(fd, newFd)) {
-                        -1 -> errnoToIOException(errno)
+                        -1 -> {
+                            err = errno
+                            // thrown (and handle is thus closed)
+                            // but catch block from within the child
+                            // does not utilize the exception, it
+                            // will write errno output back to
+                            // parent.
+                            IOException()
+                        }
                         else -> null
                     }
                 }
             } catch (_: IOException) {
-                // TODO: Handle error better
+                // [#, #, #, #, 1] (1: dup2 failure)
+                val b = ByteArray(5)
+                b[4] = 1
+                (err ?: EBADF).toBigEndian().copyInto(b)
+                try {
+                    StdioWriter(pipe).write(b)
+                } finally {
+                    close(pipe.fdWrite)
+                }
                 _exit(1)
             }
 
-            memScoped {
+            val errno = memScoped {
                 val argv = args.toArgv(program = program, scope = this)
                 val envp = env.toEnvp(scope = this)
 
                 execve(program.path, argv, envp)
-                // TODO: Handle error better
-                _exit(errno)
+
+                // exec failed to replace child process with program
+                errno
             }
+
+            // [#, #, #, #, 2] (2: execve failure)
+            val b = ByteArray(5)
+            b[4] = 2
+            errno.toBigEndian().copyInto(b)
+            try {
+                StdioWriter(pipe).write(b)
+            } finally {
+                handle.close()
+                close(pipe.fdWrite)
+            }
+            _exit(1)
         }
 
-        return NativeProcess(
+        // Parent process
+        close(pipe.fdWrite)
+
+        val p = NativeProcess(
             pid,
             handle,
             command,
@@ -194,6 +249,51 @@ internal actual class PlatformBuilder private actual constructor() {
             env,
             destroy,
         )
+
+        // Below is sort of like vfork on Linux, but
+        // with error validation and cleanup on our
+        // end.
+        val b = ByteArray(5)
+
+        val read = try {
+            StdioReader(pipe).read(b)
+        } catch (e: IOException) {
+            p.destroy()
+            throw IOException("CLOEXEC pipe read failure", e)
+        } finally {
+            close(pipe.fdRead)
+        }
+
+        when (read) {
+            // execve successful and CLOEXEC pipe's write
+            // was closed, resulting in the read end stopping.
+            0 -> null
+
+            // Something happened in the child process
+            b.size -> {
+                val type = when (b[4].toInt()) {
+                    1 -> "dup2"
+                    2 -> "exec"
+                    else -> null
+                }
+
+                if (type == null) {
+                    IOException("CLOEXEC pipe validation check failure")
+                } else {
+                    val errno = BigEndian(b[0], b[1], b[2], b[3]).toInt()
+                    val msg = strerror(errno)?.toKString() ?: "errno: $errno"
+                    IOException("Child process $type failure. $msg")
+                }
+            }
+
+            // Bad read on our pipe (should never really happen?)
+            else -> IOException("invalid read on CLOEXEC pipe")
+        }?.let { e: IOException ->
+            p.destroy()
+            throw e
+        }
+
+        return p
     }
 
     internal actual companion object {

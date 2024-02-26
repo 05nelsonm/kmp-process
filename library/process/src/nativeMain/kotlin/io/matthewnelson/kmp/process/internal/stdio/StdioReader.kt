@@ -16,6 +16,7 @@
 package io.matthewnelson.kmp.process.internal.stdio
 
 import io.matthewnelson.kmp.file.IOException
+import io.matthewnelson.kmp.file.errnoToIOException
 import io.matthewnelson.kmp.process.internal.InputStream
 import io.matthewnelson.kmp.process.internal.check
 import io.matthewnelson.kmp.process.internal.checkBounds
@@ -23,6 +24,8 @@ import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.convert
 import kotlinx.cinterop.usePinned
+import platform.posix.EINTR
+import platform.posix.errno
 
 internal class StdioReader internal constructor(
     private val pipe: StdioDescriptor.Pair
@@ -36,7 +39,26 @@ internal class StdioReader internal constructor(
 
         @OptIn(ExperimentalForeignApi::class)
         return buf.usePinned { pinned ->
-            platform.posix.read(pipe.fdRead, pinned.addressOf(offset), len.convert()).toInt()
-        }.check()
+            var read: Int? = null
+            var interrupted = 0
+            while (read == null && interrupted++ < 3) {
+                val res = platform.posix.read(
+                    pipe.fdRead,
+                    pinned.addressOf(offset),
+                    len.convert(),
+                ).toInt()
+
+                if (res == -1) {
+                    when (val e = errno) {
+                        EINTR -> continue
+                        else -> throw errnoToIOException(e)
+                    }
+                }
+                read = res
+            }
+
+            // Retried 3 times, all interrupted...
+            read ?: throw errnoToIOException(EINTR)
+        }
     }
 }

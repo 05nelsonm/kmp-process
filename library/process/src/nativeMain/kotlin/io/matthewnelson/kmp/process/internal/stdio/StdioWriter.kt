@@ -16,12 +16,14 @@
 package io.matthewnelson.kmp.process.internal.stdio
 
 import io.matthewnelson.kmp.file.IOException
-import io.matthewnelson.kmp.process.internal.check
+import io.matthewnelson.kmp.file.errnoToIOException
 import io.matthewnelson.kmp.process.internal.checkBounds
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.convert
 import kotlinx.cinterop.usePinned
+import platform.posix.EINTR
+import platform.posix.errno
 
 internal class StdioWriter internal constructor(private val pipe: StdioDescriptor.Pair) {
 
@@ -35,11 +37,29 @@ internal class StdioWriter internal constructor(private val pipe: StdioDescripto
         buf.usePinned { pinned ->
             var written = 0
             while (written < len) {
-                val write = platform.posix.write(
-                    pipe.fdWrite,
-                    pinned.addressOf(offset + written),
-                    (len - written).convert()
-                ).toInt().check()
+
+                var write: Int? = null
+                var interrupted = 0
+                while (write == null && interrupted++ < 3) {
+                    val res = platform.posix.write(
+                        pipe.fdWrite,
+                        pinned.addressOf(offset + written),
+                        (len - written).convert(),
+                    ).toInt()
+
+                    if (res == -1) {
+                        when (val e = errno) {
+                            EINTR -> continue
+                            else -> throw errnoToIOException(e)
+                        }
+                    }
+
+                    write = res
+                }
+
+                // Retried 3 times, all interrupted...
+                write ?: throw errnoToIOException(EINTR)
+
                 written += write
             }
 

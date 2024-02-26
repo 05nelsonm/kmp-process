@@ -43,8 +43,15 @@ kmpConfiguration {
 
         kotlin {
             with(sourceSets) {
+                findByName("unixMain")?.apply {
+                    dependencies {
+                        implementation(libs.kotlincrypto.endians)
+                    }
+                }
+
                 val jvmMain = findByName("jvmMain")
                 val nativeMain = findByName("nativeMain")
+
                 if (nativeMain != null || jvmMain != null) {
                     val nonJsMain = maybeCreate("nonJsMain")
                     nonJsMain.dependsOn(getByName("commonMain"))
