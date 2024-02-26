@@ -13,15 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
+@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
+
 package io.matthewnelson.kmp.process.internal
 
 import kotlin.concurrent.AtomicReference
 
-internal class Lock {
+internal actual class Lock internal actual constructor() {
 
     private val ref = AtomicReference<Int?>(null)
 
-    internal fun <T: Any?> withLock(block: () -> T): T {
+    internal actual fun <T: Any?> withLock(block: () -> T): T {
         val hc = Any().hashCode()
 
         val result = try {
