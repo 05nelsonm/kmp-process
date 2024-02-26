@@ -17,6 +17,7 @@
 
 package io.matthewnelson.kmp.process.internal
 
+import io.matthewnelson.kmp.file.FileNotFoundException
 import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.process.Output
 import io.matthewnelson.kmp.process.Process
@@ -50,6 +51,51 @@ internal actual class PlatformBuilder private actual constructor() {
         destroy: Signal,
     ): Process {
 
+        @Suppress("NewApi")
+        if (ANDROID_SDK_INT?.let { sdkInt -> sdkInt >= 24 } != false) {
+            // Only available on Android Runtime 24+ & Java 8+
+            jProcessBuilder.redirectInput(stdio.stdin.toRedirect(isStdin = true))
+            jProcessBuilder.redirectOutput(stdio.stdout.toRedirect(isStdin = false))
+            jProcessBuilder.redirectError(stdio.stderr.toRedirect(isStdin = false))
+        } else {
+            // Android 23 and below
+
+            // Check Stdio.Config for file existence (stdin) and
+            // read/write permissions.
+            //
+            // This is to mitigate any potential failures of the
+            // supplemental redirect implementation before Process
+            // creation. Not perfect by any means, but does the job.
+            listOf(
+                0 to stdio.stdin,
+                1 to stdio.stdout,
+                2 to stdio.stderr
+            ).forEach { (index, stdio) ->
+                if (stdio !is Stdio.File) return@forEach
+                if (stdio.file == STDIO_NULL) return@forEach
+
+                if (index == 0) {
+                    if (!stdio.file.exists()) {
+                        throw FileNotFoundException("stdin[${stdio.file}]")
+                    }
+                    if (!stdio.file.isFile) {
+                        throw IOException("stdin[${stdio.file}]: must be a file")
+                    }
+                    if (!stdio.file.canRead()) {
+                        throw IOException("stdin[${stdio.file}]: must be readable")
+                    }
+                } else {
+                    // Will be created when stream opens
+                    if (!stdio.file.exists()) return@forEach
+
+                    if (stdio.file.canWrite()) return@forEach
+
+                    val name = if (index == 1) "stdout" else "stderr"
+                    throw IOException("$name[${stdio.file}]: must be writable")
+                }
+            }
+        }
+
         val jCommands = ArrayList<String>(args.size + 1)
         jCommands.add(command)
         jCommands.addAll(args)
@@ -61,14 +107,6 @@ internal actual class PlatformBuilder private actual constructor() {
         //  for jProcessBuilder (which is Mutable). The immutable
         //  env value passed here is simply what gets used for
         //  Process.environment.
-
-        @Suppress("NewApi")
-        if (ANDROID_SDK_INT?.let { sdkInt -> sdkInt >= 24 } != false) {
-            // Only available on Android Runtime 24+ & Java 8+
-            jProcessBuilder.redirectInput(stdio.stdin.toRedirect(isStdin = true))
-            jProcessBuilder.redirectOutput(stdio.stdout.toRedirect(isStdin = false))
-            jProcessBuilder.redirectError(stdio.stderr.toRedirect(isStdin = false))
-        }
 
         val destroySignal = ANDROID_SDK_INT?.let { sdkInt ->
             when {
