@@ -201,7 +201,7 @@ internal actual class PlatformBuilder private actual constructor() {
                 // [#, #, #, #, 1] (1: dup2 failure)
                 val b = ByteArray(5)
                 b[4] = 1
-                (err ?: EBADFD).toBigEndian().copyInto(b)
+                (err ?: EBADF).toBigEndian().copyInto(b)
                 try {
                     StdioWriter(pipe).write(b)
                 } finally {
