@@ -37,7 +37,8 @@ class SpawnUnitTest {
             available = isAtLeast(major = 2u, minor = 29u)
         }
 
-        available ?: true
+        // available on Linux glibc 2.29+ and macOS (so no iOS)
+        available ?: !IsDarwinMobile
     }
 
     @Test

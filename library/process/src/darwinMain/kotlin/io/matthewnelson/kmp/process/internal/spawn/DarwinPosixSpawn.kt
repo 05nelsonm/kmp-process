@@ -35,8 +35,7 @@ internal actual inline fun MemScope.posixSpawn(
 ): Int = posix_spawn(pid, program.absolutePath, fileActions.ref, attrs.ref, argv, envp)
 
 @Throws(IOException::class)
-@OptIn(ExperimentalForeignApi::class)
-internal expect fun PosixSpawnFileActions.posix_spawn_file_actions_addchdir(
+@Suppress("NOTHING_TO_INLINE")
+internal expect inline fun PosixSpawnFileActions.posix_spawn_file_actions_addchdir(
     chdir: File,
-    scope: MemScope,
 ): Int

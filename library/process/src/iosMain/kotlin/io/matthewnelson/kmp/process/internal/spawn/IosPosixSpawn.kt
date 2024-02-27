@@ -19,30 +19,8 @@ package io.matthewnelson.kmp.process.internal.spawn
 
 import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.file.IOException
-import io.matthewnelson.kmp.file.path
-import kotlinx.cinterop.*
-import platform.posix.dlsym
 
 @Throws(IOException::class)
-@OptIn(ExperimentalForeignApi::class)
-internal actual fun PosixSpawnFileActions.posix_spawn_file_actions_addchdir(
+internal actual inline fun PosixSpawnFileActions.posix_spawn_file_actions_addchdir(
     chdir: File,
-    scope: MemScope,
-): Int = with (scope) {
-    // IOException thrown here if it is not supported on iOS.
-    // spawn.h has it declared as API_UNAVAILABLE, but it seems
-    // to work???
-    // Nevertheless, we throw IOException to end early b/c falling back
-    // to fork & exec is not a thing on iOS.
-    ADDCHDIR_NP?.invoke(ref, chdir.path.cstr.ptr)
-        ?: throw IOException("posix_spawn_file_actions_addchdir_np is not supported on iOS")
-}
-
-@OptIn(ExperimentalForeignApi::class)
-private val ADDCHDIR_NP by lazy {
-    val ptr = dlsym(null, "posix_spawn_file_actions_addchdir_np")
-        ?: return@lazy null
-
-    @Suppress("UNCHECKED_CAST")
-    ptr as CPointer<CFunction<(CValuesRef<posix_spawn_file_actions_tVar>, CPointer<ByteVarOf<Byte>>) -> Int>>
-}
+): Int = throw IOException("posix_spawn_file_actions_addchdir_np is not supported on iOS")

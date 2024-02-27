@@ -282,7 +282,7 @@ abstract class ProcessBaseTest {
     private fun Process.Builder.envHome(): Process.Builder = environment("HOME", homeDir.path)
 
     private fun ResourceInstaller.Paths.Tor.toProcessBuilder(): Process.Builder {
-        return Process.Builder(executable = tor)
+        val b = Process.Builder(executable = tor)
             .args("--DataDirectory")
             .args(dataDir.also { it.mkdirs() }.path)
             .args("--CacheDirectory")
@@ -299,11 +299,16 @@ abstract class ProcessBaseTest {
             .args("1")
             .args("--RunAsDaemon")
             .args("0")
-            .chdir(homeDir)
             .destroySignal(Signal.SIGTERM)
             .envHome()
             .stdin(Stdio.Null)
             .stdout(Stdio.Pipe)
             .stderr(Stdio.Pipe)
+
+        if (!IsDarwinMobile) {
+            b.chdir(homeDir)
+        }
+
+        return b
     }
 }
