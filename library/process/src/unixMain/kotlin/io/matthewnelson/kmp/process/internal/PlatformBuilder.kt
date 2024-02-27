@@ -143,13 +143,27 @@ internal actual class PlatformBuilder private actual constructor() {
                 }
             })
 
-            val pid = alloc<pid_tVar>()
+            // pre-setting to -1 will allow detection of
+            // a post-fork step failure (the best we can do atm).
+            val pid = alloc<pid_tVar>().apply { value = -1 }
+
             val argv = args.toArgv(program = program, scope = this)
             val envp = env.toEnvp(scope = this)
 
+            // error detection only with underlying fork/vfork/clone steps
             posixSpawn(program, pid.ptr, fileActions, attrs, argv, envp).check()
 
-            pid.value
+            // if there was a failure in the pre-exec or exec steps, the
+            // pid reference will not be modified.
+            //
+            // Something like using an invalid directory location (non-existent)
+            // for chdir would result in this scenario.
+            val pv = pid.value
+            if (pv == -1) {
+                throw IOException("posix_spawn failure in pre-exec/exec step. Bad arguments?")
+            }
+
+            pv
         }
 
         return NativeProcess(

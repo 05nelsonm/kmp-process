@@ -190,8 +190,8 @@ class SpawnUnitTest {
             )
             p.destroy()
             fail("posixSpawn returned Process")
-        } catch (e: IOException) {
-            e.printStackTrace()
+        } catch (_: IOException) {
+            // pass
         }
     }
 
