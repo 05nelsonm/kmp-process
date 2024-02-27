@@ -89,6 +89,10 @@ abstract class ProcessBaseTest {
             .stdin(Stdio.File.of(testCat))
             .output()
 
+        println(out.stdout)
+        println(out.stderr)
+        println(out)
+
         assertEquals(expected, out.stdout)
         assertEquals("", out.stderr)
         assertNull(out.processError)

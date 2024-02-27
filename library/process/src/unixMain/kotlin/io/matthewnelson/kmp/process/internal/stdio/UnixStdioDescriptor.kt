@@ -21,6 +21,7 @@ import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.file.errnoToIOException
 import io.matthewnelson.kmp.process.Stdio
 import io.matthewnelson.kmp.process.internal.check
+import io.matthewnelson.kmp.process.internal.fdClose
 import kotlinx.cinterop.*
 import platform.posix.*
 
@@ -48,8 +49,8 @@ internal actual fun ((fdRead: Int, fdWrite: Int) -> StdioDescriptor.Pair).fdOpen
 //            val prev = fcntl(fd, F_GETFD)
 //            if (prev < 0) {\
 //                val e = errnoToIOException(errno)
-//                close(pipeFD[0])
-//                close(pipeFD[1])
+//                fdClose(pipeFD[0])
+//                fdClose(pipeFD[1])
 //                throw e
 //            }
 
@@ -58,8 +59,8 @@ internal actual fun ((fdRead: Int, fdWrite: Int) -> StdioDescriptor.Pair).fdOpen
             val result = fcntl(fd, F_SETFD, FD_CLOEXEC)
             if (result != 0) {
                 val e = errnoToIOException(errno)
-                close(pipeFD[0])
-                close(pipeFD[1])
+                fdClose(pipeFD[0])
+                fdClose(pipeFD[1])
                 throw e
             }
         }

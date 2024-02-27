@@ -17,6 +17,8 @@
 
 package io.matthewnelson.kmp.process.internal.fork
 
+import io.matthewnelson.kmp.file.File
+import io.matthewnelson.kmp.file.absolutePath
 import io.matthewnelson.kmp.process.internal.PlatformBuilder
 import kotlinx.cinterop.ByteVar
 import kotlinx.cinterop.CPointerVar
@@ -38,7 +40,7 @@ internal actual inline fun PlatformBuilder.dup2(
 @OptIn(ExperimentalForeignApi::class)
 @Throws(UnsupportedOperationException::class)
 internal actual inline fun PlatformBuilder.execve(
-    command: String,
+    program: File,
     argv: CValuesRef<CPointerVar<ByteVar>>,
     envp: CValuesRef<CPointerVar<ByteVar>>,
-): Int = platform.posix.execve(command, argv, envp)
+): Int = platform.posix.execve(program.absolutePath, argv, envp)
