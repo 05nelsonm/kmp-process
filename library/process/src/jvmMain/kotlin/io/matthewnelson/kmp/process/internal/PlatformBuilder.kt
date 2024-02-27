@@ -78,20 +78,17 @@ internal actual class PlatformBuilder private actual constructor() {
                     if (!stdio.file.exists()) {
                         throw FileNotFoundException("stdin[${stdio.file}]")
                     }
-                    if (!stdio.file.isFile) {
-                        throw IOException("stdin[${stdio.file}]: must be a file")
-                    }
-                    if (!stdio.file.canRead()) {
-                        throw IOException("stdin[${stdio.file}]: must be readable")
+                    if (!stdio.file.isFile || !stdio.file.canRead()) {
+                        throw IOException("stdin[${stdio.file}]: must be a readable file")
                     }
                 } else {
                     // Will be created when stream opens
                     if (!stdio.file.exists()) return@forEach
 
-                    if (stdio.file.canWrite()) return@forEach
-
-                    val name = if (index == 1) "stdout" else "stderr"
-                    throw IOException("$name[${stdio.file}]: must be writable")
+                    if (!stdio.file.isFile || !stdio.file.canWrite()) {
+                        val name = if (index == 1) "stdout" else "stderr"
+                        throw IOException("$name[${stdio.file}]: must be a writable file")
+                    }
                 }
             }
         }
