@@ -13,29 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("KotlinRedundantDiagnosticSuppress", "FunctionName")
+@file:Suppress("FunctionName", "KotlinRedundantDiagnosticSuppress")
 
 package io.matthewnelson.kmp.process.internal.spawn
 
 import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.file.IOException
-import io.matthewnelson.kmp.file.absolutePath
-import kotlinx.cinterop.*
-import platform.posix.pid_tVar
-
-@Suppress("NOTHING_TO_INLINE")
-@OptIn(ExperimentalForeignApi::class)
-internal actual inline fun MemScope.posixSpawn(
-    program: File,
-    pid: CValuesRef<pid_tVar>,
-    fileActions: PosixSpawnFileActions,
-    attrs: PosixSpawnAttrs,
-    argv: CValuesRef<CPointerVar<ByteVar>>,
-    envp: CValuesRef<CPointerVar<ByteVar>>,
-): Int = posix_spawn(pid, program.absolutePath, fileActions.ref, attrs.ref, argv, envp)
 
 @Throws(IOException::class)
 @Suppress("NOTHING_TO_INLINE")
-internal expect inline fun PosixSpawnFileActions.posix_spawn_file_actions_addchdir(
+internal actual inline fun PosixSpawnFileActions.posix_spawn_file_actions_addchdir(
     directory: File,
-): Int
+): Int = throw UnsupportedOperationException("Not yet implemented")

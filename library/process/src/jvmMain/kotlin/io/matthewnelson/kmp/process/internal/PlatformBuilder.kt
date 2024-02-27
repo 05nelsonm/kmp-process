@@ -37,18 +37,18 @@ internal actual class PlatformBuilder private actual constructor() {
     internal actual fun output(
         command: String,
         args: List<String>,
-        chgDir: File?,
+        chdir: File?,
         env: Map<String, String>,
         stdio: Stdio.Config,
         options: Output.Options,
         destroy: Signal,
-    ): Output = blockingOutput(command, args, chgDir, env, stdio, options, destroy)
+    ): Output = blockingOutput(command, args, chdir, env, stdio, options, destroy)
 
     @Throws(IOException::class)
     internal actual fun spawn(
         command: String,
         args: List<String>,
-        chgDir: File?,
+        chdir: File?,
         env: Map<String, String>,
         stdio: Stdio.Config,
         destroy: Signal,
@@ -101,13 +101,13 @@ internal actual class PlatformBuilder private actual constructor() {
         jCommands.addAll(args)
 
         jProcessBuilder.command(jCommands)
-
-        jProcessBuilder.directory(chgDir)
+        jProcessBuilder.directory(chdir)
 
         // NOTE: do not modify jProcessBuilder environment.
-        //  The env value passed here is what is currently set
-        //  for jProcessBuilder (which is Mutable). The immutable
-        //  env value passed here is simply what gets used for
+        //  The env value passed to this function is what is currently
+        //  set for jProcessBuilder (which is Mutable). When start is called
+        //  ProcessBuilder uses its environment reference. The immutable env
+        //  value here is simply what gets exposed to API consumers via
         //  Process.environment.
 
         val destroySignal = ANDROID_SDK_INT?.let { sdkInt ->
@@ -128,7 +128,7 @@ internal actual class PlatformBuilder private actual constructor() {
             jProcess,
             command,
             args,
-            chgDir,
+            chdir,
             env,
             stdio,
             destroySignal,

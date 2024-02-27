@@ -17,6 +17,7 @@
 
 package io.matthewnelson.kmp.process.internal.spawn
 
+import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.process.internal.check
 import kotlinx.cinterop.CValuesRef
@@ -37,6 +38,11 @@ internal actual value class PosixSpawnFileActions private actual constructor(
 
     internal actual fun adddup2(fd: Int, newFd: Int): Int {
         return posix_spawn_file_actions_adddup2(ref, fd, newFd)
+    }
+
+    @Throws(IOException::class)
+    internal actual fun addchdir_np(chdir: File): Int {
+        return posix_spawn_file_actions_addchdir(chdir)
     }
 
     internal actual companion object {

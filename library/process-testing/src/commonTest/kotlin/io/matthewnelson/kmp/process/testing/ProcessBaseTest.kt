@@ -149,6 +149,30 @@ abstract class ProcessBaseTest {
     }
 
     @Test
+    fun givenChdir_whenExpressed_thenChangesDirectories() {
+        if (IsDarwinMobile || IsWindows) {
+            println("Skipping...")
+            return
+        }
+
+        val d = tempDir.resolve("try_chdir")
+        d.delete()
+        assertTrue(d.mkdirs())
+
+        val output = Process.Builder(command = "sh")
+            .args("-c")
+            .args("echo \"$(pwd)\"; sleep 0.25; exit 0")
+            .chdir(d)
+            .stdin(Stdio.Null)
+            .output { timeoutMillis = 500 }
+
+        println(output.stdout)
+        println(output.stderr)
+        println(output)
+        assertEquals(d.path, output.stdout.trim())
+    }
+
+    @Test
     open fun givenExecutable_whenOutputToFile_thenIsAsExpected() = runTest(timeout = 25.seconds) {
         val logsDir = homeDir.resolve("logs")
         val stdoutFile = logsDir.resolve("tor.log")

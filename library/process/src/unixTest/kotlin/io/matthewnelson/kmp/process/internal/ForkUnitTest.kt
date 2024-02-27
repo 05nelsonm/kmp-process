@@ -15,9 +15,9 @@
  **/
 package io.matthewnelson.kmp.process.internal
 
-import io.matthewnelson.kmp.file.File
-import io.matthewnelson.kmp.file.IOException
+import io.matthewnelson.kmp.file.*
 import io.matthewnelson.kmp.process.IsDarwinMobile
+import io.matthewnelson.kmp.process.PROJECT_DIR_PATH
 import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.Stdio
 import io.matthewnelson.kmp.process.internal.stdio.StdioHandle
@@ -36,8 +36,14 @@ class ForkUnitTest {
             return
         }
 
-        val p = forkProcess("sh", listOf("-c", "sleep 1; exit 42"))
+        val d = PROJECT_DIR_PATH.toFile().resolve("src").resolve("commonMain")
+
+        val p = forkProcess("sh", listOf("-c", "echo \"$(pwd)\"; sleep 1; exit 42"), chdir = d)
+        val output = mutableListOf<String>()
         val code = try {
+            p.stdoutFeed { line ->
+                output.add(line)
+            }
             p.waitFor()
         } finally {
             p.destroy()
@@ -45,6 +51,7 @@ class ForkUnitTest {
 
         println(p)
         assertEquals(42, code)
+        assertEquals(d.path, output.firstOrNull())
     }
 
     @Test
@@ -86,10 +93,28 @@ class ForkUnitTest {
         }
     }
 
+    @Test
+    fun givenBadChdir_whenFork_thenChdirThrowsException() {
+        if (IsDarwinMobile) {
+            println("Skipping...")
+            return
+        }
+
+        val d = PROJECT_DIR_PATH.toFile().resolve("non_existent_directory")
+
+        try {
+            val p = forkProcess("sh", listOf("-c", "sleep 1; exit 5"), chdir = d)
+            p.destroy()
+            fail("forkExec returned Process")
+        } catch (e: IOException) {
+            assertTrue(e.message!!.startsWith("Child process chdir failure."))
+        }
+    }
+
     private fun forkProcess(
         command: String,
         args: List<String>,
-        chgDir: File? = null,
+        chdir: File? = null,
         handle: StdioHandle? = null,
     ): NativeProcess {
         val h = handle ?: Stdio.Config.Builder.get()
@@ -98,7 +123,7 @@ class ForkUnitTest {
 
         val p = try {
             val b = PlatformBuilder.get()
-            b.forkExec(command, args, chgDir, b.env, h, Signal.SIGTERM)
+            b.forkExec(command, args, chdir, b.env, h, Signal.SIGTERM)
         } catch (e: IOException) {
             h.close()
             throw e

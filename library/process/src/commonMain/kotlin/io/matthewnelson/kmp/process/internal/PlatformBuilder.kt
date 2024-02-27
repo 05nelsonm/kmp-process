@@ -32,7 +32,7 @@ internal expect class PlatformBuilder private constructor() {
     internal fun output(
         command: String,
         args: List<String>,
-        chgDir: File?,
+        chdir: File?,
         env: Map<String, String>,
         stdio: Stdio.Config,
         options: Output.Options,
@@ -43,7 +43,7 @@ internal expect class PlatformBuilder private constructor() {
     internal fun spawn(
         command: String,
         args: List<String>,
-        chgDir: File?,
+        chdir: File?,
         env: Map<String, String>,
         stdio: Stdio.Config,
         destroy: Signal,

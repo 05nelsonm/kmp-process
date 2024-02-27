@@ -27,11 +27,11 @@ internal class NodeJsProcess internal constructor(
     private val jsProcess: child_process_ChildProcess,
     command: String,
     args: List<String>,
-    chgDir: File?,
+    chdir: File?,
     env: Map<String, String>,
     stdio: Stdio.Config,
     destroy: Signal,
-): Process(command, args, chgDir, env, stdio, destroy, INIT) {
+): Process(command, args, chdir, env, stdio, destroy, INIT) {
 
     override fun destroy(): Process {
         isDestroyed = true

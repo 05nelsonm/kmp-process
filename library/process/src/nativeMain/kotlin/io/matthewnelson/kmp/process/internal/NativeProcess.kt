@@ -38,10 +38,10 @@ internal constructor(
     private val handle: StdioHandle,
     command: String,
     args: List<String>,
-    chgDir: File?,
+    chdir: File?,
     env: Map<String, String>,
     destroy: Signal,
-): Process(command, args, chgDir, env, handle.stdio, destroy, INIT) {
+): Process(command, args, chdir, env, handle.stdio, destroy, INIT) {
 
     init {
         if (pid <= 0) {

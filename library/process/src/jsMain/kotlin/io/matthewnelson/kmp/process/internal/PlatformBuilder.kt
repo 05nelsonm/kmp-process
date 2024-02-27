@@ -47,7 +47,7 @@ internal actual class PlatformBuilder private actual constructor() {
     internal actual fun output(
         command: String,
         args: List<String>,
-        chgDir: File?,
+        chdir: File?,
         env: Map<String, String>,
         stdio: Stdio.Config,
         options: Output.Options,
@@ -57,7 +57,7 @@ internal actual class PlatformBuilder private actual constructor() {
         val (jsStdio, descriptors) = stdio.toJsStdio()
 
         val opts = js("{}")
-        chgDir?.let { opts["cwd"] = it.path }
+        chdir?.let { opts["cwd"] = it.path }
         opts["stdio"] = jsStdio
         opts["env"] = jsEnv
         opts["timeout"] = options.timeout.inWholeMilliseconds.toInt()
@@ -110,7 +110,7 @@ internal actual class PlatformBuilder private actual constructor() {
             code,
             command,
             args,
-            chgDir,
+            chdir,
             env,
             stdio,
             destroy,
@@ -121,7 +121,7 @@ internal actual class PlatformBuilder private actual constructor() {
     internal actual fun spawn(
         command: String,
         args: List<String>,
-        chgDir: File?,
+        chdir: File?,
         env: Map<String, String>,
         stdio: Stdio.Config,
         destroy: Signal
@@ -130,7 +130,7 @@ internal actual class PlatformBuilder private actual constructor() {
         val (jsStdio, descriptors) = stdio.toJsStdio()
 
         val opts = js("{}")
-        chgDir?.let { opts["cwd"] = it.path }
+        chdir?.let { opts["cwd"] = it.path }
         opts["env"] = jsEnv
         opts["stdio"] = jsStdio
         opts["detached"] = false
@@ -147,7 +147,7 @@ internal actual class PlatformBuilder private actual constructor() {
             jsProcess,
             command,
             args,
-            chgDir,
+            chdir,
             env,
             stdio,
             destroy,

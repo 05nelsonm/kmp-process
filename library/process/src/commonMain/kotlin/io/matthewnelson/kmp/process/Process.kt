@@ -243,8 +243,8 @@ public abstract class Process internal constructor(
         public constructor(executable: File): this(executable.absoluteFile.normalize().path)
 
         private val args = mutableListOf<String>()
+        private var chdir: File? = null
         private var destroy: Signal = Signal.SIGTERM
-        private var chgDir: File? = null
         private val platform = PlatformBuilder.get()
         private val stdio = Stdio.Config.Builder.get()
 
@@ -286,9 +286,9 @@ public abstract class Process internal constructor(
          *   Specifying this option will result in a failure to
          *   spawn a process on `iOS`.
          * */
-        public fun changeDirectory(
+        public fun chdir(
             directory: File?,
-        ): Builder = apply { chgDir = directory }
+        ): Builder = apply { chdir = directory }
 
         /**
          * Set/overwrite an environment variable
@@ -369,7 +369,7 @@ public abstract class Process internal constructor(
         public fun output(
             block: Output.Options.Builder.() -> Unit,
         ): Output {
-            checkArguments()
+            if (command.isBlank()) throw IOException("command cannot be blank")
 
             val options = Output.Options.Builder.build(block)
             val stdio = stdio.build(outputOptions = options)
@@ -377,7 +377,7 @@ public abstract class Process internal constructor(
             val args = args.toImmutableList()
             val env = platform.env.toImmutableMap()
 
-            return platform.output(command, args, chgDir, env, stdio, options, destroy)
+            return platform.output(command, args, chdir, env, stdio, options, destroy)
         }
 
         /**
@@ -392,14 +392,14 @@ public abstract class Process internal constructor(
          * */
         @Throws(IOException::class)
         public fun spawn(): Process {
-            checkArguments()
+            if (command.isBlank()) throw IOException("command cannot be blank")
 
             val stdio = stdio.build(outputOptions = null)
 
             val args = args.toImmutableList()
             val env = platform.env.toImmutableMap()
 
-            return platform.spawn(command, args, chgDir, env, stdio, destroy)
+            return platform.spawn(command, args, chdir, env, stdio, destroy)
         }
 
         /**
@@ -425,21 +425,6 @@ public abstract class Process internal constructor(
             }
 
             return result
-        }
-
-        @Throws(IOException::class)
-        private fun checkArguments() {
-            if (command.isBlank()) {
-                throw IOException("command cannot be blank")
-            }
-
-            val chgDir = chgDir ?: return
-
-            // TODO: Check stats for isDirectory
-            //  See: https://github.com/05nelsonm/kmp-file/issues/55
-            if (!chgDir.exists()) {
-                throw IOException("changeDirectory[$chgDir] does not exist")
-            }
         }
     }
 

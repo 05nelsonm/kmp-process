@@ -34,14 +34,14 @@ internal expect inline fun Duration.threadSleep()
 internal fun PlatformBuilder.blockingOutput(
     command: String,
     args: List<String>,
-    chgDir: File?,
+    chdir: File?,
     env: Map<String, String>,
     stdio: Stdio.Config,
     options: Output.Options,
     destroy: Signal,
 ): Output {
 
-    val p = spawn(command, args, chgDir, env, stdio, destroy)
+    val p = spawn(command, args, chdir, env, stdio, destroy)
 
     val stdoutBuffer = OutputFeedBuffer.of(options)
     val stderrBuffer = OutputFeedBuffer.of(options)

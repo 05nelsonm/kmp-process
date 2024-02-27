@@ -17,6 +17,7 @@
 
 package io.matthewnelson.kmp.process.internal.spawn
 
+import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.file.IOException
 import kotlinx.cinterop.CValuesRef
 import kotlinx.cinterop.ExperimentalForeignApi
@@ -28,6 +29,12 @@ internal expect value class PosixSpawnFileActions private constructor(
 ) {
 
     internal fun adddup2(fd: Int, newFd: Int): Int
+
+    // On iOS, an IOException will be thrown. It is
+    // not supported, nor is fork/exec, so this
+    // will result in a spawn failure and end early.
+    @Throws(IOException::class)
+    internal fun addchdir_np(chdir: File): Int
 
     internal companion object {
 

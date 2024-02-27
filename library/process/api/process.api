@@ -77,7 +77,7 @@ public final class io/matthewnelson/kmp/process/Process$Builder {
 	public final fun args (Ljava/lang/String;)Lio/matthewnelson/kmp/process/Process$Builder;
 	public final fun args (Ljava/util/List;)Lio/matthewnelson/kmp/process/Process$Builder;
 	public final fun args ([Ljava/lang/String;)Lio/matthewnelson/kmp/process/Process$Builder;
-	public final fun changeDirectory (Ljava/io/File;)Lio/matthewnelson/kmp/process/Process$Builder;
+	public final fun chdir (Ljava/io/File;)Lio/matthewnelson/kmp/process/Process$Builder;
 	public final fun destroySignal (Lio/matthewnelson/kmp/process/Signal;)Lio/matthewnelson/kmp/process/Process$Builder;
 	public final fun environment (Ljava/lang/String;Ljava/lang/String;)Lio/matthewnelson/kmp/process/Process$Builder;
 	public final fun environment (Lkotlin/jvm/functions/Function1;)Lio/matthewnelson/kmp/process/Process$Builder;

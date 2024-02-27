@@ -31,11 +31,11 @@ internal class JvmProcess private constructor(
     private val jProcess: java.lang.Process,
     command: String,
     args: List<String>,
-    chgDir: File?,
+    chdir: File?,
     env: Map<String, String>,
     stdio: Stdio.Config,
     destroy: Signal,
-): Process(command, args, chgDir, env, stdio, destroy, INIT) {
+): Process(command, args, chdir, env, stdio, destroy, INIT) {
 
     private val _pid: Int by lazy {
         // First try parsing toString output
@@ -254,7 +254,7 @@ internal class JvmProcess private constructor(
             jProcess: java.lang.Process,
             command: String,
             args: List<String>,
-            chgDir: File?,
+            chdir: File?,
             env: Map<String, String>,
             stdio: Stdio.Config,
             destroy: Signal,
@@ -262,7 +262,7 @@ internal class JvmProcess private constructor(
             jProcess,
             command,
             args,
-            chgDir,
+            chdir,
             env,
             stdio,
             destroy,

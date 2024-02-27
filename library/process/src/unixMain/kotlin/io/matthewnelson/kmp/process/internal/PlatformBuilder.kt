@@ -51,18 +51,18 @@ internal actual class PlatformBuilder private actual constructor() {
     internal actual fun output(
         command: String,
         args: List<String>,
-        chgDir: File?,
+        chdir: File?,
         env: Map<String, String>,
         stdio: Stdio.Config,
         options: Output.Options,
         destroy: Signal,
-    ): Output = blockingOutput(command, args, chgDir, env, stdio, options, destroy)
+    ): Output = blockingOutput(command, args, chdir, env, stdio, options, destroy)
 
     @Throws(IOException::class)
     internal actual fun spawn(
         command: String,
         args: List<String>,
-        chgDir: File?,
+        chdir: File?,
         env: Map<String, String>,
         stdio: Stdio.Config,
         destroy: Signal,
@@ -72,7 +72,7 @@ internal actual class PlatformBuilder private actual constructor() {
         val handle = stdio.openHandle()
 
         try {
-            return posixSpawn(command, program, args, chgDir, env, handle, destroy)
+            return posixSpawn(command, program, args, chdir, env, handle, destroy)
         } catch (_: UnsupportedOperationException) {
             /* ignore and try fork/exec */
         } catch (e: IOException) {
@@ -81,7 +81,7 @@ internal actual class PlatformBuilder private actual constructor() {
         }
 
         try {
-            return forkExec(command, program, args, chgDir, env, handle, destroy)
+            return forkExec(command, program, args, chdir, env, handle, destroy)
         } catch (e: Exception) {
             handle.close()
             throw e.wrapIOException()
@@ -94,7 +94,7 @@ internal actual class PlatformBuilder private actual constructor() {
         command: String,
         program: File,
         args: List<String>,
-        chgDir: File?,
+        chdir: File?,
         env: Map<String, String>,
         handle: StdioHandle,
         destroy: Signal,
@@ -104,10 +104,11 @@ internal actual class PlatformBuilder private actual constructor() {
                 if (!isAtLeast(major = 2u, minor = 24u)) {
                     // Only Linux glibc 2.24+ posix_spawn supports returning ENOENT
                     // fall back to fork & exec
-                    throw UnsupportedOperationException("Unsupported Linux $this")
+                    throw UnsupportedOperationException()
                 }
-                // TODO: Issue #15
-                //  if addchdir_np needed, glibc 2.29+ required
+                if (chdir != null && !isAtLeast(major = 2u, minor = 29u)) {
+                    throw UnsupportedOperationException()
+                }
             }
         } catch (_: NullPointerException) {
             // gnu_get_libc_version on Linux returned null
@@ -117,8 +118,8 @@ internal actual class PlatformBuilder private actual constructor() {
         val pid = memScoped {
             val fileActions = posixSpawnFileActionsInit()
 
-            // TODO: Issue #15
-            //  try addchdir_np (iOS/Linux throws IOException)
+            // try chgdir first before anything else
+            chdir?.let { fileActions.addchdir_np(it).check() }
 
             val attrs = posixSpawnAttrInit()
 
@@ -145,7 +146,7 @@ internal actual class PlatformBuilder private actual constructor() {
             handle,
             command,
             args,
-            chgDir,
+            chdir,
             env,
             destroy,
         )
@@ -156,11 +157,11 @@ internal actual class PlatformBuilder private actual constructor() {
     internal fun forkExec(
         command: String,
         args: List<String>,
-        chgDir: File?,
+        chdir: File?,
         env: Map<String, String>,
         handle: StdioHandle,
         destroy: Signal,
-    ): NativeProcess = forkExec(command, command.toProgramFile(), args, chgDir, env, handle, destroy)
+    ): NativeProcess = forkExec(command, command.toProgramFile(), args, chdir, env, handle, destroy)
 
     @OptIn(ExperimentalForeignApi::class)
     @Throws(IOException::class, UnsupportedOperationException::class)
@@ -168,7 +169,7 @@ internal actual class PlatformBuilder private actual constructor() {
         command: String,
         program: File,
         args: List<String>,
-        chgDir: File?,
+        chdir: File?,
         env: Map<String, String>,
         handle: StdioHandle,
         destroy: Signal,
@@ -189,7 +190,7 @@ internal actual class PlatformBuilder private actual constructor() {
         }
 
         if (pid == 0) {
-            ChildProcess(pid, pipe, handle, program, args, env)
+            ChildProcess(pid, pipe, handle, program, args, chdir, env)
         }
 
         // Parent process
@@ -200,7 +201,7 @@ internal actual class PlatformBuilder private actual constructor() {
             handle,
             command,
             args,
-            chgDir,
+            chdir,
             env,
             destroy,
         )
@@ -228,6 +229,7 @@ internal actual class PlatformBuilder private actual constructor() {
             b.size -> {
                 val type = when (b[4]) {
                     ERR_DUP2 -> "dup2"
+                    ERR_CHDIR -> "chdir"
                     ERR_EXEC -> "exec"
                     else -> null
                 }
@@ -259,6 +261,7 @@ internal actual class PlatformBuilder private actual constructor() {
         private val handle: StdioHandle,
         program: File,
         args: List<String>,
+        chdir: File?,
         env: Map<String, String>,
     ) {
 
@@ -298,6 +301,10 @@ internal actual class PlatformBuilder private actual constructor() {
                 onError(err ?: EBADF, ERR_DUP2)
             }
 
+            if (chdir != null && chdir(chdir.path) == -1) {
+                onError(errno, ERR_CHDIR)
+            }
+
             @OptIn(ExperimentalForeignApi::class)
             val errno = memScoped {
                 val argv = args.toArgv(program = program, scope = this)
@@ -316,7 +323,8 @@ internal actual class PlatformBuilder private actual constructor() {
     internal actual companion object {
 
         private const val ERR_DUP2: Byte = 1
-        private const val ERR_EXEC: Byte = 2
+        private const val ERR_CHDIR: Byte = 2
+        private const val ERR_EXEC: Byte = 3
 
         internal actual fun get(): PlatformBuilder = PlatformBuilder()
 
