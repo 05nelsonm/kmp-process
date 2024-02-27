@@ -102,6 +102,8 @@ internal actual class PlatformBuilder private actual constructor() {
 
         jProcessBuilder.command(jCommands)
 
+        jProcessBuilder.directory(chgDir)
+
         // NOTE: do not modify jProcessBuilder environment.
         //  The env value passed here is what is currently set
         //  for jProcessBuilder (which is Mutable). The immutable
