@@ -57,6 +57,7 @@ internal actual class PlatformBuilder private actual constructor() {
         val (jsStdio, descriptors) = stdio.toJsStdio()
 
         val opts = js("{}")
+        chgDir?.let { opts["cwd"] = it.path }
         opts["stdio"] = jsStdio
         opts["env"] = jsEnv
         opts["timeout"] = options.timeout.inWholeMilliseconds.toInt()
@@ -129,6 +130,7 @@ internal actual class PlatformBuilder private actual constructor() {
         val (jsStdio, descriptors) = stdio.toJsStdio()
 
         val opts = js("{}")
+        chgDir?.let { opts["cwd"] = it.path }
         opts["env"] = jsEnv
         opts["stdio"] = jsStdio
         opts["detached"] = false
