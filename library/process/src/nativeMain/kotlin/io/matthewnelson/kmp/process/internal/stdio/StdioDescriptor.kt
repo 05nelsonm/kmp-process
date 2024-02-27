@@ -22,6 +22,7 @@ import io.matthewnelson.kmp.file.path
 import io.matthewnelson.kmp.process.Stdio
 import io.matthewnelson.kmp.process.internal.STDIO_NULL
 import io.matthewnelson.kmp.process.internal.check
+import io.matthewnelson.kmp.process.internal.fdClose
 import platform.posix.*
 import kotlin.concurrent.Volatile
 
@@ -39,11 +40,11 @@ internal sealed class StdioDescriptor private constructor() {
                 Single.Stdin.fd,
                 Single.Stdout.fd,
                 Single.Stderr.fd -> { /* do not close */ }
-                else -> close(fd)
+                else -> fdClose(fd)
             }
             is Pair -> {
-                close(fdRead)
-                close(fdWrite)
+                fdClose(fdRead)
+                fdClose(fdWrite)
             }
         }
 

@@ -183,7 +183,7 @@ internal actual class PlatformBuilder private actual constructor() {
 
         if (pid == 0) {
             // Child process
-            close(pipe.fdRead)
+            fdClose(pipe.fdRead)
 
             var err: Int? = null
 
@@ -210,7 +210,8 @@ internal actual class PlatformBuilder private actual constructor() {
                 try {
                     StdioWriter(pipe).write(b)
                 } finally {
-                    close(pipe.fdWrite)
+                    // handle was closed on dup2 failure
+                    fdClose(pipe.fdWrite)
                 }
                 _exit(1)
             }
@@ -233,13 +234,13 @@ internal actual class PlatformBuilder private actual constructor() {
                 StdioWriter(pipe).write(b)
             } finally {
                 handle.close()
-                close(pipe.fdWrite)
+                fdClose(pipe.fdWrite)
             }
             _exit(1)
         }
 
         // Parent process
-        close(pipe.fdWrite)
+        fdClose(pipe.fdWrite)
 
         val p = NativeProcess(
             pid,
@@ -261,7 +262,7 @@ internal actual class PlatformBuilder private actual constructor() {
             p.destroy()
             throw IOException("CLOEXEC pipe read failure", e)
         } finally {
-            close(pipe.fdRead)
+            fdClose(pipe.fdRead)
         }
 
         when (read) {

@@ -19,9 +19,7 @@ package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.*
 import kotlinx.cinterop.*
-import platform.posix.errno
-import platform.posix.getenv
-import platform.posix.usleep
+import platform.posix.*
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
@@ -64,6 +62,27 @@ internal fun String.toProgramFile(): File {
     }
 
     return absolute?.normalize() ?: throw FileNotFoundException("Failed to locate program[$this]")
+}
+
+// Returns errno value or null (was successful)
+internal fun fdClose(fd: Int, retries: Int = 3): Int? {
+    val tries = if (retries < 3) 3 else retries
+    var attempts = 0
+
+    while (attempts++ < tries) {
+        val res = close(fd)
+        if (res == -1) {
+            when (val e = errno) {
+                EINTR -> continue
+                else -> return e
+            }
+        }
+
+        // success
+        return null
+    }
+
+    return EINTR
 }
 
 @OptIn(ExperimentalForeignApi::class)
