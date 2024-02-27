@@ -29,6 +29,7 @@ import io.matthewnelson.kmp.process.internal.spawn.GnuLibcVersion
 import io.matthewnelson.kmp.process.internal.spawn.PosixSpawnAttrs.Companion.posixSpawnAttrInit
 import io.matthewnelson.kmp.process.internal.spawn.PosixSpawnFileActions.Companion.posixSpawnFileActionsInit
 import io.matthewnelson.kmp.process.internal.spawn.posixSpawn
+import io.matthewnelson.kmp.process.internal.stdio.StdioDescriptor
 import io.matthewnelson.kmp.process.internal.stdio.StdioDescriptor.Pair.Companion.fdOpen
 import io.matthewnelson.kmp.process.internal.stdio.StdioHandle
 import io.matthewnelson.kmp.process.internal.stdio.StdioHandle.Companion.openHandle
@@ -182,61 +183,7 @@ internal actual class PlatformBuilder private actual constructor() {
         }
 
         if (pid == 0) {
-            // Child process
-            fdClose(pipe.fdRead)
-
-            var err: Int? = null
-
-            try {
-                handle.dup2 { fd, newFd ->
-                    when (dup2(fd, newFd)) {
-                        -1 -> {
-                            err = errno
-                            // thrown (and handle is thus closed)
-                            // but catch block from within the child
-                            // does not utilize the exception, it
-                            // will write errno output back to
-                            // parent.
-                            IOException()
-                        }
-                        else -> null
-                    }
-                }
-            } catch (_: IOException) {
-                // [#, #, #, #, 1] (1: dup2 failure)
-                val b = ByteArray(5)
-                b[4] = 1
-                (err ?: EBADF).toBigEndian().copyInto(b)
-                try {
-                    StdioWriter(pipe).write(b)
-                } finally {
-                    // handle was closed on dup2 failure
-                    fdClose(pipe.fdWrite)
-                }
-                _exit(1)
-            }
-
-            val errno = memScoped {
-                val argv = args.toArgv(program = program, scope = this)
-                val envp = env.toEnvp(scope = this)
-
-                execve(program, argv, envp)
-
-                // exec failed to replace child process with program
-                errno
-            }
-
-            // [#, #, #, #, 2] (2: execve failure)
-            val b = ByteArray(5)
-            b[4] = 2
-            errno.toBigEndian().copyInto(b)
-            try {
-                StdioWriter(pipe).write(b)
-            } finally {
-                handle.close()
-                fdClose(pipe.fdWrite)
-            }
-            _exit(1)
+            ChildProcess(pid, pipe, handle, program, args, env)
         }
 
         // Parent process
@@ -272,9 +219,9 @@ internal actual class PlatformBuilder private actual constructor() {
 
             // Something happened in the child process
             b.size -> {
-                val type = when (b[4].toInt()) {
-                    1 -> "dup2"
-                    2 -> "exec"
+                val type = when (b[4]) {
+                    ERR_DUP2 -> "dup2"
+                    ERR_EXEC -> "exec"
                     else -> null
                 }
 
@@ -297,7 +244,72 @@ internal actual class PlatformBuilder private actual constructor() {
         return p
     }
 
+    private inner class ChildProcess
+    @Throws(IllegalArgumentException::class)
+    constructor(
+        pid: Int,
+        private val pipe: StdioDescriptor.Pair,
+        private val handle: StdioHandle,
+        program: File,
+        args: List<String>,
+        env: Map<String, String>,
+    ) {
+
+        init {
+            require(pid == 0) { "pid must be 0 (the child process of a fork call)" }
+        }
+
+        private fun onError(errno: Int, type: Byte) {
+            val b = ByteArray(5)
+            b[4] = type
+            errno.toBigEndian().copyInto(b)
+            try {
+                StdioWriter(pipe).write(b)
+            } finally {
+                handle.close()
+                fdClose(pipe.fdWrite)
+            }
+            _exit(1)
+        }
+
+        init {
+            fdClose(pipe.fdRead)
+
+            var err: Int? = null
+
+            try {
+                handle.dup2 { fd, newFd ->
+                    when (dup2(fd, newFd)) {
+                        -1 -> {
+                            err = errno
+                            IOException()
+                        }
+                        else -> null
+                    }
+                }
+            } catch (_: IOException) {
+                onError(err ?: EBADF, ERR_DUP2)
+            }
+
+            @OptIn(ExperimentalForeignApi::class)
+            val errno = memScoped {
+                val argv = args.toArgv(program = program, scope = this)
+                val envp = env.toEnvp(scope = this)
+
+                execve(program, argv, envp)
+
+                // exec failed to replace child process with program
+                errno
+            }
+
+            onError(errno, ERR_EXEC)
+        }
+    }
+
     internal actual companion object {
+
+        private const val ERR_DUP2: Byte = 1
+        private const val ERR_EXEC: Byte = 2
 
         internal actual fun get(): PlatformBuilder = PlatformBuilder()
 
