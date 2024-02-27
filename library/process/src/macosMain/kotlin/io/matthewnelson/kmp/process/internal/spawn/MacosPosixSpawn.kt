@@ -19,9 +19,12 @@ package io.matthewnelson.kmp.process.internal.spawn
 
 import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.file.IOException
+import io.matthewnelson.kmp.file.path
+import kotlinx.cinterop.ExperimentalForeignApi
 
 @Throws(IOException::class)
 @Suppress("NOTHING_TO_INLINE")
+@OptIn(ExperimentalForeignApi::class)
 internal actual inline fun PosixSpawnFileActions.posix_spawn_file_actions_addchdir(
     directory: File,
-): Int = throw UnsupportedOperationException("Not yet implemented")
+): Int = posix_spawn_file_actions_addchdir_np(ref, directory.path)
