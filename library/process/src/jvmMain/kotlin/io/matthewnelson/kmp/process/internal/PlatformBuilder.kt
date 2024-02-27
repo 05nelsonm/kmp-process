@@ -17,6 +17,7 @@
 
 package io.matthewnelson.kmp.process.internal
 
+import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.file.FileNotFoundException
 import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.process.Output
@@ -36,16 +37,18 @@ internal actual class PlatformBuilder private actual constructor() {
     internal actual fun output(
         command: String,
         args: List<String>,
+        chgDir: File?,
         env: Map<String, String>,
         stdio: Stdio.Config,
         options: Output.Options,
         destroy: Signal,
-    ): Output = blockingOutput(command, args, env, stdio, options, destroy)
+    ): Output = blockingOutput(command, args, chgDir, env, stdio, options, destroy)
 
     @Throws(IOException::class)
     internal actual fun spawn(
         command: String,
         args: List<String>,
+        chgDir: File?,
         env: Map<String, String>,
         stdio: Stdio.Config,
         destroy: Signal,
@@ -123,6 +126,7 @@ internal actual class PlatformBuilder private actual constructor() {
             jProcess,
             command,
             args,
+            chgDir,
             env,
             stdio,
             destroySignal,

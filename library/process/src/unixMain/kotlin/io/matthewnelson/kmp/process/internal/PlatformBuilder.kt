@@ -51,16 +51,18 @@ internal actual class PlatformBuilder private actual constructor() {
     internal actual fun output(
         command: String,
         args: List<String>,
+        chgDir: File?,
         env: Map<String, String>,
         stdio: Stdio.Config,
         options: Output.Options,
         destroy: Signal,
-    ): Output = blockingOutput(command, args, env, stdio, options, destroy)
+    ): Output = blockingOutput(command, args, chgDir, env, stdio, options, destroy)
 
     @Throws(IOException::class)
     internal actual fun spawn(
         command: String,
         args: List<String>,
+        chgDir: File?,
         env: Map<String, String>,
         stdio: Stdio.Config,
         destroy: Signal,
@@ -70,7 +72,7 @@ internal actual class PlatformBuilder private actual constructor() {
         val handle = stdio.openHandle()
 
         try {
-            return posixSpawn(command, program, args, env, handle, destroy)
+            return posixSpawn(command, program, args, chgDir, env, handle, destroy)
         } catch (_: UnsupportedOperationException) {
             /* ignore and try fork/exec */
         } catch (e: IOException) {
@@ -79,7 +81,7 @@ internal actual class PlatformBuilder private actual constructor() {
         }
 
         try {
-            return forkExec(command, program, args, env, handle, destroy)
+            return forkExec(command, program, args, chgDir, env, handle, destroy)
         } catch (e: Exception) {
             handle.close()
             throw e.wrapIOException()
@@ -92,6 +94,7 @@ internal actual class PlatformBuilder private actual constructor() {
         command: String,
         program: File,
         args: List<String>,
+        chgDir: File?,
         env: Map<String, String>,
         handle: StdioHandle,
         destroy: Signal,
@@ -142,6 +145,7 @@ internal actual class PlatformBuilder private actual constructor() {
             handle,
             command,
             args,
+            chgDir,
             env,
             destroy,
         )
@@ -152,10 +156,11 @@ internal actual class PlatformBuilder private actual constructor() {
     internal fun forkExec(
         command: String,
         args: List<String>,
+        chgDir: File?,
         env: Map<String, String>,
         handle: StdioHandle,
         destroy: Signal,
-    ): NativeProcess = forkExec(command, command.toProgramFile(), args, env, handle, destroy)
+    ): NativeProcess = forkExec(command, command.toProgramFile(), args, chgDir, env, handle, destroy)
 
     @OptIn(ExperimentalForeignApi::class)
     @Throws(IOException::class, UnsupportedOperationException::class)
@@ -163,6 +168,7 @@ internal actual class PlatformBuilder private actual constructor() {
         command: String,
         program: File,
         args: List<String>,
+        chgDir: File?,
         env: Map<String, String>,
         handle: StdioHandle,
         destroy: Signal,
@@ -194,6 +200,7 @@ internal actual class PlatformBuilder private actual constructor() {
             handle,
             command,
             args,
+            chgDir,
             env,
             destroy,
         )

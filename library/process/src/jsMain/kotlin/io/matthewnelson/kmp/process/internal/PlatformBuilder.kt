@@ -47,6 +47,7 @@ internal actual class PlatformBuilder private actual constructor() {
     internal actual fun output(
         command: String,
         args: List<String>,
+        chgDir: File?,
         env: Map<String, String>,
         stdio: Stdio.Config,
         options: Output.Options,
@@ -108,6 +109,7 @@ internal actual class PlatformBuilder private actual constructor() {
             code,
             command,
             args,
+            chgDir,
             env,
             stdio,
             destroy,
@@ -118,6 +120,7 @@ internal actual class PlatformBuilder private actual constructor() {
     internal actual fun spawn(
         command: String,
         args: List<String>,
+        chgDir: File?,
         env: Map<String, String>,
         stdio: Stdio.Config,
         destroy: Signal
@@ -142,6 +145,7 @@ internal actual class PlatformBuilder private actual constructor() {
             jsProcess,
             command,
             args,
+            chgDir,
             env,
             stdio,
             destroy,

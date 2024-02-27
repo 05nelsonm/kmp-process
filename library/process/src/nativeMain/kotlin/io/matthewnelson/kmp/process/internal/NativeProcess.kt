@@ -15,6 +15,7 @@
  **/
 package io.matthewnelson.kmp.process.internal
 
+import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.Signal
@@ -37,9 +38,10 @@ internal constructor(
     private val handle: StdioHandle,
     command: String,
     args: List<String>,
+    chgDir: File?,
     env: Map<String, String>,
     destroy: Signal,
-): Process(command, args, env, handle.stdio, destroy, INIT) {
+): Process(command, args, chgDir, env, handle.stdio, destroy, INIT) {
 
     init {
         if (pid <= 0) {

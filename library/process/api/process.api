@@ -22,12 +22,13 @@ public final class io/matthewnelson/kmp/process/Output$Options$Builder {
 public final class io/matthewnelson/kmp/process/Output$ProcessInfo {
 	public final field args Ljava/util/List;
 	public final field command Ljava/lang/String;
+	public final field cwd Ljava/io/File;
 	public final field destroySignal Lio/matthewnelson/kmp/process/Signal;
 	public final field environment Ljava/util/Map;
 	public final field exitCode I
 	public final field pid I
 	public final field stdio Lio/matthewnelson/kmp/process/Stdio$Config;
-	public synthetic fun <init> (IILjava/lang/String;Ljava/util/List;Ljava/util/Map;Lio/matthewnelson/kmp/process/Stdio$Config;Lio/matthewnelson/kmp/process/Signal;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (IILjava/lang/String;Ljava/util/List;Ljava/io/File;Ljava/util/Map;Lio/matthewnelson/kmp/process/Stdio$Config;Lio/matthewnelson/kmp/process/Signal;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun toString ()Ljava/lang/String;
 }
 
@@ -54,6 +55,7 @@ public abstract class io/matthewnelson/kmp/process/Process : io/matthewnelson/km
 	protected static final field Companion Lio/matthewnelson/kmp/process/Process$Companion;
 	public final field args Ljava/util/List;
 	public final field command Ljava/lang/String;
+	public final field cwd Ljava/io/File;
 	public final field destroySignal Lio/matthewnelson/kmp/process/Signal;
 	public final field environment Ljava/util/Map;
 	public final field stdio Lio/matthewnelson/kmp/process/Stdio$Config;
@@ -75,6 +77,7 @@ public final class io/matthewnelson/kmp/process/Process$Builder {
 	public final fun args (Ljava/lang/String;)Lio/matthewnelson/kmp/process/Process$Builder;
 	public final fun args (Ljava/util/List;)Lio/matthewnelson/kmp/process/Process$Builder;
 	public final fun args ([Ljava/lang/String;)Lio/matthewnelson/kmp/process/Process$Builder;
+	public final fun changeDirectory (Ljava/io/File;)Lio/matthewnelson/kmp/process/Process$Builder;
 	public final fun destroySignal (Lio/matthewnelson/kmp/process/Signal;)Lio/matthewnelson/kmp/process/Process$Builder;
 	public final fun environment (Ljava/lang/String;Ljava/lang/String;)Lio/matthewnelson/kmp/process/Process$Builder;
 	public final fun environment (Lkotlin/jvm/functions/Function1;)Lio/matthewnelson/kmp/process/Process$Builder;

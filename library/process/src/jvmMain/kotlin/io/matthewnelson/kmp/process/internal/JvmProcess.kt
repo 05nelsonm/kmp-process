@@ -15,6 +15,7 @@
  **/
 package io.matthewnelson.kmp.process.internal
 
+import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.file.InterruptedException
 import io.matthewnelson.kmp.process.internal.BufferedLineScanner.Companion.scanLines
 import io.matthewnelson.kmp.process.Process
@@ -30,10 +31,11 @@ internal class JvmProcess private constructor(
     private val jProcess: java.lang.Process,
     command: String,
     args: List<String>,
+    chgDir: File?,
     env: Map<String, String>,
     stdio: Stdio.Config,
     destroy: Signal,
-): Process(command, args, env, stdio, destroy, INIT) {
+): Process(command, args, chgDir, env, stdio, destroy, INIT) {
 
     private val _pid: Int by lazy {
         // First try parsing toString output
@@ -252,6 +254,7 @@ internal class JvmProcess private constructor(
             jProcess: java.lang.Process,
             command: String,
             args: List<String>,
+            chgDir: File?,
             env: Map<String, String>,
             stdio: Stdio.Config,
             destroy: Signal,
@@ -259,6 +262,7 @@ internal class JvmProcess private constructor(
             jProcess,
             command,
             args,
+            chgDir,
             env,
             stdio,
             destroy,

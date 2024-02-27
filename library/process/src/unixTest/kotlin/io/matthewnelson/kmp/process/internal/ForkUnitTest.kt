@@ -15,6 +15,7 @@
  **/
 package io.matthewnelson.kmp.process.internal
 
+import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.process.IsDarwinMobile
 import io.matthewnelson.kmp.process.Signal
@@ -77,7 +78,7 @@ class ForkUnitTest {
             // which will then be piped back to the parent process and child _exit called
             h.close()
 
-            val p = forkProcess("sh", listOf("-c", "sleep 1; exit 5"), h)
+            val p = forkProcess("sh", listOf("-c", "sleep 1; exit 5"), handle = h)
             p.destroy()
             fail("forkExec returned Process")
         } catch (e: IOException) {
@@ -88,6 +89,7 @@ class ForkUnitTest {
     private fun forkProcess(
         command: String,
         args: List<String>,
+        chgDir: File? = null,
         handle: StdioHandle? = null,
     ): NativeProcess {
         val h = handle ?: Stdio.Config.Builder.get()
@@ -96,7 +98,7 @@ class ForkUnitTest {
 
         val p = try {
             val b = PlatformBuilder.get()
-            b.forkExec(command, args, b.env, h, Signal.SIGTERM)
+            b.forkExec(command, args, chgDir, b.env, h, Signal.SIGTERM)
         } catch (e: IOException) {
             h.close()
             throw e
