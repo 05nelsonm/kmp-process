@@ -88,6 +88,17 @@ internal actual class PlatformBuilder private actual constructor() {
         }
     }
 
+    // internal for testing
+    @Throws(IOException::class, UnsupportedOperationException::class)
+    internal fun posixSpawn(
+        command: String,
+        args: List<String>,
+        chdir: File?,
+        env: Map<String, String>,
+        handle: StdioHandle,
+        destroy: Signal,
+    ): NativeProcess = posixSpawn(command, command.toProgramFile(), args, chdir, env, handle, destroy)
+
     @OptIn(ExperimentalForeignApi::class)
     @Throws(IOException::class, UnsupportedOperationException::class)
     private fun posixSpawn(
@@ -119,7 +130,7 @@ internal actual class PlatformBuilder private actual constructor() {
             val fileActions = posixSpawnFileActionsInit()
 
             // try chgdir first before anything else
-            chdir?.let { fileActions.addchdir_np(it).check() }
+            chdir?.let { fileActions.addchdir_np(it, scope = this).check() }
 
             val attrs = posixSpawnAttrInit()
 

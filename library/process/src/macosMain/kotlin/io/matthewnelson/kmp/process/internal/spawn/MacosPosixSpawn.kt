@@ -13,18 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("FunctionName", "KotlinRedundantDiagnosticSuppress")
+@file:Suppress("FunctionName")
 
 package io.matthewnelson.kmp.process.internal.spawn
 
 import io.matthewnelson.kmp.file.File
-import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.file.path
 import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.MemScope
 
-@Throws(IOException::class)
-@Suppress("NOTHING_TO_INLINE")
 @OptIn(ExperimentalForeignApi::class)
-internal actual inline fun PosixSpawnFileActions.posix_spawn_file_actions_addchdir(
-    directory: File,
-): Int = posix_spawn_file_actions_addchdir_np(ref, directory.path)
+@Suppress("ACTUAL_ANNOTATIONS_NOT_MATCH_EXPECT")
+internal actual fun PosixSpawnFileActions.posix_spawn_file_actions_addchdir(
+    chdir: File,
+    scope: MemScope,
+): Int = posix_spawn_file_actions_addchdir_np(ref, chdir.path)

@@ -20,6 +20,7 @@ import io.matthewnelson.kmp.process.IsDarwinMobile
 import io.matthewnelson.kmp.process.PROJECT_DIR_PATH
 import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.Stdio
+import io.matthewnelson.kmp.process.internal.spawn.GnuLibcVersion
 import io.matthewnelson.kmp.process.internal.stdio.StdioHandle
 import io.matthewnelson.kmp.process.internal.stdio.StdioHandle.Companion.openHandle
 import kotlin.test.Test
@@ -27,10 +28,20 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import kotlin.test.fail
 
-class ForkUnitTest {
+class SpawnUnitTest {
+
+    private val chdirIsAvailable: Boolean by lazy {
+        var available: Boolean? = null
+        GnuLibcVersion.check {
+            // does nothing on non-Linux
+            available = isAtLeast(major = 2u, minor = 29u)
+        }
+
+        available ?: true
+    }
 
     @Test
-    fun givenProcess_whenFork_thenIsSuccessful() {
+    fun givenProcess_whenForkExec_thenIsSuccessful() {
         if (IsDarwinMobile) {
             println("Skipping...")
             return
@@ -38,7 +49,12 @@ class ForkUnitTest {
 
         val d = PROJECT_DIR_PATH.toFile().resolve("src").resolve("commonMain")
 
-        val p = forkProcess("sh", listOf("-c", "echo \"$(pwd)\"; sleep 1; exit 42"), chdir = d)
+        val p = spawnProcess(
+            "sh",
+            listOf("-c", "echo \"$(pwd)\"; sleep 1; exit 42"),
+            chdir = d,
+            useFork = true,
+        )
         val output = mutableListOf<String>()
         val code = try {
             p.stdoutFeed { line ->
@@ -55,7 +71,37 @@ class ForkUnitTest {
     }
 
     @Test
-    fun givenInvalidProgramPath_whenFork_thenExecThrowsException() {
+    fun givenProcess_whenPosixSpawn_thenIsSuccessful() {
+        if (IsDarwinMobile) {
+            println("Skipping...")
+            return
+        }
+
+        val d = PROJECT_DIR_PATH.toFile().resolve("src").resolve("commonMain")
+
+        val p = spawnProcess(
+            "sh",
+            listOf("-c", "echo \"$(pwd)\"; sleep 1; exit 42"),
+            chdir = d,
+            useFork = false,
+        )
+        val output = mutableListOf<String>()
+        val code = try {
+            p.stdoutFeed { line ->
+                output.add(line)
+            }
+            p.waitFor()
+        } finally {
+            p.destroy()
+        }
+
+        println(p)
+        assertEquals(42, code)
+        assertEquals(d.path, output.firstOrNull())
+    }
+
+    @Test
+    fun givenBadCommand_whenForkExec_thenExecDispatchesError() {
         if (IsDarwinMobile) {
             println("Skipping...")
             return
@@ -63,7 +109,11 @@ class ForkUnitTest {
 
         try {
             // Should result in an ENOENT when exec is called
-            val p = forkProcess("/invalid/path/sh", listOf("-c", "sleep 1; exit 5"))
+            val p = spawnProcess(
+                "/invalid/path/sh",
+                listOf("-c", "sleep 1; exit 5"),
+                useFork = true,
+            )
             p.destroy()
             fail("forkExec returned Process")
         } catch (e: IOException) {
@@ -72,7 +122,7 @@ class ForkUnitTest {
     }
 
     @Test
-    fun givenBadDup2_whenFork_thenDup2ThrowsException() {
+    fun givenBadDup2_whenForkExec_thenDup2DispatchesError() {
         if (IsDarwinMobile) {
             println("Skipping...")
             return
@@ -85,7 +135,12 @@ class ForkUnitTest {
             // which will then be piped back to the parent process and child _exit called
             h.close()
 
-            val p = forkProcess("sh", listOf("-c", "sleep 1; exit 5"), handle = h)
+            val p = spawnProcess(
+                "sh",
+                listOf("-c", "sleep 1; exit 5"),
+                handle = h,
+                useFork = true,
+            )
             p.destroy()
             fail("forkExec returned Process")
         } catch (e: IOException) {
@@ -94,7 +149,7 @@ class ForkUnitTest {
     }
 
     @Test
-    fun givenBadChdir_whenFork_thenChdirThrowsException() {
+    fun givenBadChdir_whenForkExec_thenChdirDispatchesError() {
         if (IsDarwinMobile) {
             println("Skipping...")
             return
@@ -103,7 +158,12 @@ class ForkUnitTest {
         val d = PROJECT_DIR_PATH.toFile().resolve("non_existent_directory")
 
         try {
-            val p = forkProcess("sh", listOf("-c", "sleep 1; exit 5"), chdir = d)
+            val p = spawnProcess(
+                "sh",
+                listOf("-c", "sleep 1; exit 5"),
+                chdir = d,
+                useFork = true,
+            )
             p.destroy()
             fail("forkExec returned Process")
         } catch (e: IOException) {
@@ -111,11 +171,35 @@ class ForkUnitTest {
         }
     }
 
-    private fun forkProcess(
+    @Test
+    fun givenBadChdir_whenPosixSpawn_thenThrowsException() {
+        if (IsDarwinMobile || !chdirIsAvailable) {
+            println("Skipping...")
+            return
+        }
+
+        val d = PROJECT_DIR_PATH.toFile().resolve("non_existent_directory")
+
+        try {
+            val p = spawnProcess(
+                "sh",
+                listOf("-c", "sleep 1; exit 5"),
+                chdir = d,
+                useFork = false,
+            )
+            p.destroy()
+            fail("posixSpawn returned Process")
+        } catch (e: IOException) {
+            e.printStackTrace()
+        }
+    }
+
+    private fun spawnProcess(
         command: String,
         args: List<String>,
         chdir: File? = null,
         handle: StdioHandle? = null,
+        useFork: Boolean,
     ): NativeProcess {
         val h = handle ?: Stdio.Config.Builder.get()
             .build(null)
@@ -123,7 +207,11 @@ class ForkUnitTest {
 
         val p = try {
             val b = PlatformBuilder.get()
-            b.forkExec(command, args, chdir, b.env, h, Signal.SIGTERM)
+            if (useFork) {
+                b.forkExec(command, args, chdir, b.env, h, Signal.SIGTERM)
+            } else {
+                b.posixSpawn(command, args, chdir, b.env, h, Signal.SIGTERM)
+            }
         } catch (e: IOException) {
             h.close()
             throw e

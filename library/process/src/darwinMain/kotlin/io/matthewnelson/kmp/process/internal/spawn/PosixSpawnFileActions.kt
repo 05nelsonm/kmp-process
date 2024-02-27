@@ -41,8 +41,9 @@ internal actual value class PosixSpawnFileActions private actual constructor(
     }
 
     @Throws(IOException::class)
-    internal actual fun addchdir_np(chdir: File): Int {
-        return posix_spawn_file_actions_addchdir(chdir)
+    @Suppress("ACTUAL_ANNOTATIONS_NOT_MATCH_EXPECT")
+    internal actual fun addchdir_np(chdir: File, scope: MemScope): Int {
+        return posix_spawn_file_actions_addchdir(chdir, scope)
     }
 
     internal actual companion object {

@@ -281,10 +281,6 @@ public abstract class Process internal constructor(
          *
          * [directory] must exist, otherwise the process will fail
          * to be spawned.
-         *
-         * **WARNING:** `iOS` does not support changing directories!
-         *   Specifying this option will result in a failure to
-         *   spawn a process on `iOS`.
          * */
         public fun chdir(
             directory: File?,

@@ -61,7 +61,7 @@ internal fun StringBuilder.appendProcessInfo(
         )
     }
 
-    append("cwd: ")
+    append("    cwd: ")
     appendLine(cwd?.path ?: "")
 
     appendLine("    stdio: [")

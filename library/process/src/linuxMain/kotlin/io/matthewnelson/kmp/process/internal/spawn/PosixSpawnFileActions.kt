@@ -19,12 +19,14 @@ package io.matthewnelson.kmp.process.internal.spawn
 
 import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.file.IOException
+import io.matthewnelson.kmp.file.path
 import io.matthewnelson.kmp.process.internal.check
 import kotlinx.cinterop.*
 import platform.linux.posix_spawn_file_actions_adddup2
 import platform.linux.posix_spawn_file_actions_destroy
 import platform.linux.posix_spawn_file_actions_init
 import platform.linux.posix_spawn_file_actions_t
+import platform.posix.dlsym
 
 @OptIn(ExperimentalForeignApi::class)
 internal actual value class PosixSpawnFileActions private actual constructor(
@@ -40,9 +42,13 @@ internal actual value class PosixSpawnFileActions private actual constructor(
         return posix_spawn_file_actions_adddup2(ref, fd, newFd)
     }
 
-    @Throws(IOException::class)
-    internal actual fun addchdir_np(chdir: File): Int {
-        throw UnsupportedOperationException("Not yet implemented")
+    @Throws(UnsupportedOperationException::class)
+    @Suppress("ACTUAL_ANNOTATIONS_NOT_MATCH_EXPECT")
+    internal actual fun addchdir_np(chdir: File, scope: MemScope): Int {
+        return with(scope) {
+            ADDCHDIR_NP?.invoke(ref, chdir.path.cstr.ptr)
+                ?: throw UnsupportedOperationException()
+        }
     }
 
     internal actual companion object {
@@ -53,6 +59,14 @@ internal actual value class PosixSpawnFileActions private actual constructor(
             posix_spawn_file_actions_init(fileActions.ptr).check()
             defer { posix_spawn_file_actions_destroy(fileActions.ptr) }
             return PosixSpawnFileActions(fileActions.ptr)
+        }
+
+        private val ADDCHDIR_NP by lazy {
+            val ptr = dlsym(null, "posix_spawn_file_actions_addchdir_np")
+                ?: return@lazy null
+
+            @Suppress("UNCHECKED_CAST")
+            ptr as CPointer<CFunction<(CValuesRef<posix_spawn_file_actions_t>, CPointer<ByteVarOf<Byte>>) -> Int>>
         }
     }
 }

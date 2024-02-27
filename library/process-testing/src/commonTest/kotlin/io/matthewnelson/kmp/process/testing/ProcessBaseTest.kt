@@ -68,9 +68,8 @@ abstract class ProcessBaseTest {
             return
         }
 
-        val testCat = tempDir
-            .resolve("kmp_process")
-            .resolve("test.cat")
+        val tempDir = tempDir.resolve("kmp_process")
+        val testCat = tempDir.resolve("test.cat")
 
         testCat.delete()
         testCat.parentFile?.mkdirs()
@@ -86,6 +85,7 @@ abstract class ProcessBaseTest {
 
         val out = Process.Builder(command = "cat")
             .args("-")
+            .chdir(tempDir) // << exercises chdir for Android API 15+
             .stdin(Stdio.File.of(testCat))
             .output()
 
@@ -107,6 +107,7 @@ abstract class ProcessBaseTest {
         }
 
         val expected = 42
+
         val actual = Process.Builder(command = "sh")
             .args("-c")
             .args("sleep 0.25; exit $expected")
@@ -298,6 +299,7 @@ abstract class ProcessBaseTest {
             .args("1")
             .args("--RunAsDaemon")
             .args("0")
+            .chdir(homeDir)
             .destroySignal(Signal.SIGTERM)
             .envHome()
             .stdin(Stdio.Null)
