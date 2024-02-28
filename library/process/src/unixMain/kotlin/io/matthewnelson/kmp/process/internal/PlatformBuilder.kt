@@ -122,7 +122,6 @@ internal actual class PlatformBuilder private actual constructor() {
                 }
             }
         } catch (_: NullPointerException) {
-            // gnu_get_libc_version on Linux returned null
             throw UnsupportedOperationException("gnu_get_libc_version returned null")
         }
 

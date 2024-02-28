@@ -53,7 +53,7 @@ internal fun PlatformBuilder.blockingOutput(
         p.stderrFeed(stderrBuffer)
 
         try {
-            5.milliseconds.threadSleep()
+            25.milliseconds.threadSleep()
         } catch (_: InterruptedException) {}
 
         waitForCode = p.commonWaitFor(options.timeout) {
@@ -73,7 +73,7 @@ internal fun PlatformBuilder.blockingOutput(
 
     val exitCode = try {
         try {
-            5.milliseconds.threadSleep()
+            25.milliseconds.threadSleep()
         } catch (_: InterruptedException) {}
 
         // await for final closure if not ready yet
