@@ -62,9 +62,7 @@ class ProcessUnitTest {
             Process.Builder(command = "sleep")
                 .args("0.25")
                 .destroySignal(Signal.SIGKILL)
-                .spawn { p ->
-                    p.waitFor()
-                }
+                .spawn { p -> p.waitFor() }
         } catch (e: IOException) {
             // Host (Window) did not have sleep available
             if (IsWindows) {
@@ -185,9 +183,11 @@ class ProcessUnitTest {
             throw e
         }
 
-        process.waitForAsync(::delay)
-
-        withContext(Dispatchers.Default) { delay(100.milliseconds) }
+        process
+            .stdoutWaiter()
+            .awaitStopAsync(::delay)
+            .stderrWaiter()
+            .awaitStopAsync(::delay)
 
         assertEquals(0, process.stdoutFeedsSize())
         assertEquals(0, process.stderrFeedsSize())

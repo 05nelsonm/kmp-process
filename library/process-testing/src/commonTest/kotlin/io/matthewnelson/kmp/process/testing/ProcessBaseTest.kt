@@ -23,9 +23,11 @@ import io.matthewnelson.kmp.tor.core.api.ResourceInstaller
 import io.matthewnelson.kmp.tor.resource.tor.TorResources
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
 import kotlin.test.*
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
@@ -85,7 +87,7 @@ abstract class ProcessBaseTest {
 
         val out = Process.Builder(command = "cat")
             .args("-")
-            .chdir(tempDir) // << exercises chdir for Android API 15+
+            .chdir(tempDir)
             .stdin(Stdio.File.of(testCat))
             .output()
 
@@ -202,9 +204,7 @@ abstract class ProcessBaseTest {
                 }
             }
 
-        withContext(Dispatchers.Default) {
-            delay(250.milliseconds)
-        }
+        delayTest(250.milliseconds)
 
         stdoutFile.readUtf8().assertTorRan()
     }
@@ -218,9 +218,7 @@ abstract class ProcessBaseTest {
         println(out.stdout)
         println(out.stderr)
 
-        withContext(Dispatchers.Default) {
-            delay(250.milliseconds)
-        }
+        delayTest(250.milliseconds)
 
         assertExitCode(out.processInfo.exitCode)
         out.stdout.assertTorRan()
@@ -244,28 +242,34 @@ abstract class ProcessBaseTest {
                 }
             }
 
+            assertFailsWith<IllegalStateException> {
+                p.stdoutWaiter()
+            }
+            assertFailsWith<IllegalStateException> {
+                p.stderrWaiter()
+            }
+
             withContext(Dispatchers.Default) {
                 p.waitForAsync(2.seconds, ::delay)
             }
 
-            p.destroy()
-
-            withContext(Dispatchers.Default) {
-                delay(250.milliseconds)
-            }
+            val exitCode = p.destroy()
+                .stdoutWaiter()
+                .awaitStopAsync(::delay)
+                .stderrWaiter()
+                .awaitStopAsync(::delay)
+                .waitForAsync(::delay)
 
             val stdoutString = stdoutBuilder.toString()
             val stderrString = stderrBuilder.toString()
             println(stdoutString)
             println(stderrString)
 
-            assertExitCode(p.exitCode())
+            assertExitCode(exitCode)
             stdoutString.assertTorRan()
         }
 
-        withContext(Dispatchers.Default) {
-            delay(250.milliseconds)
-        }
+        delayTest(250.milliseconds)
     }
 
     private fun String.assertTorRan() {
@@ -277,6 +281,10 @@ abstract class ProcessBaseTest {
         }
 
         assertTrue(ran)
+    }
+
+    private suspend fun TestScope.delayTest(duration: Duration) {
+        withContext(Dispatchers.Default) { delay(duration) }
     }
 
     private fun Process.Builder.envHome(): Process.Builder = environment("HOME", homeDir.path)

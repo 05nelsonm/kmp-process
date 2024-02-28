@@ -72,17 +72,18 @@ public abstract class Process internal constructor(
      * Destroys the [Process] by:
      *  - Sending it [destroySignal] (if it has not completed yet)
      *  - Closes all input/output streams
-     *  - Stops all [OutputFeed] production
-     *      - **NOTE:** This may not be immediate if there is buffered
-     *        data on `stdout` or `stderr`. The contents of what are
-     *        left on the stream(s) will be drained which may stay live
-     *        briefly **after** destruction.
+     *  - Stops all [OutputFeed] production (See [OutputFeed.Waiter])
+     *    - **NOTE:** This may not be immediate if there is buffered
+     *      data on `stdout` or `stderr`. The contents of what are
+     *      left on the stream(s) will be drained which may stay live
+     *      briefly **after** destruction.
      *
      * This **MUST** be called after you are done with the [Process]
      * to ensure resource closure occurs.
      *
      * @see [Signal]
      * @see [Builder.spawn]
+     * @see [OutputFeed.Waiter]
      * @return this [Process] instance
      * */
     public abstract fun destroy(): Process

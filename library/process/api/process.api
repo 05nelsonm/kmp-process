@@ -47,8 +47,18 @@ public abstract class io/matthewnelson/kmp/process/OutputFeed$Handler {
 	protected abstract fun startStdout ()V
 	public final fun stderrFeed (Lio/matthewnelson/kmp/process/OutputFeed;)Lio/matthewnelson/kmp/process/Process;
 	public final fun stderrFeed ([Lio/matthewnelson/kmp/process/OutputFeed;)Lio/matthewnelson/kmp/process/Process;
+	public final fun stderrWaiter ()Lio/matthewnelson/kmp/process/OutputFeed$Waiter;
 	public final fun stdoutFeed (Lio/matthewnelson/kmp/process/OutputFeed;)Lio/matthewnelson/kmp/process/Process;
 	public final fun stdoutFeed ([Lio/matthewnelson/kmp/process/OutputFeed;)Lio/matthewnelson/kmp/process/Process;
+	public final fun stdoutWaiter ()Lio/matthewnelson/kmp/process/OutputFeed$Waiter;
+}
+
+public abstract class io/matthewnelson/kmp/process/OutputFeed$Waiter {
+	public synthetic fun <init> (Lio/matthewnelson/kmp/process/Process;ZLkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun awaitStop ()Lio/matthewnelson/kmp/process/Process;
+	public final fun awaitStopAsync (Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	protected abstract fun isStarted ()Z
+	protected abstract fun isStopped ()Z
 }
 
 public abstract class io/matthewnelson/kmp/process/Process : io/matthewnelson/kmp/process/OutputFeed$Handler {

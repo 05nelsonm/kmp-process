@@ -68,12 +68,11 @@ internal fun PlatformBuilder.blockingOutput(
     }
 
     val exitCode = try {
-        try {
-            25.milliseconds.threadSleep()
-        } catch (_: InterruptedException) {}
-
-        // await for final closure if not ready yet
-        p.waitFor()
+        p.stdoutWaiter()
+            .awaitStop()
+            .stderrWaiter()
+            .awaitStop()
+            .waitFor()
     } catch (e: InterruptedException) {
         throw IOException("Underlying thread interrupted", e)
     }
