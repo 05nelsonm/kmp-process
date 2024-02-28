@@ -18,6 +18,7 @@
 package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.*
+import kotlin.time.Duration
 
 internal actual val STDIO_NULL: File by lazy {
     val isWindows = try {
@@ -27,6 +28,12 @@ internal actual val STDIO_NULL: File by lazy {
     }
 
     (if (isWindows) "NUL" else "/dev/null").toFile()
+}
+
+@Suppress("NOTHING_TO_INLINE", "ACTUAL_ANNOTATIONS_NOT_MATCH_EXPECT")
+// @Throws(UnsupportedOperationException::class)
+internal actual inline fun Duration.threadSleep() {
+    throw UnsupportedOperationException("Blocking operations are not supported on Node.js. Use Async APIs or Process.Builder.output")
 }
 
 @Suppress("NOTHING_TO_INLINE")

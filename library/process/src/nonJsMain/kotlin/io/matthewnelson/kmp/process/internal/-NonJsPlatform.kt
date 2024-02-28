@@ -26,10 +26,6 @@ import io.matthewnelson.kmp.process.Stdio
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 
-@Suppress("NOTHING_TO_INLINE")
-@Throws(InterruptedException::class)
-internal expect inline fun Duration.threadSleep()
-
 @Throws(IOException::class)
 internal fun PlatformBuilder.blockingOutput(
     command: String,
@@ -72,12 +68,11 @@ internal fun PlatformBuilder.blockingOutput(
     }
 
     val exitCode = try {
-        try {
-            25.milliseconds.threadSleep()
-        } catch (_: InterruptedException) {}
-
-        // await for final closure if not ready yet
-        p.waitFor()
+        p.stdoutWaiter()
+            .awaitStop()
+            .stderrWaiter()
+            .awaitStop()
+            .waitFor()
     } catch (e: InterruptedException) {
         throw IOException("Underlying thread interrupted", e)
     }

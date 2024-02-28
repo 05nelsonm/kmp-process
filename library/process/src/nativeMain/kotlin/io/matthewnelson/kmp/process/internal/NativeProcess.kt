@@ -28,7 +28,6 @@ import kotlin.concurrent.AtomicReference
 import kotlin.native.concurrent.ObsoleteWorkersApi
 import kotlin.native.concurrent.TransferMode
 import kotlin.native.concurrent.Worker
-import kotlin.time.Duration
 
 @OptIn(ObsoleteWorkersApi::class)
 internal class NativeProcess
@@ -140,16 +139,6 @@ internal constructor(
     }
 
     override fun pid(): Int = pid
-
-    override fun waitFor(): Int {
-        var exitCode: Int? = null
-        while (exitCode == null) {
-            exitCode = waitFor(Duration.INFINITE)
-        }
-        return exitCode
-    }
-
-    override fun waitFor(duration: Duration): Int? = commonWaitFor(duration) { it.threadSleep() }
 
     override fun startStdout() { stdoutWorker.getOrCreate() }
     override fun startStderr() { stderrWorker.getOrCreate() }

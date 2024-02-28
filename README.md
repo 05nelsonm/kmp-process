@@ -154,6 +154,29 @@ builder.stdout(Stdio.Pipe).stderr(Stdio.Pipe).spawn { p ->
 
     println("EXIT_CODE[$exitCode]")
 } // << Process.destroy automatically called on closure
+
+// Wait for asynchronous stdout/stderr output to stop
+// after Process.destroy is called
+myScope.launch {
+    val exitCode = builder.spawn { p ->
+        p.stdoutFeed { line ->
+            // do something
+        }.stderrFeed { line ->
+            // do something
+        }.waitForAsync(50.milliseconds, ::delay)
+
+        p // return Process to spawn lambda
+    } // << Process.destroy automatically called on closure
+
+        // blocking APIs also available for Jvm/Native
+        .stdoutWaiter()
+        .awaitStopAsync(::delay)
+        .stderrWaiter()
+        .awaitStopAsync(::delay)
+        .waitForAsync(::delay)
+    
+    println("EXIT_CODE[$exitCode]")
+}
 ```
 
 ## Get Started

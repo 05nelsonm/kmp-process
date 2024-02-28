@@ -17,10 +17,14 @@
 
 package io.matthewnelson.kmp.process
 
+import io.matthewnelson.kmp.file.InterruptedException
 import io.matthewnelson.kmp.process.internal.SynchronizedSet
+import io.matthewnelson.kmp.process.internal.threadSleep
 import kotlin.concurrent.Volatile
 import kotlin.jvm.JvmField
 import kotlin.jvm.JvmSynthetic
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * A callback for obtaining `stdout` and `stderr` output.
@@ -49,9 +53,20 @@ import kotlin.jvm.JvmSynthetic
  *             }
  *         )
  *
+ *     p.waitFor(500.milliseconds)
+ *
+ *     val exitCode = p.destroy()
+ *         .stdoutWaiter()
+ *         .awaitStop()
+ *         .stderrWaiter()
+ *         .awaitStop()
+ *         .waitFor()
+ *
  * @see [Process.destroy]
  * @see [Handler.stdoutFeed]
  * @see [Handler.stderrFeed]
+ * @see [Handler.stdoutWaiter]
+ * @see [Handler.stderrWaiter]
  * */
 public fun interface OutputFeed {
 
@@ -73,6 +88,14 @@ public fun interface OutputFeed {
         @JvmField
         @Volatile
         protected var isDestroyed: Boolean = false
+        @Volatile
+        private var stdoutStarted: Boolean = stdio.stdout !is Stdio.Pipe
+        @Volatile
+        private var stdoutStopped: Boolean = stdio.stdout !is Stdio.Pipe
+        @Volatile
+        private var stderrStarted: Boolean = stdio.stderr !is Stdio.Pipe
+        @Volatile
+        private var stderrStopped: Boolean = stdio.stderr !is Stdio.Pipe
 
         private val stdoutFeeds = SynchronizedSet<OutputFeed>()
         private val stderrFeeds = SynchronizedSet<OutputFeed>()
@@ -105,7 +128,10 @@ public fun interface OutputFeed {
          * */
         public fun stdoutFeed(
             vararg feeds: OutputFeed,
-        ): Process = stdoutFeeds.addFeeds(feeds, stdio.stdout, ::startStdout)
+        ): Process = stdoutFeeds.addFeeds(feeds, stdio.stdout, startStdio = {
+            stdoutStarted = true
+            startStdout()
+        })
 
         /**
          * Attaches a single [OutputFeed] to obtain `stderr` output.
@@ -135,13 +161,46 @@ public fun interface OutputFeed {
          * */
         public fun stderrFeed(
             vararg feeds: OutputFeed,
-        ): Process = stderrFeeds.addFeeds(feeds, stdio.stderr, ::startStderr)
+        ): Process = stderrFeeds.addFeeds(feeds, stdio.stderr, startStdio = {
+            stderrStarted = true
+            startStderr()
+        })
+
+        /**
+         * Returns a [Waiter] for `stdout` in order to await any
+         * final asynchronous output after resource closure occurs.
+         *
+         * @throws [IllegalStateException] if [Process.destroy] has
+         *   not been called yet.
+         * */
+        @Throws(IllegalStateException::class)
+        public fun stdoutWaiter(): Waiter {
+            return object : RealWaiter() {
+                override fun isStarted(): Boolean = stdoutStarted
+                override fun isStopped(): Boolean = stdoutStopped
+            }
+        }
+
+        /**
+         * Returns a [Waiter] for `stderr` in order to await any
+         * final asynchronous output after resource closure occurs.
+         *
+         * @throws [IllegalStateException] if [Process.destroy] has
+         *   not been called yet.
+         * */
+        @Throws(IllegalStateException::class)
+        public fun stderrWaiter(): Waiter {
+            return object : RealWaiter() {
+                override fun isStarted(): Boolean = stderrStarted
+                override fun isStopped(): Boolean = stderrStopped
+            }
+        }
 
         protected fun dispatchStdout(line: String) { stdoutFeeds.dispatch(line) }
         protected fun dispatchStderr(line: String) { stderrFeeds.dispatch(line) }
 
-        protected fun onStdoutStopped() { stdoutFeeds.withLock { clear() } }
-        protected fun onStderrStopped() { stderrFeeds.withLock { clear() } }
+        protected fun onStdoutStopped() { stdoutFeeds.withLock { clear(); stdoutStopped = true } }
+        protected fun onStderrStopped() { stderrFeeds.withLock { clear(); stderrStopped = true } }
 
         protected abstract fun startStdout()
         protected abstract fun startStderr()
@@ -185,5 +244,86 @@ public fun interface OutputFeed {
         internal fun stdoutFeedsSize(): Int = stdoutFeeds.withLock { size }
         @JvmSynthetic
         internal fun stderrFeedsSize(): Int = stderrFeeds.withLock { size }
+
+        private abstract inner class RealWaiter: Waiter(This, isDestroyed)
+    }
+
+    /**
+     * A helper to wait for `stdout` and `stderr` asynchronous
+     * output to stop after [Process.destroy] has been called.
+     *
+     * @see [Handler.stdoutWaiter]
+     * @see [Handler.stderrWaiter]
+     * */
+    public sealed class Waiter
+    @Throws(IllegalStateException::class)
+    protected constructor(
+        private val process: Process,
+        isDestroyed: Boolean,
+    ) {
+
+        /**
+         * Blocks the current thread until the [Stdio.Pipe]
+         * stops producing output.
+         *
+         * Does nothing if:
+         *  - Stdio was not [Stdio.Pipe]
+         *  - No [OutputFeed] were attached before [Process.destroy]
+         *    was called (i.e. never started)
+         *  - Has already stopped
+         *
+         * @return [Process] for chaining calls
+         * @throws [InterruptedException]
+         * @throws [UnsupportedOperationException] on Node.js
+         * */
+        @Throws(InterruptedException::class, UnsupportedOperationException::class)
+        public fun awaitStop(): Process {
+            while (isStarted() && !isStopped()) {
+                5.milliseconds.threadSleep()
+            }
+
+            return process
+        }
+
+        /**
+         * Delays the current coroutine until the [Stdio.Pipe]
+         * stops producing output.
+         *
+         * Does nothing if:
+         *  - Stdio was not [Stdio.Pipe]
+         *  - No [OutputFeed] were attached before [Process.destroy]
+         *    was called (i.e. never started)
+         *  - Has already stopped
+         *
+         * **NOTE:** This API requires the `kotlinx.coroutines` core
+         * dependency (at a minimum) in order to pass in the
+         * `kotlinx.coroutines.delay` function. Adding the dependency
+         * to `kmp-process` for a single function to use in an API
+         * that may not even be utilized (because [awaitStop] exists for
+         * non-JS) seemed ridiculous.
+         *
+         * e.g.
+         *
+         *     myDestroyedProcess.stdoutWaiter()
+         *         .awaitStopAsync(::delay)
+         *
+         * @return [Process] for chaining calls
+         * */
+        public suspend fun awaitStopAsync(
+            delay: suspend (duration: Duration) -> Unit
+        ): Process {
+            while (isStarted() && !isStopped()) {
+                delay(5.milliseconds)
+            }
+
+            return process
+        }
+
+        protected abstract fun isStarted(): Boolean
+        protected abstract fun isStopped(): Boolean
+
+        init {
+            check(isDestroyed) { "Process.destroy must be called before an OutputFeed.Waiter can be created" }
+        }
     }
 }

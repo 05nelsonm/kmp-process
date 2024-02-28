@@ -18,8 +18,9 @@ package io.matthewnelson.kmp.process
 import io.matthewnelson.immutable.collections.toImmutableList
 import io.matthewnelson.immutable.collections.toImmutableMap
 import io.matthewnelson.kmp.file.*
-import io.matthewnelson.kmp.process.internal.SyntheticAccess
+import io.matthewnelson.kmp.process.internal.*
 import io.matthewnelson.kmp.process.internal.PlatformBuilder
+import io.matthewnelson.kmp.process.internal.SyntheticAccess
 import io.matthewnelson.kmp.process.internal.appendProcessInfo
 import io.matthewnelson.kmp.process.internal.commonWaitFor
 import kotlin.contracts.ExperimentalContracts
@@ -71,17 +72,18 @@ public abstract class Process internal constructor(
      * Destroys the [Process] by:
      *  - Sending it [destroySignal] (if it has not completed yet)
      *  - Closes all input/output streams
-     *  - Stops all [OutputFeed] production
-     *      - **NOTE:** This may not be immediate if there is buffered
-     *        data on `stdout` or `stderr`. The contents of what are
-     *        left on the stream(s) will be drained which may stay live
-     *        briefly **after** destruction.
+     *  - Stops all [OutputFeed] production (See [OutputFeed.Waiter])
+     *    - **NOTE:** This may not be immediate if there is buffered
+     *      data on `stdout` or `stderr`. The contents of what are
+     *      left on the stream(s) will be drained which may stay live
+     *      briefly **after** destruction.
      *
      * This **MUST** be called after you are done with the [Process]
      * to ensure resource closure occurs.
      *
      * @see [Signal]
      * @see [Builder.spawn]
+     * @see [OutputFeed.Waiter]
      * @return this [Process] instance
      * */
     public abstract fun destroy(): Process
@@ -128,7 +130,13 @@ public abstract class Process internal constructor(
      * @throws [UnsupportedOperationException] on Node.js
      * */
     @Throws(InterruptedException::class, UnsupportedOperationException::class)
-    public abstract fun waitFor(): Int
+    public fun waitFor(): Int {
+        var exitCode: Int? = null
+        while (exitCode == null) {
+            exitCode = waitFor(Duration.INFINITE)
+        }
+        return exitCode
+    }
 
     /**
      * Blocks the current thread for the specified [duration],
@@ -142,7 +150,7 @@ public abstract class Process internal constructor(
      * @throws [UnsupportedOperationException] on Node.js
      * */
     @Throws(InterruptedException::class, UnsupportedOperationException::class)
-    public abstract fun waitFor(duration: Duration): Int?
+    public fun waitFor(duration: Duration): Int? = commonWaitFor(duration) { it.threadSleep() }
 
     /**
      * Delays the current coroutine until [Process] completion.
