@@ -25,6 +25,7 @@ import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.MemScope
 import kotlinx.cinterop.alloc
 import kotlinx.cinterop.ptr
+import kotlin.experimental.ExperimentalNativeApi
 
 @OptIn(ExperimentalForeignApi::class)
 internal actual value class PosixSpawnFileActions private actual constructor(
@@ -40,10 +41,17 @@ internal actual value class PosixSpawnFileActions private actual constructor(
         return posix_spawn_file_actions_adddup2(ref, fd, newFd)
     }
 
-    @Throws(IOException::class)
-    @Suppress("ACTUAL_ANNOTATIONS_NOT_MATCH_EXPECT")
+    @OptIn(ExperimentalNativeApi::class)
+    @Throws(IOException::class, UnsupportedOperationException::class)
     internal actual fun addchdir_np(chdir: File, scope: MemScope): Int {
-        return posix_spawn_file_actions_addchdir(chdir)
+        val platform = Platform.osFamily
+
+        @OptIn(ExperimentalNativeApi::class)
+        throw when (platform) {
+            // fall back to fork & exec
+            OsFamily.MACOSX -> UnsupportedOperationException()
+            else -> IOException("posix_spawn_file_actions_addchdirnp is not supported on $platform")
+        }
     }
 
     internal actual companion object {

@@ -30,13 +30,14 @@ internal expect value class PosixSpawnFileActions private constructor(
 
     internal fun adddup2(fd: Int, newFd: Int): Int
 
-    // On iOS, an IOException will be thrown if unavailable
-    // as fork & exec is not a thing.
-    //
     // On Linux, an UnsupportedOperationException will be thrown
     // if unavailable in order to fall back to fork & exec.
     //
-    // On macOS, the API is available so will never throw exception.
+    // On macOS, an UnsupportedOperationException will be thrown
+    // because the implementation is awful.
+    //
+    // On other Apple targets, an IOException will be thrown as
+    // it is unsupported and neither is fork & exec. End early.
     @Throws(IOException::class, UnsupportedOperationException::class)
     internal fun addchdir_np(chdir: File, scope: MemScope): Int
 
