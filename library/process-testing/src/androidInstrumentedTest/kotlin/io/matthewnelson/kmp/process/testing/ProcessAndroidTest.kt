@@ -84,21 +84,15 @@ class ProcessAndroidTest: ProcessBaseTest() {
         f.delete()
         f.deleteOnExit()
 
-        val dStdio = Stdio.File.of(d)
-        val fStdio = Stdio.File.of(f)
+        val stdioDir = Stdio.File.of(d)
+        val stdioFile = Stdio.File.of(f)
 
         val b = Process.Builder(command = "sh")
             .args("-c")
             .args("sleep 0.25")
-            .stdin(fStdio)
 
         // Should fail for not existing
-        assertFailsWith<IOException> { b.spawn {} }
-
-        b.stdin(dStdio)
-        assertTrue(d.mkdirs())
-
-        // Should fail for not being a file
+        b.stdin(stdioFile)
         assertFailsWith<IOException> { b.spawn {} }
 
         assertTrue(f.createNewFile())
@@ -107,23 +101,29 @@ class ProcessAndroidTest: ProcessBaseTest() {
 
         // Should fail for not being able to read
         assertFailsWith<IOException> { b.spawn {} }
+
+        assertTrue(d.mkdirs())
+
+        // Should fail for not being a file
+        b.stdin(stdioDir)
+        assertFailsWith<IOException> { b.spawn {} }
         b.stdin(Stdio.Pipe)
 
         // Should fail for not being a file
-        b.stdout(dStdio)
+        b.stdout(stdioDir)
         assertFailsWith<IOException> { b.spawn {} }
 
         // Should fail for not being able to write
-        b.stdout(fStdio)
+        b.stdout(stdioFile)
         assertFailsWith<IOException> { b.spawn {} }
         b.stdout(Stdio.Pipe)
 
         // Should fail for not being a file
-        b.stderr(dStdio)
+        b.stderr(stdioDir)
         assertFailsWith<IOException> { b.spawn {} }
 
         // Should fail for not being able to write
-        b.stderr(fStdio)
+        b.stderr(stdioFile)
         assertFailsWith<IOException> { b.spawn {} }
     }
 }

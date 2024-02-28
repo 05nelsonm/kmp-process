@@ -172,7 +172,7 @@ abstract class ProcessBaseTest {
         println(output.stdout)
         println(output.stderr)
         println(output)
-        assertEquals(d.canonicalPath(), output.stdout.trim())
+        assertEquals(d.canonicalPath(), output.stdout)
     }
 
     @Test

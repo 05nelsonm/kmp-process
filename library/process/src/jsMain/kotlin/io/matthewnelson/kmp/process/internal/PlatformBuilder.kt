@@ -74,13 +74,13 @@ internal actual class PlatformBuilder private actual constructor() {
         val pid = output["pid"] as Int
 
         val stdout = Buffer.wrap(output["stdout"]).let { buf ->
-            val utf8 = buf.toUtf8()
+            val utf8 = buf.toUtf8Trimmed()
             buf.fill()
             utf8
         }
 
         val stderr = Buffer.wrap(output["stderr"]).let { buf ->
-            val utf8 = buf.toUtf8()
+            val utf8 = buf.toUtf8Trimmed()
             buf.fill()
             utf8
         }
@@ -218,6 +218,17 @@ internal actual class PlatformBuilder private actual constructor() {
             }
 
             return result
+        }
+
+        private const val N = '\n'.code.toByte()
+
+        @Suppress("NOTHING_TO_INLINE")
+        private inline fun Buffer.toUtf8Trimmed(): String {
+            var limit = length.toInt()
+            if (limit == 0) return ""
+
+            if (readInt8(limit - 1) == N) limit--
+            return toUtf8(end = limit)
         }
     }
 }
