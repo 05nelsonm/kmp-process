@@ -68,6 +68,7 @@ public abstract class io/matthewnelson/kmp/process/Process : io/matthewnelson/km
 	public final field cwd Ljava/io/File;
 	public final field destroySignal Lio/matthewnelson/kmp/process/Signal;
 	public final field environment Ljava/util/Map;
+	public final field startTime Lkotlin/time/ComparableTimeMark;
 	public final field stdio Lio/matthewnelson/kmp/process/Stdio$Config;
 	public abstract fun destroy ()Lio/matthewnelson/kmp/process/Process;
 	public abstract fun exitCode ()I

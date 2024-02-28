@@ -30,7 +30,9 @@ import kotlin.jvm.JvmField
 import kotlin.jvm.JvmName
 import kotlin.jvm.JvmStatic
 import kotlin.jvm.JvmSynthetic
+import kotlin.time.ComparableTimeMark
 import kotlin.time.Duration
+import kotlin.time.TimeSource
 
 /**
  * A Process.
@@ -40,21 +42,56 @@ import kotlin.time.Duration
  * @see [OutputFeed.Handler]
  * */
 public abstract class Process internal constructor(
+
+    /**
+     * The command being executed.
+     * */
     @JvmField
     public val command: String,
+
+    /**
+     * Optional arguments being executed.
+     * */
     @JvmField
     public val args: List<String>,
+
+    /**
+     * The current working directory, or `null` if
+     * one was not set via [Builder.chdir].
+     * */
     @JvmField
     public val cwd: File?,
+
+    /**
+     * The environment that was passed.
+     * */
     @JvmField
     public val environment: Map<String, String>,
+
+    /**
+     * The I/O configuration of the process.
+     * */
     @JvmField
     public val stdio: Stdio.Config,
+
+    /**
+     * The [Signal] utilized to stop the process (if
+     * not already stopped) when [destroy] is called.
+     * */
     @JvmField
     public val destroySignal: Signal,
 
     init: SyntheticAccess
 ): OutputFeed.Handler(stdio) {
+
+    /**
+     * The "rough" start time mark of the [Process]. This is **actually**
+     * a time mark for when [Process] was instantiated, which for all
+     * platforms is immediately after the underlying platform's process
+     * implementation was created.
+     * */
+    @JvmField
+    public val startTime: ComparableTimeMark = TimeSource.Monotonic.markNow()
 
     /**
      * Information about the currently running process
