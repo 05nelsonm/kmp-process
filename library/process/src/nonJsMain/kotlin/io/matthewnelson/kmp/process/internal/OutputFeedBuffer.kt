@@ -25,7 +25,6 @@ internal class OutputFeedBuffer private constructor(maxSize: Int): OutputFeed {
 
     private val maxSize = maxSize.takeIf { it > 1 } ?: 1
     private val lines = mutableListOf<String>()
-    private val lock = Lock()
 
     @Volatile
     @get:JvmName("size")
@@ -40,36 +39,32 @@ internal class OutputFeedBuffer private constructor(maxSize: Int): OutputFeed {
     override fun onOutput(line: String) {
         if (maxSizeExceeded) return
 
-        lock.withLock {
-            if (maxSizeExceeded) return@withLock
+        // do we need to add a new line character
+        // between the previous line and this one
+        val newLineChar = if (lines.isNotEmpty()) 1 else 0
 
-            // do we need to add a new line character
-            // between the previous line and this one
-            val newLineChar = if (lines.isNotEmpty()) 1 else 0
+        val remaining = maxSize - size - newLineChar
+        if ((newLineChar + line.length) > remaining) {
+            maxSizeExceeded = true
 
-            val remaining = maxSize - size - newLineChar
-            if ((newLineChar + line.length) > remaining) {
-                maxSizeExceeded = true
-
-                if (line.isEmpty()) {
-                    lines.add(line)
-                    size += newLineChar
-                    return@withLock
-                }
-
-                val truncate = line.substring(0, remaining)
-                lines.add(truncate)
-                size += newLineChar
-                size += truncate.length
-            } else {
+            if (line.isEmpty()) {
                 lines.add(line)
                 size += newLineChar
-                size += line.length
+                return
             }
+
+            val truncate = line.substring(0, remaining)
+            lines.add(truncate)
+            size += newLineChar
+            size += truncate.length
+        } else {
+            lines.add(line)
+            size += newLineChar
+            size += line.length
         }
     }
 
-    internal fun doFinal(): String = lock.withLock {
+    internal fun doFinal(): String {
         val sb = StringBuilder(size)
         lines.joinTo(sb, separator = "\n")
         lines.clear()
@@ -78,7 +73,7 @@ internal class OutputFeedBuffer private constructor(maxSize: Int): OutputFeed {
         repeat(size) { sb.append(' ') }
         size = 0
         maxSizeExceeded = false
-        return@withLock s
+        return s
     }
 
     internal companion object {
