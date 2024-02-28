@@ -44,7 +44,3 @@ internal actual inline fun PlatformBuilder.execve(
     argv: CValuesRef<CPointerVar<ByteVar>>,
     envp: CValuesRef<CPointerVar<ByteVar>>,
 ): Int = platform.posix.execve(program.absolutePath, argv, envp)
-
-private fun kk() {
-
-}
