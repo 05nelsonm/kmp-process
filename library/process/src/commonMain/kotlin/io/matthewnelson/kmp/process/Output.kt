@@ -16,6 +16,7 @@
 package io.matthewnelson.kmp.process
 
 import io.matthewnelson.kmp.file.File
+import io.matthewnelson.kmp.process.internal.IsMobile
 import io.matthewnelson.kmp.process.internal.appendProcessInfo
 import kotlin.jvm.JvmField
 import kotlin.jvm.JvmSynthetic
@@ -73,11 +74,13 @@ public class Output private constructor(
              * on `stdout` or `stderr`. If exceeded, [Process]
              * will be terminated and output truncated.
              *
-             * Default: 2147483647 / 2
+             * Default (mobile): 1024 * 5000
+             * Default (desktop): 2147483647 / 2
              * Minimum: 1024 * 16
+             * Maximum: 2147483647
              * */
             @JvmField
-            public var maxBuffer: Int = Int.MAX_VALUE / 2
+            public var maxBuffer: Int = if (IsMobile) 1024 * 5000 else Int.MAX_VALUE / 2
 
             /**
              * Maximum number of milliseconds the [Process] is
@@ -86,6 +89,7 @@ public class Output private constructor(
              *
              * Default: 250
              * Minimum: 250
+             * Maximum: 2147483647 (ill-advised)
              * */
             @JvmField
             public var timeoutMillis: Int = MIN_TIMEOUT

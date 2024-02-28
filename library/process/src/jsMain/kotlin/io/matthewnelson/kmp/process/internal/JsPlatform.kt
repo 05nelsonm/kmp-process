@@ -30,6 +30,12 @@ internal actual val STDIO_NULL: File by lazy {
     (if (isWindows) "NUL" else "/dev/null").toFile()
 }
 
+internal actual val IsMobile: Boolean get() = try {
+    os_platform() == "android"
+} catch (_: Throwable) {
+    false
+}
+
 @Suppress("NOTHING_TO_INLINE", "ACTUAL_ANNOTATIONS_NOT_MATCH_EXPECT")
 // @Throws(UnsupportedOperationException::class)
 internal actual inline fun Duration.threadSleep() {

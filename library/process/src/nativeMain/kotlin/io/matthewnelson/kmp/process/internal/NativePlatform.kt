@@ -23,7 +23,29 @@ import platform.posix.*
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
+import kotlin.experimental.ExperimentalNativeApi
 import kotlin.time.Duration
+
+internal actual val IsMobile: Boolean get() {
+    @OptIn(ExperimentalNativeApi::class)
+    return when (Platform.osFamily) {
+        OsFamily.ANDROID,
+        OsFamily.IOS,
+        OsFamily.TVOS,
+        OsFamily.WATCHOS -> true
+        else -> false
+    }
+}
+
+@Throws(InterruptedException::class)
+@Suppress("NOTHING_TO_INLINE", "ACTUAL_ANNOTATIONS_NOT_MATCH_EXPECT")
+internal actual inline fun Duration.threadSleep() {
+    if (usleep(inWholeMicroseconds.toUInt()) == -1) {
+        // EINVAL will never happen b/c duration is
+        // max 100 millis. Must be EINTR
+        throw InterruptedException()
+    }
+}
 
 @Throws(IOException::class)
 internal fun String.toProgramFile(): File {
@@ -121,16 +143,6 @@ internal fun Map<String, String>.toEnvp(
     envp[i] = null
 
     envp
-}
-
-@Throws(InterruptedException::class)
-@Suppress("NOTHING_TO_INLINE", "ACTUAL_ANNOTATIONS_NOT_MATCH_EXPECT")
-internal actual inline fun Duration.threadSleep() {
-    if (usleep(inWholeMicroseconds.toUInt()) == -1) {
-        // EINVAL will never happen b/c duration is
-        // max 100 millis. Must be EINTR
-        throw InterruptedException()
-    }
 }
 
 @Suppress("NOTHING_TO_INLINE")
