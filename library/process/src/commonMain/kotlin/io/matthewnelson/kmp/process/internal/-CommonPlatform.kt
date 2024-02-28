@@ -26,12 +26,14 @@ import kotlin.time.Duration
 
 internal expect val STDIO_NULL: File
 
-@Suppress("NOTHING_TO_INLINE")
-@Throws(InterruptedException::class, UnsupportedOperationException::class)
-internal expect inline fun Duration.threadSleep()
+internal expect val IsMobile: Boolean
 
 @Suppress("NOTHING_TO_INLINE")
 internal inline val IsWindows: Boolean get() = STDIO_NULL.path == "NUL"
+
+@Suppress("NOTHING_TO_INLINE")
+@Throws(InterruptedException::class, UnsupportedOperationException::class)
+internal expect inline fun Duration.threadSleep()
 
 internal fun StringBuilder.appendProcessInfo(
     className: String,

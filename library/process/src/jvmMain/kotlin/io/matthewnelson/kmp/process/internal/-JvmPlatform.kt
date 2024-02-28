@@ -30,6 +30,8 @@ internal actual val STDIO_NULL: File = (System.getProperty("os.name")
     .let { isWindows -> if (isWindows) "NUL" else "/dev/null" }
     .toFile()
 
+internal actual val IsMobile: Boolean get() = ANDROID_SDK_INT != null
+
 internal val ANDROID_SDK_INT: Int? by lazy {
 
     if (
