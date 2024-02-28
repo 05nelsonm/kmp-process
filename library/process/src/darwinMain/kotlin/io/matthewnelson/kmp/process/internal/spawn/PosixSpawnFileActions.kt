@@ -41,16 +41,13 @@ internal actual value class PosixSpawnFileActions private actual constructor(
         return posix_spawn_file_actions_adddup2(ref, fd, newFd)
     }
 
-    @OptIn(ExperimentalNativeApi::class)
     @Throws(IOException::class, UnsupportedOperationException::class)
     internal actual fun addchdir_np(chdir: File, scope: MemScope): Int {
-        val platform = Platform.osFamily
-
         @OptIn(ExperimentalNativeApi::class)
-        throw when (platform) {
+        throw when (val family = Platform.osFamily) {
             // fall back to fork & exec
             OsFamily.MACOSX -> UnsupportedOperationException()
-            else -> IOException("posix_spawn_file_actions_addchdirnp is not supported on $platform")
+            else -> IOException("posix_spawn_file_actions_addchdir_np is not supported on $family")
         }
     }
 

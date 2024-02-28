@@ -129,7 +129,7 @@ internal actual class PlatformBuilder private actual constructor() {
         val pid = memScoped {
             val fileActions = posixSpawnFileActionsInit()
 
-            // try chgdir first before anything else
+            // try chdir first before anything else
             chdir?.let { fileActions.addchdir_np(it, scope = this).check() }
 
             val attrs = posixSpawnAttrInit()
@@ -246,7 +246,7 @@ internal actual class PlatformBuilder private actual constructor() {
         }
 
         when (read) {
-            // execve successful and CLOEXEC pipe's write
+            // execve successful and CLOEXEC pipe's write end
             // was closed, resulting in the read end stopping.
             0 -> null
 
