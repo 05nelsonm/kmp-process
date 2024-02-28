@@ -17,7 +17,6 @@ package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.resolve
 import io.matthewnelson.kmp.file.toFile
-import io.matthewnelson.kmp.process.IsDarwinMobile
 import io.matthewnelson.kmp.process.PROJECT_DIR_PATH
 import io.matthewnelson.kmp.process.internal.spawn.GnuLibcVersion
 import io.matthewnelson.kmp.process.internal.spawn.PosixSpawnFileActions.Companion.posixSpawnFileActionsInit
@@ -36,8 +35,8 @@ class PosixFileActionsUnitTest {
             available = isAtLeast(major = 2u, minor = 29u)
         }
 
-        // available on Linux glibc 2.29+ and macOS (so no iOS)
-        available ?: !IsDarwinMobile
+        // available on Linux glibc 2.29+
+        available!!
     }
 
     @Test

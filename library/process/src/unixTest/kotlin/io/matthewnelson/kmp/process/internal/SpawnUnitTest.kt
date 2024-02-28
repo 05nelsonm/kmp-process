@@ -37,8 +37,8 @@ class SpawnUnitTest {
             available = isAtLeast(major = 2u, minor = 29u)
         }
 
-        // available on Linux glibc 2.29+ and macOS (so no iOS)
-        available ?: !IsDarwinMobile
+        // available on Linux glibc 2.29+
+        available ?: false
     }
 
     @Test
@@ -78,7 +78,13 @@ class SpawnUnitTest {
             return
         }
 
-        val d = PROJECT_DIR_PATH.toFile().resolve("src").resolve("commonMain")
+        val d = if (chdirIsAvailable) {
+            PROJECT_DIR_PATH.toFile()
+                .resolve("src")
+                .resolve("commonMain")
+        } else {
+            null
+        }
 
         val p = spawnProcess(
             "sh",
@@ -98,7 +104,9 @@ class SpawnUnitTest {
 
         println(p)
         assertEquals(42, code)
-        assertEquals(d.path, output.firstOrNull())
+        if (d != null) {
+            assertEquals(d.path, output.firstOrNull())
+        }
     }
 
     @Test
@@ -174,7 +182,7 @@ class SpawnUnitTest {
 
     @Test
     fun givenBadChdir_whenPosixSpawn_thenThrowsException() {
-        if (IsDarwinMobile || !chdirIsAvailable) {
+        if (!chdirIsAvailable) {
             println("Skipping...")
             return
         }
