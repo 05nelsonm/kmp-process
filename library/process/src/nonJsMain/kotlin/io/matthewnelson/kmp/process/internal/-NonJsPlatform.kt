@@ -49,10 +49,16 @@ internal fun PlatformBuilder.blockingOutput(
         p.stderrFeed(stderrBuffer)
 
         try {
-            25.milliseconds.threadSleep()
+            // This is necessary to "guarantee" the stdout and
+            // stderr threads start producing output before
+            // potentially hopping out of waitFor and destroying
+            // the process if it ended already.
+            50.milliseconds.threadSleep()
         } catch (_: InterruptedException) {}
 
-        waitForCode = p.commonWaitFor(options.timeout) {
+        // Output.Options.timeout is a minimum of 250 ms,
+        // so will never be a negative value; we good.
+        waitForCode = p.commonWaitFor(options.timeout - 50.milliseconds) {
             if (stdoutBuffer.maxSizeExceeded || stderrBuffer.maxSizeExceeded) {
                 throw IllegalStateException()
             }
