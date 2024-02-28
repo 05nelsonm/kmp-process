@@ -27,13 +27,13 @@ and `Rust` [Command][url-rust-command]
 |-----------|-------------------------------------------------------------------------------------|
 | `Android` | `java.lang.ProcessBuilder`                                                          |
 | `Jvm`     | `java.lang.ProcessBuilder`                                                          |
-| `Node.js` | [spawn][url-node-spawn] or [spawnSync][url-node-spawn-sync]                         |
+| `Node.js` | [spawn][url-node-spawn] and [spawnSync][url-node-spawn-sync]                        |
 | `Linux`   | [posix_spawn][url-posix-spawn] or [fork][url-posix-fork]/[execve][url-posix-execve] |
 | `macOS`   | [posix_spawn][url-posix-spawn] or [fork][url-posix-fork]/[execve][url-posix-execve] |
 | `iOS`     | [posix_spawn][url-posix-spawn]                                                      |
 
-**NOTE:** `java.lang.ProcessBuilder` and `java.lang.Process` Java 8 APIs 
-for Android are backported and tested against API 15+.
+**NOTE:** `java.lang.ProcessBuilder` and `java.lang.Process` Java 8  
+functionality is backported for Android and tested against API 15+.
 
 ## Example
 
@@ -43,6 +43,15 @@ val builder = Process.Builder(command = "cat")
     .args("--show-ends")
     // Also accepts vararg and List<String>
     .args("--number", "--squeeze-blank")
+
+    // Change the process's working
+    // directory.
+    //
+    // WARNING: iOS is the only platform
+    // that this functionality is not supported
+    // on. Declaring chdir on iOS will result
+    // in a failure to spawn the process.
+    .chdir(myApplicationDir)
 
     // Modify the Signal to send the Process
     // when Process.destroy is called (only sent
@@ -84,15 +93,21 @@ builder.spawn().let { p ->
 // Spawned process (Async APIs for all platforms)
 //
 // Note that `kotlinx.coroutines` library is required
-// in order to pass in `kotlinx.coroutines.delay` function.
+// in order to pass in `kotlinx.coroutines.delay`
+// function.
+//
 // `kmp-process` does **not** depend on coroutines.
 myScope.launch {
 
-    // Use spawn {} (with lambda) which will automatically call destroy
-    // upon lambda closure, instead of needing the try/finally block.
+    // Use spawn {} (with lambda) which will
+    // automatically call destroy upon lambda closure,
+    // instead of needing the try/finally block.
     builder.spawn { p ->
 
-        val exitCode: Int? = p.waitForAsync(500.milliseconds, ::delay)
+        val exitCode: Int? = p.waitForAsync(
+            duration = 500.milliseconds,
+            delay = ::delay,
+        )
 
         if (exitCode == null) {
             println("Process did not complete after 500ms")
@@ -102,7 +117,7 @@ myScope.launch {
         // wait until process completes. If myScope
         // is cancelled, will automatically pop out.
         p.waitForAsync(::delay)
-    }
+    } // << Process.destroy automatically called on closure
 }
 
 // Direct output (Blocking API for all platforms)
@@ -138,7 +153,7 @@ builder.stdout(Stdio.Pipe).stderr(Stdio.Pipe).spawn { p ->
     ).waitFor(5.seconds)
 
     println("EXIT_CODE[$exitCode]")
-} // << destroy automatically called on closure
+} // << Process.destroy automatically called on closure
 ```
 
 ## Get Started

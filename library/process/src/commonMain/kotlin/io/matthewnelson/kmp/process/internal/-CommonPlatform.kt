@@ -33,6 +33,7 @@ internal fun StringBuilder.appendProcessInfo(
     exitCode: String,
     command: String,
     args: List<String>,
+    cwd: File?,
     stdio: Stdio.Config,
     destroySignal: Signal,
 ) {
@@ -59,6 +60,9 @@ internal fun StringBuilder.appendProcessInfo(
             postfix = "\n    ]\n"
         )
     }
+
+    append("    cwd: ")
+    appendLine(cwd?.path ?: "")
 
     appendLine("    stdio: [")
     stdio.toString().lines().let { lines ->

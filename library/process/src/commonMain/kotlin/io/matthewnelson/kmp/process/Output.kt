@@ -15,6 +15,7 @@
  **/
 package io.matthewnelson.kmp.process
 
+import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.process.internal.appendProcessInfo
 import kotlin.jvm.JvmField
 import kotlin.jvm.JvmSynthetic
@@ -127,6 +128,8 @@ public class Output private constructor(
         @JvmField
         public val args: List<String>,
         @JvmField
+        public val cwd: File?,
+        @JvmField
         public val environment: Map<String, String>,
         @JvmField
         public val stdio: Stdio.Config,
@@ -145,6 +148,7 @@ public class Output private constructor(
                 exitCode: Int,
                 command: String,
                 args: List<String>,
+                cwd: File?,
                 environment: Map<String, String>,
                 stdio: Stdio.Config,
                 destroySignal: Signal,
@@ -157,6 +161,7 @@ public class Output private constructor(
                     exitCode,
                     command,
                     args,
+                    cwd,
                     environment,
                     stdio,
                     destroySignal,
@@ -171,6 +176,7 @@ public class Output private constructor(
                 exitCode.toString(),
                 command,
                 args,
+                cwd,
                 stdio,
                 destroySignal
             )

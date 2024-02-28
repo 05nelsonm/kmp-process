@@ -44,6 +44,8 @@ public abstract class Process internal constructor(
     @JvmField
     public val args: List<String>,
     @JvmField
+    public val cwd: File?,
+    @JvmField
     public val environment: Map<String, String>,
     @JvmField
     public val stdio: Stdio.Config,
@@ -240,10 +242,11 @@ public abstract class Process internal constructor(
          * */
         public constructor(executable: File): this(executable.absoluteFile.normalize().path)
 
-        private val platform = PlatformBuilder.get()
         private val args = mutableListOf<String>()
-        private val stdio = Stdio.Config.Builder.get()
+        private var chdir: File? = null
         private var destroy: Signal = Signal.SIGTERM
+        private val platform = PlatformBuilder.get()
+        private val stdio = Stdio.Config.Builder.get()
 
         /**
          * Add a single argument
@@ -272,6 +275,20 @@ public abstract class Process internal constructor(
         public fun destroySignal(
             signal: Signal,
         ): Builder = apply { destroy = signal }
+
+        /**
+         * Changes the working directory of the spawned process.
+         *
+         * [directory] must exist, otherwise the process will fail
+         * to be spawned.
+         *
+         * **WARNING:** `iOS` does not support changing directories!
+         *   Specifying this option will result in a failure to
+         *   spawn a process.
+         * */
+        public fun chdir(
+            directory: File?,
+        ): Builder = apply { chdir = directory }
 
         /**
          * Set/overwrite an environment variable
@@ -360,7 +377,7 @@ public abstract class Process internal constructor(
             val args = args.toImmutableList()
             val env = platform.env.toImmutableMap()
 
-            return platform.output(command, args, env, stdio, options, destroy)
+            return platform.output(command, args, chdir, env, stdio, options, destroy)
         }
 
         /**
@@ -382,7 +399,7 @@ public abstract class Process internal constructor(
             val args = args.toImmutableList()
             val env = platform.env.toImmutableMap()
 
-            return platform.spawn(command, args, env, stdio, destroy)
+            return platform.spawn(command, args, chdir, env, stdio, destroy)
         }
 
         /**
@@ -424,6 +441,7 @@ public abstract class Process internal constructor(
             exitCode,
             command,
             args,
+            cwd,
             stdio,
             destroySignal
         )

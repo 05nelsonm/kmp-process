@@ -68,9 +68,8 @@ abstract class ProcessBaseTest {
             return
         }
 
-        val testCat = tempDir
-            .resolve("kmp_process")
-            .resolve("test.cat")
+        val tempDir = tempDir.resolve("kmp_process")
+        val testCat = tempDir.resolve("test.cat")
 
         testCat.delete()
         testCat.parentFile?.mkdirs()
@@ -86,6 +85,7 @@ abstract class ProcessBaseTest {
 
         val out = Process.Builder(command = "cat")
             .args("-")
+            .chdir(tempDir) // << exercises chdir for Android API 15+
             .stdin(Stdio.File.of(testCat))
             .output()
 
@@ -107,6 +107,7 @@ abstract class ProcessBaseTest {
         }
 
         val expected = 42
+
         val actual = Process.Builder(command = "sh")
             .args("-c")
             .args("sleep 0.25; exit $expected")
@@ -146,6 +147,30 @@ abstract class ProcessBaseTest {
             .code
 
         assertEquals(expected, actual)
+    }
+
+    @Test
+    fun givenChdir_whenExpressed_thenChangesDirectories() {
+        if (IsDarwinMobile || IsWindows) {
+            println("Skipping...")
+            return
+        }
+
+        val d = tempDir.resolve("try_chdir")
+        d.delete()
+        assertTrue(d.mkdirs())
+
+        val output = Process.Builder(command = "sh")
+            .args("-c")
+            .args("echo \"$(pwd)\"; sleep 0.25; exit 0")
+            .chdir(d)
+            .stdin(Stdio.Null)
+            .output { timeoutMillis = 500 }
+
+        println(output.stdout)
+        println(output.stderr)
+        println(output)
+        assertEquals(d.canonicalPath(), output.stdout.trim())
     }
 
     @Test
@@ -257,7 +282,7 @@ abstract class ProcessBaseTest {
     private fun Process.Builder.envHome(): Process.Builder = environment("HOME", homeDir.path)
 
     private fun ResourceInstaller.Paths.Tor.toProcessBuilder(): Process.Builder {
-        return Process.Builder(executable = tor)
+        val b = Process.Builder(executable = tor)
             .args("--DataDirectory")
             .args(dataDir.also { it.mkdirs() }.path)
             .args("--CacheDirectory")
@@ -279,5 +304,11 @@ abstract class ProcessBaseTest {
             .stdin(Stdio.Null)
             .stdout(Stdio.Pipe)
             .stderr(Stdio.Pipe)
+
+        if (!IsDarwinMobile) {
+            b.chdir(homeDir)
+        }
+
+        return b
     }
 }

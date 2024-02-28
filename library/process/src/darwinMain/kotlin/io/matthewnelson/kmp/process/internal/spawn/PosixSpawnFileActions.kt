@@ -17,6 +17,7 @@
 
 package io.matthewnelson.kmp.process.internal.spawn
 
+import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.process.internal.check
 import kotlinx.cinterop.CValuesRef
@@ -24,6 +25,7 @@ import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.MemScope
 import kotlinx.cinterop.alloc
 import kotlinx.cinterop.ptr
+import kotlin.experimental.ExperimentalNativeApi
 
 @OptIn(ExperimentalForeignApi::class)
 internal actual value class PosixSpawnFileActions private actual constructor(
@@ -37,6 +39,16 @@ internal actual value class PosixSpawnFileActions private actual constructor(
 
     internal actual fun adddup2(fd: Int, newFd: Int): Int {
         return posix_spawn_file_actions_adddup2(ref, fd, newFd)
+    }
+
+    @Throws(IOException::class, UnsupportedOperationException::class)
+    internal actual fun addchdir_np(chdir: File, scope: MemScope): Int {
+        @OptIn(ExperimentalNativeApi::class)
+        throw when (val family = Platform.osFamily) {
+            // fall back to fork & exec
+            OsFamily.MACOSX -> UnsupportedOperationException()
+            else -> IOException("posix_spawn_file_actions_addchdir_np is not supported on $family")
+        }
     }
 
     internal actual companion object {

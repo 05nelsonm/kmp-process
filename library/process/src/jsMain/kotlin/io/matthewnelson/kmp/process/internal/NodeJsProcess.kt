@@ -17,6 +17,7 @@
 
 package io.matthewnelson.kmp.process.internal
 
+import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.Stdio
@@ -26,10 +27,11 @@ internal class NodeJsProcess internal constructor(
     private val jsProcess: child_process_ChildProcess,
     command: String,
     args: List<String>,
+    chdir: File?,
     env: Map<String, String>,
     stdio: Stdio.Config,
     destroy: Signal,
-): Process(command, args, env, stdio, destroy, INIT) {
+): Process(command, args, chdir, env, stdio, destroy, INIT) {
 
     override fun destroy(): Process {
         isDestroyed = true

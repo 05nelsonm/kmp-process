@@ -58,8 +58,8 @@ class UnixStdioDescriptorUnitTest {
 
     @Test
     fun givenPosixPipe1_whenTestFunctionHasCLOEXEC_thenIsFalse() {
-        // Tests the hasCLOEXEC function to ensure that it works
-        // as expected.
+        // Tests the hasCLOEXEC function to ensure
+        // that it works as expected.
         val fds = IntArray(2) { -1 }
         fds.usePinned { pinned ->
             pipe(pinned.addressOf(0)).check()

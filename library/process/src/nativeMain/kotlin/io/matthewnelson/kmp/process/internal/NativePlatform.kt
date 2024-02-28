@@ -54,7 +54,7 @@ internal fun String.toProgramFile(): File {
             // TODO: Check stats for regular file
             //  and can execute (Unix Only)
             //  or go to next
-            //  >> https://github.com/05nelsonm/kmp-file/issues/55
+            //  See: https://github.com/05nelsonm/kmp-file/issues/55
             if (target.exists()) {
                 absolute = target
             }
