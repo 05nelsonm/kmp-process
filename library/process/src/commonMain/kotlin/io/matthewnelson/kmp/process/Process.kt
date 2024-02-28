@@ -18,8 +18,9 @@ package io.matthewnelson.kmp.process
 import io.matthewnelson.immutable.collections.toImmutableList
 import io.matthewnelson.immutable.collections.toImmutableMap
 import io.matthewnelson.kmp.file.*
-import io.matthewnelson.kmp.process.internal.SyntheticAccess
+import io.matthewnelson.kmp.process.internal.*
 import io.matthewnelson.kmp.process.internal.PlatformBuilder
+import io.matthewnelson.kmp.process.internal.SyntheticAccess
 import io.matthewnelson.kmp.process.internal.appendProcessInfo
 import io.matthewnelson.kmp.process.internal.commonWaitFor
 import kotlin.contracts.ExperimentalContracts
@@ -128,7 +129,13 @@ public abstract class Process internal constructor(
      * @throws [UnsupportedOperationException] on Node.js
      * */
     @Throws(InterruptedException::class, UnsupportedOperationException::class)
-    public abstract fun waitFor(): Int
+    public fun waitFor(): Int {
+        var exitCode: Int? = null
+        while (exitCode == null) {
+            exitCode = waitFor(Duration.INFINITE)
+        }
+        return exitCode
+    }
 
     /**
      * Blocks the current thread for the specified [duration],
@@ -142,7 +149,7 @@ public abstract class Process internal constructor(
      * @throws [UnsupportedOperationException] on Node.js
      * */
     @Throws(InterruptedException::class, UnsupportedOperationException::class)
-    public abstract fun waitFor(duration: Duration): Int?
+    public fun waitFor(duration: Duration): Int? = commonWaitFor(duration) { it.threadSleep() }
 
     /**
      * Delays the current coroutine until [Process] completion.

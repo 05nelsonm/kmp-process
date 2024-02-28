@@ -21,7 +21,6 @@ import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.Stdio
-import kotlin.time.Duration
 
 internal class NodeJsProcess internal constructor(
     private val jsProcess: child_process_ChildProcess,
@@ -70,11 +69,6 @@ internal class NodeJsProcess internal constructor(
         return result ?: -1
     }
 
-    // @Throws(UnsupportedOperationException::class)
-    override fun waitFor(): Int = throw UnsupportedOperationException(WAIT_FOR_ERR)
-    // @Throws(UnsupportedOperationException::class)
-    override fun waitFor(duration: Duration): Int = throw UnsupportedOperationException(WAIT_FOR_ERR)
-
     override fun startStdout() {
         jsProcess.stdout
             ?.onClose(::onStdoutStopped)
@@ -106,12 +100,5 @@ internal class NodeJsProcess internal constructor(
                 dispatch(line)
             }
         }
-    }
-
-    private companion object {
-
-        private const val WAIT_FOR_ERR =
-            "waitFor is not supported on Node.js. " +
-            "Use waitForAsync or Process.Builder.output()"
     }
 }

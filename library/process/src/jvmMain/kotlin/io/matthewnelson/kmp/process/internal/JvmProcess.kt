@@ -16,7 +16,6 @@
 package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.File
-import io.matthewnelson.kmp.file.InterruptedException
 import io.matthewnelson.kmp.process.internal.BufferedLineScanner.Companion.scanLines
 import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.Signal
@@ -25,7 +24,6 @@ import java.io.FileOutputStream
 import java.io.OutputStream
 import java.io.PrintStream
 import kotlin.concurrent.Volatile
-import kotlin.time.Duration
 
 internal class JvmProcess private constructor(
     private val jProcess: java.lang.Process,
@@ -102,12 +100,6 @@ internal class JvmProcess private constructor(
     }
 
     override fun pid(): Int = _pid
-
-    @Throws(InterruptedException::class)
-    override fun waitFor(): Int = jProcess.waitFor().correctExitCode()
-
-    @Throws(InterruptedException::class)
-    override fun waitFor(duration: Duration): Int? = commonWaitFor(duration) { it.threadSleep() }
 
     override fun startStdout() {
         Runnable {

@@ -18,11 +18,17 @@
 package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.File
+import io.matthewnelson.kmp.file.InterruptedException
 import io.matthewnelson.kmp.file.path
 import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.Stdio
+import kotlin.time.Duration
 
 internal expect val STDIO_NULL: File
+
+@Suppress("NOTHING_TO_INLINE")
+@Throws(InterruptedException::class, UnsupportedOperationException::class)
+internal expect inline fun Duration.threadSleep()
 
 @Suppress("NOTHING_TO_INLINE")
 internal inline val IsWindows: Boolean get() = STDIO_NULL.path == "NUL"

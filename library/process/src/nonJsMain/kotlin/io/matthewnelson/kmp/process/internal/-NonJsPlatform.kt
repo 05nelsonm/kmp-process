@@ -26,10 +26,6 @@ import io.matthewnelson.kmp.process.Stdio
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 
-@Suppress("NOTHING_TO_INLINE")
-@Throws(InterruptedException::class)
-internal expect inline fun Duration.threadSleep()
-
 @Throws(IOException::class)
 internal fun PlatformBuilder.blockingOutput(
     command: String,
