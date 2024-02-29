@@ -272,11 +272,15 @@ public fun interface OutputFeed {
          *    was called (i.e. never started)
          *  - Has already stopped
          *
+         * **NOTE:** This will always throw [InterruptedException]
+         *   on Node.js. Use [awaitStopAsync].
+         *
          * @return [Process] for chaining calls
-         * @throws [InterruptedException]
-         * @throws [UnsupportedOperationException] on Node.js
+         * @throws [InterruptedException] When:
+         *   - Platform is Node.js
+         *   - Thread this is called from on Native/Jvm was interrupted
          * */
-        @Throws(InterruptedException::class, UnsupportedOperationException::class)
+        @Throws(InterruptedException::class)
         public fun awaitStop(): Process {
             while (isStarted() && !isStopped()) {
                 5.milliseconds.threadSleep()

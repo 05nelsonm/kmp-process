@@ -55,8 +55,8 @@ internal val ANDROID_SDK_INT: Int? by lazy {
     }
 }
 
+@Suppress("NOTHING_TO_INLINE")
 @Throws(InterruptedException::class)
-@Suppress("NOTHING_TO_INLINE", "ACTUAL_ANNOTATIONS_NOT_MATCH_EXPECT")
 internal actual inline fun Duration.threadSleep() {
     Thread.sleep(inWholeMilliseconds)
 }

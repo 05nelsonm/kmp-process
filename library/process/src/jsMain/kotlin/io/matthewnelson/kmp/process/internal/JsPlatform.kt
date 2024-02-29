@@ -36,10 +36,10 @@ internal actual val IsMobile: Boolean get() = try {
     false
 }
 
+// @Throws(InterruptedException::class)
 @Suppress("NOTHING_TO_INLINE", "ACTUAL_ANNOTATIONS_NOT_MATCH_EXPECT")
-// @Throws(UnsupportedOperationException::class)
 internal actual inline fun Duration.threadSleep() {
-    throw UnsupportedOperationException("Blocking operations are not supported on Node.js. Use Async APIs or Process.Builder.output")
+    throw InterruptedException("Blocking operations are not supported on Node.js. Use Async APIs or Process.Builder.output")
 }
 
 @Suppress("NOTHING_TO_INLINE")

@@ -162,11 +162,15 @@ public abstract class Process internal constructor(
     /**
      * Blocks the current thread until [Process] completion.
      *
+     * **NOTE:** This will always throw [InterruptedException]
+     *   on Node.js. Use [waitForAsync].
+     *
      * @return The [Process.exitCode]
-     * @throws [InterruptedException]
-     * @throws [UnsupportedOperationException] on Node.js
+     * @throws [InterruptedException] When:
+     *   - Platform is Node.js
+     *   - Thread this is called from on Native/Jvm was interrupted
      * */
-    @Throws(InterruptedException::class, UnsupportedOperationException::class)
+    @Throws(InterruptedException::class)
     public fun waitFor(): Int {
         var exitCode: Int? = null
         while (exitCode == null) {
@@ -180,13 +184,17 @@ public abstract class Process internal constructor(
      * or until [Process.exitCode] is available (i.e. the
      * [Process] completed).
      *
+     * **NOTE:** This will always throw [InterruptedException]
+     *   on Node.js. Use [waitForAsync].
+     *
      * @param [duration] the [Duration] to wait
      * @return The [Process.exitCode], or null if [duration] is
      *   exceeded without [Process] completion.
-     * @throws [InterruptedException]
-     * @throws [UnsupportedOperationException] on Node.js
+     * @throws [InterruptedException] When:
+     *   - Platform is Node.js
+     *   - Thread this is called from on Native/Jvm was interrupted
      * */
-    @Throws(InterruptedException::class, UnsupportedOperationException::class)
+    @Throws(InterruptedException::class)
     public fun waitFor(duration: Duration): Int? = commonWaitFor(duration) { it.threadSleep() }
 
     /**
