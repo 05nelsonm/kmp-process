@@ -56,13 +56,17 @@ internal fun PlatformBuilder.blockingOutput(
         }
 
         if (inputBytes != null) {
-            p.input?.write(inputBytes)
+            try {
+                p.input?.write(inputBytes)
                 // Will never happen b/c Stdio.Config.Builder.build
                 // will always set stdin to Stdio.Pipe when Output.Options.input
                 // is not null, but must throw IOException instead of NPE using !!
-                ?: throw IOException("Misconfigured Stdio.Config. stdin should be Stdio.Pipe")
+                    ?: throw IOException("Misconfigured Stdio.Config. stdin should be Stdio.Pipe")
 
-            p.input.close()
+                p.input.close()
+            } finally {
+                inputBytes.fill(0)
+            }
         }
 
         try {

@@ -73,25 +73,30 @@ public class Output private constructor(
             private var _input: (() -> ByteArray)? = null
 
             /**
-             * Any input that will be passed to the process's
-             * `stdin` stream once it is spawned.
+             * Any input that needs to be passed to the process's
+             * `stdin` stream once it has spawned.
              *
              * [block] is invoked once and only once. If the
              * process fails to spawn, [block] is never invoked.
+             *
+             * **NOTE:** After being written to stdin, the array
+             * produced by [block] is zeroed out before the reference
+             * is dropped.
              *
              * **NOTE:** [block] will be called from the same
              * thread that [Process.Builder.output] is called from.
              *
              * Declaring this will override any [Process.Builder.stdin]
-             * configuration in order to use [Stdio.Pipe].
+             * configuration if it is set to something other than
+             * [Stdio.Pipe].
              * */
             public fun input(
                 block: () -> ByteArray,
             ): Builder = apply { _input = block }
 
             /**
-             * Any input that will be passed to the process's
-             * `stdin` stream once it is spawned.
+             * Any input that needs be passed to the process's
+             * `stdin` stream once it has spawned.
              *
              * [block] is invoked once and only once. If the
              * process fails to spawn, [block] is never invoked.
@@ -100,7 +105,8 @@ public class Output private constructor(
              * thread that [Process.Builder.output] is called from.
              *
              * Declaring this will override any [Process.Builder.stdin]
-             * configuration in order to use [Stdio.Pipe].
+             * configuration if it is set to something other than
+             * [Stdio.Pipe].
              * */
             public fun inputUtf8(
                 block: () -> String,
