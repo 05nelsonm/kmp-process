@@ -32,7 +32,7 @@ internal expect val IsMobile: Boolean
 internal inline val IsWindows: Boolean get() = STDIO_NULL.path == "NUL"
 
 @Suppress("NOTHING_TO_INLINE")
-@Throws(InterruptedException::class, UnsupportedOperationException::class)
+@Throws(InterruptedException::class)
 internal expect inline fun Duration.threadSleep()
 
 internal fun StringBuilder.appendProcessInfo(

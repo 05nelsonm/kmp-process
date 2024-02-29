@@ -37,8 +37,8 @@ internal actual val IsMobile: Boolean get() {
     }
 }
 
+@Suppress("NOTHING_TO_INLINE")
 @Throws(InterruptedException::class)
-@Suppress("NOTHING_TO_INLINE", "ACTUAL_ANNOTATIONS_NOT_MATCH_EXPECT")
 internal actual inline fun Duration.threadSleep() {
     if (usleep(inWholeMicroseconds.toUInt()) == -1) {
         // EINVAL will never happen b/c duration is
