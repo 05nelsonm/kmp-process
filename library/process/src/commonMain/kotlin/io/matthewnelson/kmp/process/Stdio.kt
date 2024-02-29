@@ -32,7 +32,7 @@ public sealed class Stdio private constructor() {
     /**
      * Inherit the system's standard input/output stream.
      * */
-    public data object Inherit : Stdio()
+    public data object Inherit: Stdio()
 
     /**
      * Connects the [Process] with its parent via
@@ -41,7 +41,7 @@ public sealed class Stdio private constructor() {
      * This is the default type for all [Process]
      * standard input/output streams.
      * */
-    public data object Pipe : Stdio()
+    public data object Pipe: Stdio()
 
     public companion object {
 
@@ -71,7 +71,7 @@ public sealed class Stdio private constructor() {
         public val file: io.matthewnelson.kmp.file.File,
         @JvmField
         public val append: Boolean,
-    ) : Stdio() {
+    ): Stdio() {
 
         public companion object {
 
@@ -96,7 +96,7 @@ public sealed class Stdio private constructor() {
         }
 
         override fun equals(other: Any?): Boolean {
-            return other is File
+            return  other is File
                     && other.file == file
                     && other.append == append
         }
