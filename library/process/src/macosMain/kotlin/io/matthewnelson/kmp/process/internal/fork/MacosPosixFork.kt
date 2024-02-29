@@ -27,11 +27,11 @@ import kotlinx.cinterop.ExperimentalForeignApi
 
 @Suppress("NOTHING_TO_INLINE")
 @Throws(UnsupportedOperationException::class)
-internal actual inline fun PlatformBuilder.fork(): Int = platform.posix.fork()
+internal actual inline fun PlatformBuilder.posixFork(): Int = platform.posix.fork()
 
 @Suppress("NOTHING_TO_INLINE")
 @Throws(UnsupportedOperationException::class)
-internal actual inline fun PlatformBuilder.dup2(
+internal actual inline fun PlatformBuilder.posixDup2(
     fd: Int,
     newFd: Int,
 ): Int = platform.posix.dup2(fd, newFd)
@@ -39,7 +39,7 @@ internal actual inline fun PlatformBuilder.dup2(
 @Suppress("NOTHING_TO_INLINE")
 @OptIn(ExperimentalForeignApi::class)
 @Throws(UnsupportedOperationException::class)
-internal actual inline fun PlatformBuilder.execve(
+internal actual inline fun PlatformBuilder.posixExecve(
     program: File,
     argv: CValuesRef<CPointerVar<ByteVar>>,
     envp: CValuesRef<CPointerVar<ByteVar>>,

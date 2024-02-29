@@ -26,11 +26,12 @@ import kotlinx.cinterop.ExperimentalForeignApi
 
 @Suppress("NOTHING_TO_INLINE")
 @Throws(UnsupportedOperationException::class)
-internal actual inline fun PlatformBuilder.fork(): Int = throw UnsupportedOperationException("fork is not supported on iOS")
+internal actual inline fun PlatformBuilder.posixFork(): Int =
+    throw UnsupportedOperationException("fork is not supported on iOS")
 
 @Suppress("NOTHING_TO_INLINE")
 @Throws(UnsupportedOperationException::class)
-internal actual inline fun PlatformBuilder.dup2(
+internal actual inline fun PlatformBuilder.posixDup2(
     fd: Int,
     newFd: Int,
 ): Int = throw UnsupportedOperationException("dup2 is not supported on iOS")
@@ -38,7 +39,7 @@ internal actual inline fun PlatformBuilder.dup2(
 @Suppress("NOTHING_TO_INLINE")
 @OptIn(ExperimentalForeignApi::class)
 @Throws(UnsupportedOperationException::class)
-internal actual inline fun PlatformBuilder.execve(
+internal actual inline fun PlatformBuilder.posixExecve(
     program: File,
     argv: CValuesRef<CPointerVar<ByteVar>>,
     envp: CValuesRef<CPointerVar<ByteVar>>,
