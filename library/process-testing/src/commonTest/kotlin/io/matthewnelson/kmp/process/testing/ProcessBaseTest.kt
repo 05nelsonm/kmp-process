@@ -235,6 +235,9 @@ abstract class ProcessBaseTest {
         stderrFile.delete()
         logsDir.delete()
 
+        assertFalse(stdoutFile.exists())
+        assertFalse(stderrFile.exists())
+
         installer.install().toProcessBuilder()
             .stdout(Stdio.File.of(stdoutFile, append = true))
             .stderr(Stdio.File.of(stderrFile))
