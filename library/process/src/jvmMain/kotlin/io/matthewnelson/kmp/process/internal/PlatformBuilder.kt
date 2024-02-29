@@ -54,9 +54,8 @@ internal actual class PlatformBuilder private actual constructor() {
         destroy: Signal,
     ): Process {
 
-        // Always set to default in case Process.Builder is utilized again
-        jProcessBuilder.redirectErrorStream(false)
         val isStderrSameFileAsStdout = stdio.isStderrSameFileAsStdout
+        jProcessBuilder.redirectErrorStream(isStderrSameFileAsStdout)
 
         @Suppress("NewApi")
         if (ANDROID_SDK_INT?.let { sdkInt -> sdkInt >= 24 } != false) {
@@ -64,11 +63,9 @@ internal actual class PlatformBuilder private actual constructor() {
             jProcessBuilder.redirectInput(stdio.stdin.toRedirect(isStdin = true))
             jProcessBuilder.redirectOutput(stdio.stdout.toRedirect(isStdin = false))
 
-            // Always set to default in case Process.Builder is utilized again
-            jProcessBuilder.redirectError(ProcessBuilder.Redirect.PIPE)
-
             if (isStderrSameFileAsStdout) {
-                jProcessBuilder.redirectErrorStream(true)
+                // Always set to default in case this builder is being reused
+                jProcessBuilder.redirectError(ProcessBuilder.Redirect.PIPE)
             } else {
                 jProcessBuilder.redirectError(stdio.stderr.toRedirect(isStdin = false))
             }
@@ -85,6 +82,7 @@ internal actual class PlatformBuilder private actual constructor() {
                 if (stdio !is Stdio.File) return@forEach
                 if (stdio.file == STDIO_NULL) return@forEach
 
+                // no need to check twice
                 if (name == "stderr" && isStderrSameFileAsStdout) return@forEach
 
                 if (name == "stdin") {
@@ -102,10 +100,6 @@ internal actual class PlatformBuilder private actual constructor() {
                         throw IOException("$name[${stdio.file}]: must be a writable file")
                     }
                 }
-            }
-
-            if (isStderrSameFileAsStdout) {
-                jProcessBuilder.redirectErrorStream(true)
             }
         }
 
