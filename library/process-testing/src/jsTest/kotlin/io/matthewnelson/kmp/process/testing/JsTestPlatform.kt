@@ -16,3 +16,5 @@
 package io.matthewnelson.kmp.process.testing
 
 internal actual val IsDarwinMobile: Boolean = false
+
+internal actual val IsNodeJs: Boolean = true

@@ -20,6 +20,7 @@ package io.matthewnelson.kmp.process.internal
 import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.file.InterruptedException
+import io.matthewnelson.kmp.file.wrapIOException
 import io.matthewnelson.kmp.process.Output
 import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.Stdio
@@ -47,6 +48,22 @@ internal fun PlatformBuilder.blockingOutput(
     try {
         p.stdoutFeed(stdoutBuffer)
         p.stderrFeed(stderrBuffer)
+
+        val inputBytes = try {
+            options.consumeInput()
+        } catch (t: Throwable) {
+            throw IOException("Output.Options.input invocation threw exception", t)
+        }
+
+        if (inputBytes != null) {
+            p.input?.write(inputBytes)
+                // Will never happen b/c Stdio.Config.Builder.build
+                // will always set stdin to Stdio.Pipe when Output.Options.input
+                // is not null, but must throw IOException instead of NPE using !!
+                ?: throw IOException("Misconfigured Stdio.Config. stdin should be Stdio.Pipe")
+
+            p.input.close()
+        }
 
         try {
             // This is necessary to "guarantee" the stdout and

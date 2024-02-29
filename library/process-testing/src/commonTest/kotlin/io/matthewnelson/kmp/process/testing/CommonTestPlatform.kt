@@ -21,3 +21,5 @@ import io.matthewnelson.kmp.process.Stdio
 internal val IsWindows = Stdio.Null.file.path == "NUL"
 
 internal expect val IsDarwinMobile: Boolean
+
+internal expect val IsNodeJs: Boolean

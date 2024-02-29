@@ -196,18 +196,16 @@ internal class JvmProcess private constructor(
             }
 
             when (val s = stdio.stdin) {
-                is Stdio.File -> {
-                    if (s.file != STDIO_NULL) {
-                        _stdinThread = Runnable {
-                            try {
-                                s.file.inputStream().use { iStream ->
-                                    jProcess.outputStream.use { oStream ->
-                                        iStream.writeTo(oStream)
-                                    }
+                is Stdio.File -> if (s.file != STDIO_NULL) {
+                    _stdinThread = Runnable {
+                        try {
+                            s.file.inputStream().use { iStream ->
+                                jProcess.outputStream.use { oStream ->
+                                    iStream.writeTo(oStream)
                                 }
-                            } catch (_: Throwable) {}
-                        }.execute(stdio = "stdin")
-                    }
+                            }
+                        } catch (_: Throwable) {}
+                    }.execute(stdio = "stdin")
                 }
                 is Stdio.Inherit -> {
                     // TODO: Need to think about...

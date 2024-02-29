@@ -193,6 +193,28 @@ abstract class ProcessBaseTest {
     }
 
     @Test
+    fun givenOutput_whenInput_thenStdoutIsAsExpected() {
+        if (IsDarwinMobile || IsWindows || IsNodeJs /* TODO: Implement Node.js */ ) {
+            println("Skipping...")
+            return
+        }
+
+        val expected = "Hello World 123!"
+        val out = Process.Builder(command = "cat")
+            .args("-")
+            // should be automatically set
+            // to Pipe because there is input
+            .stdin(Stdio.Inherit)
+            .output {
+                inputUtf8 { expected }
+            }
+
+        assertEquals(Stdio.Pipe, out.processInfo.stdio.stdin)
+        assertEquals(expected, out.stdout)
+        assertEquals("", out.stderr)
+    }
+
+    @Test
     fun givenStderrFile_whenSameAsStdout_thenStderrRedirectedToStdout() = runTest {
         if (IsDarwinMobile || IsWindows) {
             println("Skipping...")
