@@ -49,7 +49,7 @@ internal constructor(
         }
     }
 
-    private val lock = Lock()
+    private val destroyLock = Lock()
     private val _exitCode = AtomicReference<Int?>(null)
 
     private val stdoutWorker = Instance(create = {
@@ -66,39 +66,36 @@ internal constructor(
         Worker.start("stderr", reader, ::dispatchStderr, ::onStderrStopped)
     })
 
-    override fun destroy(): Process {
+    override fun destroy(): Process = destroyLock.withLock {
+        val hasBeenDestroyed = isDestroyed
         isDestroyed = true
 
-        lock.withLock {
-            if (isAlive) {
-                val s = when (destroySignal) {
-                    Signal.SIGTERM -> SIGTERM
-                    Signal.SIGKILL -> SIGKILL
-                }
-
-                kill(pid, s)
-
-                isAlive
+        if (isAlive) {
+            val s = when (destroySignal) {
+                Signal.SIGTERM -> SIGTERM
+                Signal.SIGKILL -> SIGKILL
             }
 
-            val hasBeenClosed = handle.isClosed
+            kill(pid, s)
 
-            handle.close()
-
-            if (!hasBeenClosed) {
-                stdoutWorker
-                    .getOrNull()
-                    ?.requestTermination(processScheduledJobs = false)
-                    ?.result
-
-                stderrWorker
-                    .getOrNull()
-                    ?.requestTermination(processScheduledJobs = false)
-                    ?.result
-            }
+            isAlive
         }
 
-        return this
+        handle.close()
+
+        if (!hasBeenDestroyed) {
+            stdoutWorker
+                .getOrNull()
+                ?.requestTermination(processScheduledJobs = false)
+                ?.result
+
+            stderrWorker
+                .getOrNull()
+                ?.requestTermination(processScheduledJobs = false)
+                ?.result
+        }
+
+        this
     }
 
     @Throws(IllegalStateException::class)
