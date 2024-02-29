@@ -18,6 +18,7 @@ package io.matthewnelson.kmp.process
 import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.process.internal.IsMobile
 import io.matthewnelson.kmp.process.internal.appendProcessInfo
+import kotlin.concurrent.Volatile
 import kotlin.jvm.JvmField
 import kotlin.jvm.JvmSynthetic
 import kotlin.time.Duration
@@ -61,13 +62,49 @@ public class Output private constructor(
      * @see [Builder]
      * */
     public class Options private constructor(
+        @Volatile
+        private var input: (() -> ByteArray)?,
         internal val maxBuffer: Int,
         internal val timeout: Duration,
     ) {
 
         public class Builder private constructor() {
 
-            // TODO: input
+            private var _input: (() -> ByteArray)? = null
+
+            /**
+             * Any input that will be passed to the process's
+             * `stdin` stream once it is spawned.
+             *
+             * [block] is invoked once and only once. If the
+             * process fails to spawn, [block] is never invoked.
+             *
+             * **NOTE:** [block] will be called from the same
+             * thread that [Process.Builder.output] is called from.
+             *
+             * Declaring this will override any [Process.Builder.stdin]
+             * configuration in order to use [Stdio.Pipe].
+             * */
+            public fun input(
+                block: () -> ByteArray,
+            ): Builder = apply { _input = block }
+
+            /**
+             * Any input that will be passed to the process's
+             * `stdin` stream once it is spawned.
+             *
+             * [block] is invoked once and only once. If the
+             * process fails to spawn, [block] is never invoked.
+             *
+             * **NOTE:** [block] will be invoked from the same
+             * thread that [Process.Builder.output] is called from.
+             *
+             * Declaring this will override any [Process.Builder.stdin]
+             * configuration in order to use [Stdio.Pipe].
+             * */
+            public fun inputUtf8(
+                block: () -> String,
+            ): Builder = input { block().encodeToByteArray() }
 
             /**
              * Maximum number of bytes that can be buffered
@@ -112,9 +149,19 @@ public class Output private constructor(
                         if (millis < MIN_TIMEOUT) MIN_TIMEOUT else millis
                     }
 
-                    return Options(maxBuffer, timeout.milliseconds)
+                    return Options(b._input, maxBuffer, timeout.milliseconds)
                 }
             }
+        }
+
+        @get:JvmSynthetic
+        internal val hasInput: Boolean get() = input != null
+
+        @JvmSynthetic
+        internal fun consumeInput(): ByteArray? {
+            val i = input ?: return null
+            input = null
+            return i()
         }
     }
 

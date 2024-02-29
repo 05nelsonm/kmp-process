@@ -34,7 +34,16 @@ internal class JvmProcess private constructor(
     env: Map<String, String>,
     stdio: Stdio.Config,
     destroy: Signal,
-): Process(command, args, chdir, env, stdio, destroy, INIT) {
+): Process(
+    command,
+    args,
+    chdir,
+    env,
+    stdio,
+    if (stdio.stdin is Stdio.Pipe) jProcess.outputStream else null,
+    destroy,
+    INIT,
+) {
 
     private val _pid: Int by lazy {
         // First try parsing toString output

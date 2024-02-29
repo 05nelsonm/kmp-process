@@ -15,8 +15,7 @@
  **/
 package io.matthewnelson.kmp.process
 
-import kotlin.test.Test
-import kotlin.test.assertEquals
+import kotlin.test.*
 import kotlin.time.Duration.Companion.milliseconds
 
 class OutputOptionsUnitTest {
@@ -30,5 +29,16 @@ class OutputOptionsUnitTest {
 
         assertEquals(250.milliseconds, o.timeout)
         assertEquals(1024 * 16, o.maxBuffer)
+    }
+
+    @Test
+    fun givenOptions_whenInputConsumed_thenDereferencesCallback() {
+        val o = Output.Options.Builder.build {
+            input { "Hello".encodeToByteArray() }
+        }
+
+        assertTrue(o.hasInput)
+        assertNotNull(o.consumeInput())
+        assertNull(o.consumeInput())
     }
 }

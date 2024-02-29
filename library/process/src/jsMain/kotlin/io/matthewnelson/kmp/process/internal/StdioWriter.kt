@@ -13,28 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("ClassName")
-@file:JsModule("stream")
-@file:JsNonModule
-
 package io.matthewnelson.kmp.process.internal
 
-/** [docs](https://nodejs.org/api/stream.html#class-streamreadable) */
-@JsName("Readable")
-internal open external class stream_Readable {
+import io.matthewnelson.kmp.process.StdinStream
 
-    internal fun <R> on(
-        eventName: String,
-        listener: Function<R>,
-    ): stream_Readable
-}
+internal class StdioWriter internal constructor(
+    private val stream: stream_Writable,
+): StdinStream() {
 
-/** [docs](https://nodejs.org/api/stream.html#class-streamwritable) */
-@JsName("Writable")
-internal open external class stream_Writable {
+    // @Throws(IllegalArgumentException::class, IndexOutOfBoundsException::class, IOException::class)
+    override fun write(buf: ByteArray, offset: Int, len: Int) {
+        // TODO
+        super.write(buf, offset, len)
+    }
 
-    internal fun <R> on(
-        eventName: String,
-        listener: Function<R>,
-    ): stream_Writable
+    // @Throws(IOException::class)
+    override fun flush() {
+        // TODO
+        super.flush()
+    }
+
+    // @Throws(IOException::class)
+    override fun close() {
+        // TODO
+        super.close()
+    }
 }

@@ -75,6 +75,13 @@ public abstract class Process internal constructor(
     public val stdio: Stdio.Config,
 
     /**
+     * A writeable stream to send data to the process,
+     * or `null` if `stdin` is not [Stdio.Pipe].
+     * */
+    @JvmField
+    public val input: StdinStream?,
+
+    /**
      * The [Signal] utilized to stop the process (if
      * not already stopped) when [destroy] is called.
      * */
