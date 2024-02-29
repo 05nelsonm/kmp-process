@@ -16,9 +16,11 @@
 package io.matthewnelson.kmp.process
 
 import io.matthewnelson.kmp.file.IOException
+import io.matthewnelson.kmp.file.normalize
 import io.matthewnelson.kmp.file.parentFile
 import io.matthewnelson.kmp.file.toFile
 import io.matthewnelson.kmp.process.internal.STDIO_NULL
+import io.matthewnelson.kmp.process.internal.isCanonicallyEqualTo
 import kotlin.jvm.*
 
 /**
@@ -87,7 +89,7 @@ public sealed class Stdio private constructor() {
                 append: Boolean = false,
             ): File {
                 if (file == STDIO_NULL) return NULL
-                return File(file, append)
+                return File(file.normalize(), append)
             }
 
             private val NULL = File(STDIO_NULL, append = false)
@@ -135,16 +137,23 @@ public sealed class Stdio private constructor() {
                 val stdout = if (isOutput) Pipe else stdout
                 val stderr = if (isOutput) Pipe else stderr
 
-                listOf(stdout, stderr).forEach { stdio ->
+                listOf(
+                    "stdout" to stdout,
+                    "stderr" to stderr
+                ).forEach { (name, stdio) ->
                     if (stdio !is File) return@forEach
                     if (stdio.file == STDIO_NULL) return@forEach
+
+                    if (stdin is File && stdin.file.isCanonicallyEqualTo(stdio.file)) {
+                        throw IOException("$name cannot be the same file as stdin")
+                    }
 
                     val parent = stdio.file
                         .parentFile
                         ?: return@forEach
 
                     if (!parent.exists() && !parent.mkdirs()) {
-                        throw IOException("Failed to create parent directory for $stdio")
+                        throw IOException("Failed to create parent directory for $name[${stdio.file}]")
                     }
                 }
 
@@ -157,6 +166,21 @@ public sealed class Stdio private constructor() {
                 internal fun get() = Builder()
             }
         }
+
+        @get:JvmSynthetic
+        internal val isStderrSameFileAsStdout: Boolean get() {
+            if (stdout !is File) return false
+            if (stderr !is File) return false
+
+            return stdout.file.isCanonicallyEqualTo(stderr.file)
+        }
+
+        @JvmSynthetic
+        internal fun iterator(): Iterator<Pair<String, Stdio>> = listOf(
+            "stdin" to stdin,
+            "stdout" to stdout,
+            "stderr" to stderr,
+        ).iterator()
 
         override fun equals(other: Any?): Boolean {
             return  other is Config

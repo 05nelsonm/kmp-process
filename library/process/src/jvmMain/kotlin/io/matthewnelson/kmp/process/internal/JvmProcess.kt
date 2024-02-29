@@ -27,6 +27,7 @@ import kotlin.concurrent.Volatile
 
 internal class JvmProcess private constructor(
     private val jProcess: java.lang.Process,
+    isStderrRedirectedToStdout: Boolean,
     command: String,
     args: List<String>,
     chdir: File?,
@@ -231,10 +232,12 @@ internal class JvmProcess private constructor(
                 is Stdio.Pipe -> { /* do nothing */ }
             }
 
-            when (val o = stdio.stderr) {
-                is Stdio.File -> jProcess.errorStream.redirectTo("stderr", o)
-                is Stdio.Inherit -> jProcess.errorStream.redirectTo("stderr", System.err)
-                is Stdio.Pipe -> { /* do nothing */ }
+            if (!isStderrRedirectedToStdout) {
+                when (val o = stdio.stderr) {
+                    is Stdio.File -> jProcess.errorStream.redirectTo("stderr", o)
+                    is Stdio.Inherit -> jProcess.errorStream.redirectTo("stderr", System.err)
+                    is Stdio.Pipe -> { /* do nothing */ }
+                }
             }
         }
     }
@@ -244,6 +247,7 @@ internal class JvmProcess private constructor(
         @JvmSynthetic
         internal fun of(
             jProcess: java.lang.Process,
+            isStderrRedirectedToStdout: Boolean,
             command: String,
             args: List<String>,
             chdir: File?,
@@ -252,6 +256,7 @@ internal class JvmProcess private constructor(
             destroy: Signal,
         ): JvmProcess = JvmProcess(
             jProcess,
+            isStderrRedirectedToStdout,
             command,
             args,
             chdir,

@@ -195,7 +195,9 @@ public abstract class Process internal constructor(
      *   - Thread this is called from on Native/Jvm was interrupted
      * */
     @Throws(InterruptedException::class)
-    public fun waitFor(duration: Duration): Int? = commonWaitFor(duration) { it.threadSleep() }
+    public fun waitFor(
+        duration: Duration,
+    ): Int? = commonWaitFor(duration) { it.threadSleep() }
 
     /**
      * Delays the current coroutine until [Process] completion.

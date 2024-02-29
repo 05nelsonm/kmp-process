@@ -176,6 +176,56 @@ abstract class ProcessBaseTest {
     }
 
     @Test
+    fun givenOutput_whenError_thenStderrIsAsExpected() {
+        if (IsDarwinMobile || IsWindows) {
+            println("Skipping...")
+            return
+        }
+
+        val expected = "Hello World!"
+        val out = Process.Builder(command = "sh")
+            .args("-c")
+            .args("echo 1>&2 \"$expected\"")
+            .output()
+
+        assertEquals("", out.stdout)
+        assertEquals(expected, out.stderr)
+    }
+
+    @Test
+    fun givenStderrFile_whenSameAsStdout_thenStderrRedirectedToStdout() = runTest {
+        if (IsDarwinMobile || IsWindows) {
+            println("Skipping...")
+            return@runTest
+        }
+
+        val f = tempDir
+            .resolve("kmp_process_redirect")
+            .resolve("stdout_stderr.txt")
+
+        if (f.exists() && !f.delete()) {
+            fail("Failed to delete test file[$f]")
+        }
+
+        Process.Builder(command = "sh")
+            .args("-c")
+            .args("echo \"stdout\"; echo 1>&2 \"stderr\"")
+            .stdin(Stdio.Null)
+            .stdout(Stdio.File.of(f))
+            .stderr(Stdio.File.of(f))
+            .spawn { p ->
+                p.waitForAsync(::delay)
+
+                delayTest(250.milliseconds)
+            }
+
+        val lines = f.readUtf8().lines()
+        assertEquals(3, lines.size)
+        assertEquals("stdout", lines[0])
+        assertEquals("stderr", lines[1])
+    }
+
+    @Test
     open fun givenExecutable_whenOutputToFile_thenIsAsExpected() = runTest(timeout = 25.seconds) {
         val logsDir = homeDir.resolve("logs")
         val stdoutFile = logsDir.resolve("tor.log")
@@ -184,6 +234,9 @@ abstract class ProcessBaseTest {
         stdoutFile.delete()
         stderrFile.delete()
         logsDir.delete()
+
+        assertFalse(stdoutFile.exists())
+        assertFalse(stderrFile.exists())
 
         installer.install().toProcessBuilder()
             .stdout(Stdio.File.of(stdoutFile, append = true))

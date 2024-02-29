@@ -22,9 +22,9 @@ import io.matthewnelson.kmp.process.Output
 import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.Stdio
-import io.matthewnelson.kmp.process.internal.fork.dup2
-import io.matthewnelson.kmp.process.internal.fork.execve
-import io.matthewnelson.kmp.process.internal.fork.fork
+import io.matthewnelson.kmp.process.internal.fork.posixDup2
+import io.matthewnelson.kmp.process.internal.fork.posixExecve
+import io.matthewnelson.kmp.process.internal.fork.posixFork
 import io.matthewnelson.kmp.process.internal.spawn.GnuLibcVersion
 import io.matthewnelson.kmp.process.internal.spawn.PosixSpawnAttrs.Companion.posixSpawnAttrInit
 import io.matthewnelson.kmp.process.internal.spawn.PosixSpawnFileActions.Companion.posixSpawnFileActionsInit
@@ -206,8 +206,8 @@ internal actual class PlatformBuilder private actual constructor() {
         }
 
         val pid = try {
-            fork().check()
-        } catch (e: IOException) {
+            posixFork().check()
+        } catch (e: Exception) {
             handle.close()
             pipe.close()
             throw e
@@ -313,7 +313,7 @@ internal actual class PlatformBuilder private actual constructor() {
 
             try {
                 handle.dup2 { fd, newFd ->
-                    when (dup2(fd, newFd)) {
+                    when (posixDup2(fd, newFd)) {
                         -1 -> {
                             err = errno
                             IOException()
@@ -334,7 +334,7 @@ internal actual class PlatformBuilder private actual constructor() {
                 val argv = args.toArgv(program = program, scope = this)
                 val envp = env.toEnvp(scope = this)
 
-                execve(program, argv, envp)
+                posixExecve(program, argv, envp)
 
                 // exec failed to replace child process with program
                 errno
