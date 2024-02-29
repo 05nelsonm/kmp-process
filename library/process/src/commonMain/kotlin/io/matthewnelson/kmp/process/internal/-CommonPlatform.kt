@@ -17,9 +17,7 @@
 
 package io.matthewnelson.kmp.process.internal
 
-import io.matthewnelson.kmp.file.File
-import io.matthewnelson.kmp.file.InterruptedException
-import io.matthewnelson.kmp.file.path
+import io.matthewnelson.kmp.file.*
 import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.Stdio
 import kotlin.time.Duration
@@ -34,6 +32,19 @@ internal inline val IsWindows: Boolean get() = STDIO_NULL.path == "NUL"
 @Suppress("NOTHING_TO_INLINE")
 @Throws(InterruptedException::class)
 internal expect inline fun Duration.threadSleep()
+
+@Suppress("NOTHING_TO_INLINE")
+internal inline fun File.isCanonicallyEqualTo(other: File): Boolean {
+    if (this == other) return true
+
+    val (thisFile, otherFile) = try {
+        canonicalFile() to other.canonicalFile()
+    } catch (_: IOException) {
+        absoluteFile.normalize() to other.absoluteFile.normalize()
+    }
+
+    return thisFile == otherFile
+}
 
 internal fun StringBuilder.appendProcessInfo(
     className: String,

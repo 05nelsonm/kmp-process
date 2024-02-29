@@ -179,8 +179,14 @@ internal actual class PlatformBuilder private actual constructor() {
                 val jsStdout = stdout.toJsStdio(isStdin = false)
                 descriptors[1] = jsStdout as? Number
 
-                val jsStderr = stderr.toJsStdio(isStdin = false)
-                descriptors[2] = jsStderr as? Number
+                val jsStderr = if (isStderrSameFileAsStdout) {
+                    // use the same file descriptor
+                    jsStdout
+                } else {
+                    val stdio = stderr.toJsStdio(isStdin = false)
+                    descriptors[2] = stdio as? Number
+                    stdio
+                }
 
                 arrayOf(jsStdin, jsStdout, jsStderr)
             } to descriptors

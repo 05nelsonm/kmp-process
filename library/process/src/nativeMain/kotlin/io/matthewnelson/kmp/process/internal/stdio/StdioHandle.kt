@@ -123,7 +123,11 @@ internal class StdioHandle private constructor(
             val stderrFD = try {
                 when (val s = stderr) {
                     is Stdio.Inherit -> StdioDescriptor.Single.Stderr
-                    is Stdio.File -> s.fdOpen(isStdin = false)
+                    is Stdio.File -> if (isStderrSameFileAsStdout) {
+                        stdoutFD
+                    } else {
+                        s.fdOpen(isStdin = false)
+                    }
                     is Stdio.Pipe -> s.fdOpen()
                 }
             } catch (e: IOException) {

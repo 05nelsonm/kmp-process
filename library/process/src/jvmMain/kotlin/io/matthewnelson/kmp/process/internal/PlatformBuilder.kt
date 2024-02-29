@@ -54,12 +54,24 @@ internal actual class PlatformBuilder private actual constructor() {
         destroy: Signal,
     ): Process {
 
+        // Always set to default in case Process.Builder is utilized again
+        jProcessBuilder.redirectErrorStream(false)
+        val isStderrSameFileAsStdout = stdio.isStderrSameFileAsStdout
+
         @Suppress("NewApi")
         if (ANDROID_SDK_INT?.let { sdkInt -> sdkInt >= 24 } != false) {
             // Only available on Android Runtime 24+ & Java 8+
             jProcessBuilder.redirectInput(stdio.stdin.toRedirect(isStdin = true))
             jProcessBuilder.redirectOutput(stdio.stdout.toRedirect(isStdin = false))
-            jProcessBuilder.redirectError(stdio.stderr.toRedirect(isStdin = false))
+
+            // Always set to default in case Process.Builder is utilized again
+            jProcessBuilder.redirectError(ProcessBuilder.Redirect.PIPE)
+
+            if (isStderrSameFileAsStdout) {
+                jProcessBuilder.redirectErrorStream(true)
+            } else {
+                jProcessBuilder.redirectError(stdio.stderr.toRedirect(isStdin = false))
+            }
         } else {
             // Android 23 and below
 
@@ -69,15 +81,13 @@ internal actual class PlatformBuilder private actual constructor() {
             // This is to mitigate any potential failures of the
             // supplemental redirect implementation before Process
             // creation. Not perfect by any means, but does the job.
-            listOf(
-                0 to stdio.stdin,
-                1 to stdio.stdout,
-                2 to stdio.stderr
-            ).forEach { (index, stdio) ->
+            stdio.iterator().forEach { (name, stdio) ->
                 if (stdio !is Stdio.File) return@forEach
                 if (stdio.file == STDIO_NULL) return@forEach
 
-                if (index == 0) {
+                if (name == "stderr" && isStderrSameFileAsStdout) return@forEach
+
+                if (name == "stdin") {
                     if (!stdio.file.exists()) {
                         throw FileNotFoundException("stdin[${stdio.file}]")
                     }
@@ -89,10 +99,13 @@ internal actual class PlatformBuilder private actual constructor() {
                     if (!stdio.file.exists()) return@forEach
 
                     if (!stdio.file.isFile || !stdio.file.canWrite()) {
-                        val name = if (index == 1) "stdout" else "stderr"
                         throw IOException("$name[${stdio.file}]: must be a writable file")
                     }
                 }
+            }
+
+            if (isStderrSameFileAsStdout) {
+                jProcessBuilder.redirectErrorStream(true)
             }
         }
 
@@ -122,10 +135,12 @@ internal actual class PlatformBuilder private actual constructor() {
             }
         } ?: destroy
 
+        val isStderrRedirectedToStdout = jProcessBuilder.redirectErrorStream()
         val jProcess = jProcessBuilder.start()
 
         return JvmProcess.of(
             jProcess,
+            isStderrRedirectedToStdout,
             command,
             args,
             chdir,

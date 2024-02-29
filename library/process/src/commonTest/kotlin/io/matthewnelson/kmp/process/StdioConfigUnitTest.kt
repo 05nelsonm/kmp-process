@@ -15,11 +15,13 @@
  **/
 package io.matthewnelson.kmp.process
 
+import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.file.resolve
 import io.matthewnelson.kmp.file.toFile
 import io.matthewnelson.kmp.process.internal.STDIO_NULL
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 
 class StdioConfigUnitTest {
 
@@ -32,6 +34,29 @@ class StdioConfigUnitTest {
 
         val config = b.build(null)
         assertEquals(false, (config.stdin as Stdio.File).append)
+    }
+
+    @Test
+    fun givenBuilder_whenStdinFileIsSameAsOutputFile_thenThrowsException() {
+        val b = Stdio.Config.Builder.get()
+
+        b.stdin = Stdio.Null
+        b.stdout = Stdio.Null
+        b.stderr = Stdio.Null
+
+        // Null file should not throw exception
+        b.build(null)
+        b.stderr = Stdio.Pipe
+
+        val f = Stdio.File.of(PROJECT_DIR_PATH.toFile().resolve("build.gradle.kts"))
+        b.stdin = f
+        b.stdout = f
+
+        assertFailsWith<IOException> { b.build(null) }
+        b.stdout = Stdio.Pipe
+
+        b.stderr = f
+        assertFailsWith<IOException> { b.build(null) }
     }
 
     @Test
