@@ -16,6 +16,7 @@
 package io.matthewnelson.kmp.process
 
 import io.matthewnelson.kmp.file.File
+import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.process.internal.IsMobile
 import io.matthewnelson.kmp.process.internal.appendProcessInfo
 import kotlin.concurrent.Volatile
@@ -76,8 +77,11 @@ public class Output private constructor(
              * Any input that needs to be passed to the process's
              * `stdin` stream once it has spawned.
              *
-             * [block] is invoked once and only once. If the
-             * process fails to spawn, [block] is never invoked.
+             * [block] is invoked once and only once. On Jvm/Native,
+             * if the process fails to spawn then [block] is never
+             * invoked. On Js there is no way to lazily provide
+             * the input, so it is always invoked before spawning
+             * the process.
              *
              * **NOTE:** After being written to stdin, the array
              * produced by [block] is zeroed out before the reference
@@ -98,8 +102,11 @@ public class Output private constructor(
              * Any input that needs be passed to the process's
              * `stdin` stream once it has spawned.
              *
-             * [block] is invoked once and only once. If the
-             * process fails to spawn, [block] is never invoked.
+             * [block] is invoked once and only once. On Jvm/Native,
+             * if the process fails to spawn then [block] is never
+             * invoked. On Js there is no way to lazily provide
+             * the input, so it is always invoked before spawning
+             * the process.
              *
              * **NOTE:** [block] will be invoked from the same
              * thread that [Process.Builder.output] is called from.
@@ -166,9 +173,20 @@ public class Output private constructor(
         @JvmSynthetic
         internal fun consumeInput(): ByteArray? {
             val i = input ?: return null
-            input = null
-            return i()
+            dropInput()
+
+            val result = try {
+                i()
+            } catch (t: Throwable) {
+                // wrap it for caller
+                throw IOException("Output.Options.input invocation threw exception", t)
+            }
+
+            return result
         }
+
+        @JvmSynthetic
+        internal fun dropInput() { input = null }
     }
 
     /**

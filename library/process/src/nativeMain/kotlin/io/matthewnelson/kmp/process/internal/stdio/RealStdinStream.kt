@@ -26,7 +26,7 @@ import kotlinx.cinterop.usePinned
 import platform.posix.EINTR
 import platform.posix.errno
 
-internal class StdioWriter internal constructor(
+internal class RealStdinStream internal constructor(
     private val pipe: StdioDescriptor.Pair
 ): StdinStream() {
 

@@ -75,8 +75,9 @@ public abstract class Process internal constructor(
     public val stdio: Stdio.Config,
 
     /**
-     * A writeable stream to send data to the process,
-     * or `null` if `stdin` is not [Stdio.Pipe].
+     * A stream to write data to the process's standard
+     * input, or `null` if [Stdio.Config.stdin] is not
+     * [Stdio.Pipe].
      * */
     @JvmField
     public val input: StdinStream?,

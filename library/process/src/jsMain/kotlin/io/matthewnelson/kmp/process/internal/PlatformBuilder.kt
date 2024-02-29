@@ -22,6 +22,7 @@ import io.matthewnelson.kmp.process.Output
 import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.Stdio
+import org.khronos.webgl.Int8Array
 
 // jsMain
 internal actual class PlatformBuilder private actual constructor() {
@@ -54,10 +55,18 @@ internal actual class PlatformBuilder private actual constructor() {
         destroy: Signal,
     ): Output {
         val jsEnv = env.toJsEnv()
-        val (jsStdio, descriptors) = stdio.toJsStdio()
+        val (jsStdio, descriptors) = try {
+            stdio.toJsStdio()
+        } catch (e: IOException) {
+            options.dropInput()
+            throw e
+        }
+
+        val input = descriptors.closeOnFailure{ options.consumeInput() }
 
         val opts = js("{}")
         chdir?.let { opts["cwd"] = it.path }
+        input?.let { opts["input"] = it.unsafeCast<Int8Array>() }
         opts["stdio"] = jsStdio
         opts["env"] = jsEnv
         opts["timeout"] = options.timeout.inWholeMilliseconds.toInt()
@@ -68,7 +77,11 @@ internal actual class PlatformBuilder private actual constructor() {
         opts["windowsHide"] = true
 
         val output = descriptors.closeOnFailure {
-            child_process_spawnSync(command, args.toTypedArray(), opts)
+            try {
+                child_process_spawnSync(command, args.toTypedArray(), opts)
+            } finally {
+                input?.fill(0)
+            }
         }
 
         val pid = output["pid"] as Int
@@ -207,7 +220,7 @@ internal actual class PlatformBuilder private actual constructor() {
         }
 
         // @Throws(IOException::class)
-        private inline fun <T: Any> Array<Number?>.closeOnFailure(
+        private inline fun <T: Any?> Array<Number?>.closeOnFailure(
             block: () -> T,
         ): T {
             val result = try {

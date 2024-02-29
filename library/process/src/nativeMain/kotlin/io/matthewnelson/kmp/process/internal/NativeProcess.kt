@@ -46,7 +46,7 @@ internal constructor(
     chdir,
     env,
     handle.stdio,
-    handle.stdinWriter(),
+    handle.stdinStream(),
     destroy,
     INIT,
 ) {

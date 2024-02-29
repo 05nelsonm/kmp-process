@@ -194,7 +194,7 @@ abstract class ProcessBaseTest {
 
     @Test
     fun givenOutput_whenInput_thenStdoutIsAsExpected() {
-        if (IsDarwinMobile || IsWindows || IsNodeJs /* TODO: Implement Node.js */ ) {
+        if (IsDarwinMobile || IsWindows) {
             println("Skipping...")
             return
         }

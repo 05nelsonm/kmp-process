@@ -13,11 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-package io.matthewnelson.kmp.process.internal
+package io.matthewnelson.kmp.process.internal.stdio
 
 import io.matthewnelson.kmp.process.StdinStream
+import io.matthewnelson.kmp.process.internal.stream_Writable
 
-internal class StdioWriter internal constructor(
+internal class RealStdinStream internal constructor(
     private val stream: stream_Writable,
 ): StdinStream() {
 

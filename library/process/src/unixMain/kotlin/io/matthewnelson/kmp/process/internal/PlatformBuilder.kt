@@ -34,7 +34,7 @@ import io.matthewnelson.kmp.process.internal.stdio.StdioDescriptor.Pair.Companio
 import io.matthewnelson.kmp.process.internal.stdio.StdioHandle
 import io.matthewnelson.kmp.process.internal.stdio.StdioHandle.Companion.openHandle
 import io.matthewnelson.kmp.process.internal.stdio.StdioReader
-import io.matthewnelson.kmp.process.internal.stdio.StdioWriter
+import io.matthewnelson.kmp.process.internal.stdio.RealStdinStream
 import kotlinx.cinterop.*
 import org.kotlincrypto.endians.BigEndian
 import org.kotlincrypto.endians.BigEndian.Companion.toBigEndian
@@ -298,7 +298,7 @@ internal actual class PlatformBuilder private actual constructor() {
             b[4] = type
             errno.toBigEndian().copyInto(b)
             try {
-                StdioWriter(pipe).write(b)
+                RealStdinStream(pipe).write(b)
             } finally {
                 handle.close()
                 fdClose(pipe.fdWrite)
