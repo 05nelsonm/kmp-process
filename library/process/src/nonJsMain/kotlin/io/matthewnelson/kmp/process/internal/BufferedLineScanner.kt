@@ -66,15 +66,14 @@ internal class BufferedLineScanner private constructor(
             var iNext = 0
             for (i in 0 until read) {
                 if (buf[i] != N) continue
-                val s = overflow.consumeAndJoin(append = buf.decodeToString(iNext, i))
+                val line = overflow.consumeAndJoin(append = buf.decodeToString(iNext, i))
                 iNext = i + 1
 
-                dispatchLine(s)
+                dispatchLine(line)
             }
 
-            if (iNext != read) {
-                overflow.add(buf.copyOfRange(iNext, read))
-            }
+            if (iNext == read) continue
+            overflow.add(buf.copyOfRange(iNext, read))
         }
 
         if (overflow.isNotEmpty()) {

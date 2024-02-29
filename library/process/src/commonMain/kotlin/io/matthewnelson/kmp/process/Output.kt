@@ -109,7 +109,7 @@ public class Output private constructor(
                         if (max < MIN_BUFFER) MIN_BUFFER else max
                     }
                     val timeout = b.timeoutMillis.let { millis ->
-                        (if (millis < MIN_TIMEOUT) MIN_TIMEOUT else millis)
+                        if (millis < MIN_TIMEOUT) MIN_TIMEOUT else millis
                     }
 
                     return Options(maxBuffer, timeout.milliseconds)
