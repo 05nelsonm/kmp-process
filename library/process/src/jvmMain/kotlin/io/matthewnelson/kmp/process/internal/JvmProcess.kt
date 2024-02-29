@@ -161,6 +161,12 @@ internal class JvmProcess private constructor(
     }
 
     init {
+        if (stdio.stdin is Stdio.File && stdio.stdin.file == STDIO_NULL) {
+            try {
+                jProcess.outputStream.close()
+            } catch (_: Throwable) {}
+        }
+
         ANDROID_SDK_INT?.let { sdkInt ->
             if (sdkInt >= 24) return@let
 
@@ -182,11 +188,7 @@ internal class JvmProcess private constructor(
 
             when (val s = stdio.stdin) {
                 is Stdio.File -> {
-                    if (s.file == STDIO_NULL) {
-                        try {
-                            jProcess.outputStream.close()
-                        } catch (_: Throwable) {}
-                    } else {
+                    if (s.file != STDIO_NULL) {
                         _stdinThread = Runnable {
                             try {
                                 s.file.inputStream().use { iStream ->
