@@ -13,23 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
-
 package io.matthewnelson.kmp.process
 
-import io.matthewnelson.kmp.file.IOException
+import java.io.BufferedOutputStream
 
-internal expect abstract class StdinStream internal constructor() {
-
-    @Throws(IllegalArgumentException::class, IndexOutOfBoundsException::class, IOException::class)
-    public open fun write(buf: ByteArray, offset: Int, len: Int)
-
-    @Throws(IOException::class)
-    public fun write(buf: ByteArray)
-
-    @Throws(IOException::class)
-    public open fun close()
-
-    @Throws(IOException::class)
-    public open fun flush()
+/**
+ * Currently, only Jvm supports writing input to `stdin`.
+ *
+ * This extension function provides access for that.
+ * */
+public val Process.stdin: BufferedOutputStream? get() {
+    // input is only ever non-null when it is Stdio.Pipe,
+    // which on Java is a ProcessPipeOutputStream, which
+    // is an instance of BufferedOutputStream.
+    return input?.buffered()
 }

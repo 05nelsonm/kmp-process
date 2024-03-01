@@ -19,7 +19,7 @@ package io.matthewnelson.kmp.process
 
 import io.matthewnelson.kmp.file.IOException
 
-public actual abstract class StdinStream internal actual constructor() {
+internal actual abstract class StdinStream internal actual constructor() {
 
     // @Throws(IllegalArgumentException::class, IndexOutOfBoundsException::class, IOException::class)
     public actual open fun write(buf: ByteArray, offset: Int, len: Int) {

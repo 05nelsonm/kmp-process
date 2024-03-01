@@ -17,4 +17,5 @@
 
 package io.matthewnelson.kmp.process
 
-public actual typealias StdinStream = java.io.OutputStream
+@Suppress("ACTUAL_WITHOUT_EXPECT")
+internal actual typealias StdinStream = java.io.OutputStream

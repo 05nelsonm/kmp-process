@@ -13,23 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
+@file:Suppress("KotlinRedundantDiagnosticSuppress")
 
-package io.matthewnelson.kmp.process
+package io.matthewnelson.kmp.process.internal
 
-import io.matthewnelson.kmp.file.IOException
-
-internal expect abstract class StdinStream internal constructor() {
-
-    @Throws(IllegalArgumentException::class, IndexOutOfBoundsException::class, IOException::class)
-    public open fun write(buf: ByteArray, offset: Int, len: Int)
-
-    @Throws(IOException::class)
-    public fun write(buf: ByteArray)
-
-    @Throws(IOException::class)
-    public open fun close()
-
-    @Throws(IOException::class)
-    public open fun flush()
+@Suppress("NOTHING_TO_INLINE")
+@Throws(IllegalArgumentException::class, IndexOutOfBoundsException::class)
+internal inline fun ByteArray.checkBounds(offset: Int, len: Int) {
+    if (size - offset < len) throw IllegalArgumentException("Input too short")
+    if (offset < 0 || len < 0 || offset > size - len) throw IndexOutOfBoundsException()
 }

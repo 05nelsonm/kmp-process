@@ -26,6 +26,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
+import kotlin.math.min
 import kotlin.test.*
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
@@ -199,7 +200,10 @@ abstract class ProcessBaseTest {
             return
         }
 
-        val expected = "Hello World 123!"
+        val expected = buildString {
+            repeat(50_000) { appendLine(it) }
+            append("50000")
+        }
         val out = Process.Builder(command = "cat")
             .args("-")
             // should be automatically set
@@ -213,6 +217,53 @@ abstract class ProcessBaseTest {
         assertEquals(expected, out.stdout)
         assertEquals("", out.stderr)
     }
+
+//    @Test
+//    fun givenSpawn_whenInput_thenStdoutIsAsExpected() = runTest {
+//        if (IsDarwinMobile || IsWindows) {
+//            println("Skipping...")
+//            return@runTest
+//        }
+//
+//        val size = 50_000
+//        val expected = ArrayList<String>(size).apply {
+//            repeat(size) { i -> add(i.toString()) }
+//        }
+//        val actual = ArrayList<String>(size)
+//
+//        val exitCode = Process.Builder(command = "cat")
+//            .args("-")
+//            .spawn { p ->
+//                val data = expected
+//                    .joinToString("\n")
+//                    .encodeToByteArray()
+//
+//                p.stdoutFeed { line ->
+//                    actual.add(line)
+//                }
+//
+//                p.input!!.write(data)
+////                var i = 0
+////                while (i < data.size) {
+////                    val len = min(4096, data.size - i)
+////                    p.input!!.write(data, i, len)
+////                    i += len
+////                }
+//
+//                delayTest(250.milliseconds)
+//
+//                p.input!!.close()
+//
+//                p
+//            }
+//            .stdoutWaiter()
+//            .awaitStopAsync(::delay)
+//            .waitForAsync(::delay)
+//
+//        assertEquals(0, exitCode)
+//        assertEquals(expected.size, actual.size)
+//        assertContentEquals(expected, actual)
+//    }
 
     @Test
     fun givenStderrFile_whenSameAsStdout_thenStderrRedirectedToStdout() = runTest {

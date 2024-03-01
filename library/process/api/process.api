@@ -1,6 +1,10 @@
 public abstract interface annotation class io/matthewnelson/kmp/process/InternalProcessApi : java/lang/annotation/Annotation {
 }
 
+public final class io/matthewnelson/kmp/process/JvmProcessKt {
+	public static final fun getStdin (Lio/matthewnelson/kmp/process/Process;)Ljava/io/BufferedOutputStream;
+}
+
 public final class io/matthewnelson/kmp/process/Output {
 	public final field processError Ljava/lang/String;
 	public final field processInfo Lio/matthewnelson/kmp/process/Output$ProcessInfo;
@@ -70,7 +74,6 @@ public abstract class io/matthewnelson/kmp/process/Process : io/matthewnelson/km
 	public final field cwd Ljava/io/File;
 	public final field destroySignal Lio/matthewnelson/kmp/process/Signal;
 	public final field environment Ljava/util/Map;
-	public final field input Ljava/io/OutputStream;
 	public final field startTime Lkotlin/time/ComparableTimeMark;
 	public final field stdio Lio/matthewnelson/kmp/process/Stdio$Config;
 	public abstract fun destroy ()Lio/matthewnelson/kmp/process/Process;

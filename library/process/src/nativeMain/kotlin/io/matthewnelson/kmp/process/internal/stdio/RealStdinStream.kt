@@ -26,6 +26,7 @@ import kotlinx.cinterop.usePinned
 import platform.posix.EINTR
 import platform.posix.errno
 
+// TODO: Issue #77
 internal class RealStdinStream internal constructor(
     private val pipe: StdioDescriptor.Pair
 ): StdinStream() {
@@ -33,7 +34,7 @@ internal class RealStdinStream internal constructor(
     @Throws(IllegalArgumentException::class, IndexOutOfBoundsException::class, IOException::class)
     override fun write(buf: ByteArray, offset: Int, len: Int) {
         buf.checkBounds(offset, len)
-        if (pipe.isClosed) throw IOException("StdioWriter is closed")
+        if (pipe.isClosed) throw IOException("StdinStream is closed")
         if (len == 0) return
 
         @OptIn(ExperimentalForeignApi::class)
@@ -76,7 +77,5 @@ internal class RealStdinStream internal constructor(
     override fun close() { pipe.close() }
 
     @Throws(IOException::class)
-    override fun flush() {
-        // TODO
-    }
+    override fun flush() {}
 }
