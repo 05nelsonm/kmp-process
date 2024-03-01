@@ -257,8 +257,8 @@ abstract class ProcessBaseTest {
 //                p
 //            }
 //            .stdoutWaiter()
-//            .awaitStopAsync(::delay)
-//            .waitForAsync(::delay)
+//            .awaitStopAsync()
+//            .waitForAsync()
 //
 //        assertEquals(0, exitCode)
 //        assertEquals(expected.size, actual.size)
@@ -287,7 +287,7 @@ abstract class ProcessBaseTest {
             .stdout(Stdio.File.of(f))
             .stderr(Stdio.File.of(f))
             .spawn { p ->
-                p.waitForAsync(::delay)
+                p.waitForAsync()
 
                 delayTest(250.milliseconds)
             }
@@ -318,7 +318,7 @@ abstract class ProcessBaseTest {
                 println(p)
 
                 withContext(Dispatchers.Default) {
-                    p.waitForAsync(100.milliseconds, ::delay)
+                    p.waitForAsync(100.milliseconds)
                 }
 
                 // parent dir was created by Stdio.Config.Builder.build
@@ -326,7 +326,7 @@ abstract class ProcessBaseTest {
                 assertTrue(stderrFile.exists())
 
                 withContext(Dispatchers.Default) {
-                    p.waitForAsync(2.seconds, ::delay)
+                    p.waitForAsync(2.seconds)
                 }
             }
 
@@ -376,15 +376,15 @@ abstract class ProcessBaseTest {
             }
 
             withContext(Dispatchers.Default) {
-                p.waitForAsync(2.seconds, ::delay)
+                p.waitForAsync(2.seconds)
             }
 
             val exitCode = p.destroy()
                 .stdoutWaiter()
-                .awaitStopAsync(::delay)
+                .awaitStopAsync()
                 .stderrWaiter()
-                .awaitStopAsync(::delay)
-                .waitForAsync(::delay)
+                .awaitStopAsync()
+                .waitForAsync()
 
             val stdoutString = stdoutBuilder.toString()
             val stderrString = stderrBuilder.toString()

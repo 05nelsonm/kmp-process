@@ -74,7 +74,7 @@ public abstract class io/matthewnelson/kmp/process/OutputFeed$Handler : io/matth
 
 public abstract class io/matthewnelson/kmp/process/OutputFeed$Waiter : io/matthewnelson/kmp/process/Blocking$Waiter {
 	public synthetic fun <init> (Lio/matthewnelson/kmp/process/Process;ZLkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun awaitStopAsync (Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun awaitStopAsync (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
 public abstract class io/matthewnelson/kmp/process/Process : io/matthewnelson/kmp/process/OutputFeed$Handler {
@@ -91,8 +91,8 @@ public abstract class io/matthewnelson/kmp/process/Process : io/matthewnelson/km
 	public final fun isAlive ()Z
 	public abstract fun pid ()I
 	public final fun toString ()Ljava/lang/String;
-	public final fun waitForAsync (Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public final fun waitForAsync-KLykuaI (JLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun waitForAsync (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun waitForAsync-VtjQ1oo (JLkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
 public final class io/matthewnelson/kmp/process/Process$Builder {

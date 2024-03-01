@@ -36,10 +36,10 @@ class ProcessUnitTest {
                 .args("3")
                 .destroySignal(Signal.SIGTERM)
                 .spawn { process ->
-                    process.waitForAsync(250.milliseconds, ::delay)
+                    process.waitForAsync(250.milliseconds)
                     process
                     // destroy called on lambda closure
-                }.waitForAsync(::delay)
+                }.waitForAsync()
         } catch (e: IOException) {
             // Host (Window) did not have sleep available
             if (IsWindows) {
@@ -64,10 +64,10 @@ class ProcessUnitTest {
                 .args("3")
                 .destroySignal(Signal.SIGKILL)
                 .spawn { process ->
-                    process.waitForAsync(250.milliseconds, ::delay)
+                    process.waitForAsync(250.milliseconds)
                     process
                     // destroy called on lambda closure
-                }.waitForAsync(::delay)
+                }.waitForAsync()
         } catch (e: IOException) {
             // Host (Window) did not have sleep available
             if (IsWindows) {
@@ -118,7 +118,7 @@ class ProcessUnitTest {
                     assertEquals(1 + 2, process.stdoutFeedsSize())
                     assertEquals(1 + 3, process.stderrFeedsSize())
 
-                    process.waitForAsync(100.milliseconds, ::delay)
+                    process.waitForAsync(100.milliseconds)
 
                     process
                     // destroy called on lambda closure
@@ -134,9 +134,9 @@ class ProcessUnitTest {
 
         process
             .stdoutWaiter()
-            .awaitStopAsync(::delay)
+            .awaitStopAsync()
             .stderrWaiter()
-            .awaitStopAsync(::delay)
+            .awaitStopAsync()
 
         assertEquals(0, process.stdoutFeedsSize())
         assertEquals(0, process.stderrFeedsSize())
@@ -171,7 +171,7 @@ class ProcessUnitTest {
                     assertEquals(0, p.stdoutFeedsSize())
                     assertEquals(0, p.stderrFeedsSize())
 
-                    p.waitForAsync(100.milliseconds, ::delay)
+                    p.waitForAsync(100.milliseconds)
                 }
         } catch (e: IOException) {
             // Host (Window) did not have sleep available

@@ -18,11 +18,11 @@ package io.matthewnelson.kmp.process
 import io.matthewnelson.immutable.collections.toImmutableList
 import io.matthewnelson.immutable.collections.toImmutableMap
 import io.matthewnelson.kmp.file.*
-import io.matthewnelson.kmp.process.internal.*
 import io.matthewnelson.kmp.process.internal.PlatformBuilder
 import io.matthewnelson.kmp.process.internal.SyntheticAccess
 import io.matthewnelson.kmp.process.internal.appendProcessInfo
 import io.matthewnelson.kmp.process.internal.commonWaitFor
+import kotlinx.coroutines.delay
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
@@ -178,15 +178,16 @@ public abstract class Process internal constructor(
     /**
      * Delays the current coroutine until [Process] completion.
      *
+     * **NOTE:** Care must be had when using Async APIs such that,
+     * upon cancellation, [Process.destroy] is still called.
+     *
      * @see [io.matthewnelson.kmp.process.Blocking.waitFor]
      * @return The [Process.exitCode]
      * */
-    public suspend fun waitForAsync(
-        delay: suspend (duration: Duration) -> Unit,
-    ): Int {
+    public suspend fun waitForAsync(): Int {
         var exitCode: Int? = null
         while (exitCode == null) {
-            exitCode = waitForAsync(Duration.INFINITE, delay)
+            exitCode = waitForAsync(Duration.INFINITE)
         }
         return exitCode
     }
@@ -196,6 +197,9 @@ public abstract class Process internal constructor(
      * or until [Process.exitCode] is available (i.e. the
      * [Process] completed).
      *
+     * **NOTE:** Care must be had when using Async APIs such that,
+     * upon cancellation, [Process.destroy] is still called.
+     *
      * @param [duration] the [Duration] to wait
      * @see [io.matthewnelson.kmp.process.Blocking.waitFor]
      * @return The [Process.exitCode], or null if [duration] is
@@ -203,7 +207,6 @@ public abstract class Process internal constructor(
      * */
     public suspend fun waitForAsync(
         duration: Duration,
-        delay: suspend (duration: Duration) -> Unit,
     ): Int? = commonWaitFor(duration) { delay(it) }
 
     /**
@@ -429,10 +432,12 @@ public abstract class Process internal constructor(
 
             val result = try {
                 block(p)
-            } finally {
+            } catch (t: Throwable) {
                 p.destroy()
+                throw t
             }
 
+            p.destroy()
             return result
         }
     }

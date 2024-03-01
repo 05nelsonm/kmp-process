@@ -18,6 +18,7 @@
 package io.matthewnelson.kmp.process
 
 import io.matthewnelson.kmp.process.internal.SynchronizedSet
+import kotlinx.coroutines.delay
 import kotlin.concurrent.Volatile
 import kotlin.jvm.JvmField
 import kotlin.jvm.JvmSynthetic
@@ -273,9 +274,7 @@ public fun interface OutputFeed {
          * @return [Process] for chaining calls
          * @see [io.matthewnelson.kmp.process.Blocking.Waiter.awaitStop]
          * */
-        public suspend fun awaitStopAsync(
-            delay: suspend (duration: Duration) -> Unit
-        ): Process {
+        public suspend fun awaitStopAsync(): Process {
             while (isStarted() && !isStopped()) {
                 delay(5.milliseconds)
             }
