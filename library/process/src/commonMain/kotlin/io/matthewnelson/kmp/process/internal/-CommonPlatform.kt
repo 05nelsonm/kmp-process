@@ -30,10 +30,6 @@ internal expect val IsMobile: Boolean
 internal inline val IsWindows: Boolean get() = STDIO_NULL.path == "NUL"
 
 @Suppress("NOTHING_TO_INLINE")
-@Throws(InterruptedException::class)
-internal expect inline fun Duration.threadSleep()
-
-@Suppress("NOTHING_TO_INLINE")
 internal inline fun File.isCanonicallyEqualTo(other: File): Boolean {
     if (this == other) return true
 

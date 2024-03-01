@@ -17,9 +17,7 @@
 
 package io.matthewnelson.kmp.process
 
-import io.matthewnelson.kmp.file.InterruptedException
 import io.matthewnelson.kmp.process.internal.SynchronizedSet
-import io.matthewnelson.kmp.process.internal.threadSleep
 import kotlin.concurrent.Volatile
 import kotlin.jvm.JvmField
 import kotlin.jvm.JvmSynthetic
@@ -83,7 +81,7 @@ public fun interface OutputFeed {
      *
      * Upon [Process] destruction, all attached [OutputFeed] are ejected.
      * */
-    public sealed class Handler(private val stdio: Stdio.Config) {
+    public sealed class Handler(private val stdio: Stdio.Config): Blocking() {
 
         @JvmField
         @Volatile
@@ -174,7 +172,7 @@ public fun interface OutputFeed {
          *   not been called yet.
          * */
         @Throws(IllegalStateException::class)
-        public fun stdoutWaiter(): Waiter {
+        public fun stdoutWaiter(): OutputFeed.Waiter {
             return object : RealWaiter() {
                 override fun isStarted(): Boolean = stdoutStarted
                 override fun isStopped(): Boolean = stdoutStopped
@@ -189,7 +187,7 @@ public fun interface OutputFeed {
          *   not been called yet.
          * */
         @Throws(IllegalStateException::class)
-        public fun stderrWaiter(): Waiter {
+        public fun stderrWaiter(): OutputFeed.Waiter {
             return object : RealWaiter() {
                 override fun isStarted(): Boolean = stderrStarted
                 override fun isStopped(): Boolean = stderrStopped
@@ -226,6 +224,8 @@ public fun interface OutputFeed {
             return This
         }
 
+        private abstract inner class RealWaiter: OutputFeed.Waiter(This, isDestroyed)
+
         @Suppress("NOTHING_TO_INLINE", "PrivatePropertyName")
         private inline val This: Process get() = this as Process
 
@@ -244,8 +244,6 @@ public fun interface OutputFeed {
         internal fun stdoutFeedsSize(): Int = stdoutFeeds.withLock { size }
         @JvmSynthetic
         internal fun stderrFeedsSize(): Int = stderrFeeds.withLock { size }
-
-        private abstract inner class RealWaiter: Waiter(This, isDestroyed)
     }
 
     /**
@@ -258,36 +256,9 @@ public fun interface OutputFeed {
     public sealed class Waiter
     @Throws(IllegalStateException::class)
     protected constructor(
-        private val process: Process,
+        process: Process,
         isDestroyed: Boolean,
-    ) {
-
-        /**
-         * Blocks the current thread until the [Stdio.Pipe]
-         * stops producing output.
-         *
-         * Does nothing if:
-         *  - Stdio was not [Stdio.Pipe]
-         *  - No [OutputFeed] were attached before [Process.destroy]
-         *    was called (i.e. never started)
-         *  - Has already stopped
-         *
-         * **NOTE:** This will always throw [InterruptedException]
-         *   on Node.js. Use [awaitStopAsync].
-         *
-         * @return [Process] for chaining calls
-         * @throws [InterruptedException] When:
-         *   - Platform is Node.js
-         *   - Thread this is called from on Native/Jvm was interrupted
-         * */
-        @Throws(InterruptedException::class)
-        public fun awaitStop(): Process {
-            while (isStarted() && !isStopped()) {
-                5.milliseconds.threadSleep()
-            }
-
-            return process
-        }
+    ): Blocking.Waiter(process) {
 
         /**
          * Delays the current coroutine until the [Stdio.Pipe]
@@ -299,19 +270,8 @@ public fun interface OutputFeed {
          *    was called (i.e. never started)
          *  - Has already stopped
          *
-         * **NOTE:** This API requires the `kotlinx.coroutines` core
-         * dependency (at a minimum) in order to pass in the
-         * `kotlinx.coroutines.delay` function. Adding the dependency
-         * to `kmp-process` for a single function to use in an API
-         * that may not even be utilized (because [awaitStop] exists for
-         * non-JS) seemed ridiculous.
-         *
-         * e.g.
-         *
-         *     myDestroyedProcess.stdoutWaiter()
-         *         .awaitStopAsync(::delay)
-         *
          * @return [Process] for chaining calls
+         * @see [io.matthewnelson.kmp.process.Blocking.Waiter.awaitStop]
          * */
         public suspend fun awaitStopAsync(
             delay: suspend (duration: Duration) -> Unit
@@ -322,9 +282,6 @@ public fun interface OutputFeed {
 
             return process
         }
-
-        protected abstract fun isStarted(): Boolean
-        protected abstract fun isStopped(): Boolean
 
         init {
             check(isDestroyed) { "Process.destroy must be called before an OutputFeed.Waiter can be created" }

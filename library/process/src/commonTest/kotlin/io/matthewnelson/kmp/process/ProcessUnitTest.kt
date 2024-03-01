@@ -17,63 +17,12 @@ package io.matthewnelson.kmp.process
 
 import io.matthewnelson.kmp.file.*
 import io.matthewnelson.kmp.process.internal.IsWindows
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.withContext
 import kotlin.test.*
 import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.Duration.Companion.seconds
-import kotlin.time.measureTime
 
 class ProcessUnitTest {
-
-    @Test
-    fun givenWaitFor_whenProcessCompletes_thenReturnsEarly() {
-        if (IsDarwinMobile || IsNodeJs || IsWindows) {
-            skipping()
-            return
-        }
-
-        val runTime = measureTime {
-            Process.Builder(command = "sleep")
-                .args("0.25")
-                .destroySignal(Signal.SIGKILL)
-                .spawn { p ->
-                    assertNull(p.waitFor(100.milliseconds))
-                    assertTrue(p.isAlive)
-                    assertEquals(0, p.waitFor(2.seconds))
-                    assertFalse(p.isAlive)
-                }
-        }
-
-        // Should be less than the 2 seconds (waitFor popped out early)
-        assertTrue(runTime < 1.seconds)
-    }
-
-    @Test
-    fun givenWaitFor_whenCompletion_thenReturnsExitCode() {
-        if (IsDarwinMobile || IsNodeJs) {
-            skipping()
-            return
-        }
-
-        val exitCode = try {
-            Process.Builder(command = "sleep")
-                .args("0.25")
-                .destroySignal(Signal.SIGKILL)
-                .spawn { p -> p.waitFor() }
-        } catch (e: IOException) {
-            // Host (Window) did not have sleep available
-            if (IsWindows) {
-                skipping()
-                return
-            }
-            throw e
-        }
-
-        assertEquals(0, exitCode)
-    }
 
     @Test
     fun givenDestroy_whenSIGTERM_thenReturnsCorrectExitCode() = runTest {
@@ -234,7 +183,9 @@ class ProcessUnitTest {
         }
     }
 
-    private fun skipping() {
-        println("Skipping...")
+    internal companion object {
+        internal fun skipping() {
+            println("Skipping...")
+        }
     }
 }

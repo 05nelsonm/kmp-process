@@ -21,7 +21,6 @@ import io.matthewnelson.kmp.file.*
 import org.khronos.webgl.Int8Array
 import org.khronos.webgl.Uint8Array
 import org.khronos.webgl.set
-import kotlin.time.Duration
 
 internal actual val STDIO_NULL: File by lazy {
     val isWindows = try {
@@ -37,12 +36,6 @@ internal actual val IsMobile: Boolean get() = try {
     os_platform() == "android"
 } catch (_: Throwable) {
     false
-}
-
-// @Throws(InterruptedException::class)
-@Suppress("NOTHING_TO_INLINE", "ACTUAL_ANNOTATIONS_NOT_MATCH_EXPECT")
-internal actual inline fun Duration.threadSleep() {
-    throw InterruptedException("Blocking operations are not supported on Node.js. Use Async APIs or Process.Builder.output")
 }
 
 @Suppress("NOTHING_TO_INLINE")

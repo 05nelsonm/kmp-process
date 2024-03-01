@@ -45,6 +45,7 @@ import kotlin.time.TimeSource
  * @see [Builder]
  * @see [Current]
  * @see [OutputFeed.Handler]
+ * @see [Blocking]
  * */
 public abstract class Process internal constructor(
 
@@ -175,60 +176,9 @@ public abstract class Process internal constructor(
     public abstract fun pid(): Int
 
     /**
-     * Blocks the current thread until [Process] completion.
-     *
-     * **NOTE:** This will always throw [InterruptedException]
-     *   on Node.js. Use [waitForAsync].
-     *
-     * @return The [Process.exitCode]
-     * @throws [InterruptedException] When:
-     *   - Platform is Node.js
-     *   - Thread this is called from on Native/Jvm was interrupted
-     * */
-    @Throws(InterruptedException::class)
-    public fun waitFor(): Int {
-        var exitCode: Int? = null
-        while (exitCode == null) {
-            exitCode = waitFor(Duration.INFINITE)
-        }
-        return exitCode
-    }
-
-    /**
-     * Blocks the current thread for the specified [duration],
-     * or until [Process.exitCode] is available (i.e. the
-     * [Process] completed).
-     *
-     * **NOTE:** This will always throw [InterruptedException]
-     *   on Node.js. Use [waitForAsync].
-     *
-     * @param [duration] the [Duration] to wait
-     * @return The [Process.exitCode], or null if [duration] is
-     *   exceeded without [Process] completion.
-     * @throws [InterruptedException] When:
-     *   - Platform is Node.js
-     *   - Thread this is called from on Native/Jvm was interrupted
-     * */
-    @Throws(InterruptedException::class)
-    public fun waitFor(
-        duration: Duration,
-    ): Int? = commonWaitFor(duration) { it.threadSleep() }
-
-    /**
      * Delays the current coroutine until [Process] completion.
      *
-     * **NOTE:** This API requires the `kotlinx.coroutines` core
-     * dependency (at a minimum) in order to pass in the
-     * `kotlinx.coroutines.delay` function. Adding the dependency
-     * to `kmp-process` for a single function to use in an API
-     * that may not even be utilized (because [waitFor] exists for
-     * non-JS) seemed ridiculous.
-     *
-     * e.g.
-     *
-     *     myProcess.waitForAsync(::delay)
-     *
-     * @param [delay] `kotlinx.coroutines.delay` function (e.g. `::delay`)
+     * @see [io.matthewnelson.kmp.process.Blocking.waitFor]
      * @return The [Process.exitCode]
      * */
     public suspend fun waitForAsync(
@@ -246,19 +196,8 @@ public abstract class Process internal constructor(
      * or until [Process.exitCode] is available (i.e. the
      * [Process] completed).
      *
-     * **NOTE:** This API requires the `kotlinx.coroutines` core
-     * dependency (at a minimum) in order to pass in the
-     * `kotlinx.coroutines.delay` function. Adding the dependency
-     * to `kmp-process` for a single function to use in an API
-     * that may not even be utilized (because [waitFor] exists for
-     * non-JS) seemed ridiculous.
-     *
-     * e.g.
-     *
-     *     myProcess.waitForAsync(250.milliseconds, ::delay)
-     *
      * @param [duration] the [Duration] to wait
-     * @param [delay] `kotlinx.coroutines.delay` function (e.g. `::delay`)
+     * @see [io.matthewnelson.kmp.process.Blocking.waitFor]
      * @return The [Process.exitCode], or null if [duration] is
      *   exceeded without [Process] completion.
      * */

@@ -1,0 +1,76 @@
+/*
+ * Copyright (c) 2024 Matthew Nelson
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ **/
+package io.matthewnelson.kmp.process.internal
+
+import io.matthewnelson.kmp.file.IOException
+import io.matthewnelson.kmp.process.IsDarwinMobile
+import io.matthewnelson.kmp.process.Process
+import io.matthewnelson.kmp.process.ProcessUnitTest.Companion.skipping
+import io.matthewnelson.kmp.process.Signal
+import kotlin.test.*
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.measureTime
+
+class ProcessBlockingUnitTest {
+
+    @Test
+    fun givenWaitFor_whenProcessCompletes_thenReturnsEarly() {
+        if (IsDarwinMobile || IsWindows) {
+            skipping()
+            return
+        }
+
+        val runTime = measureTime {
+            Process.Builder(command = "sleep")
+                .args("0.25")
+                .destroySignal(Signal.SIGKILL)
+                .spawn { p ->
+                    assertNull(p.waitFor(100.milliseconds))
+                    assertTrue(p.isAlive)
+                    assertEquals(0, p.waitFor(2.seconds))
+                    assertFalse(p.isAlive)
+                }
+        }
+
+        // Should be less than the 2 seconds (waitFor popped out early)
+        assertTrue(runTime < 1.seconds)
+    }
+
+    @Test
+    fun givenWaitFor_whenCompletion_thenReturnsExitCode() {
+        if (IsDarwinMobile) {
+            skipping()
+            return
+        }
+
+        val exitCode = try {
+            Process.Builder(command = "sleep")
+                .args("0.25")
+                .destroySignal(Signal.SIGKILL)
+                .spawn { p -> p.waitFor() }
+        } catch (e: IOException) {
+            // Host (Window) did not have sleep available
+            if (IsWindows) {
+                skipping()
+                return
+            }
+            throw e
+        }
+
+        assertEquals(0, exitCode)
+    }
+}
