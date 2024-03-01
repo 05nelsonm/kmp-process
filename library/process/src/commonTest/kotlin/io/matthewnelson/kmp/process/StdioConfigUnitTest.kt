@@ -69,6 +69,21 @@ class StdioConfigUnitTest {
         val config = b.build(Output.Options.Builder.build {  })
         assertEquals(Stdio.Pipe, config.stdout)
         assertEquals(Stdio.Pipe, config.stderr)
+
+        // stdin was Pipe (the default), but there is no input
+        // expressed via Output.Options so should be switched to
+        // null file.
+        assertEquals(Stdio.Null, config.stdin)
+    }
+
+    @Test
+    fun givenBuilder_whenOutputOptionsWithInput_thenStdinIsAsExpected() {
+        val b = Stdio.Config.Builder.get()
+        val o = Output.Options.Builder.build { inputUtf8 { "text" } }
+
+        b.stdin = Stdio.Inherit
+        assertEquals(Stdio.Pipe, b.build(o).stdin)
+
     }
 
     @Test

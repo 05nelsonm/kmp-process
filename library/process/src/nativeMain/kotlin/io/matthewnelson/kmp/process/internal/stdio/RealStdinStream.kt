@@ -17,6 +17,7 @@ package io.matthewnelson.kmp.process.internal.stdio
 
 import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.file.errnoToIOException
+import io.matthewnelson.kmp.process.StdinStream
 import io.matthewnelson.kmp.process.internal.checkBounds
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.addressOf
@@ -25,12 +26,15 @@ import kotlinx.cinterop.usePinned
 import platform.posix.EINTR
 import platform.posix.errno
 
-internal class StdioWriter internal constructor(private val pipe: StdioDescriptor.Pair) {
+// TODO: Issue #77
+internal class RealStdinStream internal constructor(
+    private val pipe: StdioDescriptor.Pair
+): StdinStream() {
 
     @Throws(IllegalArgumentException::class, IndexOutOfBoundsException::class, IOException::class)
-    internal fun write(buf: ByteArray, offset: Int, len: Int) {
+    override fun write(buf: ByteArray, offset: Int, len: Int) {
         buf.checkBounds(offset, len)
-        if (pipe.isClosed) throw IOException("StdioWriter is closed")
+        if (pipe.isClosed) throw IOException("StdinStream is closed")
         if (len == 0) return
 
         @OptIn(ExperimentalForeignApi::class)
@@ -47,6 +51,10 @@ internal class StdioWriter internal constructor(private val pipe: StdioDescripto
                         (len - written).convert(),
                     ).toInt()
 
+                    // TODO: If 0, are all fdRead ends closed?
+                    //  not really a problem b/c of isClosed
+                    //  check, but should do a proper check here
+
                     if (res == -1) {
                         when (val e = errno) {
                             EINTR -> continue
@@ -62,10 +70,12 @@ internal class StdioWriter internal constructor(private val pipe: StdioDescripto
 
                 written += write
             }
-
         }
     }
 
     @Throws(IOException::class)
-    internal fun write(buf: ByteArray) { write(buf, 0, buf.size) }
+    override fun close() { pipe.close() }
+
+    @Throws(IOException::class)
+    override fun flush() {}
 }

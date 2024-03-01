@@ -21,6 +21,7 @@ import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.Stdio
+import io.matthewnelson.kmp.process.internal.stdio.RealStdinStream
 
 internal class NodeJsProcess internal constructor(
     private val jsProcess: child_process_ChildProcess,
@@ -30,7 +31,16 @@ internal class NodeJsProcess internal constructor(
     env: Map<String, String>,
     stdio: Stdio.Config,
     destroy: Signal,
-): Process(command, args, chdir, env, stdio, destroy, INIT) {
+): Process(
+    command,
+    args,
+    chdir,
+    env,
+    stdio,
+    jsProcess.stdin?.let { RealStdinStream(it) },
+    destroy,
+    INIT,
+) {
 
     override fun destroy(): Process {
         isDestroyed = true

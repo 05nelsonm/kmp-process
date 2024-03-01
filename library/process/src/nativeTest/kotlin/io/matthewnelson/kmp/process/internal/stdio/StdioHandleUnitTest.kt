@@ -28,7 +28,7 @@ class StdioHandleUnitTest {
         val handle = Stdio.Config.Builder.get().build(null).openHandle()
 
         try {
-            assertNotNull(handle.stdinWriter())
+            assertNotNull(handle.stdinStream())
             assertNotNull(handle.stdoutReader())
             assertNotNull(handle.stderrReader())
         } finally {
@@ -42,7 +42,7 @@ class StdioHandleUnitTest {
 
         handle.close()
 
-        assertNull(handle.stdinWriter())
+        assertNull(handle.stdinStream())
         assertNull(handle.stdoutReader())
         assertNull(handle.stderrReader())
     }

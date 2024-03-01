@@ -128,10 +128,13 @@ public sealed class Stdio private constructor() {
             internal fun build(outputOptions: Output.Options?): Config {
                 val isOutput = outputOptions != null
 
-                val stdin = stdin.let {
-                    if (it !is File) return@let it
-                    if (!it.append) return@let it
-                    File.of(it.file, append = false)
+                val stdin = stdin.let { stdio ->
+                    if (outputOptions?.hasInput == true) return@let Pipe
+                    if (isOutput && stdio is Pipe) return@let Null
+
+                    if (stdio !is File) return@let stdio
+                    if (!stdio.append) return@let stdio
+                    File.of(stdio.file, append = false)
                 }
 
                 val stdout = if (isOutput) Pipe else stdout

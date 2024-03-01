@@ -162,10 +162,3 @@ internal inline fun Int.check(
 
     return this
 }
-
-@Suppress("NOTHING_TO_INLINE")
-@Throws(IllegalArgumentException::class, IndexOutOfBoundsException::class)
-internal inline fun ByteArray.checkBounds(offset: Int, len: Int) {
-    if (size - offset < len) throw IllegalArgumentException("Input too short")
-    if (offset < 0 || len < 0 || offset > size - len) throw IndexOutOfBoundsException()
-}

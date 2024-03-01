@@ -40,7 +40,16 @@ internal constructor(
     chdir: File?,
     env: Map<String, String>,
     destroy: Signal,
-): Process(command, args, chdir, env, handle.stdio, destroy, INIT) {
+): Process(
+    command,
+    args,
+    chdir,
+    env,
+    handle.stdio,
+    handle.stdinStream(),
+    destroy,
+    INIT,
+) {
 
     init {
         if (pid <= 0) {

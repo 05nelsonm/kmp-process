@@ -16,8 +16,10 @@
 package io.matthewnelson.kmp.process
 
 import io.matthewnelson.kmp.file.File
+import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.process.internal.IsMobile
 import io.matthewnelson.kmp.process.internal.appendProcessInfo
+import kotlin.concurrent.Volatile
 import kotlin.jvm.JvmField
 import kotlin.jvm.JvmSynthetic
 import kotlin.time.Duration
@@ -61,13 +63,61 @@ public class Output private constructor(
      * @see [Builder]
      * */
     public class Options private constructor(
+        @Volatile
+        private var input: (() -> ByteArray)?,
         internal val maxBuffer: Int,
         internal val timeout: Duration,
     ) {
 
         public class Builder private constructor() {
 
-            // TODO: input
+            private var _input: (() -> ByteArray)? = null
+
+            /**
+             * Any input that needs to be passed to the process's
+             * `stdin` stream once it has spawned.
+             *
+             * [block] is invoked once and only once. On Jvm/Native,
+             * if the process fails to spawn then [block] is never
+             * invoked. On Js there is no way to lazily provide
+             * the input, so it is always invoked before spawning
+             * the process.
+             *
+             * **NOTE:** After being written to stdin, the array
+             * produced by [block] is zeroed out before the reference
+             * is dropped.
+             *
+             * **NOTE:** [block] will be called from the same
+             * thread that [Process.Builder.output] is called from.
+             *
+             * Declaring this will override any [Process.Builder.stdin]
+             * configuration if it is set to something other than
+             * [Stdio.Pipe].
+             * */
+            public fun input(
+                block: () -> ByteArray,
+            ): Builder = apply { _input = block }
+
+            /**
+             * Any input that needs be passed to the process's
+             * `stdin` stream once it has spawned.
+             *
+             * [block] is invoked once and only once. On Jvm/Native,
+             * if the process fails to spawn then [block] is never
+             * invoked. On Js there is no way to lazily provide
+             * the input, so it is always invoked before spawning
+             * the process.
+             *
+             * **NOTE:** [block] will be invoked from the same
+             * thread that [Process.Builder.output] is called from.
+             *
+             * Declaring this will override any [Process.Builder.stdin]
+             * configuration if it is set to something other than
+             * [Stdio.Pipe].
+             * */
+            public fun inputUtf8(
+                block: () -> String,
+            ): Builder = input { block().encodeToByteArray() }
 
             /**
              * Maximum number of bytes that can be buffered
@@ -112,10 +162,31 @@ public class Output private constructor(
                         if (millis < MIN_TIMEOUT) MIN_TIMEOUT else millis
                     }
 
-                    return Options(maxBuffer, timeout.milliseconds)
+                    return Options(b._input, maxBuffer, timeout.milliseconds)
                 }
             }
         }
+
+        @get:JvmSynthetic
+        internal val hasInput: Boolean get() = input != null
+
+        @JvmSynthetic
+        internal fun consumeInput(): ByteArray? {
+            val i = input ?: return null
+            dropInput()
+
+            val result = try {
+                i()
+            } catch (t: Throwable) {
+                // wrap it for caller
+                throw IOException("Output.Options.input invocation threw exception", t)
+            }
+
+            return result
+        }
+
+        @JvmSynthetic
+        internal fun dropInput() { input = null }
     }
 
     /**

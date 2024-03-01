@@ -1,6 +1,10 @@
 public abstract interface annotation class io/matthewnelson/kmp/process/InternalProcessApi : java/lang/annotation/Annotation {
 }
 
+public final class io/matthewnelson/kmp/process/JvmProcess {
+	public static final fun stdin (Lio/matthewnelson/kmp/process/Process;)Ljava/io/BufferedOutputStream;
+}
+
 public final class io/matthewnelson/kmp/process/Output {
 	public final field processError Ljava/lang/String;
 	public final field processInfo Lio/matthewnelson/kmp/process/Output$ProcessInfo;
@@ -11,12 +15,14 @@ public final class io/matthewnelson/kmp/process/Output {
 }
 
 public final class io/matthewnelson/kmp/process/Output$Options {
-	public synthetic fun <init> (IJLkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Lkotlin/jvm/functions/Function0;IJLkotlin/jvm/internal/DefaultConstructorMarker;)V
 }
 
 public final class io/matthewnelson/kmp/process/Output$Options$Builder {
 	public field maxBuffer I
 	public field timeoutMillis I
+	public final fun input (Lkotlin/jvm/functions/Function0;)Lio/matthewnelson/kmp/process/Output$Options$Builder;
+	public final fun inputUtf8 (Lkotlin/jvm/functions/Function0;)Lio/matthewnelson/kmp/process/Output$Options$Builder;
 }
 
 public final class io/matthewnelson/kmp/process/Output$ProcessInfo {

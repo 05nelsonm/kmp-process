@@ -24,3 +24,5 @@ internal actual val IsDarwinMobile: Boolean = when (Platform.osFamily) {
     OsFamily.WATCHOS -> true
     else -> false
 }
+
+internal actual val IsNodeJs: Boolean = false

@@ -23,7 +23,6 @@ import io.matthewnelson.kmp.file.InterruptedException
 import io.matthewnelson.kmp.process.Output
 import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.Stdio
-import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 
 @Throws(IOException::class)
@@ -37,7 +36,12 @@ internal fun PlatformBuilder.blockingOutput(
     destroy: Signal,
 ): Output {
 
-    val p = spawn(command, args, chdir, env, stdio, destroy)
+    val p = try {
+        spawn(command, args, chdir, env, stdio, destroy)
+    } catch (e: IOException) {
+        options.dropInput()
+        throw e
+    }
 
     val stdoutBuffer = OutputFeedBuffer.of(options)
     val stderrBuffer = OutputFeedBuffer.of(options)
@@ -47,6 +51,20 @@ internal fun PlatformBuilder.blockingOutput(
     try {
         p.stdoutFeed(stdoutBuffer)
         p.stderrFeed(stderrBuffer)
+
+        options.consumeInput()?.let { bytes ->
+            try {
+                p.input?.write(bytes)
+                // Will never happen b/c Stdio.Config.Builder.build
+                // will always set stdin to Stdio.Pipe when Output.Options.input
+                // is not null, but must throw IOException instead of NPE using !!
+                    ?: throw IOException("Misconfigured Stdio.Config. stdin should be Stdio.Pipe")
+
+                p.input.close()
+            } finally {
+                bytes.fill(0)
+            }
+        }
 
         try {
             // This is necessary to "guarantee" the stdout and

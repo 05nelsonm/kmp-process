@@ -13,8 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-package io.matthewnelson.kmp.process.testing
+@file:Suppress("KotlinRedundantDiagnosticSuppress")
 
-internal actual val IsDarwinMobile: Boolean = false
+package io.matthewnelson.kmp.process.internal
 
-internal actual val IsNodeJs: Boolean = true
+@Suppress("NOTHING_TO_INLINE")
+@Throws(IllegalArgumentException::class, IndexOutOfBoundsException::class)
+internal inline fun ByteArray.checkBounds(offset: Int, len: Int) {
+    if (size - offset < len) throw IllegalArgumentException("Input too short")
+    if (offset < 0 || len < 0 || offset > size - len) throw IndexOutOfBoundsException()
+}

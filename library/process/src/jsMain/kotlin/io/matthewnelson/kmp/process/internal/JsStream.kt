@@ -19,6 +19,8 @@
 
 package io.matthewnelson.kmp.process.internal
 
+import org.khronos.webgl.Uint8Array
+
 /** [docs](https://nodejs.org/api/stream.html#class-streamreadable) */
 @JsName("Readable")
 internal open external class stream_Readable {
@@ -29,12 +31,31 @@ internal open external class stream_Readable {
     ): stream_Readable
 }
 
-///** [docs](https://nodejs.org/api/stream.html#class-streamwritable) */
-//@JsName("Writable")
-//internal open external class stream_Writable {
-//
-//    internal fun <R> on(
-//        eventName: String,
-//        listener: Function<R>,
-//    ): stream_Readable
-//}
+/** [docs](https://nodejs.org/api/stream.html#class-streamwritable) */
+@JsName("Writable")
+internal open external class stream_Writable {
+
+    internal fun <R> on(
+        eventName: String,
+        listener: Function<R>,
+    ): stream_Writable
+
+    internal fun <R> once(
+        eventName: String,
+        listener: Function<R>,
+    ): stream_Writable
+
+    // @Throws(Throwable::class)
+    internal fun write(
+        chunk: Uint8Array,
+    ): Boolean
+
+    // @Throws(Throwable::class)
+    internal fun write(
+        chunk: Uint8Array,
+        callback: () -> Unit,
+    ): Boolean
+
+    internal fun destroy(): stream_Writable
+    internal val destroyed: Boolean
+}

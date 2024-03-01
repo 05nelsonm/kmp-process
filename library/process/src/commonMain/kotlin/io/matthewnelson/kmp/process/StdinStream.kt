@@ -13,8 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-package io.matthewnelson.kmp.process.testing
+@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
 
-internal actual val IsDarwinMobile: Boolean = false
+package io.matthewnelson.kmp.process
 
-internal actual val IsNodeJs: Boolean = true
+import io.matthewnelson.kmp.file.IOException
+
+internal expect abstract class StdinStream internal constructor() {
+
+    @Throws(IllegalArgumentException::class, IndexOutOfBoundsException::class, IOException::class)
+    public open fun write(buf: ByteArray, offset: Int, len: Int)
+
+    @Throws(IOException::class)
+    public fun write(buf: ByteArray)
+
+    @Throws(IOException::class)
+    public open fun close()
+
+    @Throws(IOException::class)
+    public open fun flush()
+}

@@ -16,8 +16,6 @@
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.konan.target.Family
 import org.jetbrains.kotlin.konan.target.HostManager
-import org.jetbrains.kotlin.konan.target.KonanTarget
-import org.jetbrains.kotlin.konan.target.Xcode
 
 plugins {
     id("configuration")
@@ -65,67 +63,44 @@ kmpConfiguration {
                 }
             }
 
+            val cinteropDir = projectDir
+                .resolve("src")
+                .resolve("nativeInterop")
+                .resolve("cinterop")
+
             targets.filterIsInstance<KotlinNativeTarget>()
-                .glibc_versionCInterop()
-                .spawnCInterop()
+                .glibc_versionCInterop(cinteropDir)
+                .spawnCInterop(cinteropDir)
 
         }
     }
 }
 
 @Suppress("FunctionName")
-fun List<KotlinNativeTarget>.glibc_versionCInterop(): List<KotlinNativeTarget> {
+fun List<KotlinNativeTarget>.glibc_versionCInterop(
+    cinteropDir: File,
+): List<KotlinNativeTarget> {
     forEach { target ->
         if (target.konanTarget.family != Family.LINUX) return@forEach
 
         target.compilations["main"].cinterops.create("glibc_version").apply {
-            defFile = projectDir
-                .resolve("src")
-                .resolve("nativeInterop")
-                .resolve("cinterop")
-                .resolve("glibc_version.def")
+            defFile = cinteropDir.resolve("glibc_version.def")
         }
     }
 
     return this
 }
 
-fun List<KotlinNativeTarget>.spawnCInterop(): List<KotlinNativeTarget> {
+fun List<KotlinNativeTarget>.spawnCInterop(
+    cinteropDir: File,
+): List<KotlinNativeTarget> {
     if (!HostManager.hostIsMac) return this
-    val xcode = Xcode.findCurrent()
 
     forEach { target ->
-        val sdkInclude = when (target.konanTarget) {
-            is KonanTarget.IOS_ARM64 -> xcode.iphoneosSdk
-            is KonanTarget.IOS_SIMULATOR_ARM64,
-            is KonanTarget.IOS_X64 -> xcode.iphonesimulatorSdk
-
-            is KonanTarget.MACOS_ARM64,
-            is KonanTarget.MACOS_X64 -> xcode.macosxSdk
-
-            is KonanTarget.TVOS_ARM64 -> xcode.appletvosSdk
-            is KonanTarget.TVOS_SIMULATOR_ARM64,
-            is KonanTarget.TVOS_X64 -> xcode.appletvsimulatorSdk
-
-            is KonanTarget.WATCHOS_ARM32,
-            is KonanTarget.WATCHOS_ARM64,
-            is KonanTarget.WATCHOS_DEVICE_ARM64 -> xcode.watchosSdk
-            is KonanTarget.WATCHOS_SIMULATOR_ARM64,
-            is KonanTarget.WATCHOS_X64 -> xcode.watchsimulatorSdk
-            else -> return@forEach
-        }.let { sdkPath ->
-            File(sdkPath)
-                .resolve("usr")
-                .resolve("include")
-        }
+        if (!target.konanTarget.family.isAppleFamily) return@forEach
 
         target.compilations["main"].cinterops.create("spawn").apply {
-            includeDirs(sdkInclude.path)
-            defFile = projectDir
-                .resolve("src")
-                .resolve("nativeInterop")
-                .resolve("cinterop")
-                .resolve("spawn.def")
+            defFile = cinteropDir.resolve("spawn.def")
         }
     }
 

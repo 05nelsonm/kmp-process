@@ -13,8 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-package io.matthewnelson.kmp.process.testing
+@file:JvmName("JvmProcess")
 
-internal actual val IsDarwinMobile: Boolean = false
+package io.matthewnelson.kmp.process
 
-internal actual val IsNodeJs: Boolean = true
+import java.io.BufferedOutputStream
+
+/**
+ * Currently, only Jvm supports writing input to `stdin`.
+ *
+ * This extension function provides access for that.
+ * */
+@get:JvmName("stdin")
+public val Process.stdin: BufferedOutputStream? get() {
+    // input is only ever non-null when it is Stdio.Pipe,
+    // which on Java is a ProcessPipeOutputStream, which
+    // is an instance of BufferedOutputStream.
+    return input?.buffered()
+}

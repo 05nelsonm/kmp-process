@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-package io.matthewnelson.kmp.process.testing
+@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
 
-internal actual val IsDarwinMobile: Boolean = false
+package io.matthewnelson.kmp.process
 
-internal actual val IsNodeJs: Boolean = true
+@Suppress("ACTUAL_WITHOUT_EXPECT")
+internal actual typealias StdinStream = java.io.OutputStream

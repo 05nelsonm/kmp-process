@@ -18,6 +18,9 @@
 package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.*
+import org.khronos.webgl.Int8Array
+import org.khronos.webgl.Uint8Array
+import org.khronos.webgl.set
 import kotlin.time.Duration
 
 internal actual val STDIO_NULL: File by lazy {
@@ -40,6 +43,42 @@ internal actual val IsMobile: Boolean get() = try {
 @Suppress("NOTHING_TO_INLINE", "ACTUAL_ANNOTATIONS_NOT_MATCH_EXPECT")
 internal actual inline fun Duration.threadSleep() {
     throw InterruptedException("Blocking operations are not supported on Node.js. Use Async APIs or Process.Builder.output")
+}
+
+@Suppress("NOTHING_TO_INLINE")
+// @Throws(IllegalArgumentException::class, IndexOutOfBoundsException::class)
+internal inline fun ByteArray.toInt8Array(
+    offset: Int = 0,
+    len: Int = size,
+    checkBounds: Boolean = true,
+): Int8Array {
+    if (checkBounds) checkBounds(offset, len)
+    val array = Int8Array(len)
+
+    var aI = 0
+    for (i in offset until len) {
+        array[aI++] = this[i]
+    }
+
+    return array
+}
+
+@Suppress("NOTHING_TO_INLINE")
+// @Throws(IllegalArgumentException::class, IndexOutOfBoundsException::class)
+internal inline fun ByteArray.toUInt8Array(
+    offset: Int = 0,
+    len: Int = size,
+    checkBounds: Boolean = true,
+): Uint8Array {
+    if (checkBounds) checkBounds(offset, len)
+    val array = Uint8Array(len)
+
+    var aI = 0
+    for (i in offset until len) {
+        array[aI++] = this[i]
+    }
+
+    return array
 }
 
 @Suppress("NOTHING_TO_INLINE")

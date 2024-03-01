@@ -19,6 +19,7 @@
 package io.matthewnelson.kmp.process.internal.stdio
 
 import io.matthewnelson.kmp.file.IOException
+import io.matthewnelson.kmp.process.StdinStream
 import io.matthewnelson.kmp.process.Stdio
 import io.matthewnelson.kmp.process.internal.Instance
 import io.matthewnelson.kmp.process.internal.Lock
@@ -41,10 +42,10 @@ internal class StdioHandle private constructor(
         private set
     private val lock = Lock()
 
-    private val stdin: Instance<StdioWriter?> = Instance(create = {
+    private val stdin: Instance<StdinStream?> = Instance(create = {
         if (isClosed) return@Instance null
         if (stdinFD !is StdioDescriptor.Pair) return@Instance null
-        StdioWriter(stdinFD)
+        RealStdinStream(stdinFD)
     })
 
     private val stdout: Instance<StdioReader?> = Instance(create = {
@@ -75,7 +76,7 @@ internal class StdioHandle private constructor(
         }
     }
 
-    internal fun stdinWriter(): StdioWriter? = lock.withLock { stdin.getOrCreate() }
+    internal fun stdinStream(): StdinStream? = lock.withLock { stdin.getOrCreate() }
     internal fun stdoutReader(): StdioReader? = lock.withLock { stdout.getOrCreate() }
     internal fun stderrReader(): StdioReader? = lock.withLock { stderr.getOrCreate() }
 
