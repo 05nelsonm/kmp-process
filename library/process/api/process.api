@@ -1,8 +1,8 @@
 public abstract interface annotation class io/matthewnelson/kmp/process/InternalProcessApi : java/lang/annotation/Annotation {
 }
 
-public final class io/matthewnelson/kmp/process/JvmProcessKt {
-	public static final fun getStdin (Lio/matthewnelson/kmp/process/Process;)Ljava/io/BufferedOutputStream;
+public final class io/matthewnelson/kmp/process/JvmProcess {
+	public static final fun stdin (Lio/matthewnelson/kmp/process/Process;)Ljava/io/BufferedOutputStream;
 }
 
 public final class io/matthewnelson/kmp/process/Output {

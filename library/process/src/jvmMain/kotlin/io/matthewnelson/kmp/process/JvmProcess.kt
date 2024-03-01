@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
+@file:JvmName("JvmProcess")
+
 package io.matthewnelson.kmp.process
 
 import java.io.BufferedOutputStream
@@ -22,6 +24,7 @@ import java.io.BufferedOutputStream
  *
  * This extension function provides access for that.
  * */
+@get:JvmName("stdin")
 public val Process.stdin: BufferedOutputStream? get() {
     // input is only ever non-null when it is Stdio.Pipe,
     // which on Java is a ProcessPipeOutputStream, which
