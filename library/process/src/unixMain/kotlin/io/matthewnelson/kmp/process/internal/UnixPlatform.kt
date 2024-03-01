@@ -18,9 +18,29 @@
 package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.File
+import io.matthewnelson.kmp.file.path
 import io.matthewnelson.kmp.file.toFile
+import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.alloc
+import kotlinx.cinterop.memScoped
+import kotlinx.cinterop.ptr
+import platform.posix.*
 
 internal actual val STDIO_NULL: File = "/dev/null".toFile()
 
 @Suppress("NOTHING_TO_INLINE")
 internal expect inline fun PlatformBuilder.parentEnvironment(): MutableMap<String, String>
+
+@OptIn(ExperimentalForeignApi::class)
+internal actual fun File.isProgramOrNull(): Boolean? = memScoped {
+    val stat = alloc<stat>()
+
+    // use stat to resolve any links
+    if (stat(path, stat.ptr) != 0) {
+        return@memScoped null
+    }
+
+    // TODO: Check if executable?
+    val mode = stat.st_mode.toInt()
+    (mode and S_IFMT) == S_IFREG
+}

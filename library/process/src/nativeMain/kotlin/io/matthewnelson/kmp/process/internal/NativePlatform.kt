@@ -73,18 +73,15 @@ internal fun String.toProgramFile(): File {
         while (absolute == null && paths.hasNext()) {
             val target = paths.next().toFile().resolve(file)
 
-            // TODO: Check stats for regular file
-            //  and can execute (Unix Only)
-            //  or go to next
-            //  See: https://github.com/05nelsonm/kmp-file/issues/55
-            if (target.exists()) {
-                absolute = target
-            }
+            if (target.isProgramOrNull() != true) continue
+            absolute = target
         }
     }
 
     return absolute?.normalize() ?: throw FileNotFoundException("Failed to locate program[$this]")
 }
+
+internal expect fun File.isProgramOrNull(): Boolean?
 
 // Returns errno value or null (was successful)
 internal fun fdClose(fd: Int, retries: Int = 3): Int? {
