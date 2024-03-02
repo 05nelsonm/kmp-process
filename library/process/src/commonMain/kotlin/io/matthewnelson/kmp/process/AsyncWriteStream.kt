@@ -15,17 +15,27 @@
  **/
 @file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
 
-package io.matthewnelson.kmp.process.internal
+package io.matthewnelson.kmp.process
 
 import io.matthewnelson.kmp.file.IOException
+import kotlin.coroutines.cancellation.CancellationException
 
-internal actual abstract class InputStream internal actual constructor() {
+public expect class AsyncWriteStream {
 
-    @Throws(IllegalArgumentException::class, IndexOutOfBoundsException::class, IOException::class)
-    internal actual open fun read(buf: ByteArray, offset: Int, len: Int): Int {
-        throw IOException("Not Implemented")
-    }
+    @Throws(
+        CancellationException::class,
+        IllegalArgumentException::class,
+        IndexOutOfBoundsException::class,
+        IOException::class,
+    )
+    public suspend fun writeAsync(buf: ByteArray, offset: Int, len: Int)
 
-    @Throws(IOException::class)
-    internal actual fun read(buf: ByteArray): Int = read(buf, 0, buf.size)
+    @Throws(CancellationException::class, IOException::class)
+    public suspend fun writeAsync(buf: ByteArray)
+
+    @Throws(CancellationException::class, IOException::class)
+    public suspend fun flushAsync()
+
+    @Throws(CancellationException::class, IOException::class)
+    public suspend fun closeAsync()
 }

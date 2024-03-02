@@ -19,7 +19,7 @@ package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.IOException
 
-internal expect abstract class InputStream internal constructor() {
+internal expect abstract class ReadStream {
 
     @Throws(IllegalArgumentException::class, IndexOutOfBoundsException::class, IOException::class)
     internal open fun read(buf: ByteArray, offset: Int, len: Int): Int

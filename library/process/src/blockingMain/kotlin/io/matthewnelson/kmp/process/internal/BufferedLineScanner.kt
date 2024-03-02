@@ -21,7 +21,7 @@ import kotlin.jvm.JvmSynthetic
 @Suppress("UNUSED")
 internal class BufferedLineScanner private constructor(
     readBufferSize: Int,
-    stream: InputStream,
+    stream: ReadStream,
     dispatchLine: (line: String) -> Unit,
     onStopped: () -> Unit,
 ) {
@@ -89,14 +89,14 @@ internal class BufferedLineScanner private constructor(
     internal companion object {
 
         @JvmSynthetic
-        internal fun InputStream.scanLines(
+        internal fun ReadStream.scanLines(
             dispatchLine: (line: String) -> Unit,
             onStopped: () -> Unit,
         ) { scanLines(1024 * 8, dispatchLine, onStopped) }
 
         @JvmSynthetic
         @Throws(IllegalArgumentException::class)
-        internal fun InputStream.scanLines(
+        internal fun ReadStream.scanLines(
             readBufferSize: Int,
             dispatchLine: (line: String) -> Unit,
             onStopped: () -> Unit,

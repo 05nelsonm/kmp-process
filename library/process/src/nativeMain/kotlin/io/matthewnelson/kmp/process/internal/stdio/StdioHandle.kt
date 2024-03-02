@@ -19,10 +19,11 @@
 package io.matthewnelson.kmp.process.internal.stdio
 
 import io.matthewnelson.kmp.file.IOException
-import io.matthewnelson.kmp.process.StdinStream
+import io.matthewnelson.kmp.process.internal.WriteStream
 import io.matthewnelson.kmp.process.Stdio
 import io.matthewnelson.kmp.process.internal.Instance
 import io.matthewnelson.kmp.process.internal.Lock
+import io.matthewnelson.kmp.process.internal.ReadStream
 import io.matthewnelson.kmp.process.internal.stdio.StdioDescriptor.Pair.Companion.fdOpen
 import io.matthewnelson.kmp.process.internal.stdio.StdioDescriptor.Single.Companion.fdOpen
 import platform.posix.STDERR_FILENO
@@ -42,22 +43,22 @@ internal class StdioHandle private constructor(
         private set
     private val lock = Lock()
 
-    private val stdin: Instance<StdinStream?> = Instance(create = {
+    private val stdin: Instance<WriteStream?> = Instance(create = {
         if (isClosed) return@Instance null
         if (stdinFD !is StdioDescriptor.Pair) return@Instance null
-        RealStdinStream(stdinFD)
+        WriteStream.of(stdinFD)
     })
 
-    private val stdout: Instance<StdioReader?> = Instance(create = {
+    private val stdout: Instance<ReadStream?> = Instance(create = {
         if (isClosed) return@Instance null
         if (stdoutFD !is StdioDescriptor.Pair) return@Instance null
-        StdioReader(stdoutFD)
+        ReadStream.of(stdoutFD)
     })
 
-    private val stderr: Instance<StdioReader?> = Instance(create = {
+    private val stderr: Instance<ReadStream?> = Instance(create = {
         if (isClosed) return@Instance null
         if (stderrFD !is StdioDescriptor.Pair) return@Instance null
-        StdioReader(stderrFD)
+        ReadStream.of(stderrFD)
     })
 
     @Throws(IOException::class)
@@ -76,9 +77,9 @@ internal class StdioHandle private constructor(
         }
     }
 
-    internal fun stdinStream(): StdinStream? = lock.withLock { stdin.getOrCreate() }
-    internal fun stdoutReader(): StdioReader? = lock.withLock { stdout.getOrCreate() }
-    internal fun stderrReader(): StdioReader? = lock.withLock { stderr.getOrCreate() }
+    internal fun stdinStream(): WriteStream? = lock.withLock { stdin.getOrCreate() }
+    internal fun stdoutReader(): ReadStream? = lock.withLock { stdout.getOrCreate() }
+    internal fun stderrReader(): ReadStream? = lock.withLock { stderr.getOrCreate() }
 
     internal fun close() {
         // subsequent calls to close will do nothing, as

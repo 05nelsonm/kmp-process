@@ -15,23 +15,21 @@
  **/
 @file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
 
-package io.matthewnelson.kmp.process
+package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.IOException
 
-internal actual abstract class StdinStream internal actual constructor() {
+internal expect abstract class WriteStream {
 
     @Throws(IllegalArgumentException::class, IndexOutOfBoundsException::class, IOException::class)
-    public actual open fun write(buf: ByteArray, offset: Int, len: Int) {
-        throw IOException("Not implemented")
-    }
+    internal open fun write(buf: ByteArray, offset: Int, len: Int)
 
     @Throws(IOException::class)
-    public actual fun write(buf: ByteArray) { write(buf, 0, buf.size) }
+    internal fun write(buf: ByteArray)
 
     @Throws(IOException::class)
-    public actual open fun close() {}
+    internal open fun close()
 
     @Throws(IOException::class)
-    public actual open fun flush() {}
+    internal open fun flush()
 }

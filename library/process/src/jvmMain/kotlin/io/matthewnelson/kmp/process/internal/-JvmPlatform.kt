@@ -62,4 +62,6 @@ internal actual inline fun Duration.threadSleep() {
 }
 
 @Suppress("ACTUAL_WITHOUT_EXPECT")
-internal actual typealias InputStream = java.io.InputStream
+internal actual typealias ReadStream = java.io.InputStream
+@Suppress("ACTUAL_WITHOUT_EXPECT")
+internal actual typealias WriteStream = java.io.OutputStream

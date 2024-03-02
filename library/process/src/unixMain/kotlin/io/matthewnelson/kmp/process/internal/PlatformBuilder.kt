@@ -33,8 +33,6 @@ import io.matthewnelson.kmp.process.internal.stdio.StdioDescriptor
 import io.matthewnelson.kmp.process.internal.stdio.StdioDescriptor.Pair.Companion.fdOpen
 import io.matthewnelson.kmp.process.internal.stdio.StdioHandle
 import io.matthewnelson.kmp.process.internal.stdio.StdioHandle.Companion.openHandle
-import io.matthewnelson.kmp.process.internal.stdio.StdioReader
-import io.matthewnelson.kmp.process.internal.stdio.RealStdinStream
 import kotlinx.cinterop.*
 import org.kotlincrypto.endians.BigEndian
 import org.kotlincrypto.endians.BigEndian.Companion.toBigEndian
@@ -236,7 +234,7 @@ internal actual class PlatformBuilder private actual constructor() {
         val b = ByteArray(5)
 
         val read = try {
-            StdioReader(pipe).read(b)
+            ReadStream.of(pipe).read(b)
         } catch (e: IOException) {
             p.destroy()
             throw IOException("CLOEXEC pipe read failure", e)
@@ -298,7 +296,7 @@ internal actual class PlatformBuilder private actual constructor() {
             b[4] = type
             errno.toBigEndian().copyInto(b)
             try {
-                RealStdinStream(pipe).write(b)
+                WriteStream.of(pipe).write(b)
             } finally {
                 handle.close()
                 fdClose(pipe.fdWrite)

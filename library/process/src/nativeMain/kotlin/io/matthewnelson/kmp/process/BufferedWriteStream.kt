@@ -13,25 +13,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING", "ACTUAL_ANNOTATIONS_NOT_MATCH_EXPECT")
+@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
 
 package io.matthewnelson.kmp.process
 
 import io.matthewnelson.kmp.file.IOException
+import io.matthewnelson.kmp.process.internal.WriteStream
 
-internal actual abstract class StdinStream internal actual constructor() {
+public actual sealed class BufferedWriteStream actual constructor(
+    private val stream: WriteStream
+) {
 
-    // @Throws(IllegalArgumentException::class, IndexOutOfBoundsException::class, IOException::class)
-    public actual open fun write(buf: ByteArray, offset: Int, len: Int) {
-        throw IOException("Not implemented")
+    @Throws(IllegalArgumentException::class, IndexOutOfBoundsException::class, IOException::class)
+    public actual fun write(buf: ByteArray, offset: Int, len: Int) {
+        // TODO
+        stream.write(buf, offset, len)
     }
 
-    // @Throws(IOException::class)
+    @Throws(IOException::class)
     public actual fun write(buf: ByteArray) { write(buf, 0, buf.size) }
 
-    // @Throws(IOException::class)
-    public actual open fun close() {}
+    @Throws(IOException::class)
+    public actual fun close() {
+        // TODO
+        stream.close()
+    }
 
-    // @Throws(IOException::class)
-    public actual open fun flush() {}
+    @Throws(IOException::class)
+    public actual fun flush() {
+        // TODO
+        stream.flush()
+    }
 }

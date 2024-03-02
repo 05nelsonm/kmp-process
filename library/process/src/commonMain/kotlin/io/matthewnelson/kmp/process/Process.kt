@@ -37,11 +37,6 @@ import kotlin.time.TimeSource
 /**
  * A Process.
  *
- * Currently, only Jvm supports writing to a spawned process's
- * standard input which can be obtained via the `Process.stdin`
- * extension function. Use [Builder.output] if the process input
- * is needed. (See Issue #77)
- *
  * @see [Builder]
  * @see [Current]
  * @see [OutputFeed.Handler]
@@ -80,15 +75,13 @@ public abstract class Process internal constructor(
     @JvmField
     public val stdio: Stdio.Config,
 
-//    /**
-//     * A stream to write data to the process's standard
-//     * input, or `null` if [Stdio.Config.stdin] is not
-//     * [Stdio.Pipe].
-//     * */
-//    @JvmField
-//    TODO: Issue #77
-    @get:JvmSynthetic
-    internal val input: StdinStream?,
+    /**
+     * A stream to write data to the process's standard
+     * input, or `null` if [Stdio.Config.stdin] is not
+     * [Stdio.Pipe].
+     * */
+    @JvmField
+    public val input: AsyncWriteStream?,
 
     /**
      * The [Signal] utilized to stop the process (if
@@ -110,7 +103,7 @@ public abstract class Process internal constructor(
     public val startTime: ComparableTimeMark = TimeSource.Monotonic.markNow()
 
     /**
-     * Information about the currently running process
+     * Information about the current process (i.e. the "parent" process).
      * */
     public object Current {
 
@@ -124,7 +117,7 @@ public abstract class Process internal constructor(
     /**
      * Destroys the [Process] by:
      *  - Sending it [destroySignal] (if it has not completed yet)
-     *  - Closes all input/output streams
+     *  - Closes all I/O streams
      *  - Stops all [OutputFeed] production (See [OutputFeed.Waiter])
      *    - **NOTE:** This may not be immediate if there is buffered
      *      data on `stdout` or `stderr`. The contents of what are

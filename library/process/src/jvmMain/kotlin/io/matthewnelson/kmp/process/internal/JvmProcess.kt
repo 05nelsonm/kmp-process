@@ -16,6 +16,7 @@
 package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.File
+import io.matthewnelson.kmp.process.AsyncWriteStream
 import io.matthewnelson.kmp.process.internal.BufferedLineScanner.Companion.scanLines
 import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.Signal
@@ -40,7 +41,11 @@ internal class JvmProcess private constructor(
     chdir,
     env,
     stdio,
-    if (stdio.stdin is Stdio.Pipe) jProcess.outputStream else null,
+    if (stdio.stdin is Stdio.Pipe) {
+        AsyncWriteStream.of(jProcess.outputStream)
+    } else {
+        null
+    },
     destroy,
     INIT,
 ) {
@@ -127,6 +132,7 @@ internal class JvmProcess private constructor(
     private inline fun Runnable.execute(stdio: String): Thread {
         val t = Thread(this, "Process[pid=$_pid, stdio=$stdio]")
         t.isDaemon = true
+        t.priority = Thread.MAX_PRIORITY
         t.start()
         return t
     }
@@ -182,9 +188,9 @@ internal class JvmProcess private constructor(
             // Android API 23 and below does not have redirect
             // capabilities. Below is a supplemental implementation
 
-            fun InputStream.writeTo(oStream: OutputStream) {
+            fun ReadStream.writeTo(oStream: WriteStream) {
                 val iStream = this
-                val buf = ByteArray(4096)
+                val buf = ByteArray(DEFAULT_BUFFER_SIZE)
 
                 while (true) {
                     val read = iStream.read(buf)
@@ -213,7 +219,7 @@ internal class JvmProcess private constructor(
                 is Stdio.Pipe -> { /* do nothing */ }
             }
 
-            fun InputStream.redirectTo(stdio: String, file: Stdio.File) {
+            fun ReadStream.redirectTo(stdio: String, file: Stdio.File) {
                 Runnable {
                     try {
                         use { iStream ->
@@ -225,7 +231,7 @@ internal class JvmProcess private constructor(
                 }.execute(stdio = stdio)
             }
 
-            fun InputStream.redirectTo(stdio: String, oStream: PrintStream) {
+            fun ReadStream.redirectTo(stdio: String, oStream: PrintStream) {
                 Runnable {
                     try {
                         use { iStream ->

@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-package io.matthewnelson.kmp.process.internal.stdio
+@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
+
+package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.file.errnoToIOException
-import io.matthewnelson.kmp.process.internal.InputStream
-import io.matthewnelson.kmp.process.internal.check
-import io.matthewnelson.kmp.process.internal.checkBounds
+import io.matthewnelson.kmp.process.internal.stdio.StdioDescriptor
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.convert
@@ -27,14 +27,14 @@ import kotlinx.cinterop.usePinned
 import platform.posix.EINTR
 import platform.posix.errno
 
-internal class StdioReader internal constructor(
+internal actual abstract class ReadStream private constructor(
     private val pipe: StdioDescriptor.Pair
-): InputStream() {
+) {
 
     @Throws(IllegalArgumentException::class, IndexOutOfBoundsException::class, IOException::class)
-    override fun read(buf: ByteArray, offset: Int, len: Int): Int {
+    internal actual open fun read(buf: ByteArray, offset: Int, len: Int): Int {
         buf.checkBounds(offset, len)
-        if (pipe.isClosed) throw IOException("StdioReader is closed")
+        if (pipe.isClosed) throw IOException("ReadStream is closed")
         if (len == 0) return 0
 
         @OptIn(ExperimentalForeignApi::class)
@@ -60,5 +60,15 @@ internal class StdioReader internal constructor(
             // Retried 3 times, all interrupted...
             read ?: throw errnoToIOException(EINTR)
         }
+    }
+
+    @Throws(IOException::class)
+    internal actual fun read(buf: ByteArray): Int = read(buf, 0, buf.size)
+
+    internal companion object {
+
+        internal fun of(
+            pipe: StdioDescriptor.Pair,
+        ): ReadStream = object : ReadStream(pipe) {}
     }
 }

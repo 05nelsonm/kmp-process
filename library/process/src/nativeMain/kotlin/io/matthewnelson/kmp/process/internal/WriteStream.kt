@@ -13,12 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-package io.matthewnelson.kmp.process.internal.stdio
+@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
+
+package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.file.errnoToIOException
-import io.matthewnelson.kmp.process.StdinStream
-import io.matthewnelson.kmp.process.internal.checkBounds
+import io.matthewnelson.kmp.process.internal.stdio.StdioDescriptor
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.convert
@@ -26,15 +27,14 @@ import kotlinx.cinterop.usePinned
 import platform.posix.EINTR
 import platform.posix.errno
 
-// TODO: Issue #77
-internal class RealStdinStream internal constructor(
-    private val pipe: StdioDescriptor.Pair
-): StdinStream() {
+internal actual abstract class WriteStream private constructor(
+    private val pipe: StdioDescriptor.Pair,
+) {
 
     @Throws(IllegalArgumentException::class, IndexOutOfBoundsException::class, IOException::class)
-    override fun write(buf: ByteArray, offset: Int, len: Int) {
+    internal actual open fun write(buf: ByteArray, offset: Int, len: Int) {
         buf.checkBounds(offset, len)
-        if (pipe.isClosed) throw IOException("StdinStream is closed")
+        if (pipe.isClosed) throw IOException("WriteStream is closed")
         if (len == 0) return
 
         @OptIn(ExperimentalForeignApi::class)
@@ -74,8 +74,18 @@ internal class RealStdinStream internal constructor(
     }
 
     @Throws(IOException::class)
-    override fun close() { pipe.close() }
+    internal actual fun write(buf: ByteArray) { write(buf, 0, buf.size) }
 
     @Throws(IOException::class)
-    override fun flush() {}
+    internal actual open fun close() { pipe.close() }
+
+    @Throws(IOException::class)
+    internal actual open fun flush() {}
+
+    internal companion object {
+
+        internal fun of(
+            pipe: StdioDescriptor.Pair,
+        ): WriteStream = object : WriteStream(pipe) {}
+    }
 }

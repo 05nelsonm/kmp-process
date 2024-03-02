@@ -23,7 +23,7 @@ import kotlin.test.assertEquals
 
 class BufferedLineScannerUnitTest {
 
-    private class TestStream(text: String): InputStream() {
+    private class TestStream(text: String): ReadStream() {
 
         private val data = text.encodeToByteArray()
 
@@ -31,6 +31,8 @@ class BufferedLineScannerUnitTest {
             private set
         var numReads = 0
             private set
+
+        override fun read(): Int { TODO("Not yet implemented") }
 
         override fun read(buf: ByteArray, offset: Int, len: Int): Int {
             val remainder = data.size - read
