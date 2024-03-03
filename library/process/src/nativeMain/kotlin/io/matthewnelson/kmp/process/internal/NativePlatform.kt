@@ -83,27 +83,6 @@ internal fun String.toProgramFile(): File {
 
 internal expect fun File.isProgramOrNull(): Boolean?
 
-// Returns errno value or null (was successful)
-internal fun fdClose(fd: Int, retries: Int = 3): Int? {
-    val tries = if (retries < 3) 3 else retries
-    var attempts = 0
-
-    while (attempts++ < tries) {
-        val res = close(fd)
-        if (res == -1) {
-            when (val e = errno) {
-                EINTR -> continue
-                else -> return e
-            }
-        }
-
-        // success
-        return null
-    }
-
-    return EINTR
-}
-
 @OptIn(ExperimentalForeignApi::class)
 internal fun List<String>.toArgv(
     program: File,

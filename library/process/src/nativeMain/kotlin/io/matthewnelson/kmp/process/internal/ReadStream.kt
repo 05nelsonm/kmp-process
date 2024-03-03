@@ -18,47 +18,31 @@
 package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.IOException
-import io.matthewnelson.kmp.file.errnoToIOException
 import io.matthewnelson.kmp.process.internal.stdio.StdioDescriptor
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.convert
 import kotlinx.cinterop.usePinned
-import platform.posix.EINTR
-import platform.posix.errno
 
 internal actual abstract class ReadStream private constructor(
-    private val pipe: StdioDescriptor.Pair
+    private val descriptor: StdioDescriptor,
 ) {
 
     @Throws(IllegalArgumentException::class, IndexOutOfBoundsException::class, IOException::class)
     internal actual open fun read(buf: ByteArray, offset: Int, len: Int): Int {
         buf.checkBounds(offset, len)
-        if (pipe.isClosed) throw IOException("ReadStream is closed")
+        if (descriptor.isClosed) throw IOException("ReadStream is closed")
         if (len == 0) return 0
 
         @OptIn(ExperimentalForeignApi::class)
         return buf.usePinned { pinned ->
-            var read: Int? = null
-            var interrupted = 0
-            while (read == null && interrupted++ < 3) {
-                val res = platform.posix.read(
-                    pipe.fdRead,
+            descriptor.withFd(retries = 10) { fd ->
+                platform.posix.read(
+                    fd,
                     pinned.addressOf(offset),
                     len.convert(),
                 ).toInt()
-
-                if (res == -1) {
-                    when (val e = errno) {
-                        EINTR -> continue
-                        else -> throw errnoToIOException(e)
-                    }
-                }
-                read = res
-            }
-
-            // Retried 3 times, all interrupted...
-            read ?: throw errnoToIOException(EINTR)
+            }.check()
         }
     }
 
@@ -68,7 +52,15 @@ internal actual abstract class ReadStream private constructor(
     internal companion object {
 
         internal fun of(
-            pipe: StdioDescriptor.Pair,
-        ): ReadStream = object : ReadStream(pipe) {}
+            pipe: StdioDescriptor.Pipe,
+        ): ReadStream = of(pipe.read)
+
+        @Throws(IllegalArgumentException::class)
+        internal fun of(
+            descriptor: StdioDescriptor,
+        ): ReadStream {
+            require(descriptor.canRead) { "StdioDescriptor must be readable" }
+            return object : ReadStream(descriptor) {}
+        }
     }
 }

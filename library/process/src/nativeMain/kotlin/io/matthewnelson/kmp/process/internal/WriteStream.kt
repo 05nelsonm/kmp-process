@@ -18,23 +18,20 @@
 package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.IOException
-import io.matthewnelson.kmp.file.errnoToIOException
 import io.matthewnelson.kmp.process.internal.stdio.StdioDescriptor
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.convert
 import kotlinx.cinterop.usePinned
-import platform.posix.EINTR
-import platform.posix.errno
 
 internal actual abstract class WriteStream private constructor(
-    private val pipe: StdioDescriptor.Pair,
+    private val descriptor: StdioDescriptor,
 ) {
 
     @Throws(IllegalArgumentException::class, IndexOutOfBoundsException::class, IOException::class)
     internal actual open fun write(buf: ByteArray, offset: Int, len: Int) {
         buf.checkBounds(offset, len)
-        if (pipe.isClosed) throw IOException("WriteStream is closed")
+        if (descriptor.isClosed) throw IOException("WriteStream is closed")
         if (len == 0) return
 
         @OptIn(ExperimentalForeignApi::class)
@@ -42,32 +39,16 @@ internal actual abstract class WriteStream private constructor(
             var written = 0
             while (written < len) {
 
-                var write: Int? = null
-                var interrupted = 0
-                while (write == null && interrupted++ < 3) {
-                    val res = platform.posix.write(
-                        pipe.fdWrite,
+                val write = descriptor.withFd(retries = 10) { fd ->
+                    platform.posix.write(
+                        fd,
                         pinned.addressOf(offset + written),
                         (len - written).convert(),
                     ).toInt()
+                }.check()
 
-                    // TODO: If 0, are all fdRead ends closed?
-                    //  not really a problem b/c of isClosed
-                    //  check, but should do a proper check here
-
-                    if (res == -1) {
-                        when (val e = errno) {
-                            EINTR -> continue
-                            else -> throw errnoToIOException(e)
-                        }
-                    }
-
-                    write = res
-                }
-
-                // Retried 3 times, all interrupted...
-                write ?: throw errnoToIOException(EINTR)
-
+                // TODO: If all read ends are closed, will return 0?
+                //  need to check.
                 written += write
             }
         }
@@ -77,7 +58,7 @@ internal actual abstract class WriteStream private constructor(
     internal actual fun write(buf: ByteArray) { write(buf, 0, buf.size) }
 
     @Throws(IOException::class)
-    internal actual open fun close() { pipe.close() }
+    internal actual open fun close() { descriptor.close() }
 
     @Throws(IOException::class)
     internal actual open fun flush() {}
@@ -85,7 +66,15 @@ internal actual abstract class WriteStream private constructor(
     internal companion object {
 
         internal fun of(
-            pipe: StdioDescriptor.Pair,
-        ): WriteStream = object : WriteStream(pipe) {}
+            pipe: StdioDescriptor.Pipe,
+        ): WriteStream = of(pipe.write)
+
+        @Throws(IllegalArgumentException::class)
+        internal fun of(
+            descriptor: StdioDescriptor,
+        ): WriteStream {
+            require(descriptor.canWrite) { "StdioDescriptor must be writable" }
+            return object : WriteStream(descriptor) {}
+        }
     }
 }

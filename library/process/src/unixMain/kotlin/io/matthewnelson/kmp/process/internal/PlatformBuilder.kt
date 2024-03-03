@@ -22,6 +22,7 @@ import io.matthewnelson.kmp.process.Output
 import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.Stdio
+import io.matthewnelson.kmp.process.internal.Closable.Companion.tryCloseSuppressed
 import io.matthewnelson.kmp.process.internal.fork.posixDup2
 import io.matthewnelson.kmp.process.internal.fork.posixExecve
 import io.matthewnelson.kmp.process.internal.fork.posixFork
@@ -30,7 +31,7 @@ import io.matthewnelson.kmp.process.internal.spawn.PosixSpawnAttrs.Companion.pos
 import io.matthewnelson.kmp.process.internal.spawn.PosixSpawnFileActions.Companion.posixSpawnFileActionsInit
 import io.matthewnelson.kmp.process.internal.spawn.posixSpawn
 import io.matthewnelson.kmp.process.internal.stdio.StdioDescriptor
-import io.matthewnelson.kmp.process.internal.stdio.StdioDescriptor.Pair.Companion.fdOpen
+import io.matthewnelson.kmp.process.internal.stdio.StdioDescriptor.Pipe.Companion.fdOpen
 import io.matthewnelson.kmp.process.internal.stdio.StdioHandle
 import io.matthewnelson.kmp.process.internal.stdio.StdioHandle.Companion.openHandle
 import kotlinx.cinterop.*
@@ -74,14 +75,14 @@ internal actual class PlatformBuilder private actual constructor() {
         } catch (_: UnsupportedOperationException) {
             /* ignore and try fork/exec */
         } catch (e: IOException) {
-            handle.close()
+            handle.tryCloseSuppressed(e)
             throw e
         }
 
         try {
             return forkExec(command, program, args, chdir, env, handle, destroy)
         } catch (e: Exception) {
-            handle.close()
+            handle.tryCloseSuppressed(e)
             throw e.wrapIOException()
         }
     }
@@ -199,15 +200,15 @@ internal actual class PlatformBuilder private actual constructor() {
         val pipe = try {
             Stdio.Pipe.fdOpen()
         } catch (e: IOException) {
-            handle.close()
+            handle.tryCloseSuppressed(e)
             throw e
         }
 
         val pid = try {
             posixFork().check()
         } catch (e: Exception) {
-            handle.close()
-            pipe.close()
+            handle.tryCloseSuppressed(e)
+            pipe.tryCloseSuppressed(e)
             throw e
         }
 
@@ -216,8 +217,6 @@ internal actual class PlatformBuilder private actual constructor() {
         }
 
         // Parent process
-        fdClose(pipe.fdWrite)
-
         val p = NativeProcess(
             pid,
             handle,
@@ -228,23 +227,45 @@ internal actual class PlatformBuilder private actual constructor() {
             destroy,
         )
 
-        // Below is sort of like vfork on Linux, but
-        // with error validation and cleanup on our
-        // end.
+        try {
+            pipe.write.close()
+        } catch (e: IOException) {
+            // if we cannot close the write end of the pipe then
+            // read will never pop out with a value of 0 when the
+            // child process' exec is successful.
+            p.destroy()
+            pipe.read.tryCloseSuppressed(e)
+            throw IOException("CLOEXEC pipe failure", e)
+        }
+
+        // Below is sort of like vfork on Linux where we
+        // wait for the child process, but with error
+        // validation and cleanup on our end.
         val b = ByteArray(5)
+        var threw: IOException? = null
 
         val read = try {
             ReadStream.of(pipe).read(b)
         } catch (e: IOException) {
-            p.destroy()
-            throw IOException("CLOEXEC pipe read failure", e)
-        } finally {
-            fdClose(pipe.fdRead)
+            threw = e
         }
+
+        try {
+            pipe.read.close()
+        } catch (e: IOException) {
+            if (threw != null) {
+                threw.addSuppressed(e)
+            } else {
+                threw = e
+            }
+        }
+
+        threw?.let { p.destroy(); throw it }
 
         when (read) {
             // execve successful and CLOEXEC pipe's write end
-            // was closed, resulting in the read end stopping.
+            // was closed in the child process, resulting in the
+            // read end stopping (no write ends).
             0 -> null
 
             // Something happened in the child process
@@ -279,7 +300,7 @@ internal actual class PlatformBuilder private actual constructor() {
     @Throws(IllegalArgumentException::class)
     constructor(
         pid: Int,
-        private val pipe: StdioDescriptor.Pair,
+        private val pipe: StdioDescriptor.Pipe,
         private val handle: StdioHandle,
         program: File,
         args: List<String>,
@@ -297,20 +318,25 @@ internal actual class PlatformBuilder private actual constructor() {
             errno.toBigEndian().copyInto(b)
             try {
                 WriteStream.of(pipe).write(b)
-            } finally {
+            } catch (_: IOException) {}
+            try {
                 handle.close()
-                fdClose(pipe.fdWrite)
-            }
+            } catch (_: IOException) {}
+            try {
+                pipe.close()
+            } catch (_: IOException) {}
             _exit(1)
         }
 
         init {
-            fdClose(pipe.fdRead)
+            try {
+                pipe.read.close()
+            } catch (_: IOException) {}
 
             var err: Int? = null
 
             try {
-                handle.dup2 { fd, newFd ->
+                handle.dup2(action = { fd, newFd ->
                     when (posixDup2(fd, newFd)) {
                         -1 -> {
                             err = errno
@@ -318,7 +344,7 @@ internal actual class PlatformBuilder private actual constructor() {
                         }
                         else -> null
                     }
-                }
+                })
             } catch (_: IOException) {
                 onError(err ?: EBADF, ERR_DUP2)
             }

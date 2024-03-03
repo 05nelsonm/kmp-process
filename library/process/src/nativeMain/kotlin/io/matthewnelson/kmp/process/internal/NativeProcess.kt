@@ -21,6 +21,7 @@ import io.matthewnelson.kmp.process.AsyncWriteStream
 import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.internal.BufferedLineScanner.Companion.scanLines
+import io.matthewnelson.kmp.process.internal.Closable.Companion.tryCloseSuppressed
 import io.matthewnelson.kmp.process.internal.stdio.StdioHandle
 import kotlinx.cinterop.*
 import platform.posix.*
@@ -53,8 +54,9 @@ internal constructor(
 
     init {
         if (pid <= 0) {
-            handle.close()
-            throw IOException("pid[$pid] must be greater than 0")
+            val t = IOException("pid[$pid] must be greater than 0")
+            handle.tryCloseSuppressed(t)
+            throw t
         }
     }
 
@@ -90,7 +92,11 @@ internal constructor(
             isAlive
         }
 
-        handle.close()
+        try {
+            handle.close()
+        } catch (_: IOException) {
+            // TODO: Error handler
+        }
 
         if (!hasBeenDestroyed) {
             stdoutWorker

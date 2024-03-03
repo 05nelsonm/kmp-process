@@ -18,81 +18,131 @@
 package io.matthewnelson.kmp.process.internal.stdio
 
 import io.matthewnelson.kmp.file.IOException
+import io.matthewnelson.kmp.file.errnoToIOException
 import io.matthewnelson.kmp.file.path
 import io.matthewnelson.kmp.process.Stdio
+import io.matthewnelson.kmp.process.internal.Closable
 import io.matthewnelson.kmp.process.internal.STDIO_NULL
 import io.matthewnelson.kmp.process.internal.check
-import io.matthewnelson.kmp.process.internal.fdClose
+import kotlinx.cinterop.ExperimentalForeignApi
 import platform.posix.*
 import kotlin.concurrent.Volatile
 
-internal sealed class StdioDescriptor private constructor() {
+internal class StdioDescriptor private constructor(
+    private val fd: Int,
+    internal val canRead: Boolean,
+    internal val canWrite: Boolean,
+): Closable {
 
     @Volatile
-    internal var isClosed: Boolean = false
-        private set
+    private var _isClosed: Boolean = false
+    override val isClosed: Boolean get() = _isClosed
 
-    internal fun close() {
-        if (isClosed) return
+    @Throws(IOException::class)
+    override fun close() {
+        if (_isClosed) return
 
-        when (this) {
-            is Single -> when (fd) {
-                Single.Stdin.fd,
-                Single.Stdout.fd,
-                Single.Stderr.fd -> { /* do not close */ }
-                else -> fdClose(fd)
-            }
-            is Pair -> {
-                fdClose(fdRead)
-                fdClose(fdWrite)
-            }
+        val result = when (fd) {
+            STDIN_FILENO,
+            STDOUT_FILENO,
+            STDERR_FILENO -> { 0 /* do not actually close */ }
+            else -> withFd(retries = 10, action =  { fd -> close(fd) })
         }
 
-        isClosed = true
-    }
+        _isClosed = true
 
-    internal class Single private constructor(
-        internal val fd: Int,
-    ): StdioDescriptor() {
-
-        internal companion object {
-
-            internal val Stdin: Single = Single(STDIN_FILENO)
-            internal val Stdout: Single = Single(STDOUT_FILENO)
-            internal val Stderr: Single = Single(STDERR_FILENO)
-
-            @Throws(IOException::class)
-            internal fun Stdio.File.fdOpen(isStdin: Boolean): Single {
-                var mode = 0
-                var flags = if (isStdin) O_RDONLY else O_WRONLY
-
-                if (!isStdin && append) {
-                    flags = flags or O_APPEND
-                }
-
-                flags = flags.orOCloExec()
-
-                if (!isStdin && file != STDIO_NULL) {
-                    // File may need to be created if it does not currently exist
-                    mode = S_IRUSR or S_IWUSR or S_IRGRP or S_IWGRP or S_IROTH
-                    flags = flags or O_CREAT
-                }
-
-                val fd = open(file.path, flags, mode).check()
-                return Single(fd)
-            }
+        if (result != 0) {
+            @OptIn(ExperimentalForeignApi::class)
+            throw errnoToIOException(errno)
         }
     }
 
-    internal class Pair private constructor(
-        internal val fdRead: Int,
-        internal val fdWrite: Int,
-    ): StdioDescriptor() {
+    internal fun withFd(
+        retries: Int = 3,
+        action: (fd: Int) -> Int,
+    ): Int {
+        val tries = if (retries < 3) 3 else retries
+        var eintr = 0
+
+        while (eintr++ < tries) {
+            if (_isClosed) {
+                set_posix_errno(EBADF)
+                return -1
+            }
+
+            val result = action(fd)
+            if (result == -1 && errno == EINTR) {
+                // retry
+                continue
+            }
+
+            // non-EINTR result
+            return result
+        }
+
+        // retries ran out
+        return -1
+    }
+
+    internal companion object {
+
+        internal val STDIN get() = StdioDescriptor(STDIN_FILENO, canRead = false, canWrite = true)
+        internal val STDOUT get() = StdioDescriptor(STDOUT_FILENO, canRead = true, canWrite = false)
+        internal val STDERR get() = StdioDescriptor(STDERR_FILENO, canRead = true, canWrite = false)
+
+        @Throws(IOException::class)
+        internal fun Stdio.File.fdOpen(isStdin: Boolean): StdioDescriptor {
+            var mode = 0
+            var flags = if (isStdin) O_RDONLY else O_WRONLY
+
+            if (!isStdin && append) {
+                flags = flags or O_APPEND
+            }
+
+            flags = flags.orOCloExec()
+
+            if (!isStdin && file != STDIO_NULL) {
+                // File may need to be created if it does not currently exist
+                mode = S_IRUSR or S_IWUSR or S_IRGRP or S_IWGRP or S_IROTH
+                flags = flags or O_CREAT
+            }
+
+            val fd = open(file.path, flags, mode).check()
+            return StdioDescriptor(fd, canRead = isStdin, canWrite = !isStdin)
+        }
+    }
+
+    internal class Pipe private constructor(fdRead: Int, fdWrite: Int): Closable {
+
+        internal val read = StdioDescriptor(fdRead, canRead = true, canWrite = false)
+        internal val write = StdioDescriptor(fdWrite, canRead = false, canWrite = true)
+
+        override val isClosed: Boolean get() = read.isClosed && write.isClosed
+
+        @Throws(IOException::class)
+        override fun close() {
+            var threw: IOException? = null
+
+            try {
+                read.close()
+            } catch (e: IOException) {
+                threw = e
+            }
+            try {
+                write.close()
+            } catch (e: IOException) {
+                if (threw != null) e.addSuppressed(threw)
+                threw = e
+            }
+
+            if (threw == null) return
+            throw threw
+        }
 
         internal companion object {
 
             @Throws(IOException::class)
-            internal fun Stdio.Pipe.fdOpen(): Pair = ::Pair.fdOpen(this)
+            internal fun Stdio.Pipe.fdOpen(): Pipe = ::Pipe.fdOpen(this)
         }
     }
 }
@@ -101,6 +151,6 @@ internal sealed class StdioDescriptor private constructor() {
 internal expect inline fun Int.orOCloExec(): Int
 
 @Throws(IOException::class)
-internal expect fun ((fdRead: Int, fdWrite: Int) -> StdioDescriptor.Pair).fdOpen(
+internal expect fun ((fdRead: Int, fdWrite: Int) -> StdioDescriptor.Pipe).fdOpen(
     stdio: Stdio.Pipe,
-): StdioDescriptor.Pair
+): StdioDescriptor.Pipe
