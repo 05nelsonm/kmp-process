@@ -60,8 +60,10 @@ internal class BufferedLineScanner private constructor(
                 break
             }
 
-            if (read == 0) continue
-            if (read == -1) break
+            // If a pipe has no write ends open (i.e. the
+            // child process exited), a zero read is returned,
+            // and we can end early (before process destruction).
+            if (read <= 0) break
 
             var iNext = 0
             for (i in 0 until read) {

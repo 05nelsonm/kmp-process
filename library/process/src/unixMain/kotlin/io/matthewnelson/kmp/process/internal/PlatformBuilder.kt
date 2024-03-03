@@ -230,7 +230,7 @@ internal actual class PlatformBuilder private actual constructor() {
         try {
             pipe.write.close()
         } catch (e: IOException) {
-            // if we cannot close the write end of the pipe then
+            // If we cannot close the write end of the pipe then
             // read will never pop out with a value of 0 when the
             // child process' exec is successful.
             p.destroy()
@@ -239,7 +239,7 @@ internal actual class PlatformBuilder private actual constructor() {
         }
 
         // Below is sort of like vfork on Linux where we
-        // wait for the child process, but with error
+        // wait for the child process exec, but with error
         // validation and cleanup on our end.
         val b = ByteArray(5)
         var threw: IOException? = null
@@ -247,7 +247,7 @@ internal actual class PlatformBuilder private actual constructor() {
         val read = try {
             ReadStream.of(pipe).read(b)
         } catch (e: IOException) {
-            threw = e
+            threw = IOException("CLOEXEC pipe failure", e)
         }
 
         try {
@@ -256,7 +256,7 @@ internal actual class PlatformBuilder private actual constructor() {
             if (threw != null) {
                 threw.addSuppressed(e)
             } else {
-                threw = e
+                threw = IOException("CLOEXEC pipe failure", e)
             }
         }
 
@@ -265,7 +265,7 @@ internal actual class PlatformBuilder private actual constructor() {
         when (read) {
             // execve successful and CLOEXEC pipe's write end
             // was closed in the child process, resulting in the
-            // read end stopping (no write ends).
+            // read end here in the parent stopping.
             0 -> null
 
             // Something happened in the child process
@@ -286,7 +286,7 @@ internal actual class PlatformBuilder private actual constructor() {
                 }
             }
 
-            // Bad read on our pipe (should never really happen?)
+            // should never really happen?
             else -> IOException("invalid read on CLOEXEC pipe")
         }?.let { e: IOException ->
             p.destroy()
