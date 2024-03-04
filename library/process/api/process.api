@@ -7,8 +7,14 @@ public final class io/matthewnelson/kmp/process/AsyncWriteStream : io/matthewnel
 }
 
 public abstract class io/matthewnelson/kmp/process/Blocking {
+	public static final field Companion Lio/matthewnelson/kmp/process/Blocking$Companion;
+	public static final fun threadSleep-LRDsOJo (J)V
 	public final fun waitFor ()I
 	public final fun waitFor-LRDsOJo (J)Ljava/lang/Integer;
+}
+
+public final class io/matthewnelson/kmp/process/Blocking$Companion {
+	public final fun threadSleep-LRDsOJo (J)V
 }
 
 public abstract class io/matthewnelson/kmp/process/Blocking$Waiter {

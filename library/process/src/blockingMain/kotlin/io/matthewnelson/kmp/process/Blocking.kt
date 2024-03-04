@@ -21,6 +21,7 @@ import io.matthewnelson.kmp.file.InterruptedException
 import io.matthewnelson.kmp.process.internal.commonWaitFor
 import io.matthewnelson.kmp.process.internal.threadSleep
 import kotlin.jvm.JvmField
+import kotlin.jvm.JvmStatic
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -28,6 +29,8 @@ import kotlin.time.Duration.Companion.milliseconds
  * Extended by [OutputFeed.Handler] (which is extended
  * by [Process]) in order to provide blocking APIs for
  * Jvm & Native.
+ *
+ * @see [threadSleep]
  * */
 public actual sealed class Blocking protected actual constructor() {
 
@@ -60,6 +63,24 @@ public actual sealed class Blocking protected actual constructor() {
     public fun waitFor(
         duration: Duration,
     ): Int? = (this as Process).commonWaitFor(duration) { it.threadSleep() }
+
+    public companion object {
+
+        /**
+         * Helper function for Jvm & Native for blocking the thread for
+         * the specified [Duration]
+         *
+         * e.g.
+         *
+         *     Blocking.threadSleep(50.milliseconds)
+         *
+         * @throws [IllegalArgumentException] when [Duration] is improper
+         * @throws [InterruptedException] if the calling thread was interrupted
+         * */
+        @JvmStatic
+        @Throws(InterruptedException::class)
+        public fun threadSleep(duration: Duration) { duration.threadSleep() }
+    }
 
     /**
      * Extended by [OutputFeed.Waiter] in order to
