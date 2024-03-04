@@ -41,9 +41,10 @@ internal actual val IsMobile: Boolean get() {
 @Throws(InterruptedException::class)
 internal actual inline fun Duration.threadSleep() {
     if (usleep(inWholeMicroseconds.toUInt()) == -1) {
-        // EINVAL will never happen b/c duration is
-        // max 100 millis. Must be EINTR
-        throw InterruptedException()
+        throw when (errno) {
+            EINVAL -> IllegalArgumentException()
+            else -> InterruptedException()
+        }
     }
 }
 

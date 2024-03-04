@@ -18,30 +18,80 @@
 package io.matthewnelson.kmp.process
 
 import io.matthewnelson.kmp.file.IOException
+import io.matthewnelson.kmp.process.internal.Lock
 import io.matthewnelson.kmp.process.internal.WriteStream
+import io.matthewnelson.kmp.process.internal.checkBounds
+import kotlin.concurrent.Volatile
 
 public actual sealed class BufferedWriteStream actual constructor(
     private val stream: WriteStream
 ) {
 
+    private val buf = ByteArray(1024 * 8)
+    @Volatile private var bufLen = 0
+    private val lock = Lock()
+
     @Throws(IllegalArgumentException::class, IndexOutOfBoundsException::class, IOException::class)
-    public actual fun write(buf: ByteArray, offset: Int, len: Int) {
-        // TODO
-        stream.write(buf, offset, len)
-    }
+    public actual fun write(buf: ByteArray, offset: Int, len: Int) { lock.withLock { writeNoLock(buf, offset, len) } }
 
     @Throws(IOException::class)
     public actual fun write(buf: ByteArray) { write(buf, 0, buf.size) }
 
     @Throws(IOException::class)
     public actual fun close() {
-        // TODO
-        stream.close()
+        if (stream.isClosed) return
+
+        lock.withLock {
+            if (stream.isClosed) return@withLock
+            var threw: IOException? = null
+
+            try {
+                flushNoLock()
+            } catch (e: IOException) {
+                threw = e
+            }
+
+            try {
+                stream.close()
+            } catch (e: IOException) {
+                if (threw != null) {
+                    threw.addSuppressed(e)
+                } else {
+                    threw = e
+                }
+            }
+
+            buf.fill(0)
+
+            if (threw != null) throw threw
+        }
     }
 
     @Throws(IOException::class)
-    public actual fun flush() {
-        // TODO
-        stream.flush()
+    public actual fun flush() { lock.withLock { flushNoLock() } }
+
+    @Throws(IOException::class)
+    private fun writeNoLock(buf: ByteArray, offset: Int, len: Int) {
+        if (len >= this.buf.size) {
+            flushNoLock()
+            stream.write(buf, offset, len)
+        } else {
+            buf.checkBounds(offset, len)
+
+            if (len > (this.buf.size - bufLen)) {
+                flushNoLock()
+            }
+
+            buf.copyInto(this.buf, bufLen, offset, len + offset)
+            bufLen += len
+        }
+    }
+
+    @Throws(IOException::class)
+    private fun flushNoLock() {
+        if (bufLen > 0) {
+            stream.write(buf, 0, bufLen)
+            bufLen = 0
+        }
     }
 }

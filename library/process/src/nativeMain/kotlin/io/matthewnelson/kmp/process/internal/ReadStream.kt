@@ -36,13 +36,13 @@ internal actual abstract class ReadStream private constructor(
 
         @OptIn(ExperimentalForeignApi::class)
         return buf.usePinned { pinned ->
-            descriptor.withFd(retries = 10) { fd ->
+            descriptor.withFd(retries = 10, action = { fd ->
                 platform.posix.read(
                     fd,
                     pinned.addressOf(offset),
                     len.convert(),
                 ).toInt()
-            }.check()
+            }).check()
         }
     }
 
