@@ -17,27 +17,9 @@
 
 package io.matthewnelson.kmp.process.internal
 
-import kotlin.concurrent.AtomicReference
+import kotlinx.atomicfu.locks.SynchronizedObject
+import kotlinx.atomicfu.locks.withLock as _withLock
 
-internal actual class Lock internal actual constructor() {
-
-    private val ref = AtomicReference<Int?>(null)
-
-    internal actual fun <T: Any?> withLock(block: () -> T): T {
-        val hc = Any().hashCode()
-
-        val result = try {
-            while (true) {
-                if (ref.compareAndSet(null, hc)) {
-                    break
-                }
-            }
-
-            block()
-        } finally {
-            ref.value = null
-        }
-
-        return result
-    }
+internal actual class Lock internal actual constructor(): SynchronizedObject() {
+    internal actual fun <T: Any?> withLock(block: () -> T): T = _withLock(block)
 }
