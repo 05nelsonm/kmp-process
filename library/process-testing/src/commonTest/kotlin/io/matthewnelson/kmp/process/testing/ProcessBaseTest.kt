@@ -46,7 +46,6 @@ abstract class ProcessBaseTest {
     protected open val homeDir get() = installer.installationDir
     protected open val cacheDir get() = homeDir.resolve("cache")
     protected open val dataDir get() = homeDir.resolve("data")
-    protected open val tempDir get() = SysTempDir
 
     protected open fun assertExitCode(code: Int) {
         val expected = if (IsWindows) Signal.SIGTERM.code else 0
@@ -71,8 +70,8 @@ abstract class ProcessBaseTest {
             return
         }
 
-        val tempDir = tempDir.resolve("kmp_process")
-        val testCat = tempDir.resolve("test.cat")
+        val tempDir = SysTempDir.resolve("kmp_process")
+        val testCat = SysTempDir.resolve("test.cat")
 
         testCat.delete()
         testCat.parentFile?.mkdirs()
@@ -159,7 +158,7 @@ abstract class ProcessBaseTest {
             return
         }
 
-        val d = tempDir.resolve("try_chdir")
+        val d = SysTempDir.resolve("try_chdir")
         d.delete()
         assertTrue(d.mkdirs())
 
@@ -272,7 +271,7 @@ abstract class ProcessBaseTest {
             return@runTest
         }
 
-        val f = tempDir
+        val f = SysTempDir
             .resolve("kmp_process_redirect")
             .resolve("stdout_stderr.txt")
 

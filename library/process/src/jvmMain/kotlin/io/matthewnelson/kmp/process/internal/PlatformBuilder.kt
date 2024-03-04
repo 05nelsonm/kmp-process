@@ -17,6 +17,7 @@
 
 package io.matthewnelson.kmp.process.internal
 
+import io.matthewnelson.kmp.file.ANDROID
 import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.file.FileNotFoundException
 import io.matthewnelson.kmp.file.IOException
@@ -58,7 +59,7 @@ internal actual class PlatformBuilder private actual constructor() {
         jProcessBuilder.redirectErrorStream(isStderrSameFileAsStdout)
 
         @Suppress("NewApi")
-        if (ANDROID_SDK_INT?.let { sdkInt -> sdkInt >= 24 } != false) {
+        if (ANDROID.SDK_INT?.let { sdkInt -> sdkInt >= 24 } != false) {
             // Only available on Android Runtime 24+ & Java 8+
             jProcessBuilder.redirectInput(stdio.stdin.toRedirect(isStdin = true))
             jProcessBuilder.redirectOutput(stdio.stdout.toRedirect(isStdin = false))
@@ -117,7 +118,7 @@ internal actual class PlatformBuilder private actual constructor() {
         //  value here is simply what gets exposed to API consumers via
         //  Process.environment.
 
-        val destroySignal = ANDROID_SDK_INT?.let { sdkInt ->
+        val destroySignal = ANDROID.SDK_INT?.let { sdkInt ->
             when {
                 // API < 24 always utilizes SIGKILL
                 // when destroy is called. This reflects that.
@@ -164,7 +165,7 @@ internal actual class PlatformBuilder private actual constructor() {
 
         private val AndroidMyPidMethod by lazy {
             // Not Android Runtime
-            if (ANDROID_SDK_INT == null) return@lazy null
+            if (!IsMobile) return@lazy null
 
             // Android runtime
             Class.forName("android.os.Process")

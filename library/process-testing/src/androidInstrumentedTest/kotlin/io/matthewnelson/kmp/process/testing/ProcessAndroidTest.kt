@@ -36,7 +36,6 @@ class ProcessAndroidTest: ProcessBaseTest() {
 
     override val homeDir: File get() = ctx.getDir("torservice", Context.MODE_PRIVATE)
     override val cacheDir: File get() = SysTempDir.resolve("torservice").resolve("cache")
-    override val tempDir: File get() = ctx.cacheDir
 
     private val sdkInt: Int = android.os.Build.VERSION.SDK_INT
 
@@ -76,8 +75,8 @@ class ProcessAndroidTest: ProcessBaseTest() {
         // This ensures functionality is the same, even for supplemental
         // implementation of redirects for API 23 and below
 
-        val d = tempDir.resolve("some_directory")
-        val f = tempDir.resolve("test_file.txt")
+        val d = SysTempDir.resolve("some_directory")
+        val f = SysTempDir.resolve("test_file.txt")
 
         d.delete()
         d.deleteOnExit()

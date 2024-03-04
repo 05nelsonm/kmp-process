@@ -17,10 +17,7 @@
 
 package io.matthewnelson.kmp.process.internal
 
-import io.matthewnelson.kmp.file.File
-import io.matthewnelson.kmp.file.InterruptedException
-import io.matthewnelson.kmp.file.SysDirSep
-import io.matthewnelson.kmp.file.toFile
+import io.matthewnelson.kmp.file.*
 import kotlin.time.Duration
 
 internal actual val STDIO_NULL: File = (System.getProperty("os.name")
@@ -30,30 +27,7 @@ internal actual val STDIO_NULL: File = (System.getProperty("os.name")
     .let { isWindows -> if (isWindows) "NUL" else "/dev/null" }
     .toFile()
 
-internal actual val IsMobile: Boolean get() = ANDROID_SDK_INT != null
-
-internal val ANDROID_SDK_INT: Int? by lazy {
-
-    if (
-        System.getProperty("java.runtime.name")
-            ?.contains("android", ignoreCase = true) != true
-    ) {
-        // Not Android runtime
-        return@lazy null
-    }
-
-    try {
-        val clazz = Class.forName("android.os.Build\$VERSION")
-
-        try {
-            clazz?.getField("SDK_INT")?.getInt(null)
-        } catch (_: Throwable) {
-            clazz?.getField("SDK")?.get(null)?.toString()?.toIntOrNull()
-        }
-    } catch (_: Throwable) {
-        null
-    }
-}
+internal actual val IsMobile: Boolean get() = ANDROID.SDK_INT != null
 
 @Suppress("NOTHING_TO_INLINE")
 @Throws(InterruptedException::class)

@@ -15,6 +15,7 @@
  **/
 package io.matthewnelson.kmp.process.internal
 
+import io.matthewnelson.kmp.file.ANDROID
 import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.process.AsyncWriteStream
 import io.matthewnelson.kmp.process.internal.BufferedLineScanner.Companion.scanLines
@@ -22,7 +23,6 @@ import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.Stdio
 import java.io.FileOutputStream
-import java.io.OutputStream
 import java.io.PrintStream
 import kotlin.concurrent.Volatile
 
@@ -91,7 +91,7 @@ internal class JvmProcess private constructor(
             // call destroy under the hood. Very sad that there
             // is no choice in the termination signal which is
             // what destroyForcibly was intended for.
-            ANDROID_SDK_INT != null -> jProcess.destroy()
+            IsMobile -> jProcess.destroy()
 
             else -> when (destroySignal) {
                 Signal.SIGTERM -> jProcess.destroy()
@@ -150,7 +150,7 @@ internal class JvmProcess private constructor(
 
         // Process.destroy was invoked
 
-        ANDROID_SDK_INT?.let { sdkInt ->
+        ANDROID.SDK_INT?.let { sdkInt ->
             // Android 23 and below uses SIGKILL when
             // destroy is invoked, but fails to add 128
             // the value like newer versions do.
@@ -182,7 +182,7 @@ internal class JvmProcess private constructor(
             } catch (_: Throwable) {}
         }
 
-        ANDROID_SDK_INT?.let { sdkInt ->
+        ANDROID.SDK_INT?.let { sdkInt ->
             if (sdkInt >= 24) return@let
 
             // Android API 23 and below does not have redirect

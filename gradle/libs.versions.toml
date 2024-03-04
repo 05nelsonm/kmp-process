@@ -10,7 +10,7 @@ gradle-publish-maven = "0.27.0"
 
 immutable = "0.1.0"
 
-kmp-file = "0.1.0-beta01"
+kmp-file = "0.1.0-beta02"
 kmp-tor-resource = "408.10.0-SNAPSHOT"
 kotlincrypto-endians = "0.2.0"
 kotlinx-coroutines = "1.8.0"
