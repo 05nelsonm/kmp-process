@@ -21,7 +21,7 @@ import io.matthewnelson.kmp.process.AsyncWriteStream
 import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.internal.BufferedLineScanner.Companion.scanLines
-import io.matthewnelson.kmp.process.internal.Closable.Companion.tryCloseSuppressed
+import io.matthewnelson.kmp.process.internal.Closeable.Companion.tryCloseSuppressed
 import io.matthewnelson.kmp.process.internal.stdio.StdioHandle
 import kotlinx.cinterop.*
 import platform.posix.*

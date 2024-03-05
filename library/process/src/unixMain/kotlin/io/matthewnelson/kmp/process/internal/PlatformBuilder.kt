@@ -22,7 +22,7 @@ import io.matthewnelson.kmp.process.Output
 import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.Stdio
-import io.matthewnelson.kmp.process.internal.Closable.Companion.tryCloseSuppressed
+import io.matthewnelson.kmp.process.internal.Closeable.Companion.tryCloseSuppressed
 import io.matthewnelson.kmp.process.internal.fork.posixDup2
 import io.matthewnelson.kmp.process.internal.fork.posixExecve
 import io.matthewnelson.kmp.process.internal.fork.posixFork

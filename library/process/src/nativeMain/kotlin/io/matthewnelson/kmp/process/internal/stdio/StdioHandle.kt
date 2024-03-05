@@ -21,7 +21,7 @@ package io.matthewnelson.kmp.process.internal.stdio
 import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.process.Stdio
 import io.matthewnelson.kmp.process.internal.*
-import io.matthewnelson.kmp.process.internal.Closable.Companion.tryCloseSuppressed
+import io.matthewnelson.kmp.process.internal.Closeable.Companion.tryCloseSuppressed
 import io.matthewnelson.kmp.process.internal.Instance
 import io.matthewnelson.kmp.process.internal.Lock
 import io.matthewnelson.kmp.process.internal.ReadStream
@@ -34,10 +34,10 @@ import platform.posix.STDOUT_FILENO
 
 internal class StdioHandle private constructor(
     internal val stdio: Stdio.Config,
-    private val stdinFD: Closable,
-    private val stdoutFD: Closable,
-    private val stderrFD: Closable,
-): Closable {
+    private val stdinFD: Closeable,
+    private val stdoutFD: Closeable,
+    private val stderrFD: Closeable,
+): Closeable {
 
     override val isClosed: Boolean get() = stdinFD.isClosed && stdoutFD.isClosed && stderrFD.isClosed
     private val lock = Lock()
@@ -186,7 +186,7 @@ internal class StdioHandle private constructor(
     }
 
     @Suppress("NOTHING_TO_INLINE")
-    private inline fun Closable.dup2FD(isStdin: Boolean): Int = when (this) {
+    private inline fun Closeable.dup2FD(isStdin: Boolean): Int = when (this) {
         is StdioDescriptor -> withFd { it }
         is StdioDescriptor.Pipe -> (if (isStdin) read else write).withFd { it }
         // Will never occur

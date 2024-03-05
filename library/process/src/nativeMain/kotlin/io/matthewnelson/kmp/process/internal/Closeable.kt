@@ -17,7 +17,7 @@ package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.IOException
 
-internal interface Closable {
+internal interface Closeable {
     val isClosed: Boolean
 
     @Throws(IOException::class)
@@ -25,7 +25,7 @@ internal interface Closable {
 
     companion object {
 
-        internal fun Closable.tryCloseSuppressed(t: Throwable) {
+        internal fun Closeable.tryCloseSuppressed(t: Throwable) {
             try {
                 close()
             } catch (e: IOException) {

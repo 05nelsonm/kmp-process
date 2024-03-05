@@ -21,7 +21,7 @@ import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.file.errnoToIOException
 import io.matthewnelson.kmp.file.path
 import io.matthewnelson.kmp.process.Stdio
-import io.matthewnelson.kmp.process.internal.Closable
+import io.matthewnelson.kmp.process.internal.Closeable
 import io.matthewnelson.kmp.process.internal.STDIO_NULL
 import io.matthewnelson.kmp.process.internal.check
 import kotlinx.cinterop.ExperimentalForeignApi
@@ -32,7 +32,7 @@ internal class StdioDescriptor private constructor(
     private val fd: Int,
     internal val canRead: Boolean,
     internal val canWrite: Boolean,
-): Closable {
+): Closeable {
 
     @Volatile
     private var _isClosed: Boolean = false
@@ -112,7 +112,7 @@ internal class StdioDescriptor private constructor(
         }
     }
 
-    internal class Pipe private constructor(fdRead: Int, fdWrite: Int): Closable {
+    internal class Pipe private constructor(fdRead: Int, fdWrite: Int): Closeable {
 
         internal val read = StdioDescriptor(fdRead, canRead = true, canWrite = false)
         internal val write = StdioDescriptor(fdWrite, canRead = false, canWrite = true)
