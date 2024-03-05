@@ -57,6 +57,7 @@ internal class StdioDescriptor private constructor(
         }
     }
 
+    @Throws(IOException::class)
     internal fun withFd(
         retries: Int = 3,
         action: (fd: Int) -> Int,
@@ -65,10 +66,7 @@ internal class StdioDescriptor private constructor(
         var eintr = 0
 
         while (eintr++ < tries) {
-            if (_isClosed) {
-                set_posix_errno(EBADF)
-                return -1
-            }
+            if (_isClosed) throw IOException("StdioDescriptor is closed")
 
             val result = action(fd)
             if (result == -1 && errno == EINTR) {

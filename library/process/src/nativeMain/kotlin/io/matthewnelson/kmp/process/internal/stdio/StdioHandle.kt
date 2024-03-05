@@ -186,6 +186,7 @@ internal class StdioHandle private constructor(
     }
 
     @Suppress("NOTHING_TO_INLINE")
+    @Throws(IOException::class)
     private inline fun Closeable.dup2FD(isStdin: Boolean): Int = when (this) {
         is StdioDescriptor -> withFd { it }
         is StdioDescriptor.Pipe -> (if (isStdin) read else write).withFd { it }

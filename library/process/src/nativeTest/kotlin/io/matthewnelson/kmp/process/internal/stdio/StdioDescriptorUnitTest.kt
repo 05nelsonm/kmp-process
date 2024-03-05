@@ -15,6 +15,7 @@
  **/
 package io.matthewnelson.kmp.process.internal.stdio
 
+import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.file.resolve
 import io.matthewnelson.kmp.file.toFile
 import io.matthewnelson.kmp.process.PROJECT_DIR_PATH
@@ -23,6 +24,7 @@ import io.matthewnelson.kmp.process.internal.stdio.StdioDescriptor.Companion.fdO
 import platform.posix.*
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 
 class StdioDescriptorUnitTest {
 
@@ -41,8 +43,6 @@ class StdioDescriptorUnitTest {
         
         val descriptor = Stdio.File.of(f).fdOpen(isStdin = true)
         descriptor.close()
-        val actual = descriptor.withFd { it }
-        assertEquals(-1, actual)
-        assertEquals(EBADF, errno)
+        assertFailsWith<IOException> { descriptor.withFd { it } }
     }
 }
