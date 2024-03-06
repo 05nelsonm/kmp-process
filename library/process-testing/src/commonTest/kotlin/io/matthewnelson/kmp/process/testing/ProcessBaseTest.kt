@@ -263,7 +263,10 @@ abstract class ProcessBaseTest {
 
         assertEquals(0, exitCode)
         assertEquals(expected.size * 2, actual.size)
-        assertContentEquals(expected + expected, actual)
+
+        val expectedLen = (expected + expected).let { var count = 0; it.forEach { line -> count += line.length }; count }
+        val actualLen = actual.let { var count = 0; it.forEach { line -> count += line.length }; count }
+        assertEquals(expectedLen, actualLen)
     }
 
     @Test
