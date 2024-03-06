@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
+import org.jetbrains.kotlin.gradle.targets.js.yarn.YarnLockMismatchReport
 import org.jetbrains.kotlin.gradle.targets.js.yarn.YarnPlugin
 import org.jetbrains.kotlin.gradle.targets.js.yarn.YarnRootExtension
 
@@ -38,12 +39,18 @@ allprojects {
 
 }
 
+@Suppress("PropertyName")
+val CHECK_PUBLICATION = (findProperty("CHECK_PUBLICATION") as? String) != null
+
 plugins.withType<YarnPlugin> {
     the<YarnRootExtension>().lockFileDirectory = rootDir.resolve(".kotlin-js-store")
+    if (CHECK_PUBLICATION) {
+        the<YarnRootExtension>().yarnLockMismatchReport = YarnLockMismatchReport.NONE
+    }
 }
 
 apiValidation {
-    if (findProperty("CHECK_PUBLICATION") != null) {
+    if (CHECK_PUBLICATION) {
         ignoredProjects.add("check-publication")
     }
 }
