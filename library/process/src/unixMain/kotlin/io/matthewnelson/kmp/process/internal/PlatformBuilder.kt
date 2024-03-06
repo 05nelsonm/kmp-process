@@ -66,12 +66,11 @@ internal actual class PlatformBuilder private actual constructor() {
         stdio: Stdio.Config,
         destroy: Signal,
     ): Process {
-
-        val program = command.toProgramFile()
+        val programPaths = command.toProgramPaths()
         val handle = stdio.openHandle()
 
         try {
-            return posixSpawn(command, program, args, chdir, env, handle, destroy)
+            return posixSpawn(command, programPaths, args, chdir, env, handle, destroy)
         } catch (_: UnsupportedOperationException) {
             /* ignore and try fork/exec */
         } catch (e: IOException) {
@@ -80,7 +79,7 @@ internal actual class PlatformBuilder private actual constructor() {
         }
 
         try {
-            return forkExec(command, program, args, chdir, env, handle, destroy)
+            return forkExec(command, programPaths, args, chdir, env, handle, destroy)
         } catch (e: Exception) {
             handle.tryCloseSuppressed(e)
             throw e.wrapIOException()
@@ -96,13 +95,13 @@ internal actual class PlatformBuilder private actual constructor() {
         env: Map<String, String>,
         handle: StdioHandle,
         destroy: Signal,
-    ): NativeProcess = posixSpawn(command, command.toProgramFile(), args, chdir, env, handle, destroy)
+    ): NativeProcess = posixSpawn(command, command.toProgramPaths(), args, chdir, env, handle, destroy)
 
     @OptIn(ExperimentalForeignApi::class)
     @Throws(IOException::class, UnsupportedOperationException::class)
     private fun posixSpawn(
         command: String,
-        program: File,
+        programPaths: List<String>,
         args: List<String>,
         chdir: File?,
         env: Map<String, String>,
@@ -145,11 +144,16 @@ internal actual class PlatformBuilder private actual constructor() {
             // a post-fork step failure (the best we can do atm).
             val pid = alloc<pid_tVar>().apply { value = -1 }
 
-            val argv = args.toArgv(program = program, scope = this)
+
+            val argv = args.toArgv(program = programPaths.first(), scope = this)
             val envp = env.toEnvp(scope = this)
 
-            // error detection only with underlying fork/vfork/clone steps
-            posixSpawn(program, pid.ptr, fileActions, attrs, argv, envp).check()
+            val iPrograms = programPaths.iterator()
+
+            while (pid.value == -1 && iPrograms.hasNext()) {
+                // error detection only with underlying fork/vfork/clone steps
+                posixSpawn(iPrograms.next(), pid.ptr, fileActions, attrs, argv, envp).check()
+            }
 
             // if there was a failure in the pre-exec or exec steps, the
             // pid reference will not be modified.
@@ -184,13 +188,13 @@ internal actual class PlatformBuilder private actual constructor() {
         env: Map<String, String>,
         handle: StdioHandle,
         destroy: Signal,
-    ): NativeProcess = forkExec(command, command.toProgramFile(), args, chdir, env, handle, destroy)
+    ): NativeProcess = forkExec(command, command.toProgramPaths(), args, chdir, env, handle, destroy)
 
     @OptIn(ExperimentalForeignApi::class)
     @Throws(IOException::class, UnsupportedOperationException::class)
     private fun forkExec(
         command: String,
-        program: File,
+        programPaths: List<String>,
         args: List<String>,
         chdir: File?,
         env: Map<String, String>,
@@ -213,7 +217,7 @@ internal actual class PlatformBuilder private actual constructor() {
         }
 
         if (pid == 0) {
-            ChildProcess(pid, pipe, handle, program, args, chdir, env)
+            ChildProcess(pid, pipe, handle, programPaths, args, chdir, env)
         }
 
         // Parent process
@@ -302,7 +306,7 @@ internal actual class PlatformBuilder private actual constructor() {
         pid: Int,
         private val pipe: StdioDescriptor.Pipe,
         private val handle: StdioHandle,
-        program: File,
+        programPaths: List<String>,
         args: List<String>,
         chdir: File?,
         env: Map<String, String>,
@@ -355,10 +359,14 @@ internal actual class PlatformBuilder private actual constructor() {
 
             @OptIn(ExperimentalForeignApi::class)
             val errno = memScoped {
-                val argv = args.toArgv(program = program, scope = this)
+                val argv = args.toArgv(program = programPaths.first(), scope = this)
                 val envp = env.toEnvp(scope = this)
 
-                posixExecve(program, argv, envp)
+                // Try all potential program paths. First one
+                // to successfully execute will win out
+                programPaths.forEach { path ->
+                    posixExecve(path, argv, envp)
+                }
 
                 // exec failed to replace child process with program
                 errno

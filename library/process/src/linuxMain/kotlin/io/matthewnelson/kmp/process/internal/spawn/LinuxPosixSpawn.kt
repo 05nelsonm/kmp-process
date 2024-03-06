@@ -17,8 +17,6 @@
 
 package io.matthewnelson.kmp.process.internal.spawn
 
-import io.matthewnelson.kmp.file.File
-import io.matthewnelson.kmp.file.absolutePath
 import kotlinx.cinterop.*
 import platform.linux.posix_spawn
 import platform.posix.pid_tVar
@@ -26,10 +24,10 @@ import platform.posix.pid_tVar
 @Suppress("NOTHING_TO_INLINE")
 @OptIn(ExperimentalForeignApi::class)
 internal actual inline fun MemScope.posixSpawn(
-    program: File,
+    program: String,
     pid: CValuesRef<pid_tVar>,
     fileActions: PosixSpawnFileActions,
     attrs: PosixSpawnAttrs,
     argv: CValuesRef<CPointerVar<ByteVar>>,
     envp: CValuesRef<CPointerVar<ByteVar>>,
-): Int = posix_spawn(pid, program.absolutePath, fileActions.ref, attrs.ref, argv, envp)
+): Int = posix_spawn(pid, program, fileActions.ref, attrs.ref, argv, envp)

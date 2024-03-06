@@ -24,7 +24,7 @@ import platform.posix.pid_tVar
 @Suppress("NOTHING_TO_INLINE")
 @OptIn(ExperimentalForeignApi::class)
 internal expect inline fun MemScope.posixSpawn(
-    program: File,
+    program: String,
     pid: CValuesRef<pid_tVar>,
     fileActions: PosixSpawnFileActions,
     attrs: PosixSpawnAttrs,
