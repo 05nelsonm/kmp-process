@@ -49,7 +49,7 @@ internal actual inline fun Duration.threadSleep() {
 }
 
 @Throws(IOException::class)
-internal fun String.toProgramFile(): File {
+internal fun String.toProgramPaths(): List<String> {
     val file = toFile()
     var absolute: File? = null
 
@@ -62,36 +62,44 @@ internal fun String.toProgramFile(): File {
         absolute = file.absoluteFile
     }
 
-    // Try finding via PATH
-    if (absolute == null) {
-        @OptIn(ExperimentalForeignApi::class)
-        val paths = getenv("PATH")
-            ?.toKString()
-            ?.split(if (IsWindows) ';' else ':')
-            ?.iterator()
-            ?: throw IOException("PATH environment variable not found. Unable to locate program[$this]")
-
-        while (absolute == null && paths.hasNext()) {
-            val target = paths.next().toFile().resolve(file)
-
-            if (target.isProgramOrNull() != true) continue
-            absolute = target
-        }
+    if (absolute != null) {
+        return listOf(absolute.normalize().path)
     }
 
-    return absolute?.normalize() ?: throw FileNotFoundException("Failed to locate program[$this]")
+    // Try finding via PATH
+    @OptIn(ExperimentalForeignApi::class)
+    val paths = getenv("PATH")
+        ?.toKString()
+        ?.split(if (IsWindows) ';' else ':')
+        ?.iterator()
+        ?: throw IOException("PATH environment variable not found. Unable to locate program[$this]")
+
+    val programPaths = ArrayList<String>(1)
+
+    while (paths.hasNext()) {
+        val target = paths.next().toFile().resolve(file)
+
+        if (target.isProgramOrNull() != true) continue
+        programPaths.add(target.path)
+    }
+
+    if (programPaths.isEmpty()) {
+        throw IOException("Failed to locate program[$this]")
+    }
+
+    return programPaths
 }
 
 internal expect fun File.isProgramOrNull(): Boolean?
 
 @OptIn(ExperimentalForeignApi::class)
 internal fun List<String>.toArgv(
-    program: File,
+    program: String,
     scope: MemScope,
 ): CArrayPointer<CPointerVar<ByteVar>> = with(scope) {
     val argv = allocArray<CPointerVar<ByteVar>>(size + 2)
 
-    argv[0] = program.name.cstr.ptr
+    argv[0] = program.substringAfterLast(SysDirSep).cstr.ptr
 
     var i = 1
     val iterator = iterator()
