@@ -13,14 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-package io.matthewnelson.kmp.process
+@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
 
-import kotlin.experimental.ExperimentalNativeApi
+package io.matthewnelson.kmp.process.internal
 
-@OptIn(ExperimentalNativeApi::class)
-internal actual val IsDarwinMobile: Boolean = when (Platform.osFamily) {
-    OsFamily.IOS,
-    OsFamily.TVOS,
-    OsFamily.WATCHOS -> true
-    else -> false
+import io.matthewnelson.kmp.file.IOException
+
+internal expect abstract class WriteStream {
+
+    @Throws(IllegalArgumentException::class, IndexOutOfBoundsException::class, IOException::class)
+    internal open fun write(buf: ByteArray, offset: Int, len: Int)
+
+    @Throws(IOException::class)
+    internal fun write(buf: ByteArray)
+
+    @Throws(IOException::class)
+    internal open fun close()
+
+    @Throws(IOException::class)
+    internal open fun flush()
 }

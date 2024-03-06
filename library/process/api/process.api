@@ -1,8 +1,38 @@
-public abstract interface annotation class io/matthewnelson/kmp/process/InternalProcessApi : java/lang/annotation/Annotation {
+public final class io/matthewnelson/kmp/process/AsyncWriteStream : io/matthewnelson/kmp/process/BufferedWriteStream {
+	public synthetic fun <init> (Ljava/io/OutputStream;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun writeAsync ([BIILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun writeAsync ([BLkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
-public final class io/matthewnelson/kmp/process/JvmProcess {
-	public static final fun stdin (Lio/matthewnelson/kmp/process/Process;)Ljava/io/BufferedOutputStream;
+public abstract class io/matthewnelson/kmp/process/Blocking {
+	public static final field Companion Lio/matthewnelson/kmp/process/Blocking$Companion;
+	public static final fun threadSleep-LRDsOJo (J)V
+	public final fun waitFor ()I
+	public final fun waitFor-LRDsOJo (J)Ljava/lang/Integer;
+}
+
+public final class io/matthewnelson/kmp/process/Blocking$Companion {
+	public final fun threadSleep-LRDsOJo (J)V
+}
+
+public abstract class io/matthewnelson/kmp/process/Blocking$Waiter {
+	protected final field process Lio/matthewnelson/kmp/process/Process;
+	public synthetic fun <init> (Lio/matthewnelson/kmp/process/Process;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun awaitStop ()Lio/matthewnelson/kmp/process/Process;
+	protected abstract fun isStarted ()Z
+	protected abstract fun isStopped ()Z
+}
+
+public abstract class io/matthewnelson/kmp/process/BufferedWriteStream : java/io/BufferedOutputStream {
+	public synthetic fun <init> (Ljava/io/OutputStream;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun close ()V
+	public final fun flush ()V
+	public final fun write (I)V
+	public final fun write ([B)V
+	public final fun write ([BII)V
+}
+
+public abstract interface annotation class io/matthewnelson/kmp/process/InternalProcessApi : java/lang/annotation/Annotation {
 }
 
 public final class io/matthewnelson/kmp/process/Output {
@@ -42,7 +72,7 @@ public abstract interface class io/matthewnelson/kmp/process/OutputFeed {
 	public abstract fun onOutput (Ljava/lang/String;)V
 }
 
-public abstract class io/matthewnelson/kmp/process/OutputFeed$Handler {
+public abstract class io/matthewnelson/kmp/process/OutputFeed$Handler : io/matthewnelson/kmp/process/Blocking {
 	protected field isDestroyed Z
 	public synthetic fun <init> (Lio/matthewnelson/kmp/process/Stdio$Config;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	protected final fun dispatchStderr (Ljava/lang/String;)V
@@ -59,12 +89,9 @@ public abstract class io/matthewnelson/kmp/process/OutputFeed$Handler {
 	public final fun stdoutWaiter ()Lio/matthewnelson/kmp/process/OutputFeed$Waiter;
 }
 
-public abstract class io/matthewnelson/kmp/process/OutputFeed$Waiter {
+public abstract class io/matthewnelson/kmp/process/OutputFeed$Waiter : io/matthewnelson/kmp/process/Blocking$Waiter {
 	public synthetic fun <init> (Lio/matthewnelson/kmp/process/Process;ZLkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun awaitStop ()Lio/matthewnelson/kmp/process/Process;
-	public final fun awaitStopAsync (Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	protected abstract fun isStarted ()Z
-	protected abstract fun isStopped ()Z
+	public final fun awaitStopAsync (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
 public abstract class io/matthewnelson/kmp/process/Process : io/matthewnelson/kmp/process/OutputFeed$Handler {
@@ -74,6 +101,7 @@ public abstract class io/matthewnelson/kmp/process/Process : io/matthewnelson/km
 	public final field cwd Ljava/io/File;
 	public final field destroySignal Lio/matthewnelson/kmp/process/Signal;
 	public final field environment Ljava/util/Map;
+	public final field input Lio/matthewnelson/kmp/process/AsyncWriteStream;
 	public final field startTime Lkotlin/time/ComparableTimeMark;
 	public final field stdio Lio/matthewnelson/kmp/process/Stdio$Config;
 	public abstract fun destroy ()Lio/matthewnelson/kmp/process/Process;
@@ -81,10 +109,8 @@ public abstract class io/matthewnelson/kmp/process/Process : io/matthewnelson/km
 	public final fun isAlive ()Z
 	public abstract fun pid ()I
 	public final fun toString ()Ljava/lang/String;
-	public final fun waitFor ()I
-	public final fun waitFor-LRDsOJo (J)Ljava/lang/Integer;
-	public final fun waitForAsync (Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public final fun waitForAsync-KLykuaI (JLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun waitForAsync (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun waitForAsync-VtjQ1oo (JLkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
 public final class io/matthewnelson/kmp/process/Process$Builder {

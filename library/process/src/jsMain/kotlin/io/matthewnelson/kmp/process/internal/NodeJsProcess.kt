@@ -18,10 +18,10 @@
 package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.File
+import io.matthewnelson.kmp.process.AsyncWriteStream
 import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.Stdio
-import io.matthewnelson.kmp.process.internal.stdio.RealStdinStream
 
 internal class NodeJsProcess internal constructor(
     private val jsProcess: child_process_ChildProcess,
@@ -37,7 +37,7 @@ internal class NodeJsProcess internal constructor(
     chdir,
     env,
     stdio,
-    jsProcess.stdin?.let { RealStdinStream(it) },
+    jsProcess.stdin?.let { AsyncWriteStream(it) },
     destroy,
     INIT,
 ) {
@@ -80,34 +80,33 @@ internal class NodeJsProcess internal constructor(
     }
 
     override fun startStdout() {
-        jsProcess.stdout
-            ?.onClose(::onStdoutStopped)
-            ?.onData { data ->
-                data.dispatchLinesTo(::dispatchStdout)
+        val stdout = jsProcess.stdout ?: return
+
+        object : BufferedLineScanner(::dispatchStdout) {
+            init {
+                stdout.onClose {
+                    onStopped()
+                    onStdoutStopped()
+                }.onData { data ->
+                    onData(data)
+                    data.fill(0)
+                }
             }
+        }
     }
 
     override fun startStderr() {
-        jsProcess.stderr
-            ?.onClose(::onStderrStopped)
-            ?.onData { data ->
-                data.dispatchLinesTo(::dispatchStderr)
-            }
-    }
+        val stderr = jsProcess.stderr ?: return
 
-    @Suppress("NOTHING_TO_INLINE")
-    private inline fun String.dispatchLinesTo(
-        dispatch: (line: String) -> Unit,
-    ) {
-        val lines = lines()
-        val iLast = lines.lastIndex
-        for (i in lines.indices) {
-            val line = lines[i]
-            if (i == iLast && line.isEmpty()) {
-                // If data ended with a return, skip it
-                continue
-            } else {
-                dispatch(line)
+        object : BufferedLineScanner(::dispatchStderr) {
+            init {
+                stderr.onClose {
+                    onStopped()
+                    onStderrStopped()
+                }.onData { data ->
+                    onData(data)
+                    data.fill(0)
+                }
             }
         }
     }

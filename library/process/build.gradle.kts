@@ -30,6 +30,7 @@ kmpConfiguration {
                 dependencies {
                     api(libs.kmp.file)
                     implementation(libs.immutable.collections)
+                    implementation(libs.kotlinx.coroutines.core)
                 }
             }
             sourceSetTest {
@@ -51,12 +52,12 @@ kmpConfiguration {
                 val nativeMain = findByName("nativeMain")
 
                 if (nativeMain != null || jvmMain != null) {
-                    val nonJsMain = maybeCreate("nonJsMain")
+                    val nonJsMain = maybeCreate("blockingMain")
                     nonJsMain.dependsOn(getByName("commonMain"))
                     jvmMain?.apply { dependsOn(nonJsMain) }
                     nativeMain?.apply { dependsOn(nonJsMain) }
 
-                    val nonJsTest = maybeCreate("nonJsTest")
+                    val nonJsTest = maybeCreate("blockingTest")
                     nonJsTest.dependsOn(getByName("commonTest"))
                     findByName("jvmTest")?.apply { dependsOn(nonJsTest) }
                     findByName("nativeTest")?.apply { dependsOn(nonJsTest) }

@@ -21,7 +21,6 @@ import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.file.errnoToIOException
 import io.matthewnelson.kmp.process.Stdio
 import io.matthewnelson.kmp.process.internal.check
-import io.matthewnelson.kmp.process.internal.fdClose
 import kotlinx.cinterop.*
 import platform.posix.*
 
@@ -30,9 +29,9 @@ internal actual inline fun Int.orOCloExec(): Int = this or O_CLOEXEC
 
 @Throws(IOException::class)
 @OptIn(ExperimentalForeignApi::class)
-internal actual fun ((fdRead: Int, fdWrite: Int) -> StdioDescriptor.Pair).fdOpen(
+internal actual fun ((fdRead: Int, fdWrite: Int) -> StdioDescriptor.Pipe).fdOpen(
     stdio: Stdio.Pipe,
-): StdioDescriptor.Pair {
+): StdioDescriptor.Pipe {
     val pipeFD = IntArray(2) { -1 }
 
     val isPipe2 = pipeFD.usePinned { pinned ->
@@ -59,8 +58,12 @@ internal actual fun ((fdRead: Int, fdWrite: Int) -> StdioDescriptor.Pair).fdOpen
             val result = fcntl(fd, F_SETFD, FD_CLOEXEC)
             if (result != 0) {
                 val e = errnoToIOException(errno)
-                fdClose(pipeFD[0])
-                fdClose(pipeFD[1])
+                if (close(pipeFD[0]) == -1) {
+                    e.addSuppressed(errnoToIOException(errno))
+                }
+                if (close(pipeFD[1]) == -1) {
+                    e.addSuppressed(errnoToIOException(errno))
+                }
                 throw e
             }
         }

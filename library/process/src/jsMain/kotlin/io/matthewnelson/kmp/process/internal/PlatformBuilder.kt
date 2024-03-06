@@ -22,7 +22,8 @@ import io.matthewnelson.kmp.process.Output
 import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.Stdio
-import org.khronos.webgl.set
+import io.matthewnelson.kmp.process.internal.BufferedLineScanner.Companion.N
+import org.khronos.webgl.Int8Array
 
 // jsMain
 internal actual class PlatformBuilder private actual constructor() {
@@ -55,16 +56,16 @@ internal actual class PlatformBuilder private actual constructor() {
         destroy: Signal,
     ): Output {
         val jsEnv = env.toJsEnv()
-        val (jsStdio, descriptors) = try {
+        val jsStdio = try {
             stdio.toJsStdio()
         } catch (e: IOException) {
             options.dropInput()
             throw e
         }
 
-        val input = descriptors.closeOnFailure {
-            val b = options.consumeInput() ?: return@closeOnFailure null
-            val a = b.toInt8Array(checkBounds = false)
+        val input = jsStdio.closeDescriptorsOnFailure {
+            val b = options.consumeInput() ?: return@closeDescriptorsOnFailure null
+            val a = b.toJsArray { size -> Int8Array(size) }
             b.fill(0)
             a
         }
@@ -81,15 +82,11 @@ internal actual class PlatformBuilder private actual constructor() {
         opts["windowsVerbatimArguments"] = false
         opts["windowsHide"] = true
 
-        val output = descriptors.closeOnFailure {
+        val output = jsStdio.closeDescriptorsOnFailure {
             try {
                 child_process_spawnSync(command, args.toTypedArray(), opts)
             } finally {
-                input?.let { array ->
-                    for (i in 0 until array.length) {
-                        array[i] = 0
-                    }
-                }
+                input?.fill()
             }
         }
 
@@ -149,7 +146,7 @@ internal actual class PlatformBuilder private actual constructor() {
         destroy: Signal
     ): Process {
         val jsEnv = env.toJsEnv()
-        val (jsStdio, descriptors) = stdio.toJsStdio()
+        val jsStdio = stdio.toJsStdio()
 
         val opts = js("{}")
         chdir?.let { opts["cwd"] = it.path }
@@ -161,7 +158,7 @@ internal actual class PlatformBuilder private actual constructor() {
         opts["windowsHide"] = true
         opts["killSignal"] = destroy.name
 
-        val jsProcess = descriptors.closeOnFailure {
+        val jsProcess = jsStdio.closeDescriptorsOnFailure {
             child_process_spawn(command, args.toTypedArray(), opts)
         }
 
@@ -191,27 +188,21 @@ internal actual class PlatformBuilder private actual constructor() {
         }
 
         // @Throws(IOException::class)
-        private fun Stdio.Config.toJsStdio(): Pair<Array<Any>, Array<Number?>> {
-            val descriptors = Array<Number?>(3) { null }
+        private fun Stdio.Config.toJsStdio(): Array<Any> {
+            val jsStdio = Array<Any>(3) { "pipe" }
 
-            return descriptors.closeOnFailure {
-                val jsStdin = stdin.toJsStdio(isStdin = true)
-                descriptors[0] = jsStdin as? Number
-
-                val jsStdout = stdout.toJsStdio(isStdin = false)
-                descriptors[1] = jsStdout as? Number
-
-                val jsStderr = if (isStderrSameFileAsStdout) {
+            jsStdio.closeDescriptorsOnFailure {
+                jsStdio[0] = stdin.toJsStdio(isStdin = true)
+                jsStdio[1] = stdout.toJsStdio(isStdin = false)
+                jsStdio[2] = if (isStderrSameFileAsStdout) {
                     // use the same file descriptor
-                    jsStdout
+                    jsStdio[1]
                 } else {
-                    val stdio = stderr.toJsStdio(isStdin = false)
-                    descriptors[2] = stdio as? Number
-                    stdio
+                    stderr.toJsStdio(isStdin = false)
                 }
+            }
 
-                arrayOf(jsStdin, jsStdout, jsStderr)
-            } to descriptors
+            return jsStdio
         }
 
         // @Throw(Throwable::class)
@@ -229,14 +220,15 @@ internal actual class PlatformBuilder private actual constructor() {
         }
 
         // @Throws(IOException::class)
-        private inline fun <T: Any?> Array<Number?>.closeOnFailure(
+        private inline fun <T: Any?> Array<Any>.closeDescriptorsOnFailure(
             block: () -> T,
         ): T {
             val result = try {
                 block()
             } catch (t: Throwable) {
-                forEach { fd ->
-                    if (fd == null) return@forEach
+                forEach { stdio ->
+                    val fd = stdio as? Number ?: return@forEach
+
                     try {
                         fs_closeSync(fd)
                     } catch (_: Throwable) {}
@@ -247,8 +239,6 @@ internal actual class PlatformBuilder private actual constructor() {
 
             return result
         }
-
-        private const val N = '\n'.code.toByte()
 
         @Suppress("NOTHING_TO_INLINE")
         private inline fun Buffer.toUtf8Trimmed(): String {

@@ -35,11 +35,6 @@ internal open external class stream_Readable {
 @JsName("Writable")
 internal open external class stream_Writable {
 
-    internal fun <R> on(
-        eventName: String,
-        listener: Function<R>,
-    ): stream_Writable
-
     internal fun <R> once(
         eventName: String,
         listener: Function<R>,
@@ -48,14 +43,10 @@ internal open external class stream_Writable {
     // @Throws(Throwable::class)
     internal fun write(
         chunk: Uint8Array,
-    ): Boolean
-
-    // @Throws(Throwable::class)
-    internal fun write(
-        chunk: Uint8Array,
         callback: () -> Unit,
     ): Boolean
 
-    internal fun destroy(): stream_Writable
-    internal val destroyed: Boolean
+    internal fun end()
+
+    internal val writable: Boolean
 }

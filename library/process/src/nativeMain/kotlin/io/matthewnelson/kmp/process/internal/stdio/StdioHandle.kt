@@ -19,45 +19,69 @@
 package io.matthewnelson.kmp.process.internal.stdio
 
 import io.matthewnelson.kmp.file.IOException
-import io.matthewnelson.kmp.process.StdinStream
 import io.matthewnelson.kmp.process.Stdio
+import io.matthewnelson.kmp.process.internal.*
+import io.matthewnelson.kmp.process.internal.Closeable.Companion.tryCloseSuppressed
 import io.matthewnelson.kmp.process.internal.Instance
 import io.matthewnelson.kmp.process.internal.Lock
-import io.matthewnelson.kmp.process.internal.stdio.StdioDescriptor.Pair.Companion.fdOpen
-import io.matthewnelson.kmp.process.internal.stdio.StdioDescriptor.Single.Companion.fdOpen
+import io.matthewnelson.kmp.process.internal.ReadStream
+import io.matthewnelson.kmp.process.internal.WriteStream
+import io.matthewnelson.kmp.process.internal.stdio.StdioDescriptor.Companion.fdOpen
+import io.matthewnelson.kmp.process.internal.stdio.StdioDescriptor.Pipe.Companion.fdOpen
 import platform.posix.STDERR_FILENO
 import platform.posix.STDIN_FILENO
 import platform.posix.STDOUT_FILENO
-import kotlin.concurrent.Volatile
 
 internal class StdioHandle private constructor(
     internal val stdio: Stdio.Config,
-    private val stdinFD: StdioDescriptor,
-    private val stdoutFD: StdioDescriptor,
-    private val stderrFD: StdioDescriptor,
-) {
+    private val stdinFD: Closeable,
+    private val stdoutFD: Closeable,
+    private val stderrFD: Closeable,
+): Closeable {
 
-    @Volatile
-    internal var isClosed = false
-        private set
+    override val isClosed: Boolean get() = stdinFD.isClosed && stdoutFD.isClosed && stderrFD.isClosed
     private val lock = Lock()
 
-    private val stdin: Instance<StdinStream?> = Instance(create = {
-        if (isClosed) return@Instance null
-        if (stdinFD !is StdioDescriptor.Pair) return@Instance null
-        RealStdinStream(stdinFD)
+    private val stdin: Instance<WriteStream?> = Instance(create = {
+        // TODO: Issue #6
+
+        // This is invoked once and only once upon NativeProcess
+        // instantiation (after fork occurs). We can do some descriptor
+        // clean up here and close unneeded pipe ends which were duped
+        // in the child process and remain open over there.
+        if (stdoutFD is StdioDescriptor.Pipe) {
+            try {
+                stdoutFD.write.close()
+            } catch (_: IOException) {}
+        }
+
+        if (stderrFD is StdioDescriptor.Pipe) {
+            try {
+                stderrFD.write.close()
+            } catch (_: IOException) {}
+        }
+
+        if (stdinFD !is StdioDescriptor.Pipe) return@Instance null
+
+        try {
+            stdinFD.read.close()
+        } catch (_: IOException) {}
+
+        if (stdinFD.isClosed) return@Instance null
+
+        WriteStream.of(stdinFD)
     })
 
-    private val stdout: Instance<StdioReader?> = Instance(create = {
-        if (isClosed) return@Instance null
-        if (stdoutFD !is StdioDescriptor.Pair) return@Instance null
-        StdioReader(stdoutFD)
+    private val stdout: Instance<ReadStream?> = Instance(create = {
+        if (stdoutFD.isClosed) return@Instance null
+        if (stdoutFD !is StdioDescriptor.Pipe) return@Instance null
+        ReadStream.of(stdoutFD)
     })
 
-    private val stderr: Instance<StdioReader?> = Instance(create = {
-        if (isClosed) return@Instance null
-        if (stderrFD !is StdioDescriptor.Pair) return@Instance null
-        StdioReader(stderrFD)
+    private val stderr: Instance<ReadStream?> = Instance(create = {
+        if (stderrFD.isClosed) return@Instance null
+        if (stderrFD !is StdioDescriptor.Pipe) return@Instance null
+        ReadStream.of(stderrFD)
     })
 
     @Throws(IOException::class)
@@ -70,34 +94,54 @@ internal class StdioHandle private constructor(
                 action(stdoutFD.dup2FD(isStdin = false), STDOUT_FILENO)?.let { throw it }
                 action(stderrFD.dup2FD(isStdin = false), STDERR_FILENO)?.let { throw it }
             } catch (e: IOException) {
-                closeNoLock()
+                try {
+                    closeNoLock()
+                } catch (e: IOException) {
+                    e.addSuppressed(e)
+                }
+
                 throw e
             }
         }
     }
 
-    internal fun stdinStream(): StdinStream? = lock.withLock { stdin.getOrCreate() }
-    internal fun stdoutReader(): StdioReader? = lock.withLock { stdout.getOrCreate() }
-    internal fun stderrReader(): StdioReader? = lock.withLock { stderr.getOrCreate() }
+    internal fun stdinStream(): WriteStream? = lock.withLock { stdin.getOrCreate() }
+    internal fun stdoutReader(): ReadStream? = lock.withLock { stdout.getOrCreate() }
+    internal fun stderrReader(): ReadStream? = lock.withLock { stderr.getOrCreate() }
 
-    internal fun close() {
-        // subsequent calls to close will do nothing, as
-        // we do not want to call close on potentially
-        // recycled descriptors.
-        if (isClosed) return
-
+    @Throws(IOException::class)
+    override fun close() {
         lock.withLock {
             closeNoLock()
         }
     }
 
+    @Throws(IOException::class)
     private fun closeNoLock() {
         if (isClosed) return
-        isClosed = true
 
-        stdinFD.close()
-        stdoutFD.close()
-        stderrFD.close()
+        var threw: IOException? = null
+
+        try {
+            stdinFD.close()
+        } catch (e: IOException) {
+            threw = e
+        }
+        try {
+            stdoutFD.close()
+        } catch (e: IOException) {
+            if (threw != null) e.addSuppressed(threw)
+            threw = e
+        }
+        try {
+            stderrFD.close()
+        } catch (e: IOException) {
+            if (threw != null) e.addSuppressed(threw)
+            threw = e
+        }
+
+        if (threw == null) return
+        throw threw
     }
 
     internal companion object {
@@ -105,25 +149,25 @@ internal class StdioHandle private constructor(
         @Throws(IOException::class)
         internal fun Stdio.Config.openHandle(): StdioHandle {
             val stdinFD = when (val s = stdin) {
-                is Stdio.Inherit -> StdioDescriptor.Single.Stdin
+                is Stdio.Inherit -> StdioDescriptor.STDIN
                 is Stdio.File -> s.fdOpen(isStdin = true)
                 is Stdio.Pipe -> s.fdOpen()
             }
 
             val stdoutFD = try {
                 when (val s = stdout) {
-                    is Stdio.Inherit -> StdioDescriptor.Single.Stdout
+                    is Stdio.Inherit -> StdioDescriptor.STDOUT
                     is Stdio.File -> s.fdOpen(isStdin = false)
                     is Stdio.Pipe -> s.fdOpen()
                 }
             } catch (e: IOException) {
-                stdinFD.close()
+                stdinFD.tryCloseSuppressed(e)
                 throw e
             }
 
             val stderrFD = try {
                 when (val s = stderr) {
-                    is Stdio.Inherit -> StdioDescriptor.Single.Stderr
+                    is Stdio.Inherit -> StdioDescriptor.STDERR
                     is Stdio.File -> if (isStderrSameFileAsStdout) {
                         stdoutFD
                     } else {
@@ -132,8 +176,8 @@ internal class StdioHandle private constructor(
                     is Stdio.Pipe -> s.fdOpen()
                 }
             } catch (e: IOException) {
-                stdinFD.close()
-                stdoutFD.close()
+                stdinFD.tryCloseSuppressed(e)
+                stdoutFD.tryCloseSuppressed(e)
                 throw e
             }
 
@@ -142,8 +186,11 @@ internal class StdioHandle private constructor(
     }
 
     @Suppress("NOTHING_TO_INLINE")
-    private inline fun StdioDescriptor.dup2FD(isStdin: Boolean): Int = when (this) {
-        is StdioDescriptor.Single -> fd
-        is StdioDescriptor.Pair -> if (isStdin) fdRead else fdWrite
+    @Throws(IOException::class)
+    private inline fun Closeable.dup2FD(isStdin: Boolean): Int = when (this) {
+        is StdioDescriptor -> withFd { it }
+        is StdioDescriptor.Pipe -> (if (isStdin) read else write).withFd { it }
+        // Will never occur
+        else -> throw IOException("Closable was not a descriptor")
     }
 }

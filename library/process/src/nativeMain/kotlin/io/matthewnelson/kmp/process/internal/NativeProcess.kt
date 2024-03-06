@@ -17,11 +17,12 @@ package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.file.IOException
+import io.matthewnelson.kmp.process.AsyncWriteStream
 import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.Signal
-import io.matthewnelson.kmp.process.internal.BufferedLineScanner.Companion.scanLines
+import io.matthewnelson.kmp.process.internal.StreamLineScanner.Companion.scanLines
+import io.matthewnelson.kmp.process.internal.Closeable.Companion.tryCloseSuppressed
 import io.matthewnelson.kmp.process.internal.stdio.StdioHandle
-import io.matthewnelson.kmp.process.internal.stdio.StdioReader
 import kotlinx.cinterop.*
 import platform.posix.*
 import kotlin.concurrent.AtomicReference
@@ -46,15 +47,16 @@ internal constructor(
     chdir,
     env,
     handle.stdio,
-    handle.stdinStream(),
+    handle.stdinStream()?.let { AsyncWriteStream.of(it) },
     destroy,
     INIT,
 ) {
 
     init {
         if (pid <= 0) {
-            handle.close()
-            throw IOException("pid[$pid] must be greater than 0")
+            val t = IOException("pid[$pid] must be greater than 0")
+            handle.tryCloseSuppressed(t)
+            throw t
         }
     }
 
@@ -90,7 +92,11 @@ internal constructor(
             isAlive
         }
 
-        handle.close()
+        try {
+            handle.close()
+        } catch (_: IOException) {
+            // TODO: Error handler
+        }
 
         if (!hasBeenDestroyed) {
             stdoutWorker
@@ -151,7 +157,7 @@ internal constructor(
 
     private fun Worker.Companion.start(
         name: String,
-        r: StdioReader,
+        r: ReadStream,
         d: (line: String) -> Unit,
         s: () -> Unit,
     ): Worker {

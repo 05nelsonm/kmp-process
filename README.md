@@ -3,6 +3,7 @@
 [![badge-latest-release]][url-latest-release]
 
 [![badge-kotlin]][url-kotlin]
+[![badge-coroutines]][url-coroutines]
 [![badge-endians]][url-endians]
 [![badge-immutable]][url-immutable]
 [![badge-kmp-file]][url-kmp-file]
@@ -91,12 +92,6 @@ builder.spawn().let { p ->
 }
 
 // Spawned process (Async APIs for all platforms)
-//
-// Note that `kotlinx.coroutines` library is required
-// in order to pass in `kotlinx.coroutines.delay`
-// function.
-//
-// `kmp-process` does **not** depend on coroutines.
 myScope.launch {
 
     // Use spawn {} (with lambda) which will
@@ -104,10 +99,7 @@ myScope.launch {
     // instead of needing the try/finally block.
     builder.spawn { p ->
 
-        val exitCode: Int? = p.waitForAsync(
-            duration = 500.milliseconds,
-            delay = ::delay,
-        )
+        val exitCode: Int? = p.waitForAsync(500.milliseconds)
 
         if (exitCode == null) {
             println("Process did not complete after 500ms")
@@ -116,7 +108,7 @@ myScope.launch {
 
         // wait until process completes. If myScope
         // is cancelled, will automatically pop out.
-        p.waitForAsync(::delay)
+        p.waitForAsync()
     } // << Process.destroy automatically called on closure
 }
 
@@ -163,17 +155,17 @@ myScope.launch {
             // do something
         }.stderrFeed { line ->
             // do something
-        }.waitForAsync(50.milliseconds, ::delay)
+        }.waitForAsync(50.milliseconds)
 
         p // return Process to spawn lambda
     } // << Process.destroy automatically called on closure
 
         // blocking APIs also available for Jvm/Native
         .stdoutWaiter()
-        .awaitStopAsync(::delay)
+        .awaitStopAsync()
         .stderrWaiter()
-        .awaitStopAsync(::delay)
-        .waitForAsync(::delay)
+        .awaitStopAsync()
+        .waitForAsync()
     
     println("EXIT_CODE[$exitCode]")
 }
@@ -194,6 +186,7 @@ dependencies {
 [badge-license]: https://img.shields.io/badge/license-Apache%20License%202.0-blue.svg?style=flat
 
 <!-- TAG_DEPENDENCIES -->
+[badge-coroutines]: https://img.shields.io/badge/kotlinx.coroutines-1.8.0-blue.svg?logo=kotlin
 [badge-endians]: https://img.shields.io/badge/kotlincrypto.endians-0.2.0-blue.svg?style=flat
 [badge-immutable]: https://img.shields.io/badge/immutable-0.1.0-blue.svg?style=flat
 [badge-kmp-file]: https://img.shields.io/badge/kmp--file-0.1.0--beta01-blue.svg?style=flat
@@ -218,6 +211,7 @@ dependencies {
 
 [url-latest-release]: https://github.com/05nelsonm/kmp-process/releases/latest
 [url-license]: https://www.apache.org/licenses/LICENSE-2.0
+[url-coroutines]: https://github.com/Kotlin/kotlinx.coroutines
 [url-endians]: https://github.com/KotlinCrypto/endians
 [url-immutable]: https://github.com/05nelsonm/immutable
 [url-kmp-file]: https://github.com/05nelsonm/kmp-file

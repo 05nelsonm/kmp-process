@@ -18,11 +18,11 @@ package io.matthewnelson.kmp.process
 import io.matthewnelson.immutable.collections.toImmutableList
 import io.matthewnelson.immutable.collections.toImmutableMap
 import io.matthewnelson.kmp.file.*
-import io.matthewnelson.kmp.process.internal.*
 import io.matthewnelson.kmp.process.internal.PlatformBuilder
 import io.matthewnelson.kmp.process.internal.SyntheticAccess
 import io.matthewnelson.kmp.process.internal.appendProcessInfo
 import io.matthewnelson.kmp.process.internal.commonWaitFor
+import kotlinx.coroutines.delay
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
@@ -37,14 +37,10 @@ import kotlin.time.TimeSource
 /**
  * A Process.
  *
- * Currently, only Jvm supports writing to a spawned process's
- * standard input which can be obtained via the `Process.stdin`
- * extension function. Use [Builder.output] if the process input
- * is needed. (See Issue #77)
- *
  * @see [Builder]
  * @see [Current]
  * @see [OutputFeed.Handler]
+ * @see [Blocking]
  * */
 public abstract class Process internal constructor(
 
@@ -79,15 +75,13 @@ public abstract class Process internal constructor(
     @JvmField
     public val stdio: Stdio.Config,
 
-//    /**
-//     * A stream to write data to the process's standard
-//     * input, or `null` if [Stdio.Config.stdin] is not
-//     * [Stdio.Pipe].
-//     * */
-//    @JvmField
-//    TODO: Issue #77
-    @get:JvmSynthetic
-    internal val input: StdinStream?,
+    /**
+     * A stream to write data to the process's standard
+     * input, or `null` if [Stdio.Config.stdin] is not
+     * [Stdio.Pipe].
+     * */
+    @JvmField
+    public val input: AsyncWriteStream?,
 
     /**
      * The [Signal] utilized to stop the process (if
@@ -109,7 +103,7 @@ public abstract class Process internal constructor(
     public val startTime: ComparableTimeMark = TimeSource.Monotonic.markNow()
 
     /**
-     * Information about the currently running process
+     * Information about the current process (i.e. the "parent" process).
      * */
     public object Current {
 
@@ -123,7 +117,7 @@ public abstract class Process internal constructor(
     /**
      * Destroys the [Process] by:
      *  - Sending it [destroySignal] (if it has not completed yet)
-     *  - Closes all input/output streams
+     *  - Closes all I/O streams
      *  - Stops all [OutputFeed] production (See [OutputFeed.Waiter])
      *    - **NOTE:** This may not be immediate if there is buffered
      *      data on `stdout` or `stderr`. The contents of what are
@@ -175,68 +169,18 @@ public abstract class Process internal constructor(
     public abstract fun pid(): Int
 
     /**
-     * Blocks the current thread until [Process] completion.
-     *
-     * **NOTE:** This will always throw [InterruptedException]
-     *   on Node.js. Use [waitForAsync].
-     *
-     * @return The [Process.exitCode]
-     * @throws [InterruptedException] When:
-     *   - Platform is Node.js
-     *   - Thread this is called from on Native/Jvm was interrupted
-     * */
-    @Throws(InterruptedException::class)
-    public fun waitFor(): Int {
-        var exitCode: Int? = null
-        while (exitCode == null) {
-            exitCode = waitFor(Duration.INFINITE)
-        }
-        return exitCode
-    }
-
-    /**
-     * Blocks the current thread for the specified [duration],
-     * or until [Process.exitCode] is available (i.e. the
-     * [Process] completed).
-     *
-     * **NOTE:** This will always throw [InterruptedException]
-     *   on Node.js. Use [waitForAsync].
-     *
-     * @param [duration] the [Duration] to wait
-     * @return The [Process.exitCode], or null if [duration] is
-     *   exceeded without [Process] completion.
-     * @throws [InterruptedException] When:
-     *   - Platform is Node.js
-     *   - Thread this is called from on Native/Jvm was interrupted
-     * */
-    @Throws(InterruptedException::class)
-    public fun waitFor(
-        duration: Duration,
-    ): Int? = commonWaitFor(duration) { it.threadSleep() }
-
-    /**
      * Delays the current coroutine until [Process] completion.
      *
-     * **NOTE:** This API requires the `kotlinx.coroutines` core
-     * dependency (at a minimum) in order to pass in the
-     * `kotlinx.coroutines.delay` function. Adding the dependency
-     * to `kmp-process` for a single function to use in an API
-     * that may not even be utilized (because [waitFor] exists for
-     * non-JS) seemed ridiculous.
+     * **NOTE:** Care must be had when using Async APIs such that,
+     * upon cancellation, [Process.destroy] is still called.
      *
-     * e.g.
-     *
-     *     myProcess.waitForAsync(::delay)
-     *
-     * @param [delay] `kotlinx.coroutines.delay` function (e.g. `::delay`)
+     * @see [io.matthewnelson.kmp.process.Blocking.waitFor]
      * @return The [Process.exitCode]
      * */
-    public suspend fun waitForAsync(
-        delay: suspend (duration: Duration) -> Unit,
-    ): Int {
+    public suspend fun waitForAsync(): Int {
         var exitCode: Int? = null
         while (exitCode == null) {
-            exitCode = waitForAsync(Duration.INFINITE, delay)
+            exitCode = waitForAsync(Duration.INFINITE)
         }
         return exitCode
     }
@@ -246,25 +190,16 @@ public abstract class Process internal constructor(
      * or until [Process.exitCode] is available (i.e. the
      * [Process] completed).
      *
-     * **NOTE:** This API requires the `kotlinx.coroutines` core
-     * dependency (at a minimum) in order to pass in the
-     * `kotlinx.coroutines.delay` function. Adding the dependency
-     * to `kmp-process` for a single function to use in an API
-     * that may not even be utilized (because [waitFor] exists for
-     * non-JS) seemed ridiculous.
-     *
-     * e.g.
-     *
-     *     myProcess.waitForAsync(250.milliseconds, ::delay)
+     * **NOTE:** Care must be had when using Async APIs such that,
+     * upon cancellation, [Process.destroy] is still called.
      *
      * @param [duration] the [Duration] to wait
-     * @param [delay] `kotlinx.coroutines.delay` function (e.g. `::delay`)
+     * @see [io.matthewnelson.kmp.process.Blocking.waitFor]
      * @return The [Process.exitCode], or null if [duration] is
      *   exceeded without [Process] completion.
      * */
     public suspend fun waitForAsync(
         duration: Duration,
-        delay: suspend (duration: Duration) -> Unit,
     ): Int? = commonWaitFor(duration) { delay(it) }
 
     /**
@@ -490,10 +425,12 @@ public abstract class Process internal constructor(
 
             val result = try {
                 block(p)
-            } finally {
+            } catch (t: Throwable) {
                 p.destroy()
+                throw t
             }
 
+            p.destroy()
             return result
         }
     }

@@ -15,11 +15,27 @@
  **/
 @file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
 
-package io.matthewnelson.kmp.process.internal
+package io.matthewnelson.kmp.process
 
-import kotlinx.atomicfu.locks.SynchronizedObject
-import kotlinx.atomicfu.locks.withLock as _withLock
+import io.matthewnelson.kmp.file.IOException
+import kotlin.coroutines.cancellation.CancellationException
 
-internal actual class Lock internal actual constructor(): SynchronizedObject() {
-    internal actual fun <T: Any?> withLock(block: () -> T): T = _withLock(block)
+public expect class AsyncWriteStream {
+
+    @Throws(
+        CancellationException::class,
+        IllegalArgumentException::class,
+        IndexOutOfBoundsException::class,
+        IOException::class,
+    )
+    public suspend fun writeAsync(buf: ByteArray, offset: Int, len: Int)
+
+    @Throws(CancellationException::class, IOException::class)
+    public suspend fun writeAsync(buf: ByteArray)
+
+    @Throws(IOException::class)
+    public fun flush()
+
+    @Throws(IOException::class)
+    public fun close()
 }

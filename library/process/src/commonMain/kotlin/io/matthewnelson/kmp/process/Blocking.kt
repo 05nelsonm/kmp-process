@@ -13,14 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
+@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
+
 package io.matthewnelson.kmp.process
 
-import kotlin.experimental.ExperimentalNativeApi
+/**
+ * Extended by [OutputFeed.Handler] (which is extended
+ * by [Process]) in order to provide blocking APIs for
+ * Jvm & Native.
+ * */
+public expect sealed class Blocking protected constructor() {
 
-@OptIn(ExperimentalNativeApi::class)
-internal actual val IsDarwinMobile: Boolean = when (Platform.osFamily) {
-    OsFamily.IOS,
-    OsFamily.TVOS,
-    OsFamily.WATCHOS -> true
-    else -> false
+    /**
+     * Extended by [OutputFeed.Waiter] in order to
+     * provide blocking APIs for Jvm & Native.
+     * */
+    public sealed class Waiter protected constructor(process: Process) {
+
+        protected val process: Process
+        protected abstract fun isStarted(): Boolean
+        protected abstract fun isStopped(): Boolean
+    }
 }

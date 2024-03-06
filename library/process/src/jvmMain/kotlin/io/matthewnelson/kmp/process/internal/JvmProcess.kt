@@ -15,13 +15,14 @@
  **/
 package io.matthewnelson.kmp.process.internal
 
+import io.matthewnelson.kmp.file.ANDROID
 import io.matthewnelson.kmp.file.File
-import io.matthewnelson.kmp.process.internal.BufferedLineScanner.Companion.scanLines
+import io.matthewnelson.kmp.process.AsyncWriteStream
+import io.matthewnelson.kmp.process.internal.StreamLineScanner.Companion.scanLines
 import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.Stdio
 import java.io.FileOutputStream
-import java.io.OutputStream
 import java.io.PrintStream
 import kotlin.concurrent.Volatile
 
@@ -40,7 +41,11 @@ internal class JvmProcess private constructor(
     chdir,
     env,
     stdio,
-    if (stdio.stdin is Stdio.Pipe) jProcess.outputStream else null,
+    if (stdio.stdin is Stdio.Pipe) {
+        AsyncWriteStream.of(jProcess.outputStream)
+    } else {
+        null
+    },
     destroy,
     INIT,
 ) {
@@ -86,7 +91,7 @@ internal class JvmProcess private constructor(
             // call destroy under the hood. Very sad that there
             // is no choice in the termination signal which is
             // what destroyForcibly was intended for.
-            ANDROID_SDK_INT != null -> jProcess.destroy()
+            IsMobile -> jProcess.destroy()
 
             else -> when (destroySignal) {
                 Signal.SIGTERM -> jProcess.destroy()
@@ -127,6 +132,7 @@ internal class JvmProcess private constructor(
     private inline fun Runnable.execute(stdio: String): Thread {
         val t = Thread(this, "Process[pid=$_pid, stdio=$stdio]")
         t.isDaemon = true
+        t.priority = Thread.MAX_PRIORITY
         t.start()
         return t
     }
@@ -144,7 +150,7 @@ internal class JvmProcess private constructor(
 
         // Process.destroy was invoked
 
-        ANDROID_SDK_INT?.let { sdkInt ->
+        ANDROID.SDK_INT?.let { sdkInt ->
             // Android 23 and below uses SIGKILL when
             // destroy is invoked, but fails to add 128
             // the value like newer versions do.
@@ -176,15 +182,15 @@ internal class JvmProcess private constructor(
             } catch (_: Throwable) {}
         }
 
-        ANDROID_SDK_INT?.let { sdkInt ->
+        ANDROID.SDK_INT?.let { sdkInt ->
             if (sdkInt >= 24) return@let
 
             // Android API 23 and below does not have redirect
             // capabilities. Below is a supplemental implementation
 
-            fun InputStream.writeTo(oStream: OutputStream) {
+            fun ReadStream.writeTo(oStream: WriteStream) {
                 val iStream = this
-                val buf = ByteArray(4096)
+                val buf = ByteArray(DEFAULT_BUFFER_SIZE)
 
                 while (true) {
                     val read = iStream.read(buf)
@@ -213,7 +219,7 @@ internal class JvmProcess private constructor(
                 is Stdio.Pipe -> { /* do nothing */ }
             }
 
-            fun InputStream.redirectTo(stdio: String, file: Stdio.File) {
+            fun ReadStream.redirectTo(stdio: String, file: Stdio.File) {
                 Runnable {
                     try {
                         use { iStream ->
@@ -225,7 +231,7 @@ internal class JvmProcess private constructor(
                 }.execute(stdio = stdio)
             }
 
-            fun InputStream.redirectTo(stdio: String, oStream: PrintStream) {
+            fun ReadStream.redirectTo(stdio: String, oStream: PrintStream) {
                 Runnable {
                     try {
                         use { iStream ->

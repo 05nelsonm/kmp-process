@@ -19,8 +19,8 @@ import io.matthewnelson.kmp.file.resolve
 import io.matthewnelson.kmp.file.toFile
 import io.matthewnelson.kmp.process.PROJECT_DIR_PATH
 import io.matthewnelson.kmp.process.Stdio
-import io.matthewnelson.kmp.process.internal.stdio.StdioDescriptor.Pair.Companion.fdOpen
-import io.matthewnelson.kmp.process.internal.stdio.StdioDescriptor.Single.Companion.fdOpen
+import io.matthewnelson.kmp.process.internal.stdio.StdioDescriptor.Companion.fdOpen
+import io.matthewnelson.kmp.process.internal.stdio.StdioDescriptor.Pipe.Companion.fdOpen
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.usePinned
@@ -35,24 +35,24 @@ class UnixStdioDescriptorUnitTest {
     @Test
     fun givenStdioFile_whenFdOpen_thenHasFDCLOEXEC() {
         val f = PROJECT_DIR_PATH.toFile().resolve("build.gradle.kts")
-        val des = Stdio.File.of(f).fdOpen(isStdin = true)
+        val descriptor = Stdio.File.of(f).fdOpen(isStdin = true)
 
         try {
-            assertTrue(des.fd.hasCLOEXEC())
+            assertTrue(descriptor.withFd { it }.hasCLOEXEC())
         } finally {
-            des.close()
+            descriptor.close()
         }
     }
 
     @Test
     fun givenStdioPipe_whenFdOpen_thenHasFDCLOEXEC() {
-        val des = Stdio.Pipe.fdOpen()
+        val pipe = Stdio.Pipe.fdOpen()
 
         try {
-            assertTrue(des.fdRead.hasCLOEXEC())
-            assertTrue(des.fdWrite.hasCLOEXEC())
+            assertTrue(pipe.read.withFd { it }.hasCLOEXEC())
+            assertTrue(pipe.write.withFd { it }.hasCLOEXEC())
         } finally {
-            des.close()
+            pipe.close()
         }
     }
 
@@ -69,8 +69,8 @@ class UnixStdioDescriptorUnitTest {
             assertFalse(fds[0].hasCLOEXEC())
             assertFalse(fds[1].hasCLOEXEC())
         } finally {
-            fdClose(fds[0])
-            fdClose(fds[1])
+            close(fds[0])
+            close(fds[1])
         }
     }
 

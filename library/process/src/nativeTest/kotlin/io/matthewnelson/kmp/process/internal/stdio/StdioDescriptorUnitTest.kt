@@ -15,18 +15,34 @@
  **/
 package io.matthewnelson.kmp.process.internal.stdio
 
-import platform.posix.STDERR_FILENO
-import platform.posix.STDIN_FILENO
-import platform.posix.STDOUT_FILENO
+import io.matthewnelson.kmp.file.IOException
+import io.matthewnelson.kmp.file.resolve
+import io.matthewnelson.kmp.file.toFile
+import io.matthewnelson.kmp.process.PROJECT_DIR_PATH
+import io.matthewnelson.kmp.process.Stdio
+import io.matthewnelson.kmp.process.internal.stdio.StdioDescriptor.Companion.fdOpen
+import platform.posix.*
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 
 class StdioDescriptorUnitTest {
 
     @Test
     fun givenIO_whenCheckFD_thenIsExpected() {
-        assertEquals(StdioDescriptor.Single.Stdin.fd, STDIN_FILENO)
-        assertEquals(StdioDescriptor.Single.Stdout.fd, STDOUT_FILENO)
-        assertEquals(StdioDescriptor.Single.Stderr.fd, STDERR_FILENO)
+        assertEquals(StdioDescriptor.STDIN.withFd { it }, STDIN_FILENO)
+        assertEquals(StdioDescriptor.STDOUT.withFd { it }, STDOUT_FILENO)
+        assertEquals(StdioDescriptor.STDERR.withFd { it }, STDERR_FILENO)
+    }
+
+    @Test
+    fun givenClosed_whenWithFd_thenIsError() {
+        val f = PROJECT_DIR_PATH
+            .toFile()
+            .resolve("build.gradle.kts")
+        
+        val descriptor = Stdio.File.of(f).fdOpen(isStdin = true)
+        descriptor.close()
+        assertFailsWith<IOException> { descriptor.withFd { it } }
     }
 }

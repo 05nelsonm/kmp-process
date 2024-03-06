@@ -13,14 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-package io.matthewnelson.kmp.process
+package io.matthewnelson.kmp.process.internal
 
-import kotlin.experimental.ExperimentalNativeApi
+import io.matthewnelson.kmp.file.IOException
 
-@OptIn(ExperimentalNativeApi::class)
-internal actual val IsDarwinMobile: Boolean = when (Platform.osFamily) {
-    OsFamily.IOS,
-    OsFamily.TVOS,
-    OsFamily.WATCHOS -> true
-    else -> false
+internal interface Closeable {
+    val isClosed: Boolean
+
+    @Throws(IOException::class)
+    fun close()
+
+    companion object {
+
+        internal fun Closeable.tryCloseSuppressed(t: Throwable) {
+            try {
+                close()
+            } catch (e: IOException) {
+                t.addSuppressed(e)
+            }
+        }
+    }
 }

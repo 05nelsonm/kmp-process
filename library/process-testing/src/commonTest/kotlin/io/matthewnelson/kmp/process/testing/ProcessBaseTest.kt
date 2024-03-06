@@ -46,7 +46,6 @@ abstract class ProcessBaseTest {
     protected open val homeDir get() = installer.installationDir
     protected open val cacheDir get() = homeDir.resolve("cache")
     protected open val dataDir get() = homeDir.resolve("data")
-    protected open val tempDir get() = SysTempDir
 
     protected open fun assertExitCode(code: Int) {
         val expected = if (IsWindows) Signal.SIGTERM.code else 0
@@ -71,7 +70,7 @@ abstract class ProcessBaseTest {
             return
         }
 
-        val tempDir = tempDir.resolve("kmp_process")
+        val tempDir = SysTempDir.resolve("kmp_process")
         val testCat = tempDir.resolve("test.cat")
 
         testCat.delete()
@@ -159,7 +158,7 @@ abstract class ProcessBaseTest {
             return
         }
 
-        val d = tempDir.resolve("try_chdir")
+        val d = SysTempDir.resolve("try_chdir")
         d.delete()
         assertTrue(d.mkdirs())
 
@@ -218,52 +217,57 @@ abstract class ProcessBaseTest {
         assertEquals("", out.stderr)
     }
 
-//    @Test
-//    fun givenSpawn_whenInput_thenStdoutIsAsExpected() = runTest {
-//        if (IsDarwinMobile || IsWindows) {
-//            println("Skipping...")
-//            return@runTest
-//        }
-//
-//        val size = 50_000
-//        val expected = ArrayList<String>(size).apply {
-//            repeat(size) { i -> add(i.toString()) }
-//        }
-//        val actual = ArrayList<String>(size)
-//
-//        val exitCode = Process.Builder(command = "cat")
-//            .args("-")
-//            .spawn { p ->
-//                val data = expected
-//                    .joinToString("\n")
-//                    .encodeToByteArray()
-//
-//                p.stdoutFeed { line ->
-//                    actual.add(line)
-//                }
-//
-//                p.input!!.write(data)
-////                var i = 0
-////                while (i < data.size) {
-////                    val len = min(4096, data.size - i)
-////                    p.input!!.write(data, i, len)
-////                    i += len
-////                }
-//
-//                delayTest(250.milliseconds)
-//
-//                p.input!!.close()
-//
-//                p
-//            }
-//            .stdoutWaiter()
-//            .awaitStopAsync(::delay)
-//            .waitForAsync(::delay)
-//
-//        assertEquals(0, exitCode)
-//        assertEquals(expected.size, actual.size)
-//        assertContentEquals(expected, actual)
-//    }
+    @Test
+    fun givenSpawn_whenInput_thenStdoutIsAsExpected() = runTest {
+        if (IsDarwinMobile || IsWindows) {
+            println("Skipping...")
+            return@runTest
+        }
+
+        val size = 50000
+        val expected = ArrayList<String>(size).apply {
+            repeat(size) { i -> add(i.toString()) }
+        }
+        val actual = ArrayList<String>(size * 2)
+
+        val exitCode = Process.Builder(command = "cat")
+            .args("-")
+            .spawn { p ->
+                val data = expected
+                    .joinToString("\n", postfix = "\n")
+                    .encodeToByteArray()
+
+                p.stdoutFeed { line ->
+                    actual.add(line)
+                }
+
+                var offset = 0
+                // chunked
+                while (offset < data.size) {
+                    val len = min(4097, data.size - offset)
+                    p.input!!.writeAsync(data, offset, len)
+                    offset += len
+                }
+
+                p.input!!.writeAsync(data)
+
+                p.input!!.close()
+
+                delayTest(250.milliseconds)
+
+                p
+            }
+            .stdoutWaiter()
+            .awaitStopAsync()
+            .waitForAsync()
+
+        assertEquals(0, exitCode)
+        assertEquals(expected.size * 2, actual.size)
+
+        val expectedLen = (expected + expected).let { var count = 0; it.forEach { line -> count += line.length }; count }
+        val actualLen = actual.let { var count = 0; it.forEach { line -> count += line.length }; count }
+        assertEquals(expectedLen, actualLen)
+    }
 
     @Test
     fun givenStderrFile_whenSameAsStdout_thenStderrRedirectedToStdout() = runTest {
@@ -272,7 +276,7 @@ abstract class ProcessBaseTest {
             return@runTest
         }
 
-        val f = tempDir
+        val f = SysTempDir
             .resolve("kmp_process_redirect")
             .resolve("stdout_stderr.txt")
 
@@ -287,7 +291,7 @@ abstract class ProcessBaseTest {
             .stdout(Stdio.File.of(f))
             .stderr(Stdio.File.of(f))
             .spawn { p ->
-                p.waitForAsync(::delay)
+                p.waitForAsync()
 
                 delayTest(250.milliseconds)
             }
@@ -318,7 +322,7 @@ abstract class ProcessBaseTest {
                 println(p)
 
                 withContext(Dispatchers.Default) {
-                    p.waitForAsync(100.milliseconds, ::delay)
+                    p.waitForAsync(100.milliseconds)
                 }
 
                 // parent dir was created by Stdio.Config.Builder.build
@@ -326,7 +330,7 @@ abstract class ProcessBaseTest {
                 assertTrue(stderrFile.exists())
 
                 withContext(Dispatchers.Default) {
-                    p.waitForAsync(2.seconds, ::delay)
+                    p.waitForAsync(2.seconds)
                 }
             }
 
@@ -376,15 +380,15 @@ abstract class ProcessBaseTest {
             }
 
             withContext(Dispatchers.Default) {
-                p.waitForAsync(2.seconds, ::delay)
+                p.waitForAsync(2.seconds)
             }
 
             val exitCode = p.destroy()
                 .stdoutWaiter()
-                .awaitStopAsync(::delay)
+                .awaitStopAsync()
                 .stderrWaiter()
-                .awaitStopAsync(::delay)
-                .waitForAsync(::delay)
+                .awaitStopAsync()
+                .waitForAsync()
 
             val stdoutString = stdoutBuilder.toString()
             val stderrString = stderrBuilder.toString()

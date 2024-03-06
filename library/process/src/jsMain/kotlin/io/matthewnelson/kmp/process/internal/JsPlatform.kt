@@ -18,10 +18,11 @@
 package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.*
-import org.khronos.webgl.Int8Array
-import org.khronos.webgl.Uint8Array
-import org.khronos.webgl.set
-import kotlin.time.Duration
+import io.matthewnelson.kmp.process.internal.BufferedLineScanner.Companion.N
+import org.khronos.webgl.ArrayBufferView
+import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.InvocationKind
+import kotlin.contracts.contract
 
 internal actual val STDIO_NULL: File by lazy {
     val isWindows = try {
@@ -39,46 +40,38 @@ internal actual val IsMobile: Boolean get() = try {
     false
 }
 
-// @Throws(InterruptedException::class)
-@Suppress("NOTHING_TO_INLINE", "ACTUAL_ANNOTATIONS_NOT_MATCH_EXPECT")
-internal actual inline fun Duration.threadSleep() {
-    throw InterruptedException("Blocking operations are not supported on Node.js. Use Async APIs or Process.Builder.output")
-}
-
 @Suppress("NOTHING_TO_INLINE")
+@OptIn(ExperimentalContracts::class)
 // @Throws(IllegalArgumentException::class, IndexOutOfBoundsException::class)
-internal inline fun ByteArray.toInt8Array(
+internal inline fun <T: ArrayBufferView> ByteArray.toJsArray(
     offset: Int = 0,
-    len: Int = size,
-    checkBounds: Boolean = true,
-): Int8Array {
+    len: Int = size - offset,
+    checkBounds: Boolean = false,
+    factory: (size: Int) -> T,
+): T {
+    contract {
+        callsInPlace(factory, InvocationKind.AT_MOST_ONCE)
+    }
+
     if (checkBounds) checkBounds(offset, len)
-    val array = Int8Array(len)
+    val array = factory(len)
+    val dArray = array.asDynamic()
 
     var aI = 0
-    for (i in offset until len) {
-        array[aI++] = this[i]
+    for (i in offset until offset + len) {
+        dArray[aI++] = this[i]
     }
 
     return array
 }
 
-@Suppress("NOTHING_TO_INLINE")
-// @Throws(IllegalArgumentException::class, IndexOutOfBoundsException::class)
-internal inline fun ByteArray.toUInt8Array(
-    offset: Int = 0,
-    len: Int = size,
-    checkBounds: Boolean = true,
-): Uint8Array {
-    if (checkBounds) checkBounds(offset, len)
-    val array = Uint8Array(len)
-
-    var aI = 0
-    for (i in offset until len) {
-        array[aI++] = this[i]
+internal inline fun ArrayBufferView.fill() {
+    val len = byteLength
+    if (len == 0) return
+    val a = asDynamic()
+    for (i in 0 until len) {
+        a[i] = 0
     }
-
-    return array
 }
 
 @Suppress("NOTHING_TO_INLINE")
@@ -88,25 +81,24 @@ internal inline fun stream_Readable.onClose(
 
 @Suppress("NOTHING_TO_INLINE")
 internal inline fun stream_Readable.onData(
-    noinline block: (data: String) -> Unit,
+    noinline block: (data: ByteArray) -> Unit,
 ): stream_Readable {
     val cb: (chunk: dynamic) -> Unit = { chunk ->
         // can be either a String or a Buffer (fucking stupid...)
 
-        val result = try {
-            val buf = Buffer.wrap(chunk)
-            val utf8 = buf.toUtf8()
-            buf.fill()
-            utf8
-        } catch (_: IllegalArgumentException) {
-            try {
-                chunk as String
-            } catch (_: ClassCastException) {
-                null
+        val result = Buffer.wrap(chunk).let { buf ->
+            val len = buf.length.toInt()
+            if (len == 0) return@let null
+
+            val b = ByteArray(len)
+            for (i in b.indices) {
+                b[i] = buf.readInt8(i)
             }
+            buf.fill()
+            b
         }
 
-        if (!result.isNullOrEmpty()) block(result)
+        if (result != null) block(result)
     }
 
     return on("data", cb)
