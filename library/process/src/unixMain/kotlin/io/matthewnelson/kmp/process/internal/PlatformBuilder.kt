@@ -79,7 +79,7 @@ internal actual class PlatformBuilder private actual constructor() {
         }
 
         try {
-            return forkExec(command, args, chdir, env, handle, destroy)
+            return forkExec(command, programPaths, args, chdir, env, handle, destroy)
         } catch (e: Exception) {
             handle.tryCloseSuppressed(e)
             throw e.wrapIOException()
@@ -192,7 +192,7 @@ internal actual class PlatformBuilder private actual constructor() {
 
     @OptIn(ExperimentalForeignApi::class)
     @Throws(IOException::class, UnsupportedOperationException::class)
-    internal fun forkExec(
+    private fun forkExec(
         command: String,
         programPaths: List<String>,
         args: List<String>,
