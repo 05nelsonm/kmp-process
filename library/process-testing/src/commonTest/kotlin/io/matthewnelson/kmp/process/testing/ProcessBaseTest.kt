@@ -71,7 +71,7 @@ abstract class ProcessBaseTest {
         }
 
         val tempDir = SysTempDir.resolve("kmp_process")
-        val testCat = SysTempDir.resolve("test.cat")
+        val testCat = tempDir.resolve("test.cat")
 
         testCat.delete()
         testCat.parentFile?.mkdirs()
@@ -253,7 +253,7 @@ abstract class ProcessBaseTest {
 
                 p.input!!.close()
 
-                delayTest(50.milliseconds)
+                delayTest(250.milliseconds)
 
                 p
             }

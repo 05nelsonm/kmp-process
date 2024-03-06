@@ -60,9 +60,9 @@ internal fun PlatformBuilder.blockingOutput(
         options.consumeInput()?.let { bytes ->
             try {
                 p.input?.write(bytes)
-                // Will never happen b/c Stdio.Config.Builder.build
-                // will always set stdin to Stdio.Pipe when Output.Options.input
-                // is not null, but must throw IOException instead of NPE using !!
+                    // Will never happen b/c Stdio.Config.Builder.build
+                    // will always set stdin to Stdio.Pipe when Output.Options.input
+                    // is not null, but must throw IOException instead of NPE using !!
                     ?: throw IOException("Misconfigured Stdio.Config. stdin should be Stdio.Pipe")
 
                 p.input.close()
