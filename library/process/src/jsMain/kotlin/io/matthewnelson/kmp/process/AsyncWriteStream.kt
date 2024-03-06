@@ -18,11 +18,19 @@
 package io.matthewnelson.kmp.process
 
 import io.matthewnelson.kmp.file.IOException
+import io.matthewnelson.kmp.file.toIOException
+import io.matthewnelson.kmp.process.internal.*
+import io.matthewnelson.kmp.process.internal.checkBounds
 import io.matthewnelson.kmp.process.internal.stream_Writable
+import io.matthewnelson.kmp.process.internal.toJsArray
+import kotlinx.coroutines.Job
+import org.khronos.webgl.Uint8Array
 
 public actual class AsyncWriteStream internal constructor(
     private val stream: stream_Writable,
 ) {
+
+    private val isClosed: Boolean get() = !stream.writable
 
     // @Throws(
     //     CancellationException::class,
@@ -31,19 +39,34 @@ public actual class AsyncWriteStream internal constructor(
     //     IOException::class,
     // )
     public actual suspend fun writeAsync(buf: ByteArray, offset: Int, len: Int) {
-        throw IOException("Not implemented")
+        buf.checkBounds(offset, len)
+        if (isClosed) throw IOException("WriteStream is closed")
+        if (len == 0) return
+
+        val chunk = buf.toJsArray(offset, len) { size -> Uint8Array(size) }
+        val wLatch = Job()
+
+        try {
+            if (!stream.write(chunk) { wLatch.cancel() }) {
+                val dLatch = Job()
+                stream.once("drain") { dLatch.cancel() }
+                dLatch.join()
+            }
+        } catch (t: Throwable) {
+            wLatch.cancel()
+            throw t.toIOException()
+        }
+
+        wLatch.join()
+        chunk.fill()
     }
 
     // @Throws(CancellationException::class, IOException::class)
     public actual suspend fun writeAsync(buf: ByteArray) { writeAsync(buf, 0, buf.size) }
 
     // @Throws(CancellationException::class, IOException::class)
-    public actual suspend fun flushAsync() {
-        throw IOException("Not implemented")
-    }
+    public actual fun flush() {}
 
     // @Throws(CancellationException::class, IOException::class)
-    public actual suspend fun closeAsync() {
-        throw IOException("Not implemented")
-    }
+    public actual fun close() { stream.end() }
 }

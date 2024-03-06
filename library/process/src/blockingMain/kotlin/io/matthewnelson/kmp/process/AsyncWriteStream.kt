@@ -37,12 +37,6 @@ public actual class AsyncWriteStream private constructor(
     @Throws(CancellationException::class, IOException::class)
     public actual suspend fun writeAsync(buf: ByteArray) { write(buf) }
 
-    @Throws(CancellationException::class, IOException::class)
-    public actual suspend fun flushAsync() { flush() }
-
-    @Throws(CancellationException::class, IOException::class)
-    public actual suspend fun closeAsync() { close() }
-
     internal companion object {
 
         @JvmSynthetic

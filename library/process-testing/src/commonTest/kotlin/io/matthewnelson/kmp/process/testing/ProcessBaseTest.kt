@@ -217,52 +217,57 @@ abstract class ProcessBaseTest {
         assertEquals("", out.stderr)
     }
 
-//    @Test
-//    fun givenSpawn_whenInput_thenStdoutIsAsExpected() = runTest {
-//        if (IsDarwinMobile || IsWindows) {
-//            println("Skipping...")
-//            return@runTest
-//        }
-//
-//        val size = 50_000
-//        val expected = ArrayList<String>(size).apply {
-//            repeat(size) { i -> add(i.toString()) }
-//        }
-//        val actual = ArrayList<String>(size)
-//
-//        val exitCode = Process.Builder(command = "cat")
-//            .args("-")
-//            .spawn { p ->
-//                val data = expected
-//                    .joinToString("\n")
-//                    .encodeToByteArray()
-//
-//                p.stdoutFeed { line ->
-//                    actual.add(line)
-//                }
-//
-//                p.input!!.write(data)
-////                var i = 0
-////                while (i < data.size) {
-////                    val len = min(4096, data.size - i)
-////                    p.input!!.write(data, i, len)
-////                    i += len
-////                }
-//
-//                delayTest(250.milliseconds)
-//
-//                p.input!!.close()
-//
-//                p
-//            }
-//            .stdoutWaiter()
-//            .awaitStopAsync()
-//            .waitForAsync()
-//
-//        assertEquals(0, exitCode)
-//        assertEquals(expected.size, actual.size)
-//        assertContentEquals(expected, actual)
-//    }
+    @Test
+    fun givenSpawn_whenInput_thenStdoutIsAsExpected() = runTest {
+        if (IsDarwinMobile || IsWindows) {
+            println("Skipping...")
+            return@runTest
+        }
+
+        val size = 50000
+        val expected = ArrayList<String>(size).apply {
+            repeat(size) { i -> add(i.toString()) }
+        }
+        val actual = ArrayList<String>(size * 2)
+
+        val exitCode = Process.Builder(command = "cat")
+            .args("-")
+            .spawn { p ->
+                val data = expected
+                    .joinToString("\n", postfix = "\n")
+                    .encodeToByteArray()
+
+                p.stdoutFeed { line ->
+                    actual.add(line)
+                }
+
+                var offset = 0
+                // chunked
+                while (offset < data.size) {
+                    val len = min(4097, data.size - offset)
+                    p.input!!.writeAsync(data, offset, len)
+                    offset += len
+                }
+
+                p.input!!.writeAsync(data)
+
+                p.input!!.close()
+
+                delayTest(50.milliseconds)
+
+                p
+            }
+            .stdoutWaiter()
+            .awaitStopAsync()
+            .waitForAsync()
+
+        assertEquals(0, exitCode)
+
+        // Node.js is awful and adds blank lines at dumb intervals.
+        // We just want to ensure that the data made it to the other
+        // end.
+        assertEquals((expected.size * 2) + if (IsNodeJs) 4 else 0, actual.size)
+    }
 
     @Test
     fun givenStderrFile_whenSameAsStdout_thenStderrRedirectedToStdout() = runTest {

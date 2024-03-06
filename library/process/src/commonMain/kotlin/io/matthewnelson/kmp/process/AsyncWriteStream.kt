@@ -33,9 +33,9 @@ public expect class AsyncWriteStream {
     @Throws(CancellationException::class, IOException::class)
     public suspend fun writeAsync(buf: ByteArray)
 
-    @Throws(CancellationException::class, IOException::class)
-    public suspend fun flushAsync()
+    @Throws(IOException::class)
+    public fun flush()
 
-    @Throws(CancellationException::class, IOException::class)
-    public suspend fun closeAsync()
+    @Throws(IOException::class)
+    public fun close()
 }

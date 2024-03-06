@@ -18,9 +18,10 @@
 package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.*
-import org.khronos.webgl.Int8Array
-import org.khronos.webgl.Uint8Array
-import org.khronos.webgl.set
+import org.khronos.webgl.ArrayBufferView
+import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.InvocationKind
+import kotlin.contracts.contract
 
 internal actual val STDIO_NULL: File by lazy {
     val isWindows = try {
@@ -39,39 +40,37 @@ internal actual val IsMobile: Boolean get() = try {
 }
 
 @Suppress("NOTHING_TO_INLINE")
+@OptIn(ExperimentalContracts::class)
 // @Throws(IllegalArgumentException::class, IndexOutOfBoundsException::class)
-internal inline fun ByteArray.toInt8Array(
+internal inline fun <T: ArrayBufferView> ByteArray.toJsArray(
     offset: Int = 0,
-    len: Int = size,
-    checkBounds: Boolean = true,
-): Int8Array {
+    len: Int = size - offset,
+    checkBounds: Boolean = false,
+    factory: (size: Int) -> T,
+): T {
+    contract {
+        callsInPlace(factory, InvocationKind.AT_MOST_ONCE)
+    }
+
     if (checkBounds) checkBounds(offset, len)
-    val array = Int8Array(len)
+    val array = factory(len)
+    val dArray = array.asDynamic()
 
     var aI = 0
-    for (i in offset until len) {
-        array[aI++] = this[i]
+    for (i in offset until offset + len) {
+        dArray[aI++] = this[i]
     }
 
     return array
 }
 
-@Suppress("NOTHING_TO_INLINE")
-// @Throws(IllegalArgumentException::class, IndexOutOfBoundsException::class)
-internal inline fun ByteArray.toUInt8Array(
-    offset: Int = 0,
-    len: Int = size,
-    checkBounds: Boolean = true,
-): Uint8Array {
-    if (checkBounds) checkBounds(offset, len)
-    val array = Uint8Array(len)
-
-    var aI = 0
-    for (i in offset until len) {
-        array[aI++] = this[i]
+internal inline fun ArrayBufferView.fill() {
+    val len = byteLength
+    if (len == 0) return
+    val a = asDynamic()
+    for (i in 0 until len) {
+        a[i] = 0
     }
-
-    return array
 }
 
 @Suppress("NOTHING_TO_INLINE")
