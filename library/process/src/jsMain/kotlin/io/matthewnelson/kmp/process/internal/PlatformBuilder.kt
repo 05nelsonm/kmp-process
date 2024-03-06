@@ -22,6 +22,7 @@ import io.matthewnelson.kmp.process.Output
 import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.Stdio
+import io.matthewnelson.kmp.process.internal.BufferedLineScanner.Companion.N
 import org.khronos.webgl.Int8Array
 
 // jsMain
@@ -238,8 +239,6 @@ internal actual class PlatformBuilder private actual constructor() {
 
             return result
         }
-
-        private const val N = '\n'.code.toByte()
 
         @Suppress("NOTHING_TO_INLINE")
         private inline fun Buffer.toUtf8Trimmed(): String {

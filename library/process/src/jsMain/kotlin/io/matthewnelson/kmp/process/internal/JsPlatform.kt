@@ -18,6 +18,7 @@
 package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.*
+import io.matthewnelson.kmp.process.internal.BufferedLineScanner.Companion.N
 import org.khronos.webgl.ArrayBufferView
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
@@ -80,25 +81,24 @@ internal inline fun stream_Readable.onClose(
 
 @Suppress("NOTHING_TO_INLINE")
 internal inline fun stream_Readable.onData(
-    noinline block: (data: String) -> Unit,
+    noinline block: (data: ByteArray) -> Unit,
 ): stream_Readable {
     val cb: (chunk: dynamic) -> Unit = { chunk ->
         // can be either a String or a Buffer (fucking stupid...)
 
-        val result = try {
-            val buf = Buffer.wrap(chunk)
-            val utf8 = buf.toUtf8()
-            buf.fill()
-            utf8
-        } catch (_: IllegalArgumentException) {
-            try {
-                chunk as String
-            } catch (_: ClassCastException) {
-                null
+        val result = Buffer.wrap(chunk).let { buf ->
+            val len = buf.length.toInt()
+            if (len == 0) return@let null
+
+            val b = ByteArray(len)
+            for (i in b.indices) {
+                b[i] = buf.readInt8(i)
             }
+            buf.fill()
+            b
         }
 
-        if (!result.isNullOrEmpty()) block(result)
+        if (result != null) block(result)
     }
 
     return on("data", cb)

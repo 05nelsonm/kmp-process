@@ -19,36 +19,12 @@ import io.matthewnelson.kmp.file.IOException
 import kotlin.jvm.JvmSynthetic
 
 @Suppress("UNUSED")
-internal class BufferedLineScanner private constructor(
+internal class StreamLineScanner private constructor(
     readBufferSize: Int,
     stream: ReadStream,
     dispatchLine: (line: String) -> Unit,
-    onStopped: () -> Unit,
-) {
-
-    private val overflow = ArrayList<ByteArray>(1)
-
-    private fun ArrayList<ByteArray>.consumeAndJoin(append: String): String {
-        if (isEmpty()) return append
-
-        var size = append.length
-        forEach { size += it.size }
-        val sb = StringBuilder(size)
-
-        while (isNotEmpty()) {
-            val segment = removeAt(0)
-            sb.append(segment.decodeToString())
-            segment.fill(0)
-        }
-
-        sb.append(append)
-
-        val s = sb.toString()
-        sb.clear()
-        repeat(size) { sb.append(' ') }
-
-        return s
-    }
+    stopped: () -> Unit,
+): BufferedLineScanner(dispatchLine) {
 
     init {
         val buf = ByteArray(readBufferSize)
@@ -65,27 +41,12 @@ internal class BufferedLineScanner private constructor(
             // and we can end early (before process destruction).
             if (read <= 0) break
 
-            var iNext = 0
-            for (i in 0 until read) {
-                if (buf[i] != N) continue
-                val line = overflow.consumeAndJoin(append = buf.decodeToString(iNext, i))
-                iNext = i + 1
-
-                dispatchLine(line)
-            }
-
-            if (iNext == read) continue
-            overflow.add(buf.copyOfRange(iNext, read))
+            onData(buf, read)
         }
-
-        if (overflow.isNotEmpty()) {
-            val s = overflow.consumeAndJoin(append = "")
-            dispatchLine(s)
-        }
-
-        buf.fill(0)
 
         onStopped()
+        buf.fill(0)
+        stopped()
     }
 
     internal companion object {
@@ -102,8 +63,6 @@ internal class BufferedLineScanner private constructor(
             readBufferSize: Int,
             dispatchLine: (line: String) -> Unit,
             onStopped: () -> Unit,
-        ) { BufferedLineScanner(readBufferSize, this, dispatchLine, onStopped) }
-
-        private const val N = '\n'.code.toByte()
+        ) { StreamLineScanner(readBufferSize, this, dispatchLine, onStopped) }
     }
 }

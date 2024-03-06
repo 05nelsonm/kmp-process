@@ -262,11 +262,8 @@ abstract class ProcessBaseTest {
             .waitForAsync()
 
         assertEquals(0, exitCode)
-
-        // Node.js is awful and adds blank lines at dumb intervals.
-        // We just want to ensure that the data made it to the other
-        // end.
-        assertEquals((expected.size * 2) + if (IsNodeJs) 4 else 0, actual.size)
+        assertEquals(expected.size * 2, actual.size)
+        assertContentEquals(expected + expected, actual)
     }
 
     @Test

@@ -20,7 +20,7 @@ import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.process.AsyncWriteStream
 import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.Signal
-import io.matthewnelson.kmp.process.internal.BufferedLineScanner.Companion.scanLines
+import io.matthewnelson.kmp.process.internal.StreamLineScanner.Companion.scanLines
 import io.matthewnelson.kmp.process.internal.Closeable.Companion.tryCloseSuppressed
 import io.matthewnelson.kmp.process.internal.stdio.StdioHandle
 import kotlinx.cinterop.*

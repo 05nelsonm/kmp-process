@@ -16,12 +16,12 @@
 package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.IOException
-import io.matthewnelson.kmp.process.internal.BufferedLineScanner.Companion.scanLines
+import io.matthewnelson.kmp.process.internal.StreamLineScanner.Companion.scanLines
 import kotlin.math.min
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class BufferedLineScannerUnitTest {
+class StreamLineScannerUnitTest {
 
     private class TestStream(text: String): ReadStream() {
 
