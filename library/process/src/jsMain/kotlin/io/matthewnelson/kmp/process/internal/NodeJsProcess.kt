@@ -87,7 +87,10 @@ internal class NodeJsProcess internal constructor(
                 stdout.onClose {
                     onStopped()
                     onStdoutStopped()
-                }.onData(::onData)
+                }.onData { data ->
+                    onData(data)
+                    data.fill(0)
+                }
             }
         }
     }
@@ -100,7 +103,10 @@ internal class NodeJsProcess internal constructor(
                 stderr.onClose {
                     onStopped()
                     onStderrStopped()
-                }.onData(::onData)
+                }.onData { data ->
+                    onData(data)
+                    data.fill(0)
+                }
             }
         }
     }
