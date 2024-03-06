@@ -177,12 +177,12 @@ myScope.launch {
 
 ```kotlin
 dependencies {
-    implementation("io.matthewnelson.kmp-process:process:[TODO]")
+    implementation("io.matthewnelson.kmp-process:process:0.1.0-alpha01")
 }
 ```
 
 <!-- TAG_VERSION -->
-[badge-latest-release]: https://img.shields.io/badge/latest--release-Unreleased-blue.svg?style=flat
+[badge-latest-release]: https://img.shields.io/badge/latest--release-0.1.0--alpha01-blue.svg?style=flat
 [badge-license]: https://img.shields.io/badge/license-Apache%20License%202.0-blue.svg?style=flat
 
 <!-- TAG_DEPENDENCIES -->
