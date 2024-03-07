@@ -41,6 +41,7 @@ internal class StdioHandle private constructor(
 
     override val isClosed: Boolean get() = stdinFD.isClosed && stdoutFD.isClosed && stderrFD.isClosed
     private val lock = Lock()
+    private var threw: IOException? = null
 
     private val stdin: Instance<WriteStream?> = Instance(create = {
         // TODO: Issue #6
@@ -56,7 +57,10 @@ internal class StdioHandle private constructor(
             } else {
                 stdinFD
             }.close()
-        } catch (_: IOException) {}
+        } catch (e: IOException) {
+            threw?.let { e.addSuppressed(it) }
+            threw = e
+        }
 
         try {
             if (stdoutFD is StdioDescriptor.Pipe) {
@@ -65,7 +69,10 @@ internal class StdioHandle private constructor(
             } else {
                 stdoutFD
             }.close()
-        } catch (_: IOException) {}
+        } catch (e: IOException) {
+            threw?.let { e.addSuppressed(it) }
+            threw = e
+        }
 
         try {
             if (stderrFD is StdioDescriptor.Pipe) {
@@ -74,11 +81,13 @@ internal class StdioHandle private constructor(
             } else {
                 stdoutFD
             }.close()
-        } catch (_: IOException) {}
+        } catch (e: IOException) {
+            threw?.let { e.addSuppressed(it) }
+            threw = e
+        }
 
         if (stdinFD !is StdioDescriptor.Pipe) return@Instance null
         if (stdinFD.isClosed) return@Instance null
-
         WriteStream.of(stdinFD)
     })
 
@@ -130,11 +139,12 @@ internal class StdioHandle private constructor(
     private fun closeNoLock() {
         if (isClosed) return
 
-        var threw: IOException? = null
+        var threw: IOException? = threw
 
         try {
             stdinFD.close()
         } catch (e: IOException) {
+            if (threw != null) e.addSuppressed(threw)
             threw = e
         }
         try {
