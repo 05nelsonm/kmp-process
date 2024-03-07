@@ -41,34 +41,53 @@ internal class StdioHandle private constructor(
 
     override val isClosed: Boolean get() = stdinFD.isClosed && stdoutFD.isClosed && stderrFD.isClosed
     private val lock = Lock()
+    private var threw: IOException? = null
 
     private val stdin: Instance<WriteStream?> = Instance(create = {
         // TODO: Issue #6
 
         // This is invoked once and only once upon NativeProcess
         // instantiation (after fork occurs). We can do some descriptor
-        // clean up here and close unneeded pipe ends which were duped
+        // clean up here and close unneeded descriptors which were duped
         // in the child process and remain open over there.
-        if (stdoutFD is StdioDescriptor.Pipe) {
-            try {
-                stdoutFD.write.close()
-            } catch (_: IOException) {}
+        try {
+            if (stdinFD is StdioDescriptor.Pipe) {
+                // Leave write end open here in parent
+                stdinFD.read
+            } else {
+                stdinFD
+            }.close()
+        } catch (e: IOException) {
+            threw?.let { e.addSuppressed(it) }
+            threw = e
         }
 
-        if (stderrFD is StdioDescriptor.Pipe) {
-            try {
-                stderrFD.write.close()
-            } catch (_: IOException) {}
+        try {
+            if (stdoutFD is StdioDescriptor.Pipe) {
+                // Leave read end open here in parent
+                stdoutFD.write
+            } else {
+                stdoutFD
+            }.close()
+        } catch (e: IOException) {
+            threw?.let { e.addSuppressed(it) }
+            threw = e
+        }
+
+        try {
+            if (stderrFD is StdioDescriptor.Pipe) {
+                // Leave read end open here in parent
+                stderrFD.write
+            } else {
+                stdoutFD
+            }.close()
+        } catch (e: IOException) {
+            threw?.let { e.addSuppressed(it) }
+            threw = e
         }
 
         if (stdinFD !is StdioDescriptor.Pipe) return@Instance null
-
-        try {
-            stdinFD.read.close()
-        } catch (_: IOException) {}
-
         if (stdinFD.isClosed) return@Instance null
-
         WriteStream.of(stdinFD)
     })
 
@@ -120,11 +139,12 @@ internal class StdioHandle private constructor(
     private fun closeNoLock() {
         if (isClosed) return
 
-        var threw: IOException? = null
+        var threw: IOException? = threw
 
         try {
             stdinFD.close()
         } catch (e: IOException) {
+            if (threw != null) e.addSuppressed(threw)
             threw = e
         }
         try {
