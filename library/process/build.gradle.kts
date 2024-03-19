@@ -22,9 +22,7 @@ plugins {
 }
 
 kmpConfiguration {
-    configureShared(publish = true) {
-        jvm { target { withJava() } }
-
+    configureShared(java9ModuleName = "io.matthewnelson.kmp.process", publish = true) {
         common {
             sourceSetMain {
                 dependencies {

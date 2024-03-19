@@ -124,10 +124,10 @@ public class Output private constructor(
              * on `stdout` or `stderr`. If exceeded, [Process]
              * will be terminated and output truncated.
              *
-             * Default (mobile): 1024 * 5000
-             * Default (desktop): 2147483647 / 2
-             * Minimum: 1024 * 16
-             * Maximum: 2147483647
+             * - Default (mobile): 1024 * 5000
+             * - Default (desktop): 2147483647 / 2
+             * - Minimum: 1024 * 16
+             * - Maximum: 2147483647
              * */
             @JvmField
             public var maxBuffer: Int = if (IsMobile) 1024 * 5000 else Int.MAX_VALUE / 2
@@ -137,9 +137,9 @@ public class Output private constructor(
              * allowed to run. If exceeded, [Process] will be
              * terminated.
              *
-             * Default: 250
-             * Minimum: 250
-             * Maximum: 2147483647 (ill-advised)
+             * - Default: 250
+             * - Minimum: 250
+             * - Maximum: 2147483647 (ill-advised)
              * */
             @JvmField
             public var timeoutMillis: Int = MIN_TIMEOUT
