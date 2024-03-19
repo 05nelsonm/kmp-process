@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("KotlinRedundantDiagnosticSuppress")
+@file:Suppress("KotlinRedundantDiagnosticSuppress", "UnnecessaryOptInAnnotation")
 
 package io.matthewnelson.kmp.process.internal
 
@@ -38,6 +38,7 @@ internal actual fun File.isProgramOrNull(): Boolean? = memScoped {
     }
 
     // TODO: Check if executable?
-    val mode: Int = stat.st_mode.convert()
+    @OptIn(UnsafeNumber::class)
+    val mode = stat.st_mode.toInt()
     (mode and S_IFMT) == S_IFREG
 }
