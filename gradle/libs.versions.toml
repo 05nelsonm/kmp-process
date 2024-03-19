@@ -4,15 +4,15 @@ androidx-test-runner = "1.5.2"
 
 gradle-android = "8.1.4"
 gradle-binary-compat = "0.14.0"
-gradle-kmp-configuration = "0.2.0"
-gradle-kotlin = "1.9.22"
+gradle-kmp-configuration = "0.2.1"
+gradle-kotlin = "1.9.23"
 gradle-publish-maven = "0.27.0"
 
-immutable = "0.1.0"
+immutable = "0.1.2"
 
-kmp-file = "0.1.0-beta02"
+kmp-file = "0.1.0-beta03"
 kmp-tor-resource = "408.10.0-SNAPSHOT"
-kotlincrypto-endians = "0.2.0"
+kotlincrypto-endians = "0.3.0"
 kotlinx-coroutines = "1.8.0"
 
 [libraries]

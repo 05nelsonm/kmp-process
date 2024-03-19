@@ -187,10 +187,10 @@ dependencies {
 
 <!-- TAG_DEPENDENCIES -->
 [badge-coroutines]: https://img.shields.io/badge/kotlinx.coroutines-1.8.0-blue.svg?logo=kotlin
-[badge-endians]: https://img.shields.io/badge/kotlincrypto.endians-0.2.0-blue.svg?style=flat
-[badge-immutable]: https://img.shields.io/badge/immutable-0.1.0-blue.svg?style=flat
-[badge-kmp-file]: https://img.shields.io/badge/kmp--file-0.1.0--beta01-blue.svg?style=flat
-[badge-kotlin]: https://img.shields.io/badge/kotlin-1.9.22-blue.svg?logo=kotlin
+[badge-endians]: https://img.shields.io/badge/kotlincrypto.endians-0.3.0-blue.svg?style=flat
+[badge-immutable]: https://img.shields.io/badge/immutable-0.1.2-blue.svg?style=flat
+[badge-kmp-file]: https://img.shields.io/badge/kmp--file-0.1.0--beta03-blue.svg?style=flat
+[badge-kotlin]: https://img.shields.io/badge/kotlin-1.9.23-blue.svg?logo=kotlin
 
 <!-- TAG_PLATFORMS -->
 [badge-platform-android]: http://img.shields.io/badge/-android-6EDB8D.svg?style=flat
