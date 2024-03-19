@@ -42,11 +42,20 @@ jobs:
           key: ${{ runner.os }}-gradle-caches-${{ hashFiles('**/*.gradle.kts') }}-${{ hashFiles('gradle/libs.versions.toml') }}
           restore-keys: ${{ runner.os }}-gradle-caches-
 
-      - name: Setup JDK
+      # Windows does not build ANDROID, but needs Java 11 for JPMS Multi-Release Jar build
+      - name: Setup JDK 11
+        if: matrix.os == 'windows-latest'
         uses: actions/setup-java@v3.4.0
         with:
           distribution: 'zulu'
-          java-version: 17
+          java-version: 11
+
+      - name: Setup JDK 19
+        if: matrix.os != 'windows-latest'
+        uses: actions/setup-java@v3.4.0
+        with:
+          distribution: 'zulu'
+          java-version: 19
 
       - name: Run macOS Tests
         if: matrix.os == 'macos-latest'
