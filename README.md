@@ -38,6 +38,8 @@ functionality is backported for Android and tested against API 15+.
 
 ## Example
 
+**NOTE:** Async API usage on `Jvm` & `Android` requires the `kotlinx.coroutines.core` dependency.
+
 ```kotlin
 val builder = Process.Builder(command = "cat")
     // Optional arguments

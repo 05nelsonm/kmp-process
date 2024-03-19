@@ -171,6 +171,9 @@ public abstract class Process internal constructor(
     /**
      * Delays the current coroutine until [Process] completion.
      *
+     * **NOTE:** For Jvm & Android the `kotlinx.coroutines.core`
+     * dependency is needed.
+     *
      * **NOTE:** Care must be had when using Async APIs such that,
      * upon cancellation, [Process.destroy] is still called.
      *
@@ -189,6 +192,9 @@ public abstract class Process internal constructor(
      * Delays the current coroutine for the specified [duration],
      * or until [Process.exitCode] is available (i.e. the
      * [Process] completed).
+     *
+     * **NOTE:** For Jvm & Android the `kotlinx.coroutines.core`
+     * dependency is needed.
      *
      * **NOTE:** Care must be had when using Async APIs such that,
      * upon cancellation, [Process.destroy] is still called.
