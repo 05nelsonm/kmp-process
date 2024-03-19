@@ -28,7 +28,7 @@ kmpConfiguration {
                 dependencies {
                     api(libs.kmp.file)
                     implementation(libs.immutable.collections)
-                    implementation(libs.kotlinx.coroutines.core)
+                    compileOnly(libs.kotlinx.coroutines.core)
                 }
             }
             sourceSetTest {
@@ -40,6 +40,11 @@ kmpConfiguration {
 
         kotlin {
             with(sourceSets) {
+                findByName("nonJvmMain")?.apply {
+                    dependencies {
+                        implementation(libs.kotlinx.coroutines.core)
+                    }
+                }
                 findByName("unixMain")?.apply {
                     dependencies {
                         implementation(libs.kotlincrypto.endians)

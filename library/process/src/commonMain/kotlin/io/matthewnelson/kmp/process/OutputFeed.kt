@@ -271,6 +271,9 @@ public fun interface OutputFeed {
          *    was called (i.e. never started)
          *  - Has already stopped
          *
+         * **NOTE:** For Jvm & Android the `kotlinx.coroutines.core`
+         * dependency is needed.
+         *
          * @return [Process] for chaining calls
          * @see [io.matthewnelson.kmp.process.Blocking.Waiter.awaitStop]
          * */
