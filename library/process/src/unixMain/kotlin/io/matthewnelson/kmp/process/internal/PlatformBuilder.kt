@@ -101,7 +101,7 @@ internal actual class PlatformBuilder private actual constructor() {
     @Throws(IOException::class, UnsupportedOperationException::class)
     private fun posixSpawn(
         command: String,
-        programPaths: List<String>,
+        programPaths: Set<String>,
         args: List<String>,
         chdir: File?,
         env: Map<String, String>,
@@ -194,7 +194,7 @@ internal actual class PlatformBuilder private actual constructor() {
     @Throws(IOException::class, UnsupportedOperationException::class)
     private fun forkExec(
         command: String,
-        programPaths: List<String>,
+        programPaths: Set<String>,
         args: List<String>,
         chdir: File?,
         env: Map<String, String>,
@@ -306,7 +306,7 @@ internal actual class PlatformBuilder private actual constructor() {
         pid: Int,
         private val pipe: StdioDescriptor.Pipe,
         private val handle: StdioHandle,
-        programPaths: List<String>,
+        programPaths: Set<String>,
         args: List<String>,
         chdir: File?,
         env: Map<String, String>,

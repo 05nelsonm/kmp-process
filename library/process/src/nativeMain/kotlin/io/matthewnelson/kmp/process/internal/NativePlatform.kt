@@ -17,6 +17,8 @@
 
 package io.matthewnelson.kmp.process.internal
 
+import io.matthewnelson.immutable.collections.immutableSetOf
+import io.matthewnelson.immutable.collections.toImmutableSet
 import io.matthewnelson.kmp.file.*
 import kotlinx.cinterop.*
 import platform.posix.*
@@ -49,21 +51,16 @@ internal actual inline fun Duration.threadSleep() {
 }
 
 @Throws(IOException::class)
-internal fun String.toProgramPaths(): List<String> {
+internal fun String.toProgramPaths(): Set<String> {
     val file = toFile()
-    var absolute: File? = null
 
     if (file.isAbsolute()) {
-        absolute = file
+        return immutableSetOf(file.normalize().path)
     }
 
     // Relative path
-    if (absolute == null && file.path.contains(SysDirSep)) {
-        absolute = file.absoluteFile
-    }
-
-    if (absolute != null) {
-        return listOf(absolute.normalize().path)
+    if (file.path.contains(SysDirSep)) {
+        return immutableSetOf(file.absoluteFile.normalize().path)
     }
 
     // Try finding via PATH
@@ -87,7 +84,7 @@ internal fun String.toProgramPaths(): List<String> {
         throw IOException("Failed to locate program[$this]")
     }
 
-    return programPaths
+    return programPaths.toImmutableSet()
 }
 
 internal expect fun File.isProgramOrNull(): Boolean?
