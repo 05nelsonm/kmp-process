@@ -23,6 +23,9 @@ import io.matthewnelson.kmp.process.internal.*
 import kotlinx.coroutines.Job
 import org.khronos.webgl.Uint8Array
 
+/**
+ * A stream to write to.
+ * */
 public actual class AsyncWriteStream internal constructor(
     private val stream: stream_Writable,
 ) {
@@ -64,8 +67,14 @@ public actual class AsyncWriteStream internal constructor(
     public actual suspend fun writeAsync(buf: ByteArray) { writeAsync(buf, 0, buf.size) }
 
     // @Throws(CancellationException::class, IOException::class)
-    public actual fun flush() {}
+    public actual suspend fun flushAsync() { flush() }
 
     // @Throws(CancellationException::class, IOException::class)
+    public actual suspend fun closeAsync() { close() }
+
+    // @Throws(IOException::class)
+    public actual fun flush() {}
+
+    // @Throws(IOException::class)
     public actual fun close() { stream.end() }
 }

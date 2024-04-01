@@ -19,9 +19,23 @@ package io.matthewnelson.kmp.process
 
 import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.process.internal.WriteStream
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.jvm.JvmSynthetic
 
+/**
+ * A stream to write to. On Jvm & Native, blocking APIs are
+ * available via [BufferedWriteStream].
+ *
+ * On Jvm & Native, all Async functions utilize Dispatchers.IO
+ * under the hood when calling BufferedWriteStream functions.
+ *
+ * **NOTE:** For Jvm & Android the `kotlinx.coroutines.core`
+ * dependency is needed when using Async functions.
+ * */
 public actual class AsyncWriteStream private constructor(
     stream: WriteStream,
 ): BufferedWriteStream(stream) {
@@ -32,10 +46,24 @@ public actual class AsyncWriteStream private constructor(
         IndexOutOfBoundsException::class,
         IOException::class,
     )
-    public actual suspend fun writeAsync(buf: ByteArray, offset: Int, len: Int) { write(buf, offset, len) }
+    public actual suspend fun writeAsync(buf: ByteArray, offset: Int, len: Int) {
+        withContext(NonCancellable + Dispatchers.IO) { write(buf, offset, len) }
+    }
 
     @Throws(CancellationException::class, IOException::class)
-    public actual suspend fun writeAsync(buf: ByteArray) { write(buf) }
+    public actual suspend fun writeAsync(buf: ByteArray) {
+        withContext(NonCancellable + Dispatchers.IO) { write(buf) }
+    }
+
+    @Throws(CancellationException::class, IOException::class)
+    public actual suspend fun flushAsync() {
+        withContext(NonCancellable + Dispatchers.IO) { flush() }
+    }
+
+    @Throws(CancellationException::class, IOException::class)
+    public actual suspend fun closeAsync() {
+        withContext(NonCancellable + Dispatchers.IO) { close() }
+    }
 
     internal companion object {
 
