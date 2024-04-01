@@ -20,9 +20,6 @@ package io.matthewnelson.kmp.process
 import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.file.toIOException
 import io.matthewnelson.kmp.process.internal.*
-import io.matthewnelson.kmp.process.internal.checkBounds
-import io.matthewnelson.kmp.process.internal.stream_Writable
-import io.matthewnelson.kmp.process.internal.toJsArray
 import kotlinx.coroutines.Job
 import org.khronos.webgl.Uint8Array
 
@@ -45,15 +42,17 @@ public actual class AsyncWriteStream internal constructor(
 
         val chunk = buf.toJsArray(offset, len) { size -> Uint8Array(size) }
         val wLatch = Job()
+        var dLatch: Job? = null
 
         try {
             if (!stream.write(chunk) { wLatch.cancel() }) {
-                val dLatch = Job()
+                dLatch = Job()
                 stream.once("drain") { dLatch.cancel() }
                 dLatch.join()
             }
         } catch (t: Throwable) {
             wLatch.cancel()
+            dLatch?.cancel()
             throw t.toIOException()
         }
 

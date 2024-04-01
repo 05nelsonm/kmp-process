@@ -36,7 +36,8 @@ internal class OutputFeedBuffer private constructor(maxSize: Int): OutputFeed {
     internal var maxSizeExceeded: Boolean = false
         private set
 
-    override fun onOutput(line: String) {
+    override fun onOutput(line: String?) {
+        if (line == null) return
         if (maxSizeExceeded) return
 
         // do we need to add a new line character

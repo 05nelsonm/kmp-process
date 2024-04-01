@@ -41,11 +41,11 @@ import kotlin.time.Duration.Companion.milliseconds
  *
  *     val p = builder.spawn()
  *         .stdoutFeed { line ->
- *             println(line)
+ *             println(line ?: "--STDOUT EOS--")
  *         }.stderrFeed(
  *             // attach multiple at once
  *             OutputFeed { line ->
- *                 println(line)
+ *                 println(line ?: "--STDERR EOS--")
  *             },
  *             OutputFeed { line ->
  *                 // do something
@@ -72,8 +72,10 @@ public fun interface OutputFeed {
     /**
      * A line of output from `stdout` or `stderr` (whichever
      * this [OutputFeed] has been attached to).
+     *
+     * `null` is dispatched to indicate [OutputFeed] closure.
      * */
-    public fun onOutput(line: String)
+    public fun onOutput(line: String?)
 
     /**
      * Helper class which [Process] implements that handles everything
@@ -195,8 +197,8 @@ public fun interface OutputFeed {
             }
         }
 
-        protected fun dispatchStdout(line: String) { stdoutFeeds.dispatch(line) }
-        protected fun dispatchStderr(line: String) { stderrFeeds.dispatch(line) }
+        protected fun dispatchStdout(line: String?) { stdoutFeeds.dispatch(line) }
+        protected fun dispatchStderr(line: String?) { stderrFeeds.dispatch(line) }
 
         protected fun onStdoutStopped() { stdoutFeeds.withLock { clear(); stdoutStopped = true } }
         protected fun onStderrStopped() { stderrFeeds.withLock { clear(); stderrStopped = true } }
@@ -231,13 +233,11 @@ public fun interface OutputFeed {
         private inline val This: Process get() = this as Process
 
         @Suppress("NOTHING_TO_INLINE")
-        private inline fun SynchronizedSet<OutputFeed>.dispatch(line: String) {
-            withLock {
-                forEach { feed ->
-                    try {
-                        feed.onOutput(line)
-                    } catch (_: Throwable) {}
-                }
+        private inline fun SynchronizedSet<OutputFeed>.dispatch(line: String?) {
+            withLock { toSet() }.forEach { feed ->
+                try {
+                    feed.onOutput(line)
+                } catch (_: Throwable) {}
             }
         }
 

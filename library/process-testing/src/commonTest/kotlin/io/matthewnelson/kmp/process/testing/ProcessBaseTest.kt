@@ -238,6 +238,7 @@ abstract class ProcessBaseTest {
                     .encodeToByteArray()
 
                 p.stdoutFeed { line ->
+                    if (line == null) return@stdoutFeed
                     actual.add(line)
                 }
 
@@ -361,11 +362,13 @@ abstract class ProcessBaseTest {
             val stderrBuilder = StringBuilder()
 
             p.stdoutFeed { line ->
+                if (line == null) return@stdoutFeed
                 with(stdoutBuilder) {
                     if (isNotEmpty()) appendLine()
                     append(line)
                 }
             }.stderrFeed { line ->
+                if (line == null) return@stderrFeed
                 with(stderrBuilder) {
                     if (isNotEmpty()) appendLine()
                     append(line)

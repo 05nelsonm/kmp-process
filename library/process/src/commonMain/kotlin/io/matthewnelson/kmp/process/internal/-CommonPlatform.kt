@@ -20,7 +20,6 @@ package io.matthewnelson.kmp.process.internal
 import io.matthewnelson.kmp.file.*
 import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.Stdio
-import kotlin.time.Duration
 
 internal expect val STDIO_NULL: File
 
@@ -90,4 +89,17 @@ internal fun StringBuilder.appendProcessInfo(
     append("    destroySignal: ")
     appendLine(destroySignal)
     append(']')
+}
+
+@Throws(IllegalArgumentException::class, IndexOutOfBoundsException::class)
+internal fun ByteArray.checkBounds(offset: Int, len: Int) {
+    size.checkBounds(offset, len)
+}
+
+@Suppress("NOTHING_TO_INLINE")
+@Throws(IllegalArgumentException::class, IndexOutOfBoundsException::class)
+internal inline fun Int.checkBounds(offset: Int, len: Int) {
+    val size = this
+    if (size - offset < len) throw IllegalArgumentException("Input too short")
+    if (offset < 0 || len < 0 || offset > size - len) throw IndexOutOfBoundsException()
 }

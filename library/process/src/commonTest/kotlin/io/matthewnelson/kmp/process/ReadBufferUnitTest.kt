@@ -13,13 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("KotlinRedundantDiagnosticSuppress")
+package io.matthewnelson.kmp.process
 
-package io.matthewnelson.kmp.process.internal
+import kotlin.test.Test
+import kotlin.test.assertEquals
 
-@Suppress("NOTHING_TO_INLINE")
-@Throws(IllegalArgumentException::class, IndexOutOfBoundsException::class)
-internal inline fun ByteArray.checkBounds(offset: Int, len: Int) {
-    if (size - offset < len) throw IllegalArgumentException("Input too short")
-    if (offset < 0 || len < 0 || offset > size - len) throw IndexOutOfBoundsException()
+@OptIn(InternalProcessApi::class)
+class ReadBufferUnitTest {
+
+    @Test
+    fun givenAllocate_whenCapacity_thenIs8mb() {
+        val buf = ReadBuffer.allocate()
+        assertEquals(8 * 1024, buf.capacity())
+    }
 }
