@@ -20,6 +20,16 @@ package io.matthewnelson.kmp.process
 import io.matthewnelson.kmp.file.IOException
 import kotlin.coroutines.cancellation.CancellationException
 
+/**
+ * A stream to write to. On Jvm & Native, blocking APIs are
+ * available via [io.matthewnelson.kmp.process.BufferedWriteStream].
+ *
+ * On Jvm & Native, all Async functions utilize Dispatchers.IO
+ * under the hood when calling BufferedWriteStream functions.
+ *
+ * **NOTE:** For Jvm & Android the `kotlinx.coroutines.core`
+ * dependency is needed when using Async functions.
+ * */
 public expect class AsyncWriteStream {
 
     @Throws(
@@ -32,6 +42,12 @@ public expect class AsyncWriteStream {
 
     @Throws(CancellationException::class, IOException::class)
     public suspend fun writeAsync(buf: ByteArray)
+
+    @Throws(CancellationException::class, IOException::class)
+    public suspend fun flushAsync()
+
+    @Throws(CancellationException::class, IOException::class)
+    public suspend fun closeAsync()
 
     @Throws(IOException::class)
     public fun flush()

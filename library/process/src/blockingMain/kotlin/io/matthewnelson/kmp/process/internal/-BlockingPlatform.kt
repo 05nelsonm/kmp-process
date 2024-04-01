@@ -134,36 +134,39 @@ internal fun PlatformBuilder.blockingOutput(
 
 internal fun ReadStream.scanLines(
     dispatch: (line: String?) -> Unit,
-) { scanLines(1024 * 8, dispatch) }
+    onCompletion: () -> Unit,
+) { scanLines(1024 * 8, dispatch, onCompletion) }
 
 @OptIn(InternalProcessApi::class)
 @Throws(IllegalArgumentException::class)
 internal fun ReadStream.scanLines(
     bufferSize: Int,
     dispatch: (line: String?) -> Unit,
+    onCompletion: () -> Unit,
 ) {
 
+    val stream = this
     val buf = ReadBuffer.of(ByteArray(bufferSize))
     val feed = ReadBuffer.lineOutputFeed(dispatch)
 
-    try {
-        while (true) {
-            val read = try {
-                read(buf.buf)
-            } catch (_: IOException) {
-                break
-            }
-
-            // If a pipe has no write ends open (i.e. the
-            // child process exited), a zero read is returned,
-            // and we can end early (before process destruction).
-            if (read <= 0) break
-
-            feed.onData(buf, read)
+    while (true) {
+        val read = try {
+            stream.read(buf.buf)
+        } catch (_: IOException) {
+            break
         }
-    } finally {
-        // Process.destroy closes the streams
-        buf.buf.fill(0)
-        feed.close()
+
+        // If a pipe has no write ends open (i.e. the
+        // child process exited), a zero read is returned,
+        // and we can end early (before process destruction).
+        if (read <= 0) break
+
+        feed.onData(buf, read)
     }
+
+    // Process.destroy closes the streams
+    buf.buf.fill(0)
+    feed.close()
+
+    onCompletion()
 }

@@ -22,7 +22,11 @@ import io.matthewnelson.kmp.file.toIOException
 import io.matthewnelson.kmp.process.internal.*
 import kotlinx.coroutines.Job
 import org.khronos.webgl.Uint8Array
+import kotlin.coroutines.cancellation.CancellationException
 
+/**
+ * A stream to write to.
+ * */
 public actual class AsyncWriteStream internal constructor(
     private val stream: stream_Writable,
 ) {
@@ -45,10 +49,9 @@ public actual class AsyncWriteStream internal constructor(
         var dLatch: Job? = null
 
         try {
-            if (!stream.write(chunk) { wLatch.cancel() }) {
+            if (!stream.write(chunk) { wLatch.cancel(); chunk.fill() }) {
                 dLatch = Job()
                 stream.once("drain") { dLatch.cancel() }
-                dLatch.join()
             }
         } catch (t: Throwable) {
             wLatch.cancel()
@@ -56,16 +59,22 @@ public actual class AsyncWriteStream internal constructor(
             throw t.toIOException()
         }
 
+        dLatch?.join()
         wLatch.join()
-        chunk.fill()
     }
 
     // @Throws(CancellationException::class, IOException::class)
     public actual suspend fun writeAsync(buf: ByteArray) { writeAsync(buf, 0, buf.size) }
 
     // @Throws(CancellationException::class, IOException::class)
-    public actual fun flush() {}
+    public actual suspend fun flushAsync() { flush() }
 
     // @Throws(CancellationException::class, IOException::class)
+    public actual suspend fun closeAsync() { close() }
+
+    // @Throws(IOException::class)
+    public actual fun flush() {}
+
+    // @Throws(IOException::class)
     public actual fun close() { stream.end() }
 }

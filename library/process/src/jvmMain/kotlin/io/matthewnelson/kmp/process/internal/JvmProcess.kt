@@ -117,21 +117,13 @@ internal class JvmProcess private constructor(
 
     override fun startStdout() {
         Runnable {
-            try {
-                jProcess.inputStream.scanLines(::dispatchStdout)
-            } finally {
-                onStdoutStopped()
-            }
+            jProcess.inputStream.scanLines(::dispatchStdout, ::onStdoutStopped)
         }.execute(stdio = "stdout")
     }
 
     override fun startStderr() {
         Runnable {
-            try {
-                jProcess.errorStream.scanLines(::dispatchStderr)
-            } finally {
-                onStderrStopped()
-            }
+            jProcess.errorStream.scanLines(::dispatchStderr, ::onStderrStopped)
         }.execute(stdio = "stderr")
     }
 
