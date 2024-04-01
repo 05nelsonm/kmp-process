@@ -41,11 +41,11 @@ import kotlin.time.Duration.Companion.milliseconds
  *
  *     val p = builder.spawn()
  *         .stdoutFeed { line ->
- *             println(line)
+ *             println(line ?: "--STDOUT EOS--")
  *         }.stderrFeed(
  *             // attach multiple at once
  *             OutputFeed { line ->
- *                 println(line)
+ *                 println(line ?: "--STDERR EOS--")
  *             },
  *             OutputFeed { line ->
  *                 // do something
@@ -72,8 +72,10 @@ public fun interface OutputFeed {
     /**
      * A line of output from `stdout` or `stderr` (whichever
      * this [OutputFeed] has been attached to).
+     *
+     * `null` is dispatched to indicate [OutputFeed] closure.
      * */
-    public fun onOutput(line: String)
+    public fun onOutput(line: String?)
 
     /**
      * Helper class which [Process] implements that handles everything
@@ -232,9 +234,6 @@ public fun interface OutputFeed {
 
         @Suppress("NOTHING_TO_INLINE")
         private inline fun SynchronizedSet<OutputFeed>.dispatch(line: String?) {
-            // TODO: dispatch null to indicate end of stream
-            if (line == null) return
-
             withLock { toSet() }.forEach { feed ->
                 try {
                     feed.onOutput(line)

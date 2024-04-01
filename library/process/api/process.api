@@ -145,12 +145,9 @@ public final class io/matthewnelson/kmp/process/Process$Current {
 public final class io/matthewnelson/kmp/process/ReadBuffer {
 	public static final field Companion Lio/matthewnelson/kmp/process/ReadBuffer$Companion;
 	public static final synthetic fun box-impl (Ljava/lang/Object;)Lio/matthewnelson/kmp/process/ReadBuffer;
-	public static final fun capacity-impl (Ljava/lang/Object;)I
-	public static final fun decodeToUtf8-impl (Ljava/lang/Object;II)Ljava/lang/String;
 	public fun equals (Ljava/lang/Object;)Z
 	public static fun equals-impl (Ljava/lang/Object;Ljava/lang/Object;)Z
 	public static final fun equals-impl0 (Ljava/lang/Object;Ljava/lang/Object;)Z
-	public static final fun get-impl (Ljava/lang/Object;I)B
 	public static final fun getBuf-impl (Ljava/lang/Object;)[B
 	public fun hashCode ()I
 	public static fun hashCode-impl (Ljava/lang/Object;)I

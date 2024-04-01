@@ -59,6 +59,7 @@ class SpawnUnitTest {
         val output = mutableListOf<String>()
         val code = try {
             p.stdoutFeed { line ->
+                if (line == null) return@stdoutFeed
                 output.add(line)
             }
             p.waitFor()
@@ -95,6 +96,7 @@ class SpawnUnitTest {
         val output = mutableListOf<String>()
         val code = try {
             p.stdoutFeed { line ->
+                if (line == null) return@stdoutFeed
                 output.add(line)
             }
             p.waitFor()
