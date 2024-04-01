@@ -3,6 +3,8 @@
 ## Version 0.1.0-alpha03 (2024-04-01)
  - Fixes `OutputFeed` line parsing. Now checks for `CR` and `LF`
    line terminators [[#94]][94]
+     - **NOTE:** `OutputFeed.onOutput` now dispatches `String?`
+       instead of `String` to indicate End Of Stream via `null`
  - Uses  `NonCancellable` + `Dispatchers.IO` for `Jvm` & `Native`
    when utilizing `AsyncWriteStream` asynchronous APIs [[#95]][95]
 
