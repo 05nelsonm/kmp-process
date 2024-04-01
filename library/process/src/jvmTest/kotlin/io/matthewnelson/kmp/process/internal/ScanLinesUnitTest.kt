@@ -63,30 +63,25 @@ class ScanLinesUnitTest {
             append("END")
         })
 
-        var completion = 0
         var nullOutput = false
-        s.scanLines(
-            bufferSize,
-            dispatch = { line ->
-                // anymore output should fail
-                assertFalse(nullOutput)
+        s.scanLines(bufferSize) { line ->
+            // anymore output should fail
+            assertFalse(nullOutput)
 
-                if (line == null) {
-                    nullOutput = true
-                    return@scanLines
-                }
+            if (line == null) {
+                nullOutput = true
+                return@scanLines
+            }
 
-                lines.add(line)
-            },
-            onCompletion = { completion++; assertTrue(nullOutput) }
-        )
+            lines.add(line)
+        }
 
 
         assertEquals(3, lines.size)
         assertEquals(lengthFirst, lines.first().length)
         assertEquals("Hello World!", lines[1])
         assertEquals("END", lines.last())
-        assertEquals(1, completion)
+        assertTrue(nullOutput)
         assertEquals((lengthFirst / bufferSize) + 1, s.numReads)
     }
 
@@ -99,27 +94,23 @@ class ScanLinesUnitTest {
             appendLine("END")
         })
 
-        var completion = 0
         var nullOutput = false
-        s.scanLines(
-            dispatch = { line ->
-                // anymore output should fail
-                assertFalse(nullOutput)
+        s.scanLines { line ->
+            // anymore output should fail
+            assertFalse(nullOutput)
 
-                if (line == null) {
-                    nullOutput = true
-                    return@scanLines
-                }
+            if (line == null) {
+                nullOutput = true
+                return@scanLines
+            }
 
-                lines.add(line)
-            },
-            onCompletion = { completion++; assertTrue(nullOutput) }
-        )
+            lines.add(line)
+        }
 
         assertEquals(2, lines.size)
         assertEquals("Hello World!", lines.first())
         assertEquals("END", lines.last())
-        assertEquals(1, completion)
+        assertTrue(nullOutput)
         assertEquals(1, s.numReads)
     }
 
@@ -133,22 +124,18 @@ class ScanLinesUnitTest {
             appendLine("END")
         })
 
-        var completion = 0
         var nullOutput = false
-        s.scanLines(
-            dispatch = { line ->
-                // anymore output should fail
-                assertFalse(nullOutput)
+        s.scanLines { line ->
+            // anymore output should fail
+            assertFalse(nullOutput)
 
-                if (line == null) {
-                    nullOutput = true
-                    return@scanLines
-                }
+            if (line == null) {
+                nullOutput = true
+                return@scanLines
+            }
 
-                lines.add(line)
-            },
-            onCompletion = { completion++; assertTrue(nullOutput) }
-        )
+            lines.add(line)
+        }
 
         assertEquals(6, lines.size)
         for (i in 1..4) {
@@ -156,7 +143,7 @@ class ScanLinesUnitTest {
         }
         assertEquals("Hello World!", lines.first())
         assertEquals("END", lines.last())
-        assertEquals(1, completion)
+        assertTrue(nullOutput)
         assertEquals(1, s.numReads)
     }
 
@@ -167,27 +154,22 @@ class ScanLinesUnitTest {
         val expected = "1234"
         val s = TestStream(text = expected)
 
-        var completion = 0
         var nullOutput = false
-        s.scanLines(
-            expected.length,
-            dispatch = { line ->
-                // anymore output should fail
-                assertFalse(nullOutput)
+        s.scanLines(expected.length) { line ->
+            // anymore output should fail
+            assertFalse(nullOutput)
 
-                if (line == null) {
-                    nullOutput = true
-                    return@scanLines
-                }
+            if (line == null) {
+                nullOutput = true
+                return@scanLines
+            }
 
-                lines.add(line)
-            },
-            onCompletion = { completion++; assertTrue(nullOutput) },
-        )
+            lines.add(line)
+        }
 
         assertEquals(1, lines.size)
         assertEquals(expected, lines.first())
-        assertEquals(1, completion)
+        assertTrue(nullOutput)
         assertEquals(1, s.numReads)
     }
 
@@ -199,25 +181,21 @@ class ScanLinesUnitTest {
         // as it will throw IOException.
         val s = TestStream(text = "")
 
-        var completion = 0
         var nullOutput = false
-        s.scanLines(
-            dispatch = { line ->
-                // anymore output should fail
-                assertFalse(nullOutput)
+        s.scanLines { line ->
+            // anymore output should fail
+            assertFalse(nullOutput)
 
-                if (line == null) {
-                    nullOutput = true
-                    return@scanLines
-                }
+            if (line == null) {
+                nullOutput = true
+                return@scanLines
+            }
 
-                lines.add(line)
-            },
-            onCompletion = { completion++; assertTrue(nullOutput) }
-        )
+            lines.add(line)
+        }
 
         assertEquals(0, lines.size)
-        assertEquals(1, completion)
+        assertTrue(nullOutput)
         assertEquals(0, s.numReads)
     }
 }

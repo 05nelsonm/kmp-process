@@ -134,15 +134,13 @@ internal fun PlatformBuilder.blockingOutput(
 
 internal fun ReadStream.scanLines(
     dispatch: (line: String?) -> Unit,
-    onCompletion: () -> Unit,
-) { scanLines(1024 * 8, dispatch, onCompletion) }
+) { scanLines(1024 * 8, dispatch) }
 
 @OptIn(InternalProcessApi::class)
 @Throws(IllegalArgumentException::class)
 internal fun ReadStream.scanLines(
     bufferSize: Int,
     dispatch: (line: String?) -> Unit,
-    onCompletion: () -> Unit,
 ) {
 
     val stream = this
@@ -167,6 +165,4 @@ internal fun ReadStream.scanLines(
     // Process.destroy closes the streams
     buf.buf.fill(0)
     feed.close()
-
-    onCompletion()
 }

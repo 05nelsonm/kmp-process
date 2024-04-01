@@ -79,8 +79,6 @@ public abstract class io/matthewnelson/kmp/process/OutputFeed$Handler : io/matth
 	public synthetic fun <init> (Lio/matthewnelson/kmp/process/Stdio$Config;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	protected final fun dispatchStderr (Ljava/lang/String;)V
 	protected final fun dispatchStdout (Ljava/lang/String;)V
-	protected final fun onStderrStopped ()V
-	protected final fun onStdoutStopped ()V
 	protected abstract fun startStderr ()V
 	protected abstract fun startStdout ()V
 	public final fun stderrFeed (Lio/matthewnelson/kmp/process/OutputFeed;)Lio/matthewnelson/kmp/process/Process;
