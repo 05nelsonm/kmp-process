@@ -195,8 +195,8 @@ public fun interface OutputFeed {
             }
         }
 
-        protected fun dispatchStdout(line: String) { stdoutFeeds.dispatch(line) }
-        protected fun dispatchStderr(line: String) { stderrFeeds.dispatch(line) }
+        protected fun dispatchStdout(line: String?) { stdoutFeeds.dispatch(line) }
+        protected fun dispatchStderr(line: String?) { stderrFeeds.dispatch(line) }
 
         protected fun onStdoutStopped() { stdoutFeeds.withLock { clear(); stdoutStopped = true } }
         protected fun onStderrStopped() { stderrFeeds.withLock { clear(); stderrStopped = true } }
@@ -231,13 +231,14 @@ public fun interface OutputFeed {
         private inline val This: Process get() = this as Process
 
         @Suppress("NOTHING_TO_INLINE")
-        private inline fun SynchronizedSet<OutputFeed>.dispatch(line: String) {
-            withLock {
-                forEach { feed ->
-                    try {
-                        feed.onOutput(line)
-                    } catch (_: Throwable) {}
-                }
+        private inline fun SynchronizedSet<OutputFeed>.dispatch(line: String?) {
+            // TODO: dispatch null to indicate end of stream
+            if (line == null) return
+
+            withLock { toSet() }.forEach { feed ->
+                try {
+                    feed.onOutput(line)
+                } catch (_: Throwable) {}
             }
         }
 

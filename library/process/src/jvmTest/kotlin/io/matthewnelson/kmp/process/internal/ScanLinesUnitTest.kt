@@ -16,12 +16,13 @@
 package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.IOException
-import io.matthewnelson.kmp.process.internal.StreamLineScanner.Companion.scanLines
 import kotlin.math.min
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
-class StreamLineScannerUnitTest {
+class ScanLinesUnitTest {
 
     private class TestStream(text: String): ReadStream() {
 
@@ -51,7 +52,6 @@ class StreamLineScannerUnitTest {
     @Test
     fun givenInputStream_whenOutputExceedsBufferSize_thenScanLinesProducesExpectedOutput() {
         val lines = mutableListOf<String>()
-        var onStoppedInvocations = 0
 
         val bufferSize = 512
         val lengthFirst = (bufferSize * 32) + 1
@@ -63,50 +63,60 @@ class StreamLineScannerUnitTest {
             append("END")
         })
 
-        s.scanLines(
-            readBufferSize = bufferSize,
-            dispatchLine = { line -> lines.add(line) },
-            onStopped = {
-                onStoppedInvocations++
-                assertEquals(3, lines.size)
-                assertEquals(lengthFirst, lines.first().length)
-                assertEquals("Hello World!", lines[1])
-                assertEquals("END", lines.last())
-            }
-        )
+        var nullOutput = false
+        s.scanLines(bufferSize) { line ->
+            // anymore output should fail
+            assertFalse(nullOutput)
 
-        assertEquals(1, onStoppedInvocations)
+            if (line == null) {
+                nullOutput = true
+                return@scanLines
+            }
+
+            lines.add(line)
+        }
+
+
+        assertEquals(3, lines.size)
+        assertEquals(lengthFirst, lines.first().length)
+        assertEquals("Hello World!", lines[1])
+        assertEquals("END", lines.last())
+        assertTrue(nullOutput)
         assertEquals((lengthFirst / bufferSize) + 1, s.numReads)
     }
 
     @Test
     fun givenInputStream_whenBufferSizeExceedsOutput_thenScanLinesProducesExpectedOutput() {
         val lines = mutableListOf<String>()
-        var onStoppedInvocations = 0
 
         val s = TestStream(text = buildString {
             appendLine("Hello World!")
             appendLine("END")
         })
 
-        s.scanLines(
-            dispatchLine = { line -> lines.add(line) },
-            onStopped = {
-                onStoppedInvocations++
-                assertEquals(2, lines.size)
-                assertEquals("Hello World!", lines.first())
-                assertEquals("END", lines.last())
-            }
-        )
+        var nullOutput = false
+        s.scanLines { line ->
+            // anymore output should fail
+            assertFalse(nullOutput)
 
-        assertEquals(1, onStoppedInvocations)
+            if (line == null) {
+                nullOutput = true
+                return@scanLines
+            }
+
+            lines.add(line)
+        }
+
+        assertEquals(2, lines.size)
+        assertEquals("Hello World!", lines.first())
+        assertEquals("END", lines.last())
+        assertTrue(nullOutput)
         assertEquals(1, s.numReads)
     }
 
     @Test
     fun givenInputStream_whenBlankLines_thenScanLinesProducesExpectedOutput() {
         val lines = mutableListOf<String>()
-        var onStoppedInvocations = 0
 
         val s = TestStream(text = buildString {
             appendLine("Hello World!")
@@ -114,63 +124,78 @@ class StreamLineScannerUnitTest {
             appendLine("END")
         })
 
-        s.scanLines(
-            dispatchLine = { line -> lines.add(line) },
-            onStopped = {
-                onStoppedInvocations++
-                assertEquals(6, lines.size)
-                for (i in 1..4) {
-                    assertEquals(0, lines[i].length)
-                }
-                assertEquals("Hello World!", lines.first())
-                assertEquals("END", lines.last())
-            }
-        )
+        var nullOutput = false
+        s.scanLines { line ->
+            // anymore output should fail
+            assertFalse(nullOutput)
 
-        assertEquals(1, onStoppedInvocations)
+            if (line == null) {
+                nullOutput = true
+                return@scanLines
+            }
+
+            lines.add(line)
+        }
+
+        assertEquals(6, lines.size)
+        for (i in 1..4) {
+            assertEquals(0, lines[i].length)
+        }
+        assertEquals("Hello World!", lines.first())
+        assertEquals("END", lines.last())
+        assertTrue(nullOutput)
         assertEquals(1, s.numReads)
     }
 
     @Test
     fun givenInputStream_whenOutputSameSizeAsBuffer_thenScanLinesProducesExpectedOutput() {
         val lines = mutableListOf<String>()
-        var onStoppedInvocations = 0
 
         val expected = "1234"
         val s = TestStream(text = expected)
 
-        s.scanLines(
-            readBufferSize = expected.length,
-            dispatchLine = { line -> lines.add(line) },
-            onStopped = {
-                onStoppedInvocations++
-                assertEquals(1, lines.size)
-                assertEquals(expected, lines.first())
-            }
-        )
+        var nullOutput = false
+        s.scanLines(expected.length) { line ->
+            // anymore output should fail
+            assertFalse(nullOutput)
 
-        assertEquals(1, onStoppedInvocations)
+            if (line == null) {
+                nullOutput = true
+                return@scanLines
+            }
+
+            lines.add(line)
+        }
+
+        assertEquals(1, lines.size)
+        assertEquals(expected, lines.first())
+        assertTrue(nullOutput)
         assertEquals(1, s.numReads)
     }
 
     @Test
     fun givenInputStream_whenClosed_thenOnStopInvoked() {
         val lines = mutableListOf<String>()
-        var onStoppedInvocations = 0
 
         // empty string will simulate a read on a closed stream
         // as it will throw IOException.
         val s = TestStream(text = "")
 
-        s.scanLines(
-            dispatchLine = { line -> lines.add(line) },
-            onStopped = {
-                onStoppedInvocations++
-                assertEquals(0, lines.size)
-            }
-        )
+        var nullOutput = false
+        s.scanLines { line ->
+            // anymore output should fail
+            assertFalse(nullOutput)
 
-        assertEquals(1, onStoppedInvocations)
+            if (line == null) {
+                nullOutput = true
+                return@scanLines
+            }
+
+            lines.add(line)
+        }
+
+        assertEquals(0, lines.size)
+        assertTrue(nullOutput)
         assertEquals(0, s.numReads)
     }
 }

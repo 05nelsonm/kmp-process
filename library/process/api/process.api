@@ -142,6 +142,34 @@ public final class io/matthewnelson/kmp/process/Process$Current {
 	public static final fun pid ()I
 }
 
+public final class io/matthewnelson/kmp/process/ReadBuffer {
+	public static final field Companion Lio/matthewnelson/kmp/process/ReadBuffer$Companion;
+	public static final synthetic fun box-impl (Ljava/lang/Object;)Lio/matthewnelson/kmp/process/ReadBuffer;
+	public static final fun capacity-impl (Ljava/lang/Object;)I
+	public static final fun decodeToUtf8-impl (Ljava/lang/Object;II)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/Object;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/Object;Ljava/lang/Object;)Z
+	public static final fun get-impl (Ljava/lang/Object;I)B
+	public static final fun getBuf-impl (Ljava/lang/Object;)[B
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/Object;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/Object;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/Object;
+}
+
+public final class io/matthewnelson/kmp/process/ReadBuffer$Companion {
+	public final fun allocate-VWWedcE ()Ljava/lang/Object;
+	public final fun lineOutputFeed (Lkotlin/jvm/functions/Function1;)Lio/matthewnelson/kmp/process/ReadBuffer$LineOutputFeed;
+	public final fun of-Armsq0Q ([B)Ljava/lang/Object;
+}
+
+public abstract class io/matthewnelson/kmp/process/ReadBuffer$LineOutputFeed {
+	public abstract fun close ()V
+	public abstract fun onData-zry8YOI (Ljava/lang/Object;I)V
+}
+
 public final class io/matthewnelson/kmp/process/Signal : java/lang/Enum {
 	public static final field SIGKILL Lio/matthewnelson/kmp/process/Signal;
 	public static final field SIGTERM Lio/matthewnelson/kmp/process/Signal;

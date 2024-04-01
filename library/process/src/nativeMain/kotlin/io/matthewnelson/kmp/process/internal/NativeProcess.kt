@@ -20,7 +20,6 @@ import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.process.AsyncWriteStream
 import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.Signal
-import io.matthewnelson.kmp.process.internal.StreamLineScanner.Companion.scanLines
 import io.matthewnelson.kmp.process.internal.Closeable.Companion.tryCloseSuppressed
 import io.matthewnelson.kmp.process.internal.stdio.StdioHandle
 import kotlinx.cinterop.*
@@ -158,13 +157,17 @@ internal constructor(
     private fun Worker.Companion.start(
         name: String,
         r: ReadStream,
-        d: (line: String) -> Unit,
+        d: (line: String?) -> Unit,
         s: () -> Unit,
     ): Worker {
         val w = start(name = "Process[pid=$pid, stdio=$name]")
 
         w.execute(TransferMode.SAFE, { Triple(r, d, s) }) { (reader, dispatch, onStopped) ->
-            reader.scanLines(dispatch, onStopped)
+            try {
+                reader.scanLines(dispatch)
+            } finally {
+                onStopped()
+            }
         }
 
         return w

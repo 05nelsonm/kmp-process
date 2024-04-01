@@ -18,15 +18,11 @@
 package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.IOException
-import io.matthewnelson.kmp.file.errnoToIOException
 import io.matthewnelson.kmp.process.internal.stdio.StdioDescriptor
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.convert
 import kotlinx.cinterop.usePinned
-import platform.posix.F_GETFD
-import platform.posix.errno
-import platform.posix.fcntl
 
 internal actual abstract class WriteStream private constructor(
     private val descriptor: StdioDescriptor,

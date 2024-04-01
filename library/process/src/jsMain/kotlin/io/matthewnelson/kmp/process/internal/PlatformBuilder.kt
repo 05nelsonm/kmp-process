@@ -18,11 +18,11 @@
 package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.*
+import io.matthewnelson.kmp.process.internal.RealLineOutputFeed.Companion.LF
 import io.matthewnelson.kmp.process.Output
 import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.Stdio
-import io.matthewnelson.kmp.process.internal.BufferedLineScanner.Companion.N
 import org.khronos.webgl.Int8Array
 
 // jsMain
@@ -245,7 +245,7 @@ internal actual class PlatformBuilder private actual constructor() {
             var limit = length.toInt()
             if (limit == 0) return ""
 
-            if (readInt8(limit - 1) == N) limit--
+            if (readInt8(limit - 1) == LF) limit--
             return toUtf8(end = limit)
         }
     }

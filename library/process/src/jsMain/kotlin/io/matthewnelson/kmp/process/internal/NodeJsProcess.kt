@@ -18,10 +18,7 @@
 package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.File
-import io.matthewnelson.kmp.process.AsyncWriteStream
-import io.matthewnelson.kmp.process.Process
-import io.matthewnelson.kmp.process.Signal
-import io.matthewnelson.kmp.process.Stdio
+import io.matthewnelson.kmp.process.*
 
 internal class NodeJsProcess internal constructor(
     private val jsProcess: child_process_ChildProcess,
@@ -82,15 +79,13 @@ internal class NodeJsProcess internal constructor(
     override fun startStdout() {
         val stdout = jsProcess.stdout ?: return
 
-        object : BufferedLineScanner(::dispatchStdout) {
-            init {
-                stdout.onClose {
-                    onStopped()
-                    onStdoutStopped()
-                }.onData { data ->
-                    onData(data)
-                    data.fill(0)
-                }
+        @OptIn(InternalProcessApi::class)
+        ReadBuffer.lineOutputFeed(::dispatchStdout).apply {
+            stdout.onClose {
+                close()
+                onStdoutStopped()
+            }.onData { data ->
+                onData(data, data.capacity())
             }
         }
     }
@@ -98,15 +93,13 @@ internal class NodeJsProcess internal constructor(
     override fun startStderr() {
         val stderr = jsProcess.stderr ?: return
 
-        object : BufferedLineScanner(::dispatchStderr) {
-            init {
-                stderr.onClose {
-                    onStopped()
-                    onStderrStopped()
-                }.onData { data ->
-                    onData(data)
-                    data.fill(0)
-                }
+        @OptIn(InternalProcessApi::class)
+        ReadBuffer.lineOutputFeed(::dispatchStderr).apply {
+            stderr.onClose {
+                close()
+                onStderrStopped()
+            }.onData { data ->
+                onData(data, data.capacity())
             }
         }
     }

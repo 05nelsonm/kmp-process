@@ -20,9 +20,7 @@ package io.matthewnelson.kmp.process.internal
 import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.file.InterruptedException
-import io.matthewnelson.kmp.process.Output
-import io.matthewnelson.kmp.process.Signal
-import io.matthewnelson.kmp.process.Stdio
+import io.matthewnelson.kmp.process.*
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -132,4 +130,40 @@ internal fun PlatformBuilder.blockingOutput(
         p.stdio,
         p.destroySignal,
     )
+}
+
+internal fun ReadStream.scanLines(
+    dispatch: (line: String?) -> Unit,
+) { scanLines(1024 * 8, dispatch) }
+
+@OptIn(InternalProcessApi::class)
+@Throws(IllegalArgumentException::class)
+internal fun ReadStream.scanLines(
+    bufferSize: Int,
+    dispatch: (line: String?) -> Unit,
+) {
+
+    val buf = ReadBuffer.of(ByteArray(bufferSize))
+    val feed = ReadBuffer.lineOutputFeed(dispatch)
+
+    try {
+        while (true) {
+            val read = try {
+                read(buf.buf)
+            } catch (_: IOException) {
+                break
+            }
+
+            // If a pipe has no write ends open (i.e. the
+            // child process exited), a zero read is returned,
+            // and we can end early (before process destruction).
+            if (read <= 0) break
+
+            feed.onData(buf, read)
+        }
+    } finally {
+        // Process.destroy closes the streams
+        buf.buf.fill(0)
+        feed.close()
+    }
 }

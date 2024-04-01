@@ -18,7 +18,6 @@ package io.matthewnelson.kmp.process.internal
 import io.matthewnelson.kmp.file.ANDROID
 import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.process.AsyncWriteStream
-import io.matthewnelson.kmp.process.internal.StreamLineScanner.Companion.scanLines
 import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.Stdio
@@ -118,13 +117,21 @@ internal class JvmProcess private constructor(
 
     override fun startStdout() {
         Runnable {
-            jProcess.inputStream.scanLines(::dispatchStdout, ::onStdoutStopped)
+            try {
+                jProcess.inputStream.scanLines(::dispatchStdout)
+            } finally {
+                onStdoutStopped()
+            }
         }.execute(stdio = "stdout")
     }
 
     override fun startStderr() {
         Runnable {
-            jProcess.errorStream.scanLines(::dispatchStderr, ::onStderrStopped)
+            try {
+                jProcess.errorStream.scanLines(::dispatchStderr)
+            } finally {
+                onStderrStopped()
+            }
         }.execute(stdio = "stderr")
     }
 
