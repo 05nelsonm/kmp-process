@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## Version 0.1.0-alpha03 (2024-04-01)
+ - Fixes `OutputFeed` line parsing. Now checks for `CR` and `LF`
+   line terminators [[#94]][94]
+ - Uses  `NonCancellable` + `Dispatchers.IO` for `Jvm` & `Native`
+   when utilizing `AsyncWriteStream` asynchronous APIs [[#95]][95]
+
 ## Version 0.1.0-alpha02 (2024-03-19)
  - Update dependencies [[#88]][88]
      - `immutable` -> `0.1.2`
@@ -16,3 +22,5 @@
 [85]: https://github.com/05nelsonm/kmp-process/pull/85
 [88]: https://github.com/05nelsonm/kmp-process/pull/88
 [89]: https://github.com/05nelsonm/kmp-process/pull/89
+[94]: https://github.com/05nelsonm/kmp-process/pull/94
+[95]: https://github.com/05nelsonm/kmp-process/pull/95
