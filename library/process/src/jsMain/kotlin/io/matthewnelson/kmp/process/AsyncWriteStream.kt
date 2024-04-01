@@ -22,6 +22,7 @@ import io.matthewnelson.kmp.file.toIOException
 import io.matthewnelson.kmp.process.internal.*
 import kotlinx.coroutines.Job
 import org.khronos.webgl.Uint8Array
+import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * A stream to write to.
@@ -48,10 +49,9 @@ public actual class AsyncWriteStream internal constructor(
         var dLatch: Job? = null
 
         try {
-            if (!stream.write(chunk) { wLatch.cancel() }) {
+            if (!stream.write(chunk) { wLatch.cancel(); chunk.fill() }) {
                 dLatch = Job()
                 stream.once("drain") { dLatch.cancel() }
-                dLatch.join()
             }
         } catch (t: Throwable) {
             wLatch.cancel()
@@ -59,8 +59,8 @@ public actual class AsyncWriteStream internal constructor(
             throw t.toIOException()
         }
 
+        dLatch?.join()
         wLatch.join()
-        chunk.fill()
     }
 
     // @Throws(CancellationException::class, IOException::class)
