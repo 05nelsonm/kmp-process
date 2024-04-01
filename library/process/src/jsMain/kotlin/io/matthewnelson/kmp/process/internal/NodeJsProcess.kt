@@ -83,7 +83,6 @@ internal class NodeJsProcess internal constructor(
         ReadBuffer.lineOutputFeed(::dispatchStdout).apply {
             stdout.onClose {
                 close()
-                onStdoutStopped()
             }.onData { data ->
                 onData(data, data.capacity())
             }
@@ -97,7 +96,6 @@ internal class NodeJsProcess internal constructor(
         ReadBuffer.lineOutputFeed(::dispatchStderr).apply {
             stderr.onClose {
                 close()
-                onStderrStopped()
             }.onData { data ->
                 onData(data, data.capacity())
             }

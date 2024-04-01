@@ -22,7 +22,6 @@ import kotlinx.coroutines.delay
 import kotlin.concurrent.Volatile
 import kotlin.jvm.JvmField
 import kotlin.jvm.JvmSynthetic
-import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 
 /**
@@ -197,11 +196,12 @@ public fun interface OutputFeed {
             }
         }
 
-        protected fun dispatchStdout(line: String?) { stdoutFeeds.dispatch(line) }
-        protected fun dispatchStderr(line: String?) { stderrFeeds.dispatch(line) }
-
-        protected fun onStdoutStopped() { stdoutFeeds.withLock { clear(); stdoutStopped = true } }
-        protected fun onStderrStopped() { stderrFeeds.withLock { clear(); stderrStopped = true } }
+        protected fun dispatchStdout(line: String?) {
+            stdoutFeeds.dispatch(line, onClosed = { stdoutStopped = true })
+        }
+        protected fun dispatchStderr(line: String?) {
+            stderrFeeds.dispatch(line, onClosed = { stderrStopped = true })
+        }
 
         protected abstract fun startStdout()
         protected abstract fun startStderr()
@@ -233,12 +233,22 @@ public fun interface OutputFeed {
         private inline val This: Process get() = this as Process
 
         @Suppress("NOTHING_TO_INLINE")
-        private inline fun SynchronizedSet<OutputFeed>.dispatch(line: String?) {
+        private inline fun SynchronizedSet<OutputFeed>.dispatch(
+            line: String?,
+            crossinline onClosed: () -> Unit,
+        ) {
             withLock { toSet() }.forEach { feed ->
                 try {
                     feed.onOutput(line)
-                } catch (_: Throwable) {}
+                } catch (_: Throwable) {
+                    // TODO: exception handler
+                }
             }
+
+            if (line != null) return
+
+            // null was dispatched indicating that the stream stopped.
+            withLock { clear(); onClosed() }
         }
 
         @JvmSynthetic

@@ -66,14 +66,14 @@ internal constructor(
         if (isDestroyed) return@Instance null
         val reader = handle.stdoutReader() ?: return@Instance null
 
-        Worker.start("stdout", reader, ::dispatchStdout, ::onStdoutStopped)
+        Worker.execute("stdout", reader, ::dispatchStdout)
     })
 
     private val stderrWorker = Instance(create = {
         if (isDestroyed) return@Instance null
         val reader = handle.stderrReader() ?: return@Instance null
 
-        Worker.start("stderr", reader, ::dispatchStderr, ::onStderrStopped)
+        Worker.execute("stderr", reader, ::dispatchStderr)
     })
 
     override fun destroy(): Process = destroyLock.withLock {
@@ -94,7 +94,7 @@ internal constructor(
         try {
             handle.close()
         } catch (_: IOException) {
-            // TODO: Error handler
+            // TODO: exception handler
         }
 
         if (!hasBeenDestroyed) {
@@ -154,16 +154,15 @@ internal constructor(
     override fun startStdout() { stdoutWorker.getOrCreate() }
     override fun startStderr() { stderrWorker.getOrCreate() }
 
-    private fun Worker.Companion.start(
+    private fun Worker.Companion.execute(
         name: String,
         r: ReadStream,
         d: (line: String?) -> Unit,
-        s: () -> Unit,
     ): Worker {
         val w = start(name = "Process[pid=$pid, stdio=$name]")
 
-        w.execute(TransferMode.SAFE, { Triple(r, d, s) }) { (reader, dispatch, onStopped) ->
-            reader.scanLines(dispatch, onStopped)
+        w.execute(TransferMode.SAFE, { Pair(r, d) }) { (reader, dispatch) ->
+            reader.scanLines(dispatch)
         }
 
         return w
