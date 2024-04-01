@@ -163,11 +163,7 @@ internal constructor(
         val w = start(name = "Process[pid=$pid, stdio=$name]")
 
         w.execute(TransferMode.SAFE, { Triple(r, d, s) }) { (reader, dispatch, onStopped) ->
-            try {
-                reader.scanLines(dispatch)
-            } finally {
-                onStopped()
-            }
+            reader.scanLines(dispatch, onStopped)
         }
 
         return w
