@@ -20,7 +20,9 @@ package io.matthewnelson.kmp.process
 import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.file.toIOException
 import io.matthewnelson.kmp.process.internal.*
+import kotlinx.coroutines.CompletableJob
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.currentCoroutineContext
 import org.khronos.webgl.Uint8Array
 import kotlin.coroutines.cancellation.CancellationException
 
@@ -45,13 +47,13 @@ public actual class AsyncWriteStream internal constructor(
         if (len == 0) return
 
         val chunk = buf.toJsArray(offset, len) { size -> Uint8Array(size) }
-        val wLatch = Job()
-        var dLatch: Job? = null
+        val wLatch: CompletableJob = Job(currentCoroutineContext()[Job])
+        var dLatch: CompletableJob? = null
 
         try {
-            if (!stream.write(chunk) { wLatch.cancel(); chunk.fill() }) {
-                dLatch = Job()
-                stream.once("drain") { dLatch.cancel() }
+            if (!stream.write(chunk) { wLatch.complete(); chunk.fill() }) {
+                dLatch = Job(wLatch)
+                stream.once("drain") { dLatch.complete() }
             }
         } catch (t: Throwable) {
             wLatch.cancel()
