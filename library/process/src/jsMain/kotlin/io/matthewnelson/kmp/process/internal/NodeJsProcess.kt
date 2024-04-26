@@ -40,12 +40,16 @@ internal class NodeJsProcess internal constructor(
 ) {
 
     override fun destroy(): Process {
+        val wasDestroyed = !isDestroyed
         isDestroyed = true
 
         if (!jsProcess.killed && isAlive) {
             // TODO: check result. check error
             jsProcess.kill(destroySignal.name)
         }
+
+        if (wasDestroyed) jsProcess.unref()
+
         return this
     }
 

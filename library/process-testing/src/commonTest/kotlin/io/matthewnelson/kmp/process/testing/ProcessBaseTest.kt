@@ -441,6 +441,8 @@ abstract class ProcessBaseTest {
             .args("1")
             .args("--RunAsDaemon")
             .args("0")
+            .args("--__OwningControllerProcess")
+            .args(Process.Current.pid().toString())
             .destroySignal(Signal.SIGTERM)
             .envHome()
             .stdin(Stdio.Null)

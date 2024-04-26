@@ -55,4 +55,6 @@ internal external class child_process_ChildProcess: events_EventEmitter {
     internal val stdin: stream_Writable?
     internal val stdout: stream_Readable?
     internal val stderr: stream_Readable?
+
+    internal fun unref()
 }
