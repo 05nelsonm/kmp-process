@@ -41,53 +41,10 @@ internal class StdioHandle private constructor(
 
     override val isClosed: Boolean get() = stdinFD.isClosed && stdoutFD.isClosed && stderrFD.isClosed
     private val lock = Lock()
-    private var threw: IOException? = null
 
     private val stdin: Instance<WriteStream?> = Instance(create = {
-        // TODO: Issue #6
-
-        // This is invoked once and only once upon NativeProcess
-        // instantiation (after fork occurs). We can do some descriptor
-        // clean up here and close unneeded descriptors which were duped
-        // in the child process and remain open over there.
-        try {
-            if (stdinFD is StdioDescriptor.Pipe) {
-                // Leave write end open here in parent
-                stdinFD.read
-            } else {
-                stdinFD
-            }.close()
-        } catch (e: IOException) {
-            threw?.let { e.addSuppressed(it) }
-            threw = e
-        }
-
-        try {
-            if (stdoutFD is StdioDescriptor.Pipe) {
-                // Leave read end open here in parent
-                stdoutFD.write
-            } else {
-                stdoutFD
-            }.close()
-        } catch (e: IOException) {
-            threw?.let { e.addSuppressed(it) }
-            threw = e
-        }
-
-        try {
-            if (stderrFD is StdioDescriptor.Pipe) {
-                // Leave read end open here in parent
-                stderrFD.write
-            } else {
-                stdoutFD
-            }.close()
-        } catch (e: IOException) {
-            threw?.let { e.addSuppressed(it) }
-            threw = e
-        }
-
-        if (stdinFD !is StdioDescriptor.Pipe) return@Instance null
         if (stdinFD.isClosed) return@Instance null
+        if (stdinFD !is StdioDescriptor.Pipe) return@Instance null
         WriteStream.of(stdinFD)
     })
 
@@ -139,7 +96,7 @@ internal class StdioHandle private constructor(
     private fun closeNoLock() {
         if (isClosed) return
 
-        var threw: IOException? = threw
+        var threw: IOException? = null
 
         try {
             stdinFD.close()
