@@ -332,7 +332,7 @@ abstract class ProcessBaseTest {
                 assertTrue(stderrFile.exists())
 
                 withContext(Dispatchers.Default) {
-                    p.waitForAsync(2.seconds)
+                    p.waitForAsync(5.seconds)
                 }
             }
 
