@@ -30,6 +30,7 @@ import io.matthewnelson.kmp.process.internal.spawn.GnuLibcVersion
 import io.matthewnelson.kmp.process.internal.spawn.PosixSpawnAttrs.Companion.posixSpawnAttrInit
 import io.matthewnelson.kmp.process.internal.spawn.PosixSpawnFileActions.Companion.posixSpawnFileActionsInit
 import io.matthewnelson.kmp.process.internal.spawn.posixSpawn
+import io.matthewnelson.kmp.process.internal.spawn.posixSpawnP
 import io.matthewnelson.kmp.process.internal.stdio.StdioDescriptor
 import io.matthewnelson.kmp.process.internal.stdio.StdioDescriptor.Pipe.Companion.fdOpen
 import io.matthewnelson.kmp.process.internal.stdio.StdioHandle
@@ -66,11 +67,10 @@ internal actual class PlatformBuilder private actual constructor() {
         stdio: Stdio.Config,
         destroy: Signal,
     ): Process {
-        val programPaths = command.toProgramPaths()
         val handle = stdio.openHandle()
 
         try {
-            return posixSpawn(command, programPaths, args, chdir, env, handle, destroy)
+            return posixSpawn(command, args, chdir, env, handle, destroy)
         } catch (_: UnsupportedOperationException) {
             /* ignore and try fork/exec */
         } catch (e: IOException) {
@@ -79,7 +79,7 @@ internal actual class PlatformBuilder private actual constructor() {
         }
 
         try {
-            return forkExec(command, programPaths, args, chdir, env, handle, destroy)
+            return forkExec(command, args, chdir, env, handle, destroy)
         } catch (e: Exception) {
             handle.tryCloseSuppressed(e)
             throw e.wrapIOException()
@@ -87,21 +87,10 @@ internal actual class PlatformBuilder private actual constructor() {
     }
 
     // internal for testing
+    @OptIn(ExperimentalForeignApi::class)
     @Throws(IOException::class, UnsupportedOperationException::class)
     internal fun posixSpawn(
         command: String,
-        args: List<String>,
-        chdir: File?,
-        env: Map<String, String>,
-        handle: StdioHandle,
-        destroy: Signal,
-    ): NativeProcess = posixSpawn(command, command.toProgramPaths(), args, chdir, env, handle, destroy)
-
-    @OptIn(ExperimentalForeignApi::class)
-    @Throws(IOException::class, UnsupportedOperationException::class)
-    private fun posixSpawn(
-        command: String,
-        programPaths: Set<String>,
         args: List<String>,
         chdir: File?,
         env: Map<String, String>,
@@ -129,6 +118,15 @@ internal actual class PlatformBuilder private actual constructor() {
             // try chdir first before anything else
             chdir?.let { fileActions.addchdir_np(it, scope = this).check() }
 
+            val (program, isAbsolutePath) = if (command.contains(SysDirSep)) {
+                // File system separator present, ensure it is absolute
+                // and normalized. Will use posix_spawn instead of the
+                // p variant.
+                command.toFile().absoluteFile.normalize().path to true
+            } else {
+                command to false
+            }
+
             val attrs = posixSpawnAttrInit()
 
             handle.dup2(action = { fd, newFd ->
@@ -144,25 +142,24 @@ internal actual class PlatformBuilder private actual constructor() {
             // a post-fork step failure (the best we can do atm).
             val pid = alloc<pid_tVar>().apply { value = -1 }
 
-
-            val argv = args.toArgv(program = programPaths.first(), scope = this)
+            val argv = args.toArgv(program = program, scope = this)
             val envp = env.toEnvp(scope = this)
 
-            val iPrograms = programPaths.iterator()
+            if (isAbsolutePath) {
+                posixSpawn(program, pid.ptr, fileActions, attrs, argv, envp)
+            } else {
+                posixSpawnP(program, pid.ptr, fileActions, attrs, argv, envp)
+            }.check()
 
-            while (pid.value == -1 && iPrograms.hasNext()) {
-                // error detection only with underlying fork/vfork/clone steps
-                posixSpawn(iPrograms.next(), pid.ptr, fileActions, attrs, argv, envp).check()
-            }
-
-            // if there was a failure in the pre-exec or exec steps, the
+            // If there was a failure in the pre-exec or exec steps, the
             // pid reference will not be modified.
             //
             // Something like using an invalid directory location (non-existent)
             // for chdir would result in this scenario.
             val pv = pid.value
             if (pv == -1) {
-                throw IOException("posix_spawn failure in pre-exec/exec step. Bad arguments?")
+                val name = if (isAbsolutePath) "posix_spawn" else "posix_spawnp"
+                throw IOException("$name failed in pre-exec/exec step. Bad arguments for '$program'?")
             }
 
             pv
