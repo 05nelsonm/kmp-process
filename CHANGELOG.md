@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## Version 0.1.0-beta01 (2024-06-15)
+ - `AsyncWriteStream` improvements for `Node.js` implementation [[#98]][98]
+ - `unref` is now called on `Process` when destroyed for `Node.js` [[#100]][100]
+ - Adds usage of `posix_spawnp` for Native Unix when `command`
+   is a program name (no file system separators present) [[#106]][106]
+ - Updates dependencies [[#107]][107]
+     - `immutable` -> `0.1.3`
+     - `kmp-file` -> `0.1.0`
+     - `kotlin` -> `1.9.24`
+     - `kotlinx-coroutines` -> `1.8.1`
+
 ## Version 0.1.0-alpha03 (2024-04-01)
  - Fixes `OutputFeed` line parsing. Now checks for `CR` and `LF`
    line terminators [[#94]][94]
@@ -26,3 +37,7 @@
 [89]: https://github.com/05nelsonm/kmp-process/pull/89
 [94]: https://github.com/05nelsonm/kmp-process/pull/94
 [95]: https://github.com/05nelsonm/kmp-process/pull/95
+[98]: https://github.com/05nelsonm/kmp-process/pull/98
+[100]: https://github.com/05nelsonm/kmp-process/pull/100
+[106]: https://github.com/05nelsonm/kmp-process/pull/106
+[107]: https://github.com/05nelsonm/kmp-process/pull/107
