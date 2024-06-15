@@ -100,8 +100,7 @@ public actual value class ReadBuffer private actual constructor(private actual v
          * */
         @InternalProcessApi
         public actual fun allocate(): ReadBuffer {
-            val buf = Buffer.wrap(js("Buffer.alloc(8 * 1024)"))
-            return ReadBuffer(buf)
+            return ReadBuffer(Buffer.alloc(8 * 1024))
         }
 
         /**
