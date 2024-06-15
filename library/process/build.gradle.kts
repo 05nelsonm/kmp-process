@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
+import io.matthewnelson.kmp.configuration.ExperimentalKmpConfigurationApi
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.konan.target.Family
 import org.jetbrains.kotlin.konan.target.HostManager
@@ -22,7 +23,12 @@ plugins {
 }
 
 kmpConfiguration {
-    configureShared(java9ModuleName = "io.matthewnelson.kmp.process", publish = true) {
+    configureShared(publish = true) {
+        jvm {
+            @OptIn(ExperimentalKmpConfigurationApi::class)
+            java9ModuleInfoName = "io.matthewnelson.kmp.process"
+        }
+
         common {
             sourceSetMain {
                 dependencies {
