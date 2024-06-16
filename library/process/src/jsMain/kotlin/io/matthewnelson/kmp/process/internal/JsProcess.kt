@@ -21,3 +21,7 @@ package io.matthewnelson.kmp.process.internal
 /** [docs](https://nodejs.org/api/process.html#processpid) */
 @JsName("pid")
 internal external val process_pid: Int
+
+/** [docs](https://nodejs.org/api/process.html#processversions) */
+@JsName("versions")
+internal external val process_versions: dynamic

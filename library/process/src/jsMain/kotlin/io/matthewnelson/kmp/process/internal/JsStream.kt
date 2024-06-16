@@ -29,6 +29,8 @@ internal open external class stream_Readable {
         eventName: String,
         listener: Function<R>,
     ): stream_Readable
+
+    internal fun destroy()
 }
 
 /** [docs](https://nodejs.org/api/stream.html#class-streamwritable) */

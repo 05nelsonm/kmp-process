@@ -18,6 +18,7 @@
 package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.File
+import io.matthewnelson.kmp.file.errorCodeOrNull
 import io.matthewnelson.kmp.process.*
 
 internal class NodeJsProcess internal constructor(
@@ -39,33 +40,90 @@ internal class NodeJsProcess internal constructor(
     INIT,
 ) {
 
+    private var _exitCode: Int? = null
+
     override fun destroy(): Process {
         val wasDestroyed = !isDestroyed
         isDestroyed = true
 
-        if (!jsProcess.killed && isAlive) {
-            // TODO: check result. check error
-            jsProcess.kill(destroySignal.name)
+        @Suppress("UNUSED_VARIABLE")
+        val error: Throwable? = if (!jsProcess.killed && isAlive) {
+            try {
+                jsProcess.kill(destroySignal.name)
+                null
+            } catch (t: Throwable) {
+                val code = t.errorCodeOrNull
+                var destroySelfIfAlive = false
+
+                // https://github.com/05nelsonm/kmp-process/issues/108
+                run {
+                    if (!IsWindows) return@run
+                    if (code != "EPERM") return@run
+
+                    val (major, minor, patch) = try {
+                        val split = (process_versions["uv"] as String).split('.')
+                        Triple(split[0].toInt(), split[1].toInt(), split[2].toInt())
+                    } catch (_: Throwable) {
+                        return@run
+                    }
+
+                    // libuv 1.48.0 bad windows implementation
+                    if (major == 1 && minor == 48 && patch == 0) {
+                        destroySelfIfAlive = true
+                    }
+                }
+
+                if (code == "ESRCH") {
+                    destroySelfIfAlive = true
+                }
+
+                var error: Throwable? = t
+
+                if (destroySelfIfAlive && isAlive) {
+                    // Still registering as "alive" w/o exit code, but no process
+                    // found with our PID. Unable to kill b/c no process, it's just
+                    // gone... Self-assign exit code and move on.
+                    _exitCode = destroySignal.code
+                    jsProcess.stdin?.end()
+                    jsProcess.stdout?.destroy()
+                    jsProcess.stderr?.destroy()
+                    error = null
+                }
+
+                error
+            }
+        } else {
+            null
         }
 
         if (wasDestroyed) jsProcess.unref()
+
+        // TODO: Handle errors Issue #109
 
         return this
     }
 
     // @Throws(IllegalStateException::class)
     override fun exitCode(): Int {
-        jsProcess.exitCode?.toInt()?.let { return it }
+        _exitCode?.let { return it }
+
+        jsProcess.exitCode?.toInt()?.let {
+            _exitCode = it
+            return it
+        }
 
         jsProcess.signalCode?.let { signal ->
-            return try {
+            val code = try {
                 Signal.valueOf(signal)
             } catch (_: IllegalArgumentException) {
                 destroySignal
             }.code
+
+            _exitCode = code
+            return code
         }
 
-        throw IllegalStateException("Process hasn't exited")
+        return _exitCode ?: throw IllegalStateException("Process hasn't exited")
     }
 
     override fun pid(): Int {
