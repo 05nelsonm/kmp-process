@@ -105,7 +105,8 @@ public abstract class io/matthewnelson/kmp/process/Process : io/matthewnelson/km
 	public final field startTime Lkotlin/time/ComparableTimeMark;
 	public final field stdio Lio/matthewnelson/kmp/process/Stdio$Config;
 	public abstract fun destroy ()Lio/matthewnelson/kmp/process/Process;
-	public abstract fun exitCode ()I
+	public final fun exitCode ()I
+	public abstract fun exitCodeOrNull ()Ljava/lang/Integer;
 	public final fun isAlive ()Z
 	public abstract fun pid ()I
 	public final fun toString ()Ljava/lang/String;

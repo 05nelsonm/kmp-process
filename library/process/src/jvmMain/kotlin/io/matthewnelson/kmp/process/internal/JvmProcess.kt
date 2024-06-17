@@ -99,6 +99,7 @@ internal class JvmProcess private constructor(
         }
 
         _stdinThread?.let { thread ->
+            _stdinThread = null
             if (thread.isInterrupted) return@let
             thread.interrupt()
         }
@@ -106,11 +107,10 @@ internal class JvmProcess private constructor(
         return this
     }
 
-    @Throws(IllegalStateException::class)
-    override fun exitCode(): Int = try {
+    override fun exitCodeOrNull(): Int? = try {
         jProcess.exitValue().correctExitCode()
     } catch (_: IllegalThreadStateException) {
-        throw IllegalStateException("Process hasn't exited")
+        null
     }
 
     override fun pid(): Int = _pid
