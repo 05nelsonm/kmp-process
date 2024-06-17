@@ -80,21 +80,36 @@ internal constructor(
         val hasBeenDestroyed = isDestroyed
         isDestroyed = true
 
-        if (isAlive) {
-            val s = when (destroySignal) {
+        @Suppress("UNUSED_VARIABLE")
+        val killErrno = if (isAlive) {
+            val sig = when (destroySignal) {
                 Signal.SIGTERM -> SIGTERM
                 Signal.SIGKILL -> SIGKILL
             }
 
-            kill(pid, s)
+            var errno = if (kill(pid, sig) == -1) {
+                errno
+            } else {
+                null
+            }
 
-            isAlive
+            // Always call isAlive whether there was an error
+            // or not to ensure _exitCode is set.
+            if (!isAlive) {
+                errno = null
+            }
+
+            errno
+        } else {
+            null
         }
 
-        try {
+        @Suppress("UNUSED_VARIABLE")
+        val closeError = try {
             handle.close()
-        } catch (_: IOException) {
-            // TODO: exception handler
+            null
+        } catch (t: IOException) {
+            t
         }
 
         if (!hasBeenDestroyed) {
@@ -108,6 +123,8 @@ internal constructor(
                 ?.requestTermination(processScheduledJobs = false)
                 ?.result
         }
+
+        // TODO: Handle errors Issue #109
 
         this
     }
