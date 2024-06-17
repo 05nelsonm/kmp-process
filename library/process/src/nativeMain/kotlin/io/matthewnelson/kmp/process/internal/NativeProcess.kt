@@ -129,8 +129,7 @@ internal constructor(
         this
     }
 
-    @Throws(IllegalStateException::class)
-    override fun exitCode(): Int {
+    override fun exitCodeOrNull(): Int? {
         _exitCode.value?.let { return it }
 
         @OptIn(ExperimentalForeignApi::class)
@@ -156,14 +155,11 @@ internal constructor(
 
                     _exitCode.compareAndSet(null, code)
                 }
-                else -> {
-                    val message = strerror(errno)?.toKString() ?: "errno: $errno"
-                    throw IllegalStateException(message)
-                }
+                else -> {}
             }
         }
 
-        return _exitCode.value ?: throw IllegalStateException("Process hasn't exited")
+        return _exitCode.value
     }
 
     override fun pid(): Int = pid

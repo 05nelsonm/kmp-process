@@ -103,8 +103,7 @@ internal class NodeJsProcess internal constructor(
         return this
     }
 
-    // @Throws(IllegalStateException::class)
-    override fun exitCode(): Int {
+    override fun exitCodeOrNull(): Int? {
         _exitCode?.let { return it }
 
         jsProcess.exitCode?.toInt()?.let {
@@ -123,7 +122,7 @@ internal class NodeJsProcess internal constructor(
             return code
         }
 
-        return _exitCode ?: throw IllegalStateException("Process hasn't exited")
+        return _exitCode
     }
 
     override fun pid(): Int {

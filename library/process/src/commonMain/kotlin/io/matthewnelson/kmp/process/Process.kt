@@ -142,18 +142,21 @@ public abstract class Process internal constructor(
      *   not exited yet
      * */
     @Throws(IllegalStateException::class)
-    public abstract fun exitCode(): Int
+    public fun exitCode(): Int = exitCodeOrNull()
+        ?: throw IllegalStateException("Process hasn't exited")
+
+    /**
+     * Returns the exit code for which the process
+     * completed with, or `null` if it has not
+     * exited yet.
+     * */
+    public abstract fun exitCodeOrNull(): Int?
 
     /**
      * Checks if the [Process] is still running
      * */
     @get:JvmName("isAlive")
-    public val isAlive: Boolean get() = try {
-        exitCode()
-        false
-    } catch (_: IllegalStateException) {
-        true
-    }
+    public val isAlive: Boolean get() = exitCodeOrNull() == null
 
     /**
      * Returns the [Process] identifier (PID).

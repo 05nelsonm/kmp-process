@@ -18,7 +18,6 @@
 package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.process.Process
-import io.matthewnelson.kmp.process.Stdio
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
@@ -42,17 +41,16 @@ internal inline fun Process.commonWaitFor(
     var remainingNanos = timeout.inWholeNanoseconds
 
     do {
-        try {
-            return exitCode()
-        } catch (_: IllegalStateException) {
-            if (remainingNanos > 0) {
-                val millis = min(
-                    (remainingNanos.nanoseconds.inWholeMilliseconds + 1).toDouble(),
-                    100.0
-                ).toLong().milliseconds
+        val code = exitCodeOrNull()
+        if (code != null) return code
 
-                sleep(millis)
-            }
+        if (remainingNanos > 0) {
+            val millis = min(
+                (remainingNanos.nanoseconds.inWholeMilliseconds + 1).toDouble(),
+                100.0
+            ).toLong().milliseconds
+
+            sleep(millis)
         }
 
         remainingNanos = (timeout - startMark.elapsedNow()).inWholeNanoseconds
