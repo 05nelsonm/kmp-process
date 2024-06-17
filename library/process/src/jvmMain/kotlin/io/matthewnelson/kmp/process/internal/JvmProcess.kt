@@ -17,10 +17,7 @@ package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.ANDROID
 import io.matthewnelson.kmp.file.File
-import io.matthewnelson.kmp.process.AsyncWriteStream
-import io.matthewnelson.kmp.process.Process
-import io.matthewnelson.kmp.process.Signal
-import io.matthewnelson.kmp.process.Stdio
+import io.matthewnelson.kmp.process.*
 import java.io.FileOutputStream
 import java.io.PrintStream
 import kotlin.concurrent.Volatile
@@ -34,6 +31,7 @@ internal class JvmProcess private constructor(
     env: Map<String, String>,
     stdio: Stdio.Config,
     destroy: Signal,
+    handler: ProcessException.Handler,
 ): Process(
     command,
     args,
@@ -46,6 +44,7 @@ internal class JvmProcess private constructor(
         null
     },
     destroy,
+    handler,
     INIT,
 ) {
 
@@ -268,6 +267,7 @@ internal class JvmProcess private constructor(
             env: Map<String, String>,
             stdio: Stdio.Config,
             destroy: Signal,
+            handler: ProcessException.Handler,
         ): JvmProcess = JvmProcess(
             jProcess,
             isStderrRedirectedToStdout,
@@ -277,6 +277,7 @@ internal class JvmProcess private constructor(
             env,
             stdio,
             destroy,
+            handler,
         )
 
         private val PidMethod by lazy {

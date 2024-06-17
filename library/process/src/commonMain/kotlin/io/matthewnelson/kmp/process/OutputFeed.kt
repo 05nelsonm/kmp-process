@@ -34,7 +34,7 @@ import kotlin.time.Duration.Companion.milliseconds
  * [OutputFeed] to both `stdout` and `stderr`.
  *
  * **NOTE:** Any uncaught exceptions that [onOutput]
- * throws will be swallowed.
+ * throws will be delegated to [ProcessException.Handler].
  *
  * e.g.
  *
@@ -83,7 +83,11 @@ public fun interface OutputFeed {
      *
      * Upon [Process] destruction, all attached [OutputFeed] are ejected.
      * */
-    public sealed class Handler(private val stdio: Stdio.Config): Blocking() {
+    public sealed class Handler(
+        @JvmField
+        protected val handler: ProcessException.Handler,
+        private val stdio: Stdio.Config,
+    ): Blocking() {
 
         @JvmField
         @Volatile
@@ -240,8 +244,8 @@ public fun interface OutputFeed {
             withLock { toSet() }.forEach { feed ->
                 try {
                     feed.onOutput(line)
-                } catch (_: Throwable) {
-                    // TODO: exception handler
+                } catch (t: Throwable) {
+                    // TODO: Handle errors Issue #109
                 }
             }
 

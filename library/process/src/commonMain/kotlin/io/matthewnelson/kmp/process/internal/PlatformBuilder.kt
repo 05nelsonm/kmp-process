@@ -19,10 +19,7 @@ package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.file.IOException
-import io.matthewnelson.kmp.process.Output
-import io.matthewnelson.kmp.process.Process
-import io.matthewnelson.kmp.process.Signal
-import io.matthewnelson.kmp.process.Stdio
+import io.matthewnelson.kmp.process.*
 
 internal expect class PlatformBuilder private constructor() {
 
@@ -47,6 +44,7 @@ internal expect class PlatformBuilder private constructor() {
         env: Map<String, String>,
         stdio: Stdio.Config,
         destroy: Signal,
+        handler: ProcessException.Handler,
     ): Process
 
     internal companion object {

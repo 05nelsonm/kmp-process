@@ -75,8 +75,9 @@ public abstract interface class io/matthewnelson/kmp/process/OutputFeed {
 }
 
 public abstract class io/matthewnelson/kmp/process/OutputFeed$Handler : io/matthewnelson/kmp/process/Blocking {
+	protected final field handler Lio/matthewnelson/kmp/process/ProcessException$Handler;
 	protected field isDestroyed Z
-	public synthetic fun <init> (Lio/matthewnelson/kmp/process/Stdio$Config;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Lio/matthewnelson/kmp/process/ProcessException$Handler;Lio/matthewnelson/kmp/process/Stdio$Config;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	protected final fun dispatchStderr (Ljava/lang/String;)V
 	protected final fun dispatchStdout (Ljava/lang/String;)V
 	protected abstract fun startStderr ()V
@@ -125,6 +126,7 @@ public final class io/matthewnelson/kmp/process/Process$Builder {
 	public final fun destroySignal (Lio/matthewnelson/kmp/process/Signal;)Lio/matthewnelson/kmp/process/Process$Builder;
 	public final fun environment (Ljava/lang/String;Ljava/lang/String;)Lio/matthewnelson/kmp/process/Process$Builder;
 	public final fun environment (Lkotlin/jvm/functions/Function1;)Lio/matthewnelson/kmp/process/Process$Builder;
+	public final fun onError (Lio/matthewnelson/kmp/process/ProcessException$Handler;)Lio/matthewnelson/kmp/process/Process$Builder;
 	public final fun output ()Lio/matthewnelson/kmp/process/Output;
 	public final fun output (Lkotlin/jvm/functions/Function1;)Lio/matthewnelson/kmp/process/Output;
 	public final fun spawn ()Lio/matthewnelson/kmp/process/Process;
@@ -141,6 +143,30 @@ public final class io/matthewnelson/kmp/process/Process$Current {
 	public static final field INSTANCE Lio/matthewnelson/kmp/process/Process$Current;
 	public static final fun environment ()Ljava/util/Map;
 	public static final fun pid ()I
+}
+
+public final class io/matthewnelson/kmp/process/ProcessException : java/lang/RuntimeException {
+	public static final field CTX_DESTROY Ljava/lang/String;
+	public static final field CTX_FEED_STDERR Ljava/lang/String;
+	public static final field CTX_FEED_STDOUT Ljava/lang/String;
+	public static final field Companion Lio/matthewnelson/kmp/process/ProcessException$Companion;
+	public final field context Ljava/lang/String;
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Throwable;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun getCause ()Ljava/lang/Throwable;
+	public fun getMessage ()Ljava/lang/String;
+}
+
+public final class io/matthewnelson/kmp/process/ProcessException$Companion {
+}
+
+public abstract interface class io/matthewnelson/kmp/process/ProcessException$Handler {
+	public static final field Companion Lio/matthewnelson/kmp/process/ProcessException$Handler$Companion;
+	public static final field IGNORE Lio/matthewnelson/kmp/process/ProcessException$Handler;
+	public static final field THROW Lio/matthewnelson/kmp/process/ProcessException$Handler;
+	public abstract fun invoke (Lio/matthewnelson/kmp/process/Process;Lio/matthewnelson/kmp/process/ProcessException;)V
+}
+
+public final class io/matthewnelson/kmp/process/ProcessException$Handler$Companion {
 }
 
 public final class io/matthewnelson/kmp/process/ReadBuffer {

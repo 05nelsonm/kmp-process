@@ -19,6 +19,7 @@ import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.process.AsyncWriteStream
 import io.matthewnelson.kmp.process.Process
+import io.matthewnelson.kmp.process.ProcessException
 import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.internal.Closeable.Companion.tryCloseSuppressed
 import io.matthewnelson.kmp.process.internal.stdio.StdioHandle
@@ -40,6 +41,7 @@ internal constructor(
     chdir: File?,
     env: Map<String, String>,
     destroy: Signal,
+    handler: ProcessException.Handler,
 ): Process(
     command,
     args,
@@ -48,6 +50,7 @@ internal constructor(
     handle.stdio,
     handle.stdinStream()?.let { AsyncWriteStream.of(it) },
     destroy,
+    handler,
     INIT,
 ) {
 

@@ -16,10 +16,9 @@
 package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.*
+import io.matthewnelson.kmp.process.*
 import io.matthewnelson.kmp.process.IsDarwinMobile
 import io.matthewnelson.kmp.process.PROJECT_DIR_PATH
-import io.matthewnelson.kmp.process.Signal
-import io.matthewnelson.kmp.process.Stdio
 import io.matthewnelson.kmp.process.internal.spawn.GnuLibcVersion
 import io.matthewnelson.kmp.process.internal.stdio.StdioHandle
 import io.matthewnelson.kmp.process.internal.stdio.StdioHandle.Companion.openHandle
@@ -219,9 +218,9 @@ class SpawnUnitTest {
         val p = try {
             val b = PlatformBuilder.get()
             if (useFork) {
-                b.forkExec(command, args, chdir, b.env, h, Signal.SIGTERM)
+                b.forkExec(command, args, chdir, b.env, h, Signal.SIGTERM, ProcessException.Handler.IGNORE)
             } else {
-                b.posixSpawn(command, args, chdir, b.env, h, Signal.SIGTERM)
+                b.posixSpawn(command, args, chdir, b.env, h, Signal.SIGTERM, ProcessException.Handler.IGNORE)
             }
         } catch (e: IOException) {
             h.close()

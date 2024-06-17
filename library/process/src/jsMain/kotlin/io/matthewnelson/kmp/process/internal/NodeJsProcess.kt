@@ -29,6 +29,7 @@ internal class NodeJsProcess internal constructor(
     env: Map<String, String>,
     stdio: Stdio.Config,
     destroy: Signal,
+    handler: ProcessException.Handler,
 ): Process(
     command,
     args,
@@ -37,6 +38,7 @@ internal class NodeJsProcess internal constructor(
     stdio,
     jsProcess.stdin?.let { AsyncWriteStream(it) },
     destroy,
+    handler,
     INIT,
 ) {
 

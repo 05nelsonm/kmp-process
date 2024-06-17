@@ -90,8 +90,9 @@ public abstract class Process internal constructor(
     @JvmField
     public val destroySignal: Signal,
 
-    init: SyntheticAccess
-): OutputFeed.Handler(stdio) {
+    handler: ProcessException.Handler,
+    init: SyntheticAccess,
+): OutputFeed.Handler(handler, stdio) {
 
     /**
      * The "rough" start time mark of the [Process]. This is **actually**
@@ -260,6 +261,7 @@ public abstract class Process internal constructor(
         private var chdir: File? = null
         private var destroy: Signal = Signal.SIGTERM
         private val platform = PlatformBuilder.get()
+        private var handler: ProcessException.Handler? = null
         private val stdio = Stdio.Config.Builder.get()
 
         /**
@@ -324,6 +326,22 @@ public abstract class Process internal constructor(
         public fun environment(
             block: MutableMap<String, String>.() -> Unit,
         ): Builder = apply { block(platform.env) }
+
+        /**
+         * Set a [ProcessException.Handler] to manage internal
+         * [Process] errors for spawned processes.
+         *
+         * By default, [ProcessException.Handler.IGNORE] is used
+         * if one is not set.
+         *
+         * **NOTE:** [output] utilizes its own [ProcessException.Handler]
+         * and does **not** use whatever may be set by [onError].
+         *
+         * @see [ProcessException]
+         * */
+        public fun onError(
+            handler: ProcessException.Handler?,
+        ): Builder = apply { this.handler = handler }
 
         /**
          * Modify the standard input source
@@ -412,8 +430,9 @@ public abstract class Process internal constructor(
 
             val args = args.toImmutableList()
             val env = platform.env.toImmutableMap()
+            val handler = handler ?: ProcessException.Handler.IGNORE
 
-            return platform.spawn(command, args, chdir, env, stdio, destroy)
+            return platform.spawn(command, args, chdir, env, stdio, destroy, handler)
         }
 
         /**

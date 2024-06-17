@@ -40,7 +40,7 @@ internal fun PlatformBuilder.blockingOutput(
 ): Output {
 
     val p = try {
-        spawn(command, args, chdir, env, stdio, destroy)
+        spawn(command, args, chdir, env, stdio, destroy, ProcessException.Handler.IGNORE)
     } catch (e: IOException) {
         options.dropInput()
         throw e
