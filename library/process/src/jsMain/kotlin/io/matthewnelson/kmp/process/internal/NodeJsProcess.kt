@@ -18,6 +18,7 @@
 package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.File
+import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.file.errorCodeOrNull
 import io.matthewnelson.kmp.process.*
 
@@ -29,6 +30,7 @@ internal class NodeJsProcess internal constructor(
     env: Map<String, String>,
     stdio: Stdio.Config,
     destroy: Signal,
+    handler: ProcessException.Handler,
 ): Process(
     command,
     args,
@@ -37,12 +39,23 @@ internal class NodeJsProcess internal constructor(
     stdio,
     jsProcess.stdin?.let { AsyncWriteStream(it) },
     destroy,
+    handler,
     INIT,
 ) {
 
     private var _exitCode: Int? = null
 
-    override fun destroy(): Process {
+    init {
+        @OptIn(InternalProcessApi::class)
+        jsProcess.onError { err ->
+            if (isDestroyed) return@onError
+            val t = (err as? Throwable) ?: IOException("$err")
+            onError(t, lazyContext = { "nodejs.on('error')" })
+        }
+    }
+
+    // @Throws(Throwable::class)
+    protected override fun destroyProtected(immediate: Boolean) {
         val wasDestroyed = !isDestroyed
         isDestroyed = true
 
@@ -98,12 +111,10 @@ internal class NodeJsProcess internal constructor(
 
         if (wasDestroyed) jsProcess.unref()
 
-        // TODO: Handle errors Issue #109
-
-        return this
+        error?.let { throw it }
     }
 
-    override fun exitCodeOrNull(): Int? {
+    public override fun exitCodeOrNull(): Int? {
         _exitCode?.let { return it }
 
         jsProcess.exitCode?.toInt()?.let {
@@ -125,7 +136,7 @@ internal class NodeJsProcess internal constructor(
         return _exitCode
     }
 
-    override fun pid(): Int {
+    public override fun pid(): Int {
         val result = try {
             // can be undefined if called before the
             // underlying process has not spawned yet.
@@ -137,7 +148,7 @@ internal class NodeJsProcess internal constructor(
         return result ?: -1
     }
 
-    override fun startStdout() {
+    protected override fun startStdout() {
         val stdout = jsProcess.stdout ?: return
 
         @OptIn(InternalProcessApi::class)
@@ -150,7 +161,7 @@ internal class NodeJsProcess internal constructor(
         }
     }
 
-    override fun startStderr() {
+    protected override fun startStderr() {
         val stderr = jsProcess.stderr ?: return
 
         @OptIn(InternalProcessApi::class)

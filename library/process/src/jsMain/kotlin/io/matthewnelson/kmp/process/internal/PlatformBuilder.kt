@@ -18,11 +18,8 @@
 package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.*
+import io.matthewnelson.kmp.process.*
 import io.matthewnelson.kmp.process.internal.RealLineOutputFeed.Companion.LF
-import io.matthewnelson.kmp.process.Output
-import io.matthewnelson.kmp.process.Process
-import io.matthewnelson.kmp.process.Signal
-import io.matthewnelson.kmp.process.Stdio
 import org.khronos.webgl.Int8Array
 
 // jsMain
@@ -143,7 +140,8 @@ internal actual class PlatformBuilder private actual constructor() {
         chdir: File?,
         env: Map<String, String>,
         stdio: Stdio.Config,
-        destroy: Signal
+        destroy: Signal,
+        handler: ProcessException.Handler,
     ): Process {
         val jsEnv = env.toJsEnv()
         val jsStdio = stdio.toJsStdio()
@@ -170,6 +168,7 @@ internal actual class PlatformBuilder private actual constructor() {
             env,
             stdio,
             destroy,
+            handler,
         )
     }
 

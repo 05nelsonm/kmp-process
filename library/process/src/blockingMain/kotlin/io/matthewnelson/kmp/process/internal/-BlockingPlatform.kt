@@ -40,7 +40,8 @@ internal fun PlatformBuilder.blockingOutput(
 ): Output {
 
     val p = try {
-        spawn(command, args, chdir, env, stdio, destroy)
+        // TODO: Exception Handler
+        spawn(command, args, chdir, env, stdio, destroy, ProcessException.Handler.IGNORE)
     } catch (e: IOException) {
         options.dropInput()
         throw e
@@ -147,6 +148,7 @@ internal fun ReadStream.scanLines(
     val buf = ReadBuffer.of(ByteArray(bufferSize))
     val feed = ReadBuffer.lineOutputFeed(dispatch)
 
+    var threw: Throwable? = null
     while (true) {
         val read = try {
             stream.read(buf.buf)
@@ -159,10 +161,15 @@ internal fun ReadStream.scanLines(
         // and we can end early (before process destruction).
         if (read <= 0) break
 
-        feed.onData(buf, read)
+        try {
+            feed.onData(buf, read)
+        } catch (t: Throwable) {
+            threw = t
+            break
+        }
     }
 
-    // Process.destroy closes the streams
     buf.buf.fill(0)
+    threw?.let { throw it }
     feed.close()
 }

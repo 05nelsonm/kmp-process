@@ -17,6 +17,8 @@
 
 package io.matthewnelson.kmp.process
 
+import io.matthewnelson.kmp.process.ProcessException.Companion.CTX_FEED_STDERR
+import io.matthewnelson.kmp.process.ProcessException.Companion.CTX_FEED_STDOUT
 import io.matthewnelson.kmp.process.internal.SynchronizedSet
 import kotlinx.coroutines.delay
 import kotlin.concurrent.Volatile
@@ -33,8 +35,11 @@ import kotlin.time.Duration.Companion.milliseconds
  * [OutputFeed]). It is ill-advised to attach the same
  * [OutputFeed] to both `stdout` and `stderr`.
  *
- * **NOTE:** Any uncaught exceptions that [onOutput]
- * throws will be swallowed.
+ * **NOTE:** Any exceptions that [onOutput] throws will be
+ * delegated to [ProcessException.Handler]. If it is re-thrown
+ * by the [ProcessException.Handler], the [Process] will be
+ * terminated, and all [OutputFeed] for that I/O stream will
+ * be ejected immediately.
  *
  * e.g.
  *
@@ -128,10 +133,12 @@ public fun interface OutputFeed {
          * */
         public fun stdoutFeed(
             vararg feeds: OutputFeed,
-        ): Process = stdoutFeeds.addFeeds(feeds, stdio.stdout, startStdio = {
-            stdoutStarted = true
-            startStdout()
-        })
+        ): Process = stdoutFeeds.addFeeds(
+            feeds,
+            stdio.stdout,
+            isStopped = { stdoutStopped },
+            startStdio = { stdoutStarted = true; startStdout() },
+        )
 
         /**
          * Attaches a single [OutputFeed] to obtain `stderr` output.
@@ -161,10 +168,12 @@ public fun interface OutputFeed {
          * */
         public fun stderrFeed(
             vararg feeds: OutputFeed,
-        ): Process = stderrFeeds.addFeeds(feeds, stdio.stderr, startStdio = {
-            stderrStarted = true
-            startStderr()
-        })
+        ): Process = stderrFeeds.addFeeds(
+            feeds,
+            stdio.stderr,
+            isStopped = { stderrStopped },
+            startStdio = { stderrStarted = true; startStderr() },
+        )
 
         /**
          * Returns a [Waiter] for `stdout` in order to await any
@@ -197,26 +206,39 @@ public fun interface OutputFeed {
         }
 
         protected fun dispatchStdout(line: String?) {
-            stdoutFeeds.dispatch(line, onClosed = { stdoutStopped = true })
+            stdoutFeeds.dispatch(
+                line,
+                lazyContext = { CTX_FEED_STDOUT },
+                onClosed = { stdoutStopped = true },
+            )
         }
         protected fun dispatchStderr(line: String?) {
-            stderrFeeds.dispatch(line, onClosed = { stderrStopped = true })
+            stderrFeeds.dispatch(
+                line,
+                lazyContext = { CTX_FEED_STDERR },
+                onClosed = { stderrStopped = true },
+            )
         }
 
+        @Throws(Throwable::class)
+        protected abstract fun onError(t: Throwable, lazyContext: () -> String)
         protected abstract fun startStdout()
         protected abstract fun startStderr()
 
         private fun SynchronizedSet<OutputFeed>.addFeeds(
             feeds: Array<out OutputFeed>,
             stdio: Stdio,
-            startStdio: () -> Unit
+            isStopped: () -> Boolean,
+            startStdio: () -> Unit,
         ): Process {
             if (isDestroyed) return This
             if (feeds.isEmpty()) return This
             if (stdio !is Stdio.Pipe) return This
+            if (isStopped()) return This
 
             val start = withLock {
                 if (isDestroyed) return@withLock false
+                if (isStopped()) return@withLock false
                 val wasEmpty = isEmpty()
                 feeds.forEach { add(it) }
                 wasEmpty && isNotEmpty()
@@ -235,20 +257,36 @@ public fun interface OutputFeed {
         @Suppress("NOTHING_TO_INLINE")
         private inline fun SynchronizedSet<OutputFeed>.dispatch(
             line: String?,
+            noinline lazyContext: () -> String,
             crossinline onClosed: () -> Unit,
         ) {
+            var threw: Throwable? = null
+
             withLock { toSet() }.forEach { feed ->
                 try {
                     feed.onOutput(line)
-                } catch (_: Throwable) {
-                    // TODO: exception handler
+                } catch (t: Throwable) {
+                    threw?.addSuppressed(t) ?: run { threw = t }
                 }
             }
 
-            if (line != null) return
+            threw?.let { t ->
+                try {
+                    onError(t, lazyContext)
+                    // Handler swallowed it
+                    threw = null
+                } catch (e: Throwable) {
+                    threw = e
+                }
+            }
 
-            // null was dispatched indicating that the stream stopped.
+            if (threw == null) {
+                if (line != null) return
+            }
+
+            // Line was null (end of stream), or error. Close up shop.
             withLock { clear(); onClosed() }
+            threw?.let { throw it }
         }
 
         @JvmSynthetic

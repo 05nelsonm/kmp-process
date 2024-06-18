@@ -18,6 +18,7 @@ package io.matthewnelson.kmp.process
 import io.matthewnelson.immutable.collections.toImmutableList
 import io.matthewnelson.immutable.collections.toImmutableMap
 import io.matthewnelson.kmp.file.*
+import io.matthewnelson.kmp.process.ProcessException.Companion.CTX_DESTROY
 import io.matthewnelson.kmp.process.internal.PlatformBuilder
 import io.matthewnelson.kmp.process.internal.SyntheticAccess
 import io.matthewnelson.kmp.process.internal.appendProcessInfo
@@ -90,7 +91,8 @@ public abstract class Process internal constructor(
     @JvmField
     public val destroySignal: Signal,
 
-    init: SyntheticAccess
+    private val handler: ProcessException.Handler,
+    init: SyntheticAccess,
 ): OutputFeed.Handler(stdio) {
 
     /**
@@ -132,7 +134,15 @@ public abstract class Process internal constructor(
      * @see [OutputFeed.Waiter]
      * @return this [Process] instance
      * */
-    public abstract fun destroy(): Process
+    public fun destroy(): Process {
+        try {
+            destroyProtected(immediate = true)
+        } catch (t: Throwable) {
+            onError(t, lazyContext = { CTX_DESTROY })
+        }
+
+        return this
+    }
 
     /**
      * Returns the exit code for which the process
@@ -260,6 +270,7 @@ public abstract class Process internal constructor(
         private var chdir: File? = null
         private var destroy: Signal = Signal.SIGTERM
         private val platform = PlatformBuilder.get()
+        private var handler: ProcessException.Handler? = null
         private val stdio = Stdio.Config.Builder.get()
 
         /**
@@ -324,6 +335,22 @@ public abstract class Process internal constructor(
         public fun environment(
             block: MutableMap<String, String>.() -> Unit,
         ): Builder = apply { block(platform.env) }
+
+        /**
+         * Set a [ProcessException.Handler] to manage internal
+         * [Process] errors for spawned processes.
+         *
+         * By default, [ProcessException.Handler.IGNORE] is used
+         * if one is not set.
+         *
+         * **NOTE:** [output] utilizes its own [ProcessException.Handler]
+         * and does **not** use whatever may be set by [onError].
+         *
+         * @see [ProcessException]
+         * */
+        public fun onError(
+            handler: ProcessException.Handler?,
+        ): Builder = apply { this.handler = handler }
 
         /**
          * Modify the standard input source
@@ -412,8 +439,9 @@ public abstract class Process internal constructor(
 
             val args = args.toImmutableList()
             val env = platform.env.toImmutableMap()
+            val handler = handler ?: ProcessException.Handler.IGNORE
 
-            return platform.spawn(command, args, chdir, env, stdio, destroy)
+            return platform.spawn(command, args, chdir, env, stdio, destroy, handler)
         }
 
         /**
@@ -461,6 +489,43 @@ public abstract class Process internal constructor(
             stdio,
             destroySignal
         )
+    }
+
+    @Throws(Throwable::class)
+    protected abstract fun destroyProtected(immediate: Boolean)
+
+    @Throws(Throwable::class)
+    protected final override fun onError(t: Throwable, lazyContext: () -> String) {
+        if (handler == ProcessException.Handler.IGNORE) return
+
+        val context = lazyContext()
+
+        val threw = try {
+            handler.onException(ProcessException.of(context, t))
+            null
+        } catch (t: Throwable) {
+            // Handler threw on us. Clean up shop.
+            t
+        }
+
+        if (threw == null) return
+
+        // Error was coming from somewhere other than destroy call.
+        // Ensure we are destroyed to close everything down before
+        // re-throwing.
+        if (context != CTX_DESTROY) {
+            try {
+                // Because this error did not come from destroy,
+                // Native must terminate Workers lazily because the
+                // current thread may be the Worker (i.e. OutputFeed
+                // threw exception). So, `immediate = false`.
+                destroyProtected(immediate = false)
+            } catch (t: Throwable) {
+                threw.addSuppressed(t)
+            }
+        }
+
+        throw threw
     }
 
     protected companion object {

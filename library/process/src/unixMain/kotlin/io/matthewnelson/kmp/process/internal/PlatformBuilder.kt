@@ -18,10 +18,7 @@
 package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.*
-import io.matthewnelson.kmp.process.Output
-import io.matthewnelson.kmp.process.Process
-import io.matthewnelson.kmp.process.Signal
-import io.matthewnelson.kmp.process.Stdio
+import io.matthewnelson.kmp.process.*
 import io.matthewnelson.kmp.process.internal.Closeable.Companion.tryCloseSuppressed
 import io.matthewnelson.kmp.process.internal.fork.posixDup2
 import io.matthewnelson.kmp.process.internal.fork.posixExecve
@@ -66,11 +63,12 @@ internal actual class PlatformBuilder private actual constructor() {
         env: Map<String, String>,
         stdio: Stdio.Config,
         destroy: Signal,
+        handler: ProcessException.Handler,
     ): Process {
         val handle = stdio.openHandle()
 
         try {
-            return posixSpawn(command, args, chdir, env, handle, destroy)
+            return posixSpawn(command, args, chdir, env, handle, destroy, handler)
         } catch (_: UnsupportedOperationException) {
             /* ignore and try fork/exec */
         } catch (e: IOException) {
@@ -79,7 +77,7 @@ internal actual class PlatformBuilder private actual constructor() {
         }
 
         try {
-            return forkExec(command, args, chdir, env, handle, destroy)
+            return forkExec(command, args, chdir, env, handle, destroy, handler)
         } catch (e: Exception) {
             handle.tryCloseSuppressed(e)
             throw e.wrapIOException()
@@ -96,6 +94,7 @@ internal actual class PlatformBuilder private actual constructor() {
         env: Map<String, String>,
         handle: StdioHandle,
         destroy: Signal,
+        handler: ProcessException.Handler,
     ): NativeProcess {
         try {
             GnuLibcVersion.check {
@@ -173,6 +172,7 @@ internal actual class PlatformBuilder private actual constructor() {
             chdir,
             env,
             destroy,
+            handler,
         )
     }
 
@@ -185,7 +185,8 @@ internal actual class PlatformBuilder private actual constructor() {
         env: Map<String, String>,
         handle: StdioHandle,
         destroy: Signal,
-    ): NativeProcess = forkExec(command, command.toProgramPaths(), args, chdir, env, handle, destroy)
+        handler: ProcessException.Handler,
+    ): NativeProcess = forkExec(command, command.toProgramPaths(), args, chdir, env, handle, destroy, handler)
 
     @OptIn(ExperimentalForeignApi::class)
     @Throws(IOException::class, UnsupportedOperationException::class)
@@ -197,6 +198,7 @@ internal actual class PlatformBuilder private actual constructor() {
         env: Map<String, String>,
         handle: StdioHandle,
         destroy: Signal,
+        handler: ProcessException.Handler,
     ): NativeProcess {
         val pipe = try {
             Stdio.Pipe.fdOpen()
@@ -226,6 +228,7 @@ internal actual class PlatformBuilder private actual constructor() {
             chdir,
             env,
             destroy,
+            handler,
         )
 
         try {

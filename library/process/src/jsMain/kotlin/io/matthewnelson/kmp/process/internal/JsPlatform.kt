@@ -75,6 +75,24 @@ internal inline fun ArrayBufferView.fill() {
     }
 }
 
+@InternalProcessApi
+@Suppress("NOTHING_TO_INLINE")
+public inline fun <T: events_EventEmitter> T.onError(
+    noinline block: (err: dynamic) -> Unit,
+): T {
+    on("error", block)
+    return this
+}
+
+@InternalProcessApi
+@Suppress("NOTHING_TO_INLINE")
+public inline fun <T: events_EventEmitter> T.onceError(
+    noinline block: (err: dynamic) -> Unit,
+): T {
+    once("error", block)
+    return this
+}
+
 @Suppress("NOTHING_TO_INLINE")
 internal inline fun stream_Readable.onClose(
     noinline block: () -> Unit,

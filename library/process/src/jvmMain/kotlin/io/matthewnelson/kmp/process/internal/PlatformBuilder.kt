@@ -21,10 +21,7 @@ import io.matthewnelson.kmp.file.ANDROID
 import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.file.FileNotFoundException
 import io.matthewnelson.kmp.file.IOException
-import io.matthewnelson.kmp.process.Output
-import io.matthewnelson.kmp.process.Process
-import io.matthewnelson.kmp.process.Signal
-import io.matthewnelson.kmp.process.Stdio
+import io.matthewnelson.kmp.process.*
 
 // jvmMain
 internal actual class PlatformBuilder private actual constructor() {
@@ -53,6 +50,7 @@ internal actual class PlatformBuilder private actual constructor() {
         env: Map<String, String>,
         stdio: Stdio.Config,
         destroy: Signal,
+        handler: ProcessException.Handler,
     ): Process {
 
         val isStderrSameFileAsStdout = stdio.isStderrSameFileAsStdout
@@ -142,6 +140,7 @@ internal actual class PlatformBuilder private actual constructor() {
             env,
             stdio,
             destroySignal,
+            handler,
         )
     }
 
