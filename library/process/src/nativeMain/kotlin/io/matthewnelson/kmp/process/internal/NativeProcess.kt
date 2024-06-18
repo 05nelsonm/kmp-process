@@ -17,6 +17,7 @@ package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.file.IOException
+import io.matthewnelson.kmp.file.errnoToIOException
 import io.matthewnelson.kmp.process.AsyncWriteStream
 import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.ProcessException
@@ -24,11 +25,13 @@ import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.internal.Closeable.Companion.tryCloseSuppressed
 import io.matthewnelson.kmp.process.internal.stdio.StdioHandle
 import kotlinx.cinterop.*
+import kotlinx.coroutines.*
 import platform.posix.*
 import kotlin.concurrent.AtomicReference
 import kotlin.native.concurrent.ObsoleteWorkersApi
 import kotlin.native.concurrent.TransferMode
 import kotlin.native.concurrent.Worker
+import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ObsoleteWorkersApi::class)
 internal class NativeProcess
@@ -79,12 +82,14 @@ internal constructor(
         Worker.execute("stderr", reader, ::dispatchStderr)
     })
 
-    override fun destroy(): Process = destroyLock.withLock {
+    @Throws(Throwable::class)
+    protected override fun destroyProtected(immediate: Boolean) = destroyLock.withLock {
         val hasBeenDestroyed = isDestroyed
         isDestroyed = true
 
-        @Suppress("UNUSED_VARIABLE")
-        val killErrno = if (isAlive) {
+        var threw: Throwable? = null
+
+        if (isAlive) {
             val sig = when (destroySignal) {
                 Signal.SIGTERM -> SIGTERM
                 Signal.SIGKILL -> SIGKILL
@@ -102,37 +107,54 @@ internal constructor(
                 errno = null
             }
 
-            errno
-        } else {
-            null
+            if (errno != null) {
+                @OptIn(ExperimentalForeignApi::class)
+                threw = errnoToIOException(errno)
+            }
         }
 
-        @Suppress("UNUSED_VARIABLE")
-        val closeError = try {
+        try {
             handle.close()
-            null
         } catch (t: IOException) {
-            t
+            if (threw != null) {
+                threw.addSuppressed(t)
+            } else {
+                threw = t
+            }
         }
 
-        if (!hasBeenDestroyed) {
-            stdoutWorker
-                .getOrNull()
-                ?.requestTermination(processScheduledJobs = false)
-                ?.result
+        val terminate: (() -> Unit)? = run {
+            if (hasBeenDestroyed) return@run null
 
-            stderrWorker
-                .getOrNull()
-                ?.requestTermination(processScheduledJobs = false)
-                ?.result
+            val wStdout = stdoutWorker.getOrNull()
+            val wStderr = stderrWorker.getOrNull()
+
+            if (wStdout == null && wStderr == null) return@run null
+
+            {
+                wStdout?.requestTermination(processScheduledJobs = false)?.result
+                wStderr?.requestTermination(processScheduledJobs = false)?.result
+            }
         }
 
-        // TODO: Handle errors Issue #109
+        Pair(threw, terminate)
+    }.let { (threw, terminate) ->
+        if (terminate != null) {
+            if (immediate) {
+                terminate()
+            } else {
+                @OptIn(DelicateCoroutinesApi::class)
+                GlobalScope.launch(Dispatchers.IO) {
+                    delay(150.milliseconds)
+                    terminate()
+                }
+            }
+        }
 
-        this
+        if (threw != null) throw threw
     }
 
-    override fun exitCodeOrNull(): Int? {
+    public override fun exitCodeOrNull(): Int? {
         _exitCode.value?.let { return it }
 
         @OptIn(ExperimentalForeignApi::class)
@@ -165,10 +187,10 @@ internal constructor(
         return _exitCode.value
     }
 
-    override fun pid(): Int = pid
+    public override fun pid(): Int = pid
 
-    override fun startStdout() { stdoutWorker.getOrCreate() }
-    override fun startStderr() { stderrWorker.getOrCreate() }
+    protected override fun startStdout() { stdoutWorker.getOrCreate() }
+    protected override fun startStderr() { stderrWorker.getOrCreate() }
 
     private fun Worker.Companion.execute(
         name: String,

@@ -44,8 +44,7 @@ public class ProcessException private constructor(
     public val context: String,
 
     /**
-     * The underlying cause of the [ProcessException]. Will
-     * **never** be null.
+     * The underlying cause of the [ProcessException].
      * */
     public override val cause: Throwable,
 ): RuntimeException(context, cause) {
@@ -60,15 +59,12 @@ public class ProcessException private constructor(
 
         /**
          * If a [Handler] implementation throws an exception from
-         * within its [invoke] lambda instead of handling it, it
-         * will be caught and re-thrown after ensuring that the
-         * [Process] has been destroyed.
+         * within its [onException] lambda, the [Process] will be terminated.
          *
-         * **NOTE:** Throwing an exception from [invoke] will likely
-         * result in crashing your app.
+         * **WARNING:** Throwing an exception may result in a crash.
          * */
         @Throws(Throwable::class)
-        public operator fun Process.invoke(e: ProcessException)
+        public fun onException(e: ProcessException)
 
         public companion object {
 
@@ -78,20 +74,42 @@ public class ProcessException private constructor(
              * This is the default used by [Process.Builder].
              * */
             @JvmField
-            public val IGNORE: Handler = Handler {}
+            public val IGNORE: Handler = object : Handler {
+                override fun onException(e: ProcessException) {}
+                override fun toString(): String = "ProcessException.Handler.IGNORE"
+            }
 
             /**
              * Static instance that automatically throws the [ProcessException].
              * */
             @JvmField
-            public val THROW: Handler = Handler { throw it }
+            public val THROW: Handler = object : Handler {
+                override fun onException(e: ProcessException) { throw e }
+                override fun toString(): String = "ProcessException.Handler.THROW"
+            }
         }
     }
 
     public companion object {
 
+        /**
+         * String for [ProcessException.context] indicating that
+         * [Process.destroy] threw an exception when it was called.
+         * */
         public const val CTX_DESTROY: String = "destroy"
+
+        /**
+         * String for [ProcessException.context] indicating that
+         * an [OutputFeed] for [Stdio.Config.stdout] threw exception
+         * when [OutputFeed.onOutput] was called.
+         * */
         public const val CTX_FEED_STDERR: String = "feed.stderr"
+
+        /**
+         * String for [ProcessException.context] indicating that
+         * an [OutputFeed] for [Stdio.Config.stderr] threw exception
+         * when [OutputFeed.onOutput] was called.
+         * */
         public const val CTX_FEED_STDOUT: String = "feed.stdout"
 
         @JvmSynthetic

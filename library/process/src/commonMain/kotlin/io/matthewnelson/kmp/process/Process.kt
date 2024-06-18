@@ -18,6 +18,7 @@ package io.matthewnelson.kmp.process
 import io.matthewnelson.immutable.collections.toImmutableList
 import io.matthewnelson.immutable.collections.toImmutableMap
 import io.matthewnelson.kmp.file.*
+import io.matthewnelson.kmp.process.ProcessException.Companion.CTX_DESTROY
 import io.matthewnelson.kmp.process.internal.PlatformBuilder
 import io.matthewnelson.kmp.process.internal.SyntheticAccess
 import io.matthewnelson.kmp.process.internal.appendProcessInfo
@@ -90,9 +91,9 @@ public abstract class Process internal constructor(
     @JvmField
     public val destroySignal: Signal,
 
-    handler: ProcessException.Handler,
+    private val handler: ProcessException.Handler,
     init: SyntheticAccess,
-): OutputFeed.Handler(handler, stdio) {
+): OutputFeed.Handler(stdio) {
 
     /**
      * The "rough" start time mark of the [Process]. This is **actually**
@@ -133,7 +134,15 @@ public abstract class Process internal constructor(
      * @see [OutputFeed.Waiter]
      * @return this [Process] instance
      * */
-    public abstract fun destroy(): Process
+    public fun destroy(): Process {
+        try {
+            destroyProtected(immediate = true)
+        } catch (t: Throwable) {
+            onError(t, lazyContext = { CTX_DESTROY })
+        }
+
+        return this
+    }
 
     /**
      * Returns the exit code for which the process
@@ -480,6 +489,43 @@ public abstract class Process internal constructor(
             stdio,
             destroySignal
         )
+    }
+
+    @Throws(Throwable::class)
+    protected abstract fun destroyProtected(immediate: Boolean)
+
+    @Throws(Throwable::class)
+    protected final override fun onError(t: Throwable, lazyContext: () -> String) {
+        if (handler == ProcessException.Handler.IGNORE) return
+
+        val context = lazyContext()
+
+        val threw = try {
+            handler.onException(ProcessException.of(context, t))
+            null
+        } catch (t: Throwable) {
+            // Handler threw on us. Clean up shop.
+            t
+        }
+
+        if (threw == null) return
+
+        // Error was coming from somewhere other than destroy call.
+        // Ensure we are destroyed to close everything down before
+        // re-throwing.
+        if (context != CTX_DESTROY) {
+            try {
+                // Because this error did not come from destroy,
+                // Native must terminate Workers lazily because the
+                // current thread may be the Worker (i.e. OutputFeed
+                // threw exception). So, `immediate = false`.
+                destroyProtected(immediate = false)
+            } catch (t: Throwable) {
+                threw.addSuppressed(t)
+            }
+        }
+
+        throw threw
     }
 
     protected companion object {

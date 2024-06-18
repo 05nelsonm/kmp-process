@@ -17,15 +17,14 @@ package io.matthewnelson.kmp.process.testing
 
 import io.matthewnelson.kmp.file.*
 import io.matthewnelson.kmp.process.Process
+import io.matthewnelson.kmp.process.ProcessException.Companion.CTX_FEED_STDOUT
 import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.Stdio
 import io.matthewnelson.kmp.tor.core.api.ResourceInstaller
 import io.matthewnelson.kmp.tor.resource.tor.TorResources
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.*
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.withContext
 import kotlin.math.min
 import kotlin.test.*
 import kotlin.time.Duration
@@ -176,7 +175,7 @@ abstract class ProcessBaseTest {
     }
 
     @Test
-    fun givenOutput_whenError_thenStderrIsAsExpected() {
+    fun givenOutput_whenStderrOutput_thenIsAsExpected() {
         if (IsDarwinMobile || IsWindows) {
             println("Skipping...")
             return
@@ -216,6 +215,57 @@ abstract class ProcessBaseTest {
         @Suppress("ReplaceAssertBooleanWithAssertEquality")
         assertTrue(expected == out.stdout, "Stdout output did not match expected")
         assertEquals("", out.stderr)
+    }
+
+    @Test
+    fun givenFeed_whenExceptionHandler_thenNotifies() = runTest(timeout = 5.seconds) {
+        var invocationError = 0
+        val p = try {
+            Process.Builder(command = "sh")
+                .args("-c")
+                .args("echo \"something\"; sleep 1; exit 42")
+                .onError { t ->
+                    invocationError++
+                    assertEquals(CTX_FEED_STDOUT, t.context)
+                    assertIs<IllegalStateException>(t.cause)
+
+                    // Node.js will crash (expected)
+                    if (!IsNodeJs) throw t
+                }
+                .stdin(Stdio.Null)
+                .stdout(Stdio.Pipe)
+                .stderr(Stdio.Pipe)
+                .spawn()
+        } catch (e: IOException) {
+            if (IsDarwinMobile || IsWindows) {
+                println("Skipping...")
+                return@runTest
+            }
+            throw e
+        }
+
+        currentCoroutineContext().job.invokeOnCompletion { p.destroy() }
+
+        p.stdoutFeed { line ->
+            throw IllegalStateException(line)
+        }.waitForAsync(500.milliseconds)
+
+        assertTrue(invocationError > 0)
+
+        if (IsNodeJs) {
+            assertTrue(p.isAlive)
+            p.destroy()
+        } else {
+            // non-Node.js process should have
+            // been destroyed upon onOutput throwing
+            // exception.
+            assertFalse(p.isAlive)
+        }
+
+        // Ensure waiters work properly for all platforms, indicating that
+        // OutputFeed.Handler closed up shop for all feeds (especially native).
+        // If it is not correct, this would suspend until test timeout occurred
+        p.stderrWaiter().awaitStopAsync().stdoutWaiter().awaitStopAsync()
     }
 
     @Test

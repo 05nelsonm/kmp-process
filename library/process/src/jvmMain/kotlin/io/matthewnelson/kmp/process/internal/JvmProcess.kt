@@ -79,7 +79,8 @@ internal class JvmProcess private constructor(
     @Volatile
     private var _stdinThread: Thread? = null
 
-    override fun destroy(): Process {
+    // @Throws(Throwable::class)
+    protected override fun destroyProtected(immediate: Boolean) {
         isDestroyed = true
 
         @Suppress("NewApi")
@@ -102,25 +103,23 @@ internal class JvmProcess private constructor(
             if (thread.isInterrupted) return@let
             thread.interrupt()
         }
-
-        return this
     }
 
-    override fun exitCodeOrNull(): Int? = try {
+    public override fun exitCodeOrNull(): Int? = try {
         jProcess.exitValue().correctExitCode()
     } catch (_: IllegalThreadStateException) {
         null
     }
 
-    override fun pid(): Int = _pid
+    public override fun pid(): Int = _pid
 
-    override fun startStdout() {
+    protected override fun startStdout() {
         Runnable {
             jProcess.inputStream.scanLines(::dispatchStdout)
         }.execute(stdio = "stdout")
     }
 
-    override fun startStderr() {
+    protected override fun startStderr() {
         Runnable {
             jProcess.errorStream.scanLines(::dispatchStderr)
         }.execute(stdio = "stderr")
@@ -209,7 +208,7 @@ internal class JvmProcess private constructor(
                                 }
                             }
                         } catch (_: Throwable) {}
-                    }.execute(stdio = "stdin")
+                    }.execute(stdio = "stdin-redirect")
                 }
                 is Stdio.Inherit -> {
                     // TODO: Need to think about...
@@ -240,15 +239,15 @@ internal class JvmProcess private constructor(
             }
 
             when (val o = stdio.stdout) {
-                is Stdio.File -> jProcess.inputStream.redirectTo("stdout", o)
-                is Stdio.Inherit -> jProcess.inputStream.redirectTo("stdout", System.out)
+                is Stdio.File -> jProcess.inputStream.redirectTo("stdout-redirect", o)
+                is Stdio.Inherit -> jProcess.inputStream.redirectTo("stdout-redirect", System.out)
                 is Stdio.Pipe -> { /* do nothing */ }
             }
 
             if (!isStderrRedirectedToStdout) {
                 when (val o = stdio.stderr) {
-                    is Stdio.File -> jProcess.errorStream.redirectTo("stderr", o)
-                    is Stdio.Inherit -> jProcess.errorStream.redirectTo("stderr", System.err)
+                    is Stdio.File -> jProcess.errorStream.redirectTo("stderr-redirect", o)
+                    is Stdio.Inherit -> jProcess.errorStream.redirectTo("stderr-redirect", System.err)
                     is Stdio.Pipe -> { /* do nothing */ }
                 }
             }

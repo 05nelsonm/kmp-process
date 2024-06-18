@@ -17,7 +17,6 @@ package io.matthewnelson.kmp.process
 
 import io.matthewnelson.kmp.file.*
 import io.matthewnelson.kmp.process.internal.IsWindows
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.runTest
 import kotlin.test.*
 import kotlin.time.Duration.Companion.milliseconds
