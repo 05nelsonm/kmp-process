@@ -34,6 +34,7 @@ class ProcessAndroidTest: ProcessBaseTest() {
 
     private val ctx = ApplicationProvider.getApplicationContext<Application>().applicationContext
 
+    override val IsAndroidInstrumentTest: Boolean = true
     override val homeDir: File get() = ctx.getDir("torservice", Context.MODE_PRIVATE)
     override val cacheDir: File get() = SysTempDir.resolve("torservice").resolve("cache")
 

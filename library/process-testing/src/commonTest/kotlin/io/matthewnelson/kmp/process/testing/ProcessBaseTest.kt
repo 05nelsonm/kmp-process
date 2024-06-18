@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
+@file:Suppress("PropertyName")
+
 package io.matthewnelson.kmp.process.testing
 
 import io.matthewnelson.kmp.file.*
@@ -42,6 +44,7 @@ abstract class ProcessBaseTest {
         }
     }
 
+    protected open val IsAndroidInstrumentTest: Boolean = false
     protected open val homeDir get() = installer.installationDir
     protected open val cacheDir get() = homeDir.resolve("cache")
     protected open val dataDir get() = homeDir.resolve("data")
@@ -219,6 +222,8 @@ abstract class ProcessBaseTest {
 
     @Test
     fun givenFeed_whenExceptionHandler_thenNotifies() = runTest(timeout = 5.seconds) {
+        val shouldThrow = !IsAndroidInstrumentTest && !IsNodeJs
+
         var invocationError = 0
         val p = try {
             Process.Builder(command = "sh")
@@ -230,7 +235,7 @@ abstract class ProcessBaseTest {
                     assertIs<IllegalStateException>(t.cause)
 
                     // Node.js will crash (expected)
-                    if (!IsNodeJs) throw t
+                    if (shouldThrow) throw t
                 }
                 .stdin(Stdio.Null)
                 .stdout(Stdio.Pipe)
@@ -252,7 +257,7 @@ abstract class ProcessBaseTest {
 
         assertTrue(invocationError > 0)
 
-        if (IsNodeJs) {
+        if (!shouldThrow) {
             assertTrue(p.isAlive)
             p.destroy()
         } else {
