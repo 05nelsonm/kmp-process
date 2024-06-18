@@ -18,6 +18,7 @@
 package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.File
+import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.file.errorCodeOrNull
 import io.matthewnelson.kmp.process.*
 
@@ -44,7 +45,14 @@ internal class NodeJsProcess internal constructor(
 
     private var _exitCode: Int? = null
 
-    // TODO: init attach error listener to jsProcess
+    init {
+        @OptIn(InternalProcessApi::class)
+        jsProcess.onError { err ->
+            if (isDestroyed) return@onError
+            val t = (err as? Throwable) ?: IOException("$err")
+            onError(t, lazyContext = { "nodejs.on('error')" })
+        }
+    }
 
     // @Throws(Throwable::class)
     protected override fun destroyProtected(immediate: Boolean) {
