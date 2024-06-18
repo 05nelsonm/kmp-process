@@ -17,7 +17,7 @@ package io.matthewnelson.kmp.process.internal
 
 internal class SynchronizedSet<E: Any?> internal constructor() {
 
-    private var set = LinkedHashSet<E>(1, 1.0F)
+    private val set = LinkedHashSet<E>(1, 1.0F)
     private val lock = Lock()
 
     internal fun <T: Any?> withLock(
