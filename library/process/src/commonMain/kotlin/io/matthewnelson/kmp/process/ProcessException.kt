@@ -78,15 +78,6 @@ public class ProcessException private constructor(
                 override fun onException(e: ProcessException) {}
                 override fun toString(): String = "ProcessException.Handler.IGNORE"
             }
-
-            /**
-             * Static instance that automatically throws the [ProcessException].
-             * */
-            @JvmField
-            public val THROW: Handler = object : Handler {
-                override fun onException(e: ProcessException) { throw e }
-                override fun toString(): String = "ProcessException.Handler.THROW"
-            }
         }
     }
 
