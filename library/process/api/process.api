@@ -164,7 +164,6 @@ public final class io/matthewnelson/kmp/process/ProcessException$Companion {
 public abstract interface class io/matthewnelson/kmp/process/ProcessException$Handler {
 	public static final field Companion Lio/matthewnelson/kmp/process/ProcessException$Handler$Companion;
 	public static final field IGNORE Lio/matthewnelson/kmp/process/ProcessException$Handler;
-	public static final field THROW Lio/matthewnelson/kmp/process/ProcessException$Handler;
 	public abstract fun onException (Lio/matthewnelson/kmp/process/ProcessException;)V
 }
 
