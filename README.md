@@ -171,6 +171,42 @@ myScope.launch {
     
     println("EXIT_CODE[$exitCode]")
 }
+
+// Error handling API for "internal-ish" process errors.
+// By default, ProcessException.Handler.IGNORE is used,
+// but you may supplement that with your own handler.
+builder.onError { e ->
+    // e is always an instance of ProcessException
+    //
+    // Throwing an exception from here will be caught,
+    // the process destroyed (to prevent zombie processes),
+    // and then be re-thrown. That will likely cause a crash,
+    // but you can do it and know that the process has been
+    // cleaned up before getting crazy.
+
+    when (e.context) {
+        ProcessException.CTX_DESTROY -> {
+            // Process.destroy had an issue, such as a
+            // file descriptor closure failure on Native.
+            e.cause.printStackTrace()
+        }
+        ProcessException.CTX_FEED_STDOUT,
+        ProcessException.CTX_FEED_STDERR -> {
+            // An attached OutputFeed threw exception
+            // when a line was dispatched to it. Let's
+            // get crazy and potentially crash the app.
+            throw e
+        }
+        // Currently, the only other place a ProcessException
+        // will come from is the `Node.js` implementation's
+        // ChildProcess error listener.
+        else -> e.printStackTrace()
+    }
+}.spawn { p ->
+    p.stdoutFeed { line ->
+        myOtherClassThatHasABugAndWillThrowException.parse(line)
+    }.waitFor()
+}
 ```
 
 ## Get Started
@@ -179,12 +215,12 @@ myScope.launch {
 
 ```kotlin
 dependencies {
-    implementation("io.matthewnelson.kmp-process:process:0.1.0-beta01")
+    implementation("io.matthewnelson.kmp-process:process:0.1.0-beta02")
 }
 ```
 
 <!-- TAG_VERSION -->
-[badge-latest-release]: https://img.shields.io/badge/latest--release-0.1.0--beta01-blue.svg?style=flat
+[badge-latest-release]: https://img.shields.io/badge/latest--release-0.1.0--beta02-blue.svg?style=flat
 [badge-license]: https://img.shields.io/badge/license-Apache%20License%202.0-blue.svg?style=flat
 
 <!-- TAG_DEPENDENCIES -->

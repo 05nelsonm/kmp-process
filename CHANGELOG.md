@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## Version 0.1.0-beta02 (2024-06-19)
+ - Fixes issue for `Node.js` on Windows where `Process.destroy` may
+   throw exception due to a bug in `libuv` version `1.48.0` which was
+   introduced in `Node.js` version `21.6.2` [[#111]][111]
+     - See issue [[#108]][issue-108] for details.
+ - Adds the `Process.exitCodeOrNull` function to mitigate unnecessary
+   production of stack traces [[#112]][112]
+ - Adds an exception handling API for dealing with "internal-ish" `Process`
+   errors, and "bad" `OutputFeed` implementations [[#113]][113]
+     - By default `ProcessException.Handler.IGNORE` is utilized which
+       preserves the behavior of previous versions of `kmp-process`.
+
 ## Version 0.1.0-beta01 (2024-06-15)
  - `AsyncWriteStream` improvements for `Node.js` implementation [[#98]][98]
  - `unref` is now called on `Process` when destroyed for `Node.js` [[#100]][100]
@@ -41,3 +53,8 @@
 [100]: https://github.com/05nelsonm/kmp-process/pull/100
 [106]: https://github.com/05nelsonm/kmp-process/pull/106
 [107]: https://github.com/05nelsonm/kmp-process/pull/107
+[111]: https://github.com/05nelsonm/kmp-process/pull/111
+[112]: https://github.com/05nelsonm/kmp-process/pull/112
+[113]: https://github.com/05nelsonm/kmp-process/pull/113
+
+[issue-108]: https://github.com/05nelsonm/kmp-process/issues/108
