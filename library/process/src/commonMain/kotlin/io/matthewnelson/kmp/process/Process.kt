@@ -129,6 +129,13 @@ public abstract class Process internal constructor(
      * This **MUST** be called after you are done with the [Process]
      * to ensure resource closure occurs.
      *
+     * **NOTE:** Depending on your [ProcessException.Handler], if an
+     * error is produced (e.g. a file descriptor closure failure) and
+     * you choose to throw it from [ProcessException.Handler.onException],
+     * the caller of this function will receive the exception. You can
+     * choose to ignore it (e.g. log only) by not throwing when the
+     * [ProcessException.context] is equal to [CTX_DESTROY].
+     *
      * @see [Signal]
      * @see [Builder.spawn]
      * @see [OutputFeed.Waiter]
@@ -473,11 +480,7 @@ public abstract class Process internal constructor(
     }
 
     public final override fun toString(): String = buildString {
-        val exitCode = try {
-            exitCode().toString()
-        } catch (_: IllegalStateException) {
-            "not exited"
-        }
+        val exitCode = exitCodeOrNull()?.toString() ?: "not exited"
 
         appendProcessInfo(
             "Process",
