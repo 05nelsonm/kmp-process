@@ -18,6 +18,7 @@ import io.matthewnelson.kmp.configuration.extension.KmpConfigurationExtension
 import io.matthewnelson.kmp.configuration.extension.container.target.KmpConfigurationContainerDsl
 import org.gradle.api.Action
 import org.gradle.api.JavaVersion
+import org.jetbrains.kotlin.konan.target.HostManager
 import java.io.File
 
 fun KmpConfigurationExtension.configureShared(
@@ -39,8 +40,13 @@ fun KmpConfigurationExtension.configureShared(
             compileSourceCompatibility = JavaVersion.VERSION_1_8
             compileTargetCompatibility = JavaVersion.VERSION_1_8
 
-            @OptIn(ExperimentalKmpConfigurationApi::class)
-            java9ModuleInfoName = java9ModuleName
+            // windows always throws a fit if not using Java 11. This disables
+            // compilations of module-info.java. Nobody deploys from Windows
+            // anyway...
+            if (!HostManager.hostIsMingw) {
+                @OptIn(ExperimentalKmpConfigurationApi::class)
+                java9ModuleInfoName = java9ModuleName
+            }
         }
 
         js {
