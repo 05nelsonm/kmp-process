@@ -1,0 +1,343 @@
+// Klib ABI Dump
+// Targets: [iosArm64, iosSimulatorArm64, iosX64, js, linuxArm64, linuxX64, macosArm64, macosX64]
+// Alias: native => [iosArm64, iosSimulatorArm64, iosX64, linuxArm64, linuxX64, macosArm64, macosX64]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <io.matthewnelson.kmp-process:process>
+open annotation class io.matthewnelson.kmp.process/InternalProcessApi : kotlin/Annotation { // io.matthewnelson.kmp.process/InternalProcessApi|null[0]
+    constructor <init>() // io.matthewnelson.kmp.process/InternalProcessApi.<init>|<init>(){}[0]
+}
+
+final enum class io.matthewnelson.kmp.process/Signal : kotlin/Enum<io.matthewnelson.kmp.process/Signal> { // io.matthewnelson.kmp.process/Signal|null[0]
+    enum entry SIGKILL // io.matthewnelson.kmp.process/Signal.SIGKILL|null[0]
+    enum entry SIGTERM // io.matthewnelson.kmp.process/Signal.SIGTERM|null[0]
+
+    final val code // io.matthewnelson.kmp.process/Signal.code|{}code[0]
+        final fun <get-code>(): kotlin/Int // io.matthewnelson.kmp.process/Signal.code.<get-code>|<get-code>(){}[0]
+    final val entries // io.matthewnelson.kmp.process/Signal.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.matthewnelson.kmp.process/Signal> // io.matthewnelson.kmp.process/Signal.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.matthewnelson.kmp.process/Signal // io.matthewnelson.kmp.process/Signal.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.matthewnelson.kmp.process/Signal> // io.matthewnelson.kmp.process/Signal.values|values#static(){}[0]
+}
+
+abstract fun interface io.matthewnelson.kmp.process/OutputFeed { // io.matthewnelson.kmp.process/OutputFeed|null[0]
+    abstract fun onOutput(kotlin/String?) // io.matthewnelson.kmp.process/OutputFeed.onOutput|onOutput(kotlin.String?){}[0]
+
+    sealed class Handler : io.matthewnelson.kmp.process/Blocking { // io.matthewnelson.kmp.process/OutputFeed.Handler|null[0]
+        constructor <init>(io.matthewnelson.kmp.process/Stdio.Config) // io.matthewnelson.kmp.process/OutputFeed.Handler.<init>|<init>(io.matthewnelson.kmp.process.Stdio.Config){}[0]
+
+        final var isDestroyed // io.matthewnelson.kmp.process/OutputFeed.Handler.isDestroyed|{}isDestroyed[0]
+            final fun <get-isDestroyed>(): kotlin/Boolean // io.matthewnelson.kmp.process/OutputFeed.Handler.isDestroyed.<get-isDestroyed>|<get-isDestroyed>(){}[0]
+            final fun <set-isDestroyed>(kotlin/Boolean) // io.matthewnelson.kmp.process/OutputFeed.Handler.isDestroyed.<set-isDestroyed>|<set-isDestroyed>(kotlin.Boolean){}[0]
+
+        abstract fun onError(kotlin/Throwable, kotlin/Function0<kotlin/String>) // io.matthewnelson.kmp.process/OutputFeed.Handler.onError|onError(kotlin.Throwable;kotlin.Function0<kotlin.String>){}[0]
+        abstract fun startStderr() // io.matthewnelson.kmp.process/OutputFeed.Handler.startStderr|startStderr(){}[0]
+        abstract fun startStdout() // io.matthewnelson.kmp.process/OutputFeed.Handler.startStdout|startStdout(){}[0]
+        final fun dispatchStderr(kotlin/String?) // io.matthewnelson.kmp.process/OutputFeed.Handler.dispatchStderr|dispatchStderr(kotlin.String?){}[0]
+        final fun dispatchStdout(kotlin/String?) // io.matthewnelson.kmp.process/OutputFeed.Handler.dispatchStdout|dispatchStdout(kotlin.String?){}[0]
+        final fun stderrFeed(io.matthewnelson.kmp.process/OutputFeed): io.matthewnelson.kmp.process/Process // io.matthewnelson.kmp.process/OutputFeed.Handler.stderrFeed|stderrFeed(io.matthewnelson.kmp.process.OutputFeed){}[0]
+        final fun stderrFeed(kotlin/Array<out io.matthewnelson.kmp.process/OutputFeed>...): io.matthewnelson.kmp.process/Process // io.matthewnelson.kmp.process/OutputFeed.Handler.stderrFeed|stderrFeed(kotlin.Array<out|io.matthewnelson.kmp.process.OutputFeed>...){}[0]
+        final fun stderrWaiter(): io.matthewnelson.kmp.process/OutputFeed.Waiter // io.matthewnelson.kmp.process/OutputFeed.Handler.stderrWaiter|stderrWaiter(){}[0]
+        final fun stdoutFeed(io.matthewnelson.kmp.process/OutputFeed): io.matthewnelson.kmp.process/Process // io.matthewnelson.kmp.process/OutputFeed.Handler.stdoutFeed|stdoutFeed(io.matthewnelson.kmp.process.OutputFeed){}[0]
+        final fun stdoutFeed(kotlin/Array<out io.matthewnelson.kmp.process/OutputFeed>...): io.matthewnelson.kmp.process/Process // io.matthewnelson.kmp.process/OutputFeed.Handler.stdoutFeed|stdoutFeed(kotlin.Array<out|io.matthewnelson.kmp.process.OutputFeed>...){}[0]
+        final fun stdoutWaiter(): io.matthewnelson.kmp.process/OutputFeed.Waiter // io.matthewnelson.kmp.process/OutputFeed.Handler.stdoutWaiter|stdoutWaiter(){}[0]
+    }
+
+    sealed class Waiter : io.matthewnelson.kmp.process/Blocking.Waiter { // io.matthewnelson.kmp.process/OutputFeed.Waiter|null[0]
+        constructor <init>(io.matthewnelson.kmp.process/Process, kotlin/Boolean) // io.matthewnelson.kmp.process/OutputFeed.Waiter.<init>|<init>(io.matthewnelson.kmp.process.Process;kotlin.Boolean){}[0]
+
+        final suspend fun awaitStopAsync(): io.matthewnelson.kmp.process/Process // io.matthewnelson.kmp.process/OutputFeed.Waiter.awaitStopAsync|awaitStopAsync(){}[0]
+    }
+}
+
+abstract class io.matthewnelson.kmp.process/Process : io.matthewnelson.kmp.process/OutputFeed.Handler { // io.matthewnelson.kmp.process/Process|null[0]
+    final val args // io.matthewnelson.kmp.process/Process.args|{}args[0]
+        final fun <get-args>(): kotlin.collections/List<kotlin/String> // io.matthewnelson.kmp.process/Process.args.<get-args>|<get-args>(){}[0]
+    final val command // io.matthewnelson.kmp.process/Process.command|{}command[0]
+        final fun <get-command>(): kotlin/String // io.matthewnelson.kmp.process/Process.command.<get-command>|<get-command>(){}[0]
+    final val cwd // io.matthewnelson.kmp.process/Process.cwd|{}cwd[0]
+        final fun <get-cwd>(): io.matthewnelson.kmp.file/File? // io.matthewnelson.kmp.process/Process.cwd.<get-cwd>|<get-cwd>(){}[0]
+    final val destroySignal // io.matthewnelson.kmp.process/Process.destroySignal|{}destroySignal[0]
+        final fun <get-destroySignal>(): io.matthewnelson.kmp.process/Signal // io.matthewnelson.kmp.process/Process.destroySignal.<get-destroySignal>|<get-destroySignal>(){}[0]
+    final val environment // io.matthewnelson.kmp.process/Process.environment|{}environment[0]
+        final fun <get-environment>(): kotlin.collections/Map<kotlin/String, kotlin/String> // io.matthewnelson.kmp.process/Process.environment.<get-environment>|<get-environment>(){}[0]
+    final val input // io.matthewnelson.kmp.process/Process.input|{}input[0]
+        final fun <get-input>(): io.matthewnelson.kmp.process/AsyncWriteStream? // io.matthewnelson.kmp.process/Process.input.<get-input>|<get-input>(){}[0]
+    final val isAlive // io.matthewnelson.kmp.process/Process.isAlive|{}isAlive[0]
+        final fun <get-isAlive>(): kotlin/Boolean // io.matthewnelson.kmp.process/Process.isAlive.<get-isAlive>|<get-isAlive>(){}[0]
+    final val startTime // io.matthewnelson.kmp.process/Process.startTime|{}startTime[0]
+        final fun <get-startTime>(): kotlin.time/ComparableTimeMark // io.matthewnelson.kmp.process/Process.startTime.<get-startTime>|<get-startTime>(){}[0]
+    final val stdio // io.matthewnelson.kmp.process/Process.stdio|{}stdio[0]
+        final fun <get-stdio>(): io.matthewnelson.kmp.process/Stdio.Config // io.matthewnelson.kmp.process/Process.stdio.<get-stdio>|<get-stdio>(){}[0]
+
+    abstract fun destroyProtected(kotlin/Boolean) // io.matthewnelson.kmp.process/Process.destroyProtected|destroyProtected(kotlin.Boolean){}[0]
+    abstract fun exitCodeOrNull(): kotlin/Int? // io.matthewnelson.kmp.process/Process.exitCodeOrNull|exitCodeOrNull(){}[0]
+    abstract fun pid(): kotlin/Int // io.matthewnelson.kmp.process/Process.pid|pid(){}[0]
+    final fun destroy(): io.matthewnelson.kmp.process/Process // io.matthewnelson.kmp.process/Process.destroy|destroy(){}[0]
+    final fun exitCode(): kotlin/Int // io.matthewnelson.kmp.process/Process.exitCode|exitCode(){}[0]
+    final fun onError(kotlin/Throwable, kotlin/Function0<kotlin/String>) // io.matthewnelson.kmp.process/Process.onError|onError(kotlin.Throwable;kotlin.Function0<kotlin.String>){}[0]
+    final fun toString(): kotlin/String // io.matthewnelson.kmp.process/Process.toString|toString(){}[0]
+    final suspend fun waitForAsync(): kotlin/Int // io.matthewnelson.kmp.process/Process.waitForAsync|waitForAsync(){}[0]
+    final suspend fun waitForAsync(kotlin.time/Duration): kotlin/Int? // io.matthewnelson.kmp.process/Process.waitForAsync|waitForAsync(kotlin.time.Duration){}[0]
+
+    final class Builder { // io.matthewnelson.kmp.process/Process.Builder|null[0]
+        constructor <init>(io.matthewnelson.kmp.file/File) // io.matthewnelson.kmp.process/Process.Builder.<init>|<init>(io.matthewnelson.kmp.file.File){}[0]
+        constructor <init>(kotlin/String) // io.matthewnelson.kmp.process/Process.Builder.<init>|<init>(kotlin.String){}[0]
+
+        final val command // io.matthewnelson.kmp.process/Process.Builder.command|{}command[0]
+            final fun <get-command>(): kotlin/String // io.matthewnelson.kmp.process/Process.Builder.command.<get-command>|<get-command>(){}[0]
+
+        final fun args(kotlin.collections/List<kotlin/String>): io.matthewnelson.kmp.process/Process.Builder // io.matthewnelson.kmp.process/Process.Builder.args|args(kotlin.collections.List<kotlin.String>){}[0]
+        final fun args(kotlin/Array<out kotlin/String>...): io.matthewnelson.kmp.process/Process.Builder // io.matthewnelson.kmp.process/Process.Builder.args|args(kotlin.Array<out|kotlin.String>...){}[0]
+        final fun args(kotlin/String): io.matthewnelson.kmp.process/Process.Builder // io.matthewnelson.kmp.process/Process.Builder.args|args(kotlin.String){}[0]
+        final fun chdir(io.matthewnelson.kmp.file/File?): io.matthewnelson.kmp.process/Process.Builder // io.matthewnelson.kmp.process/Process.Builder.chdir|chdir(io.matthewnelson.kmp.file.File?){}[0]
+        final fun destroySignal(io.matthewnelson.kmp.process/Signal): io.matthewnelson.kmp.process/Process.Builder // io.matthewnelson.kmp.process/Process.Builder.destroySignal|destroySignal(io.matthewnelson.kmp.process.Signal){}[0]
+        final fun environment(kotlin/Function1<kotlin.collections/MutableMap<kotlin/String, kotlin/String>, kotlin/Unit>): io.matthewnelson.kmp.process/Process.Builder // io.matthewnelson.kmp.process/Process.Builder.environment|environment(kotlin.Function1<kotlin.collections.MutableMap<kotlin.String,kotlin.String>,kotlin.Unit>){}[0]
+        final fun environment(kotlin/String, kotlin/String): io.matthewnelson.kmp.process/Process.Builder // io.matthewnelson.kmp.process/Process.Builder.environment|environment(kotlin.String;kotlin.String){}[0]
+        final fun onError(io.matthewnelson.kmp.process/ProcessException.Handler?): io.matthewnelson.kmp.process/Process.Builder // io.matthewnelson.kmp.process/Process.Builder.onError|onError(io.matthewnelson.kmp.process.ProcessException.Handler?){}[0]
+        final fun output(): io.matthewnelson.kmp.process/Output // io.matthewnelson.kmp.process/Process.Builder.output|output(){}[0]
+        final fun output(kotlin/Function1<io.matthewnelson.kmp.process/Output.Options.Builder, kotlin/Unit>): io.matthewnelson.kmp.process/Output // io.matthewnelson.kmp.process/Process.Builder.output|output(kotlin.Function1<io.matthewnelson.kmp.process.Output.Options.Builder,kotlin.Unit>){}[0]
+        final fun spawn(): io.matthewnelson.kmp.process/Process // io.matthewnelson.kmp.process/Process.Builder.spawn|spawn(){}[0]
+        final fun stderr(io.matthewnelson.kmp.process/Stdio): io.matthewnelson.kmp.process/Process.Builder // io.matthewnelson.kmp.process/Process.Builder.stderr|stderr(io.matthewnelson.kmp.process.Stdio){}[0]
+        final fun stdin(io.matthewnelson.kmp.process/Stdio): io.matthewnelson.kmp.process/Process.Builder // io.matthewnelson.kmp.process/Process.Builder.stdin|stdin(io.matthewnelson.kmp.process.Stdio){}[0]
+        final fun stdout(io.matthewnelson.kmp.process/Stdio): io.matthewnelson.kmp.process/Process.Builder // io.matthewnelson.kmp.process/Process.Builder.stdout|stdout(io.matthewnelson.kmp.process.Stdio){}[0]
+        final inline fun <#A2: kotlin/Any?> spawn(kotlin/Function1<io.matthewnelson.kmp.process/Process, #A2>): #A2 // io.matthewnelson.kmp.process/Process.Builder.spawn|spawn(kotlin.Function1<io.matthewnelson.kmp.process.Process,0:0>){0§<kotlin.Any?>}[0]
+    }
+
+    final object Companion // io.matthewnelson.kmp.process/Process.Companion|null[0]
+
+    final object Current { // io.matthewnelson.kmp.process/Process.Current|null[0]
+        final fun environment(): kotlin.collections/Map<kotlin/String, kotlin/String> // io.matthewnelson.kmp.process/Process.Current.environment|environment(){}[0]
+        final fun pid(): kotlin/Int // io.matthewnelson.kmp.process/Process.Current.pid|pid(){}[0]
+    }
+}
+
+final class io.matthewnelson.kmp.process/Output { // io.matthewnelson.kmp.process/Output|null[0]
+    final val processError // io.matthewnelson.kmp.process/Output.processError|{}processError[0]
+        final fun <get-processError>(): kotlin/String? // io.matthewnelson.kmp.process/Output.processError.<get-processError>|<get-processError>(){}[0]
+    final val processInfo // io.matthewnelson.kmp.process/Output.processInfo|{}processInfo[0]
+        final fun <get-processInfo>(): io.matthewnelson.kmp.process/Output.ProcessInfo // io.matthewnelson.kmp.process/Output.processInfo.<get-processInfo>|<get-processInfo>(){}[0]
+    final val stderr // io.matthewnelson.kmp.process/Output.stderr|{}stderr[0]
+        final fun <get-stderr>(): kotlin/String // io.matthewnelson.kmp.process/Output.stderr.<get-stderr>|<get-stderr>(){}[0]
+    final val stdout // io.matthewnelson.kmp.process/Output.stdout|{}stdout[0]
+        final fun <get-stdout>(): kotlin/String // io.matthewnelson.kmp.process/Output.stdout.<get-stdout>|<get-stdout>(){}[0]
+
+    final fun toString(): kotlin/String // io.matthewnelson.kmp.process/Output.toString|toString(){}[0]
+
+    final class Options { // io.matthewnelson.kmp.process/Output.Options|null[0]
+        final class Builder { // io.matthewnelson.kmp.process/Output.Options.Builder|null[0]
+            final var maxBuffer // io.matthewnelson.kmp.process/Output.Options.Builder.maxBuffer|{}maxBuffer[0]
+                final fun <get-maxBuffer>(): kotlin/Int // io.matthewnelson.kmp.process/Output.Options.Builder.maxBuffer.<get-maxBuffer>|<get-maxBuffer>(){}[0]
+                final fun <set-maxBuffer>(kotlin/Int) // io.matthewnelson.kmp.process/Output.Options.Builder.maxBuffer.<set-maxBuffer>|<set-maxBuffer>(kotlin.Int){}[0]
+            final var timeoutMillis // io.matthewnelson.kmp.process/Output.Options.Builder.timeoutMillis|{}timeoutMillis[0]
+                final fun <get-timeoutMillis>(): kotlin/Int // io.matthewnelson.kmp.process/Output.Options.Builder.timeoutMillis.<get-timeoutMillis>|<get-timeoutMillis>(){}[0]
+                final fun <set-timeoutMillis>(kotlin/Int) // io.matthewnelson.kmp.process/Output.Options.Builder.timeoutMillis.<set-timeoutMillis>|<set-timeoutMillis>(kotlin.Int){}[0]
+
+            final fun input(kotlin/Function0<kotlin/ByteArray>): io.matthewnelson.kmp.process/Output.Options.Builder // io.matthewnelson.kmp.process/Output.Options.Builder.input|input(kotlin.Function0<kotlin.ByteArray>){}[0]
+            final fun inputUtf8(kotlin/Function0<kotlin/String>): io.matthewnelson.kmp.process/Output.Options.Builder // io.matthewnelson.kmp.process/Output.Options.Builder.inputUtf8|inputUtf8(kotlin.Function0<kotlin.String>){}[0]
+        }
+    }
+
+    final class ProcessInfo { // io.matthewnelson.kmp.process/Output.ProcessInfo|null[0]
+        final val args // io.matthewnelson.kmp.process/Output.ProcessInfo.args|{}args[0]
+            final fun <get-args>(): kotlin.collections/List<kotlin/String> // io.matthewnelson.kmp.process/Output.ProcessInfo.args.<get-args>|<get-args>(){}[0]
+        final val command // io.matthewnelson.kmp.process/Output.ProcessInfo.command|{}command[0]
+            final fun <get-command>(): kotlin/String // io.matthewnelson.kmp.process/Output.ProcessInfo.command.<get-command>|<get-command>(){}[0]
+        final val cwd // io.matthewnelson.kmp.process/Output.ProcessInfo.cwd|{}cwd[0]
+            final fun <get-cwd>(): io.matthewnelson.kmp.file/File? // io.matthewnelson.kmp.process/Output.ProcessInfo.cwd.<get-cwd>|<get-cwd>(){}[0]
+        final val destroySignal // io.matthewnelson.kmp.process/Output.ProcessInfo.destroySignal|{}destroySignal[0]
+            final fun <get-destroySignal>(): io.matthewnelson.kmp.process/Signal // io.matthewnelson.kmp.process/Output.ProcessInfo.destroySignal.<get-destroySignal>|<get-destroySignal>(){}[0]
+        final val environment // io.matthewnelson.kmp.process/Output.ProcessInfo.environment|{}environment[0]
+            final fun <get-environment>(): kotlin.collections/Map<kotlin/String, kotlin/String> // io.matthewnelson.kmp.process/Output.ProcessInfo.environment.<get-environment>|<get-environment>(){}[0]
+        final val exitCode // io.matthewnelson.kmp.process/Output.ProcessInfo.exitCode|{}exitCode[0]
+            final fun <get-exitCode>(): kotlin/Int // io.matthewnelson.kmp.process/Output.ProcessInfo.exitCode.<get-exitCode>|<get-exitCode>(){}[0]
+        final val pid // io.matthewnelson.kmp.process/Output.ProcessInfo.pid|{}pid[0]
+            final fun <get-pid>(): kotlin/Int // io.matthewnelson.kmp.process/Output.ProcessInfo.pid.<get-pid>|<get-pid>(){}[0]
+        final val stdio // io.matthewnelson.kmp.process/Output.ProcessInfo.stdio|{}stdio[0]
+            final fun <get-stdio>(): io.matthewnelson.kmp.process/Stdio.Config // io.matthewnelson.kmp.process/Output.ProcessInfo.stdio.<get-stdio>|<get-stdio>(){}[0]
+
+        final fun toString(): kotlin/String // io.matthewnelson.kmp.process/Output.ProcessInfo.toString|toString(){}[0]
+    }
+}
+
+final class io.matthewnelson.kmp.process/ProcessException : kotlin/RuntimeException { // io.matthewnelson.kmp.process/ProcessException|null[0]
+    final val cause // io.matthewnelson.kmp.process/ProcessException.cause|{}cause[0]
+        final fun <get-cause>(): kotlin/Throwable // io.matthewnelson.kmp.process/ProcessException.cause.<get-cause>|<get-cause>(){}[0]
+    final val context // io.matthewnelson.kmp.process/ProcessException.context|{}context[0]
+        final fun <get-context>(): kotlin/String // io.matthewnelson.kmp.process/ProcessException.context.<get-context>|<get-context>(){}[0]
+    final val message // io.matthewnelson.kmp.process/ProcessException.message|{}message[0]
+        final fun <get-message>(): kotlin/String // io.matthewnelson.kmp.process/ProcessException.message.<get-message>|<get-message>(){}[0]
+
+    abstract fun interface Handler { // io.matthewnelson.kmp.process/ProcessException.Handler|null[0]
+        abstract fun onException(io.matthewnelson.kmp.process/ProcessException) // io.matthewnelson.kmp.process/ProcessException.Handler.onException|onException(io.matthewnelson.kmp.process.ProcessException){}[0]
+
+        final object Companion { // io.matthewnelson.kmp.process/ProcessException.Handler.Companion|null[0]
+            final val IGNORE // io.matthewnelson.kmp.process/ProcessException.Handler.Companion.IGNORE|{}IGNORE[0]
+                final fun <get-IGNORE>(): io.matthewnelson.kmp.process/ProcessException.Handler // io.matthewnelson.kmp.process/ProcessException.Handler.Companion.IGNORE.<get-IGNORE>|<get-IGNORE>(){}[0]
+        }
+    }
+
+    final object Companion { // io.matthewnelson.kmp.process/ProcessException.Companion|null[0]
+        final const val CTX_DESTROY // io.matthewnelson.kmp.process/ProcessException.Companion.CTX_DESTROY|{}CTX_DESTROY[0]
+            final fun <get-CTX_DESTROY>(): kotlin/String // io.matthewnelson.kmp.process/ProcessException.Companion.CTX_DESTROY.<get-CTX_DESTROY>|<get-CTX_DESTROY>(){}[0]
+        final const val CTX_FEED_STDERR // io.matthewnelson.kmp.process/ProcessException.Companion.CTX_FEED_STDERR|{}CTX_FEED_STDERR[0]
+            final fun <get-CTX_FEED_STDERR>(): kotlin/String // io.matthewnelson.kmp.process/ProcessException.Companion.CTX_FEED_STDERR.<get-CTX_FEED_STDERR>|<get-CTX_FEED_STDERR>(){}[0]
+        final const val CTX_FEED_STDOUT // io.matthewnelson.kmp.process/ProcessException.Companion.CTX_FEED_STDOUT|{}CTX_FEED_STDOUT[0]
+            final fun <get-CTX_FEED_STDOUT>(): kotlin/String // io.matthewnelson.kmp.process/ProcessException.Companion.CTX_FEED_STDOUT.<get-CTX_FEED_STDOUT>|<get-CTX_FEED_STDOUT>(){}[0]
+    }
+}
+
+final value class io.matthewnelson.kmp.process/ReadBuffer { // io.matthewnelson.kmp.process/ReadBuffer|null[0]
+    final val buf // io.matthewnelson.kmp.process/ReadBuffer.buf|{}buf[0]
+        // Targets: [native]
+        final fun <get-buf>(): kotlin/ByteArray // io.matthewnelson.kmp.process/ReadBuffer.buf.<get-buf>|<get-buf>(){}[0]
+
+        // Targets: [js]
+        final fun <get-buf>(): io.matthewnelson.kmp.file/Buffer // io.matthewnelson.kmp.process/ReadBuffer.buf.<get-buf>|<get-buf>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.matthewnelson.kmp.process/ReadBuffer.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.matthewnelson.kmp.process/ReadBuffer.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.matthewnelson.kmp.process/ReadBuffer.toString|toString(){}[0]
+
+    abstract class LineOutputFeed { // io.matthewnelson.kmp.process/ReadBuffer.LineOutputFeed|null[0]
+        abstract fun close() // io.matthewnelson.kmp.process/ReadBuffer.LineOutputFeed.close|close(){}[0]
+        abstract fun onData(io.matthewnelson.kmp.process/ReadBuffer, kotlin/Int) // io.matthewnelson.kmp.process/ReadBuffer.LineOutputFeed.onData|onData(io.matthewnelson.kmp.process.ReadBuffer;kotlin.Int){}[0]
+    }
+
+    final object Companion { // io.matthewnelson.kmp.process/ReadBuffer.Companion|null[0]
+        final fun allocate(): io.matthewnelson.kmp.process/ReadBuffer // io.matthewnelson.kmp.process/ReadBuffer.Companion.allocate|allocate(){}[0]
+        final fun lineOutputFeed(kotlin/Function1<kotlin/String?, kotlin/Unit>): io.matthewnelson.kmp.process/ReadBuffer.LineOutputFeed // io.matthewnelson.kmp.process/ReadBuffer.Companion.lineOutputFeed|lineOutputFeed(kotlin.Function1<kotlin.String?,kotlin.Unit>){}[0]
+
+        // Targets: [native]
+        final fun of(kotlin/ByteArray): io.matthewnelson.kmp.process/ReadBuffer // io.matthewnelson.kmp.process/ReadBuffer.Companion.of|of(kotlin.ByteArray){}[0]
+
+        // Targets: [js]
+        final fun of(io.matthewnelson.kmp.file/Buffer): io.matthewnelson.kmp.process/ReadBuffer // io.matthewnelson.kmp.process/ReadBuffer.Companion.of|of(io.matthewnelson.kmp.file.Buffer){}[0]
+    }
+}
+
+sealed class io.matthewnelson.kmp.process/Blocking { // io.matthewnelson.kmp.process/Blocking|null[0]
+    constructor <init>() // io.matthewnelson.kmp.process/Blocking.<init>|<init>(){}[0]
+
+    sealed class Waiter { // io.matthewnelson.kmp.process/Blocking.Waiter|null[0]
+        constructor <init>(io.matthewnelson.kmp.process/Process) // io.matthewnelson.kmp.process/Blocking.Waiter.<init>|<init>(io.matthewnelson.kmp.process.Process){}[0]
+
+        final val process // io.matthewnelson.kmp.process/Blocking.Waiter.process|{}process[0]
+            final fun <get-process>(): io.matthewnelson.kmp.process/Process // io.matthewnelson.kmp.process/Blocking.Waiter.process.<get-process>|<get-process>(){}[0]
+
+        abstract fun isStarted(): kotlin/Boolean // io.matthewnelson.kmp.process/Blocking.Waiter.isStarted|isStarted(){}[0]
+        abstract fun isStopped(): kotlin/Boolean // io.matthewnelson.kmp.process/Blocking.Waiter.isStopped|isStopped(){}[0]
+
+        // Targets: [native]
+        final fun awaitStop(): io.matthewnelson.kmp.process/Process // io.matthewnelson.kmp.process/Blocking.Waiter.awaitStop|awaitStop(){}[0]
+    }
+
+    // Targets: [native]
+    final fun waitFor(): kotlin/Int // io.matthewnelson.kmp.process/Blocking.waitFor|waitFor(){}[0]
+
+    // Targets: [native]
+    final fun waitFor(kotlin.time/Duration): kotlin/Int? // io.matthewnelson.kmp.process/Blocking.waitFor|waitFor(kotlin.time.Duration){}[0]
+
+    // Targets: [native]
+    final object Companion { // io.matthewnelson.kmp.process/Blocking.Companion|null[0]
+        final fun threadSleep(kotlin.time/Duration) // io.matthewnelson.kmp.process/Blocking.Companion.threadSleep|threadSleep(kotlin.time.Duration){}[0]
+    }
+}
+
+sealed class io.matthewnelson.kmp.process/Stdio { // io.matthewnelson.kmp.process/Stdio|null[0]
+    final fun toString(): kotlin/String // io.matthewnelson.kmp.process/Stdio.toString|toString(){}[0]
+
+    final class Config { // io.matthewnelson.kmp.process/Stdio.Config|null[0]
+        final val stderr // io.matthewnelson.kmp.process/Stdio.Config.stderr|{}stderr[0]
+            final fun <get-stderr>(): io.matthewnelson.kmp.process/Stdio // io.matthewnelson.kmp.process/Stdio.Config.stderr.<get-stderr>|<get-stderr>(){}[0]
+        final val stdin // io.matthewnelson.kmp.process/Stdio.Config.stdin|{}stdin[0]
+            final fun <get-stdin>(): io.matthewnelson.kmp.process/Stdio // io.matthewnelson.kmp.process/Stdio.Config.stdin.<get-stdin>|<get-stdin>(){}[0]
+        final val stdout // io.matthewnelson.kmp.process/Stdio.Config.stdout|{}stdout[0]
+            final fun <get-stdout>(): io.matthewnelson.kmp.process/Stdio // io.matthewnelson.kmp.process/Stdio.Config.stdout.<get-stdout>|<get-stdout>(){}[0]
+
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.matthewnelson.kmp.process/Stdio.Config.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.matthewnelson.kmp.process/Stdio.Config.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.matthewnelson.kmp.process/Stdio.Config.toString|toString(){}[0]
+    }
+
+    final class File : io.matthewnelson.kmp.process/Stdio { // io.matthewnelson.kmp.process/Stdio.File|null[0]
+        final val append // io.matthewnelson.kmp.process/Stdio.File.append|{}append[0]
+            final fun <get-append>(): kotlin/Boolean // io.matthewnelson.kmp.process/Stdio.File.append.<get-append>|<get-append>(){}[0]
+        final val file // io.matthewnelson.kmp.process/Stdio.File.file|{}file[0]
+            final fun <get-file>(): io.matthewnelson.kmp.file/File // io.matthewnelson.kmp.process/Stdio.File.file.<get-file>|<get-file>(){}[0]
+
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.matthewnelson.kmp.process/Stdio.File.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.matthewnelson.kmp.process/Stdio.File.hashCode|hashCode(){}[0]
+
+        final object Companion { // io.matthewnelson.kmp.process/Stdio.File.Companion|null[0]
+            final fun of(io.matthewnelson.kmp.file/File, kotlin/Boolean =...): io.matthewnelson.kmp.process/Stdio.File // io.matthewnelson.kmp.process/Stdio.File.Companion.of|of(io.matthewnelson.kmp.file.File;kotlin.Boolean){}[0]
+            final fun of(kotlin/String, kotlin/Boolean =...): io.matthewnelson.kmp.process/Stdio.File // io.matthewnelson.kmp.process/Stdio.File.Companion.of|of(kotlin.String;kotlin.Boolean){}[0]
+        }
+    }
+
+    final object Companion { // io.matthewnelson.kmp.process/Stdio.Companion|null[0]
+        final val Null // io.matthewnelson.kmp.process/Stdio.Companion.Null|{}Null[0]
+            final fun <get-Null>(): io.matthewnelson.kmp.process/Stdio.File // io.matthewnelson.kmp.process/Stdio.Companion.Null.<get-Null>|<get-Null>(){}[0]
+    }
+
+    final object Inherit : io.matthewnelson.kmp.process/Stdio { // io.matthewnelson.kmp.process/Stdio.Inherit|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.matthewnelson.kmp.process/Stdio.Inherit.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.matthewnelson.kmp.process/Stdio.Inherit.hashCode|hashCode(){}[0]
+    }
+
+    final object Pipe : io.matthewnelson.kmp.process/Stdio { // io.matthewnelson.kmp.process/Stdio.Pipe|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.matthewnelson.kmp.process/Stdio.Pipe.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.matthewnelson.kmp.process/Stdio.Pipe.hashCode|hashCode(){}[0]
+    }
+}
+
+// Targets: [native]
+final class io.matthewnelson.kmp.process/AsyncWriteStream : io.matthewnelson.kmp.process/BufferedWriteStream { // io.matthewnelson.kmp.process/AsyncWriteStream|null[0]
+    final suspend fun closeAsync() // io.matthewnelson.kmp.process/AsyncWriteStream.closeAsync|closeAsync(){}[0]
+    final suspend fun flushAsync() // io.matthewnelson.kmp.process/AsyncWriteStream.flushAsync|flushAsync(){}[0]
+    final suspend fun writeAsync(kotlin/ByteArray) // io.matthewnelson.kmp.process/AsyncWriteStream.writeAsync|writeAsync(kotlin.ByteArray){}[0]
+    final suspend fun writeAsync(kotlin/ByteArray, kotlin/Int, kotlin/Int) // io.matthewnelson.kmp.process/AsyncWriteStream.writeAsync|writeAsync(kotlin.ByteArray;kotlin.Int;kotlin.Int){}[0]
+}
+
+// Targets: [native]
+sealed class io.matthewnelson.kmp.process/BufferedWriteStream { // io.matthewnelson.kmp.process/BufferedWriteStream|null[0]
+    constructor <init>(io.matthewnelson.kmp.process.internal/WriteStream) // io.matthewnelson.kmp.process/BufferedWriteStream.<init>|<init>(io.matthewnelson.kmp.process.internal.WriteStream){}[0]
+
+    final fun close() // io.matthewnelson.kmp.process/BufferedWriteStream.close|close(){}[0]
+    final fun flush() // io.matthewnelson.kmp.process/BufferedWriteStream.flush|flush(){}[0]
+    final fun write(kotlin/ByteArray) // io.matthewnelson.kmp.process/BufferedWriteStream.write|write(kotlin.ByteArray){}[0]
+    final fun write(kotlin/ByteArray, kotlin/Int, kotlin/Int) // io.matthewnelson.kmp.process/BufferedWriteStream.write|write(kotlin.ByteArray;kotlin.Int;kotlin.Int){}[0]
+}
+
+// Targets: [js]
+final class io.matthewnelson.kmp.process/AsyncWriteStream { // io.matthewnelson.kmp.process/AsyncWriteStream|null[0]
+    final fun close() // io.matthewnelson.kmp.process/AsyncWriteStream.close|close(){}[0]
+    final fun flush() // io.matthewnelson.kmp.process/AsyncWriteStream.flush|flush(){}[0]
+    final suspend fun closeAsync() // io.matthewnelson.kmp.process/AsyncWriteStream.closeAsync|closeAsync(){}[0]
+    final suspend fun flushAsync() // io.matthewnelson.kmp.process/AsyncWriteStream.flushAsync|flushAsync(){}[0]
+    final suspend fun writeAsync(kotlin/ByteArray) // io.matthewnelson.kmp.process/AsyncWriteStream.writeAsync|writeAsync(kotlin.ByteArray){}[0]
+    final suspend fun writeAsync(kotlin/ByteArray, kotlin/Int, kotlin/Int) // io.matthewnelson.kmp.process/AsyncWriteStream.writeAsync|writeAsync(kotlin.ByteArray;kotlin.Int;kotlin.Int){}[0]
+}
+
+// Targets: [js]
+open class io.matthewnelson.kmp.process.internal/events_EventEmitter { // io.matthewnelson.kmp.process.internal/events_EventEmitter|null[0]
+    constructor <init>() // io.matthewnelson.kmp.process.internal/events_EventEmitter.<init>|<init>(){}[0]
+
+    final fun <#A1: kotlin/Any?> on(kotlin/String, kotlin/Function<#A1>): io.matthewnelson.kmp.process.internal/events_EventEmitter // io.matthewnelson.kmp.process.internal/events_EventEmitter.on|on(kotlin.String;kotlin.Function<0:0>){0§<kotlin.Any?>}[0]
+    final fun <#A1: kotlin/Any?> once(kotlin/String, kotlin/Function<#A1>): io.matthewnelson.kmp.process.internal/events_EventEmitter // io.matthewnelson.kmp.process.internal/events_EventEmitter.once|once(kotlin.String;kotlin.Function<0:0>){0§<kotlin.Any?>}[0]
+    final fun <#A1: kotlin/Any?> removeListener(kotlin/String, kotlin/Function<#A1>): io.matthewnelson.kmp.process.internal/events_EventEmitter // io.matthewnelson.kmp.process.internal/events_EventEmitter.removeListener|removeListener(kotlin.String;kotlin.Function<0:0>){0§<kotlin.Any?>}[0]
+    final fun getMaxListeners(): kotlin/Number // io.matthewnelson.kmp.process.internal/events_EventEmitter.getMaxListeners|getMaxListeners(){}[0]
+    final fun listeners(kotlin/String): kotlin/Array<kotlin/Function<*>> // io.matthewnelson.kmp.process.internal/events_EventEmitter.listeners|listeners(kotlin.String){}[0]
+    final fun removeAllListeners(): io.matthewnelson.kmp.process.internal/events_EventEmitter // io.matthewnelson.kmp.process.internal/events_EventEmitter.removeAllListeners|removeAllListeners(){}[0]
+    final fun removeAllListeners(kotlin/String): io.matthewnelson.kmp.process.internal/events_EventEmitter // io.matthewnelson.kmp.process.internal/events_EventEmitter.removeAllListeners|removeAllListeners(kotlin.String){}[0]
+}
+
+// Targets: [js]
+final inline fun <#A: io.matthewnelson.kmp.process.internal/events_EventEmitter> (#A).io.matthewnelson.kmp.process.internal/onError(noinline kotlin/Function1<dynamic, kotlin/Unit>): #A // io.matthewnelson.kmp.process.internal/onError|onError@0:0(kotlin.Function1<<dynamic>,kotlin.Unit>){0§<io.matthewnelson.kmp.process.internal.events_EventEmitter>}[0]
+
+// Targets: [js]
+final inline fun <#A: io.matthewnelson.kmp.process.internal/events_EventEmitter> (#A).io.matthewnelson.kmp.process.internal/onceError(noinline kotlin/Function1<dynamic, kotlin/Unit>): #A // io.matthewnelson.kmp.process.internal/onceError|onceError@0:0(kotlin.Function1<<dynamic>,kotlin.Unit>){0§<io.matthewnelson.kmp.process.internal.events_EventEmitter>}[0]
