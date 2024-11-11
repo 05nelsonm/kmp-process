@@ -17,6 +17,10 @@ plugins {
     id("configuration")
 }
 
+repositories {
+    google()
+}
+
 kmpConfiguration {
     configureShared {
         androidLibrary {
