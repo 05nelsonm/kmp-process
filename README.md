@@ -215,19 +215,19 @@ builder.onError { e ->
 
 ```kotlin
 dependencies {
-    implementation("io.matthewnelson.kmp-process:process:0.1.0-beta02")
+    implementation("io.matthewnelson.kmp-process:process:0.1.0-rc01")
 }
 ```
 
 <!-- TAG_VERSION -->
-[badge-latest-release]: https://img.shields.io/badge/latest--release-0.1.0--beta02-blue.svg?style=flat
+[badge-latest-release]: https://img.shields.io/badge/latest--release-0.1.0--rc01-blue.svg?style=flat
 [badge-license]: https://img.shields.io/badge/license-Apache%20License%202.0-blue.svg?style=flat
 
 <!-- TAG_DEPENDENCIES -->
 [badge-coroutines]: https://img.shields.io/badge/kotlinx.coroutines-1.8.1-blue.svg?logo=kotlin
-[badge-endians]: https://img.shields.io/badge/kotlincrypto.endians-0.3.0-blue.svg?style=flat
-[badge-immutable]: https://img.shields.io/badge/immutable-0.1.3-blue.svg?style=flat
-[badge-kmp-file]: https://img.shields.io/badge/kmp--file-0.1.0-blue.svg?style=flat
+[badge-endians]: https://img.shields.io/badge/kotlincrypto.endians-0.3.1-blue.svg?style=flat
+[badge-immutable]: https://img.shields.io/badge/immutable-0.1.4-blue.svg?style=flat
+[badge-kmp-file]: https://img.shields.io/badge/kmp--file-0.1.1-blue.svg?style=flat
 [badge-kotlin]: https://img.shields.io/badge/kotlin-1.9.24-blue.svg?logo=kotlin
 
 <!-- TAG_PLATFORMS -->

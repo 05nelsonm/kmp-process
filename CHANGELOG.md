@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## Version 0.1.0-rc01 (2024-11-11)
+ - Fixes multiplatform metadata manifest `unique_name` parameter for
+   all source sets to be truly unique. [[#121]][121]
+ - Updates jvm `.kotlin_module` with truly unique file name. [[#121]][121]
+ - Updates dependencies [[#121]][121]
+     - `immutable` -> `0.1.4`
+     - `kmp-file` -> `0.1.1`
+     - `kotlincrypto.endians` -> `0.3.1`
+
 ## Version 0.1.0-beta02 (2024-06-19)
  - Fixes issue for `Node.js` on Windows where `Process.destroy` may
    throw exception due to a bug in `libuv` version `1.48.0` which was
@@ -56,5 +65,6 @@
 [111]: https://github.com/05nelsonm/kmp-process/pull/111
 [112]: https://github.com/05nelsonm/kmp-process/pull/112
 [113]: https://github.com/05nelsonm/kmp-process/pull/113
+[121]: https://github.com/05nelsonm/kmp-process/pull/121
 
 [issue-108]: https://github.com/05nelsonm/kmp-process/issues/108
