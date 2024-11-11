@@ -26,6 +26,11 @@ jobs:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
 
+      - name: Check API Compatibility
+        if: matrix.os == 'macos-latest' && matrix.java-version == 19
+        run: >
+          ./gradlew apiCheck --stacktrace
+
       - name: Run macOS Tests [ Java 11 ]
         if: matrix.os == 'macos-latest' && matrix.java-version == 11
         run: >
