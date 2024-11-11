@@ -1,24 +1,22 @@
 [versions]
-androidx-test-core = "1.5.0"
-androidx-test-runner = "1.5.2"
-
 gradle-android = "8.2.2"
-gradle-binary-compat = "0.14.0"
-gradle-kmp-configuration = "0.2.2"
+gradle-binary-compat = "0.16.3"
+gradle-kmp-configuration = "0.3.2"
 gradle-kotlin = "1.9.24"
-gradle-publish-maven = "0.28.0"
+gradle-publish-maven = "0.29.0"
 
-immutable = "0.1.3"
+immutable = "0.1.4"
 
-kmp-file = "0.1.0"
-kmp-tor-resource = "408.10.0-SNAPSHOT"
-kotlincrypto-endians = "0.3.0"
+kmp-file = "0.1.1"
+kotlincrypto-endians = "0.3.1"
 kotlinx-coroutines = "1.8.1"
 
-[libraries]
-androidx-test-core = { module = "androidx.test:core", version.ref = "androidx-test-core" }
-androidx-test-runner = { module = "androidx.test:runner", version.ref = "androidx-test-runner" }
+# tests
+androidx-test-core = "1.5.0"
+androidx-test-runner = "1.5.2"
+kmp-tor-resource = "408.10.0-SNAPSHOT"
 
+[libraries]
 gradle-android = { module = "com.android.tools.build:gradle", version.ref = "gradle-android" }
 gradle-kmp-configuration = { module = "io.matthewnelson:gradle-kmp-configuration-plugin", version.ref = "gradle-kmp-configuration" }
 gradle-kotlin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "gradle-kotlin" }
@@ -27,9 +25,13 @@ gradle-publish-maven = { module = "com.vanniktech:gradle-maven-publish-plugin", 
 immutable-collections = { module = "io.matthewnelson.immutable:collections", version.ref = "immutable" }
 
 kmp-file = { module = "io.matthewnelson.kmp-file:file", version.ref = "kmp-file" }
-kmp-tor-resource-tor = { module = "io.matthewnelson.kmp-tor:resource-tor", version.ref = "kmp-tor-resource" }
 kotlincrypto-endians = { module = "org.kotlincrypto.endians:endians", version.ref = "kotlincrypto-endians" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
+
+# tests
+androidx-test-core = { module = "androidx.test:core", version.ref = "androidx-test-core" }
+androidx-test-runner = { module = "androidx.test:runner", version.ref = "androidx-test-runner" }
+kmp-tor-resource-tor = { module = "io.matthewnelson.kmp-tor:resource-tor", version.ref = "kmp-tor-resource" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
 
 [plugins]

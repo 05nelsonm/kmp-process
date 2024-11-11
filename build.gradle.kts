@@ -24,23 +24,18 @@ plugins {
 }
 
 allprojects {
-
     findProperty("GROUP")?.let { group = it }
     findProperty("VERSION_NAME")?.let { version = it }
     findProperty("POM_DESCRIPTION")?.let { description = it.toString() }
 
     repositories {
         mavenCentral()
-        google()
-        gradlePluginPortal()
-
         maven("https://s01.oss.sonatype.org/content/repositories/snapshots")
     }
-
 }
 
 @Suppress("PropertyName")
-val CHECK_PUBLICATION = (findProperty("CHECK_PUBLICATION") as? String) != null
+val CHECK_PUBLICATION = findProperty("CHECK_PUBLICATION") != null
 
 plugins.withType<YarnPlugin> {
     the<YarnRootExtension>().lockFileDirectory = rootDir.resolve(".kotlin-js-store")

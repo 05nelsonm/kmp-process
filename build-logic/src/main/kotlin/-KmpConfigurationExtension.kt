@@ -13,30 +13,48 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
+import io.matthewnelson.kmp.configuration.ExperimentalKmpConfigurationApi
 import io.matthewnelson.kmp.configuration.extension.KmpConfigurationExtension
 import io.matthewnelson.kmp.configuration.extension.container.target.KmpConfigurationContainerDsl
 import org.gradle.api.Action
 import org.gradle.api.JavaVersion
+import org.jetbrains.kotlin.konan.target.HostManager
 import java.io.File
 
 fun KmpConfigurationExtension.configureShared(
+    java9ModuleName: String? = null,
     publish: Boolean = false,
     action: Action<KmpConfigurationContainerDsl>
 ) {
+    if (publish) {
+        require(!java9ModuleName.isNullOrBlank()) { "publications must specify a module-info name" }
+    }
+
     configure {
+        options {
+            useUniqueModuleNames = true
+        }
+
         jvm {
             kotlinJvmTarget = JavaVersion.VERSION_1_8
             compileSourceCompatibility = JavaVersion.VERSION_1_8
             compileTargetCompatibility = JavaVersion.VERSION_1_8
+
+            // windows always throws a fit if not using Java 11. This disables
+            // compilations of module-info.java. Nobody deploys from Windows
+            // anyway...
+            if (!HostManager.hostIsMingw) {
+                @OptIn(ExperimentalKmpConfigurationApi::class)
+                java9ModuleInfoName = java9ModuleName
+            }
         }
 
         js {
             target {
                 nodejs {
-                    @Suppress("RedundantSamConstructor")
-                    testTask(Action {
+                    testTask {
                         useMocha { timeout = "30s" }
-                    })
+                    }
                 }
             }
         }
@@ -92,9 +110,7 @@ fun KmpConfigurationExtension.configureShared(
 
             """.trimIndent())
 
-            with(sourceSets) {
-                commonTest.get().kotlin.srcDir(kotlinSrc)
-            }
+            sourceSets.commonTest.get().kotlin.srcDir(kotlinSrc)
         }
 
         action.execute(this)
