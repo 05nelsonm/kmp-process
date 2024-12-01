@@ -22,8 +22,7 @@ import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.ProcessException.Companion.CTX_FEED_STDOUT
 import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.Stdio
-import io.matthewnelson.kmp.tor.core.api.ResourceInstaller
-import io.matthewnelson.kmp.tor.resource.tor.TorResources
+import io.matthewnelson.kmp.tor.common.api.ResourceLoader
 import kotlinx.coroutines.*
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
@@ -35,17 +34,8 @@ import kotlin.time.Duration.Companion.seconds
 
 abstract class ProcessBaseTest {
 
-    private companion object {
-        // This is OK for Android Runtime, as only geoip files will be installed
-        // to the Context.cacheDir/kmp_process. libtor.so is extracted to the
-        // Context.applicationInfo.nativeLibraryDir automatically, so.
-        private val installer by lazy {
-            TorResources(installationDir = SysTempDir.resolve("kmp_process"))
-        }
-    }
-
     protected open val IsAndroidInstrumentTest: Boolean = false
-    protected open val homeDir get() = installer.installationDir
+    protected open val homeDir get() = LOADER.resourceDir
     protected open val cacheDir get() = homeDir.resolve("cache")
     protected open val dataDir get() = homeDir.resolve("data")
 
@@ -255,6 +245,8 @@ abstract class ProcessBaseTest {
             throw IllegalStateException(line)
         }.waitForAsync(500.milliseconds)
 
+        delayTest(100.milliseconds)
+
         assertTrue(invocationError > 0)
 
         if (!shouldThrow) {
@@ -372,7 +364,7 @@ abstract class ProcessBaseTest {
         assertFalse(stdoutFile.exists())
         assertFalse(stderrFile.exists())
 
-        installer.install().toProcessBuilder()
+        LOADER.toProcessBuilder()
             .stdout(Stdio.File.of(stdoutFile, append = true))
             .stderr(Stdio.File.of(stderrFile))
             .spawn { p ->
@@ -398,7 +390,7 @@ abstract class ProcessBaseTest {
 
     @Test
     open fun givenExecutable_whenOutput_thenIsAsExpected() = runTest(timeout = 25.seconds) {
-        val out = installer.install().toProcessBuilder()
+        val out = LOADER.toProcessBuilder()
             .output { timeoutMillis = 2_000 }
 
         println(out)
@@ -413,7 +405,7 @@ abstract class ProcessBaseTest {
 
     @Test
     open fun givenExecutable_whenPipeOutputFeeds_thenIsAsExpected() = runTest(timeout = 25.seconds) {
-        installer.install().toProcessBuilder().spawn { p ->
+        LOADER.toProcessBuilder().spawn { p ->
             val stdoutBuilder = StringBuilder()
             val stderrBuilder = StringBuilder()
 
@@ -478,31 +470,36 @@ abstract class ProcessBaseTest {
 
     private fun Process.Builder.envHome(): Process.Builder = environment("HOME", homeDir.path)
 
-    private fun ResourceInstaller.Paths.Tor.toProcessBuilder(): Process.Builder {
-        val b = Process.Builder(executable = tor)
-            .args("--DataDirectory")
-            .args(dataDir.also { it.mkdirs() }.path)
-            .args("--CacheDirectory")
-            .args(cacheDir.also { it.mkdirs() }.path)
-            .args("--GeoIPFile")
-            .args(geoip.path)
-            .args("--GeoIPv6File")
-            .args(geoip6.path)
-            .args("--DormantCanceledByStartup")
-            .args("1")
-            .args("--SocksPort")
-            .args("auto")
-            .args("--DisableNetwork")
-            .args("1")
-            .args("--RunAsDaemon")
-            .args("0")
-            .args("--__OwningControllerProcess")
-            .args(Process.Current.pid().toString())
-            .destroySignal(Signal.SIGTERM)
-            .envHome()
-            .stdin(Stdio.Null)
-            .stdout(Stdio.Pipe)
-            .stderr(Stdio.Pipe)
+    private fun ResourceLoader.Tor.Exec.toProcessBuilder(): Process.Builder {
+        val geoipFiles = extract()
+
+        val b = process(TorResourceBinder) { tor, configureEnv ->
+            Process.Builder(executable = tor)
+                .args("--DataDirectory")
+                .args(dataDir.also { it.mkdirs() }.path)
+                .args("--CacheDirectory")
+                .args(cacheDir.also { it.mkdirs() }.path)
+                .args("--GeoIPFile")
+                .args(geoipFiles.geoip.path)
+                .args("--GeoIPv6File")
+                .args(geoipFiles.geoip6.path)
+                .args("--DormantCanceledByStartup")
+                .args("1")
+                .args("--SocksPort")
+                .args("auto")
+                .args("--DisableNetwork")
+                .args("1")
+                .args("--RunAsDaemon")
+                .args("0")
+                .args("--__OwningControllerProcess")
+                .args(Process.Current.pid().toString())
+                .destroySignal(Signal.SIGTERM)
+                .envHome()
+                .environment(configureEnv)
+                .stdin(Stdio.Null)
+                .stdout(Stdio.Pipe)
+                .stderr(Stdio.Pipe)
+        }
 
         if (!IsDarwinMobile) {
             b.chdir(homeDir)
