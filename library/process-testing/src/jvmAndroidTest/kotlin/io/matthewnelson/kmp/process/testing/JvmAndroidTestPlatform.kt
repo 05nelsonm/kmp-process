@@ -15,6 +15,13 @@
  **/
 package io.matthewnelson.kmp.process.testing
 
+import io.matthewnelson.kmp.tor.common.api.ResourceLoader
+import io.matthewnelson.kmp.tor.resource.exec.tor.ResourceLoaderTorExec
+
 internal actual val IsDarwinMobile: Boolean = false
 
 internal actual val IsNodeJs: Boolean = false
+
+internal actual val LOADER: ResourceLoader.Tor.Exec by lazy {
+    ResourceLoaderTorExec.getOrCreate(TorResourceBinder.RESOURCE_DIR) as ResourceLoader.Tor.Exec
+}

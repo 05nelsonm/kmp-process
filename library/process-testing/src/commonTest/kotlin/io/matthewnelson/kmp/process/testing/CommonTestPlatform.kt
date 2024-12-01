@@ -15,11 +15,28 @@
  **/
 package io.matthewnelson.kmp.process.testing
 
+import io.matthewnelson.kmp.file.File
+import io.matthewnelson.kmp.file.SysTempDir
 import io.matthewnelson.kmp.file.path
+import io.matthewnelson.kmp.file.resolve
 import io.matthewnelson.kmp.process.Stdio
+import io.matthewnelson.kmp.tor.common.api.ResourceLoader
 
 internal val IsWindows = Stdio.Null.file.path == "NUL"
 
 internal expect val IsDarwinMobile: Boolean
 
 internal expect val IsNodeJs: Boolean
+
+internal expect val LOADER: ResourceLoader.Tor.Exec
+
+internal object TorResourceBinder: ResourceLoader.RuntimeBinder {
+
+    internal val RESOURCE_DIR: File by lazy {
+
+        // This is OK for Android Runtime, as only geoip files will be installed
+        // to the Context.cacheDir/kmp_process. libtor.so is extracted to the
+        // Context.applicationInfo.nativeLibraryDir automatically, so.
+        SysTempDir.resolve("kmp_process")
+    }
+}
