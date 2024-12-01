@@ -245,6 +245,8 @@ abstract class ProcessBaseTest {
             throw IllegalStateException(line)
         }.waitForAsync(500.milliseconds)
 
+        delayTest(100.milliseconds)
+
         assertTrue(invocationError > 0)
 
         if (!shouldThrow) {
