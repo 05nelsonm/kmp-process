@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## Version 0.1.0 (2024-12-01)
+ - Updates test dependency to non `-SNAPSHOT` version of `kmp-tor-resource` [[#124]][124]
+
 ## Version 0.1.0-rc01 (2024-11-11)
  - Fixes multiplatform metadata manifest `unique_name` parameter for
    all source sets to be truly unique. [[#121]][121]
@@ -66,5 +69,6 @@
 [112]: https://github.com/05nelsonm/kmp-process/pull/112
 [113]: https://github.com/05nelsonm/kmp-process/pull/113
 [121]: https://github.com/05nelsonm/kmp-process/pull/121
+[124]: https://github.com/05nelsonm/kmp-process/pull/124
 
 [issue-108]: https://github.com/05nelsonm/kmp-process/issues/108
