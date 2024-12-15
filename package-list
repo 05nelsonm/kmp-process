@@ -1,0 +1,5 @@
+$dokka.format:html-v1
+$dokka.linkExtension:html
+$dokka.location:io.matthewnelson.kmp.process/ReadBuffer/buf/#/PointingToDeclaration/process/io.matthewnelson.kmp.process/-read-buffer/[js]buf.html
+module:library/process
+io.matthewnelson.kmp.process
