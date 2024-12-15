@@ -21,7 +21,10 @@ package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.process.InternalProcessApi
 
-/** [docs](https://nodejs.org/api/events.html#class-eventemitter) */
+/**
+ * [docs](https://nodejs.org/api/events.html#class-eventemitter)
+ * @suppress
+ * */
 @InternalProcessApi
 @JsName("EventEmitter")
 public open external class events_EventEmitter {
