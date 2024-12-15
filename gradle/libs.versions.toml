@@ -1,6 +1,7 @@
 [versions]
 gradle-android = "8.2.2"
 gradle-binary-compat = "0.16.3"
+gradle-dokka = "1.9.20"
 gradle-kmp-configuration = "0.3.2"
 gradle-kotlin = "1.9.24"
 gradle-publish-maven = "0.29.0"
@@ -14,10 +15,11 @@ kotlinx-coroutines = "1.8.1"
 # tests
 androidx-test-core = "1.5.0"
 androidx-test-runner = "1.5.2"
-kmp-tor-resource = "408.12.0"
+kmp-tor-resource = "408.13.0"
 
 [libraries]
 gradle-android = { module = "com.android.tools.build:gradle", version.ref = "gradle-android" }
+gradle-dokka = { module = "org.jetbrains.dokka:dokka-gradle-plugin", version.ref = "gradle-dokka" }
 gradle-kmp-configuration = { module = "io.matthewnelson:gradle-kmp-configuration-plugin", version.ref = "gradle-kmp-configuration" }
 gradle-kotlin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "gradle-kotlin" }
 gradle-publish-maven = { module = "com.vanniktech:gradle-maven-publish-plugin", version.ref = "gradle-publish-maven" }
@@ -38,4 +40,5 @@ kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-t
 [plugins]
 android-library = { id = "com.android.library", version.ref = "gradle-android" }
 binary-compat = { id = "org.jetbrains.kotlinx.binary-compatibility-validator", version.ref = "gradle-binary-compat" }
+dokka = { id = "org.jetbrains.dokka", version.ref = "gradle-dokka" }
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "gradle-kotlin" }

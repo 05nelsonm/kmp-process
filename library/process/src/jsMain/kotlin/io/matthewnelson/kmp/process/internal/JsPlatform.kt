@@ -75,6 +75,7 @@ internal inline fun ArrayBufferView.fill() {
     }
 }
 
+/** @suppress */
 @InternalProcessApi
 @Suppress("NOTHING_TO_INLINE")
 public inline fun <T: events_EventEmitter> T.onError(
@@ -84,6 +85,7 @@ public inline fun <T: events_EventEmitter> T.onError(
     return this
 }
 
+/** @suppress */
 @InternalProcessApi
 @Suppress("NOTHING_TO_INLINE")
 public inline fun <T: events_EventEmitter> T.onceError(
