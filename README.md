@@ -41,7 +41,7 @@ functionality is backported for Android and tested against API 15+.
 **NOTE:** Spawning of processes for Apple mobile targets will work on simulators when utilizing 
 executables compiled for `macOS`. Unfortunately due to the `com.apple.security.app-sandbox`
 entitlement inhibiting modification of a file's permissions to set as executable, `posix_spawn` 
-will likely fail (unless executing a file accessible on the OS that **is** executable).  
+will likely fail on the device (unless executing a file accessible on the OS that **is** executable).  
 
 ## Example
 
