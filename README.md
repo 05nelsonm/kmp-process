@@ -19,6 +19,8 @@
 
 `Process` implementation for Kotlin Multiplatform.
 
+API docs available at [https://kmp-process.matthewnelson.io][url-docs]
+
 API is highly inspired by `Node.js` [child_process][url-node-child_process] 
 and `Rust` [Command][url-rust-command]
 
@@ -247,6 +249,7 @@ dependencies {
 [badge-support-js-ir]: https://img.shields.io/badge/support-[js--IR]-AAC4E0.svg?style=flat
 [badge-support-linux-arm]: http://img.shields.io/badge/support-[LinuxArm]-2D3F6C.svg?style=flat
 
+[url-docs]: https://kmp-process.matthewnelson.io
 [url-latest-release]: https://github.com/05nelsonm/kmp-process/releases/latest
 [url-license]: https://www.apache.org/licenses/LICENSE-2.0
 [url-coroutines]: https://github.com/Kotlin/kotlinx.coroutines
