@@ -36,6 +36,11 @@ and `Rust` [Command][url-rust-command]
 **NOTE:** `java.lang.ProcessBuilder` and `java.lang.Process` Java 8  
 functionality is backported for Android and tested against API 15+.
 
+**NOTE:** Spawning of processes for Apple mobile targets will work on simulators when utilizing 
+executables compiled for `macOS`. Unfortunately due to the `com.apple.security.app-sandbox`
+entitlement inhibiting modification of a file's permissions to set as executable, `posix_spawn` 
+will likely fail (unless executing a file accessible on the OS that **is** executable).  
+
 ## Example
 
 **NOTE:** Async API usage on `Jvm` & `Android` requires the `kotlinx.coroutines.core` dependency.
@@ -210,12 +215,12 @@ builder.onError { e ->
 
 ```kotlin
 dependencies {
-    implementation("io.matthewnelson.kmp-process:process:0.1.0")
+    implementation("io.matthewnelson.kmp-process:process:0.1.1")
 }
 ```
 
 <!-- TAG_VERSION -->
-[badge-latest-release]: https://img.shields.io/badge/latest--release-0.1.0-blue.svg?style=flat
+[badge-latest-release]: https://img.shields.io/badge/latest--release-0.1.1-blue.svg?style=flat
 [badge-license]: https://img.shields.io/badge/license-Apache%20License%202.0-blue.svg?style=flat
 
 <!-- TAG_DEPENDENCIES -->

@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## Version 0.1.1 (2024-12-18)
+ - Fixes inability to configure process options on `Node.js` for [[#128]][128]:
+     - `shell`
+     - `windowsVerbatimArguments`
+     - `windowsHide`
+ - Deprecates `Process.Builder.chdir` in favor of platform specific extension 
+   function `Process.Builder.changeDir`, available for all non-Apple mobile 
+   targets. [[#128]][128]
+ - Adds `dokka` documentation at `https://kmp-process.matthewnelson.io` [[#126]][126]
+
 ## Version 0.1.0 (2024-12-01)
  - Updates test dependency to non `-SNAPSHOT` version of `kmp-tor-resource` [[#124]][124]
 
@@ -70,5 +80,7 @@
 [113]: https://github.com/05nelsonm/kmp-process/pull/113
 [121]: https://github.com/05nelsonm/kmp-process/pull/121
 [124]: https://github.com/05nelsonm/kmp-process/pull/124
+[126]: https://github.com/05nelsonm/kmp-process/pull/126
+[128]: https://github.com/05nelsonm/kmp-process/pull/128
 
 [issue-108]: https://github.com/05nelsonm/kmp-process/issues/108
