@@ -337,6 +337,18 @@ open class io.matthewnelson.kmp.process.internal/events_EventEmitter { // io.mat
 }
 
 // Targets: [js]
+final fun (io.matthewnelson.kmp.process/Process.Builder).io.matthewnelson.kmp.process/shell(kotlin/Boolean): io.matthewnelson.kmp.process/Process.Builder // io.matthewnelson.kmp.process/shell|shell@io.matthewnelson.kmp.process.Process.Builder(kotlin.Boolean){}[0]
+
+// Targets: [js]
+final fun (io.matthewnelson.kmp.process/Process.Builder).io.matthewnelson.kmp.process/shell(kotlin/String): io.matthewnelson.kmp.process/Process.Builder // io.matthewnelson.kmp.process/shell|shell@io.matthewnelson.kmp.process.Process.Builder(kotlin.String){}[0]
+
+// Targets: [js]
+final fun (io.matthewnelson.kmp.process/Process.Builder).io.matthewnelson.kmp.process/windowsHide(kotlin/Boolean): io.matthewnelson.kmp.process/Process.Builder // io.matthewnelson.kmp.process/windowsHide|windowsHide@io.matthewnelson.kmp.process.Process.Builder(kotlin.Boolean){}[0]
+
+// Targets: [js]
+final fun (io.matthewnelson.kmp.process/Process.Builder).io.matthewnelson.kmp.process/windowsVerbatimArguments(kotlin/Boolean): io.matthewnelson.kmp.process/Process.Builder // io.matthewnelson.kmp.process/windowsVerbatimArguments|windowsVerbatimArguments@io.matthewnelson.kmp.process.Process.Builder(kotlin.Boolean){}[0]
+
+// Targets: [js]
 final inline fun <#A: io.matthewnelson.kmp.process.internal/events_EventEmitter> (#A).io.matthewnelson.kmp.process.internal/onError(noinline kotlin/Function1<dynamic, kotlin/Unit>): #A // io.matthewnelson.kmp.process.internal/onError|onError@0:0(kotlin.Function1<<dynamic>,kotlin.Unit>){0§<io.matthewnelson.kmp.process.internal.events_EventEmitter>}[0]
 
 // Targets: [js]

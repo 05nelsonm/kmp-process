@@ -244,6 +244,7 @@ public class Output private constructor(
             )
         }
 
+        /** @suppress */
         override fun toString(): String = buildString {
             appendProcessInfo(
                 "Output.ProcessInfo",
@@ -258,6 +259,7 @@ public class Output private constructor(
         }
     }
 
+    /** @suppress */
     override fun toString(): String = buildString {
         appendLine("Output: [")
         appendLine("    stdout: [Omitted]")

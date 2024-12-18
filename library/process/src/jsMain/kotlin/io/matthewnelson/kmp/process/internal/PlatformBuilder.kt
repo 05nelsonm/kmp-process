@@ -25,6 +25,11 @@ import org.khronos.webgl.Int8Array
 // jsMain
 internal actual class PlatformBuilder private actual constructor() {
 
+    // String or Boolean
+    internal var shell: Any = false
+    internal var windowsVerbatimArguments = false
+    internal var windowsHide: Boolean = true
+
     internal actual val env: MutableMap<String, String> by lazy {
         try {
             val env = js("require('process')").env
@@ -75,9 +80,9 @@ internal actual class PlatformBuilder private actual constructor() {
         opts["timeout"] = options.timeout.inWholeMilliseconds.toInt()
         opts["killSignal"] = destroy.name
         opts["maxBuffer"] = options.maxBuffer
-        opts["shell"] = false
-        opts["windowsVerbatimArguments"] = false
-        opts["windowsHide"] = true
+        opts["shell"] = shell
+        opts["windowsVerbatimArguments"] = windowsVerbatimArguments
+        opts["windowsHide"] = windowsHide
 
         val output = jsStdio.closeDescriptorsOnFailure {
             try {
@@ -151,9 +156,9 @@ internal actual class PlatformBuilder private actual constructor() {
         opts["env"] = jsEnv
         opts["stdio"] = jsStdio
         opts["detached"] = false
-        opts["shell"] = false
-        opts["windowsVerbatimArguments"] = false
-        opts["windowsHide"] = true
+        opts["shell"] = shell
+        opts["windowsVerbatimArguments"] = windowsVerbatimArguments
+        opts["windowsHide"] = windowsHide
         opts["killSignal"] = destroy.name
 
         val jsProcess = jsStdio.closeDescriptorsOnFailure {

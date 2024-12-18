@@ -273,40 +273,40 @@ public abstract class Process internal constructor(
          * */
         public constructor(executable: File): this(executable.absoluteFile.normalize().path)
 
-        private val args = mutableListOf<String>()
-        private var chdir: File? = null
-        private var destroy: Signal = Signal.SIGTERM
-        private val platform = PlatformBuilder.get()
-        private var handler: ProcessException.Handler? = null
-        private val stdio = Stdio.Config.Builder.get()
+        private val _args = mutableListOf<String>()
+        private var _chdir: File? = null
+        private var _signal: Signal = Signal.SIGTERM
+        private val _platform = PlatformBuilder.get()
+        private var _handler: ProcessException.Handler? = null
+        private val _stdio = Stdio.Config.Builder.get()
 
         /**
          * Add a single argument
          * */
         public fun args(
             arg: String,
-        ): Builder = apply { args.add(arg) }
+        ): Builder = apply { _args.add(arg) }
 
         /**
          * Add multiple arguments
          * */
         public fun args(
             vararg args: String,
-        ): Builder = apply { args.forEach { this.args.add(it) } }
+        ): Builder = apply { args.forEach { this._args.add(it) } }
 
         /**
          * Add multiple arguments
          * */
         public fun args(
             args: List<String>,
-        ): Builder = apply { args.forEach { this.args.add(it) } }
+        ): Builder = apply { args.forEach { this._args.add(it) } }
 
         /**
          * Set the [Signal] to use when [Process.destroy] is called.
          * */
         public fun destroySignal(
             signal: Signal,
-        ): Builder = apply { destroy = signal }
+        ): Builder = apply { _signal = signal }
 
         /**
          * Changes the working directory of the spawned process.
@@ -320,7 +320,7 @@ public abstract class Process internal constructor(
          * */
         public fun chdir(
             directory: File?,
-        ): Builder = apply { chdir = directory }
+        ): Builder = apply { _chdir = directory }
 
         /**
          * Set/overwrite an environment variable
@@ -331,7 +331,7 @@ public abstract class Process internal constructor(
         public fun environment(
             key: String,
             value: String,
-        ): Builder = apply { platform.env[key] = value }
+        ): Builder = apply { _platform.env[key] = value }
 
         /**
          * Modify the environment via lambda
@@ -341,7 +341,7 @@ public abstract class Process internal constructor(
          * */
         public fun environment(
             block: MutableMap<String, String>.() -> Unit,
-        ): Builder = apply { block(platform.env) }
+        ): Builder = apply { block(_platform.env) }
 
         /**
          * Set a [ProcessException.Handler] to manage internal
@@ -357,7 +357,7 @@ public abstract class Process internal constructor(
          * */
         public fun onError(
             handler: ProcessException.Handler?,
-        ): Builder = apply { this.handler = handler }
+        ): Builder = apply { this._handler = handler }
 
         /**
          * Modify the standard input source
@@ -366,7 +366,7 @@ public abstract class Process internal constructor(
          * */
         public fun stdin(
             source: Stdio,
-        ): Builder = apply { stdio.stdin = source }
+        ): Builder = apply { _stdio.stdin = source }
 
         /**
          * Modify the standard output destination
@@ -375,7 +375,7 @@ public abstract class Process internal constructor(
          * */
         public fun stdout(
             destination: Stdio,
-        ): Builder = apply { stdio.stdout = destination }
+        ): Builder = apply { _stdio.stdout = destination }
 
         /**
          * Modify the standard error output destination
@@ -384,7 +384,7 @@ public abstract class Process internal constructor(
          * */
         public fun stderr(
             destination: Stdio,
-        ): Builder = apply { stdio.stderr = destination }
+        ): Builder = apply { _stdio.stderr = destination }
 
         /**
          * Blocks the current thread until [Process] completion,
@@ -420,12 +420,12 @@ public abstract class Process internal constructor(
             if (command.isBlank()) throw IOException("command cannot be blank")
 
             val options = Output.Options.Builder.build(block)
-            val stdio = stdio.build(outputOptions = options)
+            val stdio = _stdio.build(outputOptions = options)
 
-            val args = args.toImmutableList()
-            val env = platform.env.toImmutableMap()
+            val args = _args.toImmutableList()
+            val env = _platform.env.toImmutableMap()
 
-            return platform.output(command, args, chdir, env, stdio, options, destroy)
+            return _platform.output(command, args, _chdir, env, stdio, options, _signal)
         }
 
         /**
@@ -442,17 +442,17 @@ public abstract class Process internal constructor(
         public fun spawn(): Process {
             if (command.isBlank()) throw IOException("command cannot be blank")
 
-            val stdio = stdio.build(outputOptions = null)
+            val stdio = _stdio.build(outputOptions = null)
 
-            val args = args.toImmutableList()
-            val env = platform.env.toImmutableMap()
-            val handler = handler ?: ProcessException.Handler.IGNORE
+            val args = _args.toImmutableList()
+            val env = _platform.env.toImmutableMap()
+            val handler = _handler ?: ProcessException.Handler.IGNORE
 
-            return platform.spawn(command, args, chdir, env, stdio, destroy, handler)
+            return _platform.spawn(command, args, _chdir, env, stdio, _signal, handler)
         }
 
         /**
-         * Spawns the [Process] and calls [destroy] upon [block] closure.
+         * Spawns the [Process] and calls [_signal] upon [block] closure.
          *
          * @throws [IOException] if [Process] creation failed
          * */
@@ -477,8 +477,12 @@ public abstract class Process internal constructor(
             p.destroy()
             return result
         }
+
+        @JvmSynthetic
+        internal fun platform(): PlatformBuilder = _platform
     }
 
+    /** @suppress */
     public final override fun toString(): String = buildString {
         val exitCode = exitCodeOrNull()?.toString() ?: "not exited"
 
@@ -494,9 +498,11 @@ public abstract class Process internal constructor(
         )
     }
 
+    /** @suppress */
     @Throws(Throwable::class)
     protected abstract fun destroyProtected(immediate: Boolean)
 
+    /** @suppress */
     @Throws(Throwable::class)
     protected final override fun onError(t: Throwable, lazyContext: () -> String) {
         if (handler == ProcessException.Handler.IGNORE) return
@@ -531,6 +537,7 @@ public abstract class Process internal constructor(
         throw threw
     }
 
+    /** @suppress */
     protected companion object {
 
         @JvmSynthetic

@@ -205,6 +205,7 @@ public fun interface OutputFeed {
             }
         }
 
+        /** @suppress */
         protected fun dispatchStdout(line: String?) {
             stdoutFeeds.dispatch(
                 line,
@@ -212,6 +213,7 @@ public fun interface OutputFeed {
                 onClosed = { stdoutStopped = true },
             )
         }
+        /** @suppress */
         protected fun dispatchStderr(line: String?) {
             stderrFeeds.dispatch(
                 line,
@@ -220,9 +222,12 @@ public fun interface OutputFeed {
             )
         }
 
+        /** @suppress */
         @Throws(Throwable::class)
         protected abstract fun onError(t: Throwable, lazyContext: () -> String)
+        /** @suppress */
         protected abstract fun startStdout()
+        /** @suppress */
         protected abstract fun startStderr()
 
         private fun SynchronizedSet<OutputFeed>.addFeeds(
