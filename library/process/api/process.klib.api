@@ -295,6 +295,8 @@ sealed class io.matthewnelson.kmp.process/Stdio { // io.matthewnelson.kmp.proces
     }
 }
 
+final fun (io.matthewnelson.kmp.process/Process.Builder).io.matthewnelson.kmp.process/changeDir(io.matthewnelson.kmp.file/File?): io.matthewnelson.kmp.process/Process.Builder // io.matthewnelson.kmp.process/changeDir|changeDir@io.matthewnelson.kmp.process.Process.Builder(io.matthewnelson.kmp.file.File?){}[0]
+
 // Targets: [native]
 final class io.matthewnelson.kmp.process/AsyncWriteStream : io.matthewnelson.kmp.process/BufferedWriteStream { // io.matthewnelson.kmp.process/AsyncWriteStream|null[0]
     final suspend fun closeAsync() // io.matthewnelson.kmp.process/AsyncWriteStream.closeAsync|closeAsync(){}[0]

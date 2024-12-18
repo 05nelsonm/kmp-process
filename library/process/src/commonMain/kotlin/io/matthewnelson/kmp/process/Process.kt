@@ -58,8 +58,8 @@ public abstract class Process internal constructor(
     public val args: List<String>,
 
     /**
-     * The current working directory, or `null` if
-     * one was not set via [Builder.chdir].
+     * The current working directory, or `null` if one was
+     * not set via [io.matthewnelson.kmp.process.changeDir].
      * */
     @JvmField
     public val cwd: File?,
@@ -309,20 +309,6 @@ public abstract class Process internal constructor(
         ): Builder = apply { _signal = signal }
 
         /**
-         * Changes the working directory of the spawned process.
-         *
-         * [directory] must exist, otherwise the process will fail
-         * to be spawned.
-         *
-         * **WARNING:** `iOS` does not support changing directories!
-         *   Specifying this option will result in a failure to
-         *   spawn a process.
-         * */
-        public fun chdir(
-            directory: File?,
-        ): Builder = apply { _chdir = directory }
-
-        /**
          * Set/overwrite an environment variable
          *
          * By default, the new [Process] will inherit all environment
@@ -477,6 +463,28 @@ public abstract class Process internal constructor(
             p.destroy()
             return result
         }
+
+        /**
+         * Changes the working directory of the spawned process.
+         *
+         * [directory] must exist, otherwise the process will fail
+         * to be spawned.
+         *
+         * **WARNING:** `iOS` does not support changing directories!
+         *   Specifying this option will result in a failure to
+         *   spawn a process.
+         * @suppress
+         * */
+        @Deprecated(
+            message = "Not available for apple mobile targets resulting in spawn failure. Use changeDir.",
+            replaceWith = ReplaceWith(
+                expression = "this.changeDir(directory)",
+                "io.matthewnelson.kmp.process.changeDir"
+            )
+        )
+        public fun chdir(
+            directory: File?,
+        ): Builder = apply { _chdir = directory }
 
         @JvmSynthetic
         internal fun platform(): PlatformBuilder = _platform
