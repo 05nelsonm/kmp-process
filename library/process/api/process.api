@@ -37,6 +37,10 @@ public abstract class io/matthewnelson/kmp/process/BufferedWriteStream : java/io
 public abstract interface annotation class io/matthewnelson/kmp/process/InternalProcessApi : java/lang/annotation/Annotation {
 }
 
+public final class io/matthewnelson/kmp/process/NonAppleMobileProcessBuilderKt {
+	public static final fun changeDir (Lio/matthewnelson/kmp/process/Process$Builder;Ljava/io/File;)Lio/matthewnelson/kmp/process/Process$Builder;
+}
+
 public final class io/matthewnelson/kmp/process/Output {
 	public final field processError Ljava/lang/String;
 	public final field processInfo Lio/matthewnelson/kmp/process/Output$ProcessInfo;

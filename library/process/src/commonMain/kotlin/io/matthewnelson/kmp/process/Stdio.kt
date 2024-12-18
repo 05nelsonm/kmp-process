@@ -95,12 +95,14 @@ public sealed class Stdio private constructor() {
             private val NULL = File(STDIO_NULL, append = false)
         }
 
+        /** @suppress */
         override fun equals(other: Any?): Boolean {
             return  other is File
                     && other.file == file
                     && other.append == append
         }
 
+        /** @suppress */
         override fun hashCode(): Int {
             var result = 42
             result = result * 31 + file.hashCode()
@@ -185,6 +187,7 @@ public sealed class Stdio private constructor() {
             "stderr" to stderr,
         ).iterator()
 
+        /** @suppress */
         override fun equals(other: Any?): Boolean {
             return  other is Config
                     && other.stdin == stdin
@@ -192,6 +195,7 @@ public sealed class Stdio private constructor() {
                     && other.stderr == stderr
         }
 
+        /** @suppress */
         override fun hashCode(): Int {
             var result = 17
             result = result * 31 + stdin.hashCode()
@@ -200,6 +204,7 @@ public sealed class Stdio private constructor() {
             return result
         }
 
+        /** @suppress */
         override fun toString(): String = buildString {
             appendLine("Stdio.Config: [")
             append("    stdin: ")
@@ -212,6 +217,7 @@ public sealed class Stdio private constructor() {
         }
     }
 
+    /** @suppress */
     final override fun toString(): String = buildString {
         append("Stdio.")
         when (this@Stdio) {

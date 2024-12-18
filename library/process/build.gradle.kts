@@ -40,6 +40,35 @@ kmpConfiguration {
 
         kotlin {
             with(sourceSets) {
+                val sources = listOf(
+                    "jvm",
+                    "js",
+                    "androidNative",
+                    "linux",
+                    "macos",
+                    "windows",
+                ).mapNotNull { name ->
+                    val main = findByName(name + "Main") ?: return@mapNotNull null
+                    main to getByName(name + "Test")
+                }
+
+                if (sources.isEmpty()) return@kotlin
+
+                val main = maybeCreate("nonAppleMobileMain").apply {
+                    dependsOn(getByName("commonMain"))
+                }
+                val test = maybeCreate("nonAppleMobileTest").apply {
+                    dependsOn(getByName("commonTest"))
+                }
+                sources.forEach { (sourceMain, sourceTest) ->
+                    sourceMain.dependsOn(main)
+                    sourceTest.dependsOn(test)
+                }
+            }
+        }
+
+        kotlin {
+            with(sourceSets) {
                 findByName("nonJvmMain")?.apply {
                     dependencies {
                         implementation(libs.kotlinx.coroutines.core)
@@ -55,15 +84,15 @@ kmpConfiguration {
                 val nativeMain = findByName("nativeMain")
 
                 if (nativeMain != null || jvmMain != null) {
-                    val nonJsMain = maybeCreate("blockingMain")
-                    nonJsMain.dependsOn(getByName("commonMain"))
-                    jvmMain?.apply { dependsOn(nonJsMain) }
-                    nativeMain?.apply { dependsOn(nonJsMain) }
+                    val blockingMain = maybeCreate("blockingMain")
+                    blockingMain.dependsOn(getByName("commonMain"))
+                    jvmMain?.apply { dependsOn(blockingMain) }
+                    nativeMain?.apply { dependsOn(blockingMain) }
 
-                    val nonJsTest = maybeCreate("blockingTest")
-                    nonJsTest.dependsOn(getByName("commonTest"))
-                    findByName("jvmTest")?.apply { dependsOn(nonJsTest) }
-                    findByName("nativeTest")?.apply { dependsOn(nonJsTest) }
+                    val blockingTest = maybeCreate("blockingTest")
+                    blockingTest.dependsOn(getByName("commonTest"))
+                    findByName("jvmTest")?.apply { dependsOn(blockingTest) }
+                    findByName("nativeTest")?.apply { dependsOn(blockingTest) }
                 }
             }
 

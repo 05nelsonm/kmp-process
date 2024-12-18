@@ -47,14 +47,9 @@ val builder = Process.Builder(command = "cat")
     // Also accepts vararg and List<String>
     .args("--number", "--squeeze-blank")
 
-    // Change the process's working
-    // directory.
-    //
-    // WARNING: iOS is the only platform
-    // that this functionality is not supported
-    // on. Declaring chdir on iOS will result
-    // in a failure to spawn the process.
-    .chdir(myApplicationDir)
+    // Change the process's working directory
+    // (extension available for non-apple mobile).
+    .changeDir(myApplicationDir)
 
     // Modify the Signal to send the Process
     // when Process.destroy is called (only sent
