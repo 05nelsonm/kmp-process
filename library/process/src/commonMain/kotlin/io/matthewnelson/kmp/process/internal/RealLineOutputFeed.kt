@@ -24,7 +24,7 @@ internal class RealLineOutputFeed internal constructor(
 
     @Volatile
     private var isClosed: Boolean = false
-    private val overflow = ArrayList<ByteArray>(1)
+    private val overflow = ArrayDeque<ByteArray>(1)
     private var skipLF: Boolean = false
 
     @Throws(IllegalArgumentException::class, IndexOutOfBoundsException::class, IllegalStateException::class)
@@ -85,7 +85,7 @@ internal class RealLineOutputFeed internal constructor(
         }
     }
 
-    private fun ArrayList<ByteArray>.consumeAndAppend(remainder: String): String {
+    private fun MutableList<ByteArray>.consumeAndAppend(remainder: String): String {
         if (isEmpty()) return remainder
 
         var size = remainder.length
