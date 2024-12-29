@@ -25,6 +25,7 @@ import org.khronos.webgl.Int8Array
 // jsMain
 internal actual class PlatformBuilder private actual constructor() {
 
+    internal var detached: Boolean = false
     // String or Boolean
     internal var shell: Any = false
     internal var windowsVerbatimArguments = false
@@ -150,12 +151,13 @@ internal actual class PlatformBuilder private actual constructor() {
     ): Process {
         val jsEnv = env.toJsEnv()
         val jsStdio = stdio.toJsStdio()
+        val isDetached = detached
 
         val opts = js("{}")
         chdir?.let { opts["cwd"] = it.path }
         opts["env"] = jsEnv
         opts["stdio"] = jsStdio
-        opts["detached"] = false
+        opts["detached"] = isDetached
         opts["shell"] = shell
         opts["windowsVerbatimArguments"] = windowsVerbatimArguments
         opts["windowsHide"] = windowsHide
@@ -167,6 +169,7 @@ internal actual class PlatformBuilder private actual constructor() {
 
         return NodeJsProcess(
             jsProcess,
+            isDetached,
             command,
             args,
             chdir,
