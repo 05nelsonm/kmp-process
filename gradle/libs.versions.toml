@@ -1,4 +1,7 @@
 [versions]
+androidx-test-core = "1.5.0"
+androidx-test-runner = "1.5.2"
+
 gradle-android = "8.2.2"
 gradle-binary-compat = "0.16.3"
 gradle-dokka = "1.9.20"
@@ -9,13 +12,9 @@ gradle-publish-maven = "0.29.0"
 immutable = "0.1.4"
 
 kmp-file = "0.1.1"
+kmp-tor-resource = "408.13.0"
 kotlincrypto-endians = "0.3.1"
 kotlinx-coroutines = "1.8.1"
-
-# tests
-androidx-test-core = "1.5.0"
-androidx-test-runner = "1.5.2"
-kmp-tor-resource = "408.13.0"
 
 [libraries]
 gradle-android = { module = "com.android.tools.build:gradle", version.ref = "gradle-android" }

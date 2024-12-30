@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## Version 0.1.2 (2024-12-30)
+ - Fixes inability to configure `detached` option on `Node.js` [[#132]][132]
+ - Use `ArrayDeque` instead of `ArrayList` when buffering `stdout`/`stderr` [[#131]][131]
+
 ## Version 0.1.1 (2024-12-18)
  - Fixes inability to configure process options on `Node.js` for [[#128]][128]:
      - `shell`
@@ -82,5 +86,7 @@
 [124]: https://github.com/05nelsonm/kmp-process/pull/124
 [126]: https://github.com/05nelsonm/kmp-process/pull/126
 [128]: https://github.com/05nelsonm/kmp-process/pull/128
+[131]: https://github.com/05nelsonm/kmp-process/pull/131
+[132]: https://github.com/05nelsonm/kmp-process/pull/132
 
 [issue-108]: https://github.com/05nelsonm/kmp-process/issues/108
