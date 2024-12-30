@@ -16,6 +16,23 @@
 package io.matthewnelson.kmp.process
 
 /**
+ * Configures the `detached` option for `spawn`.
+ *
+ * **NOTE:** `unref` will be called immediately on the underlying child process.
+ * It is upon API consumers to ensure an appropriate [Stdio] configuration is had
+ * for their detached [Process], as detailed in the documentation linked below.
+ *
+ * Default: `false`
+ *
+ * [docs#spawn](https://nodejs.org/api/child_process.html#optionsdetached)
+ * */
+public fun Process.Builder.detached(
+    enable: Boolean,
+): Process.Builder = apply {
+    platform().detached = enable
+}
+
+/**
  * Configures the `shell` option for `spawn` and `spawnSync`
  *
  * Default: `false`

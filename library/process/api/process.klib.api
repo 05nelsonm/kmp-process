@@ -342,6 +342,9 @@ open class io.matthewnelson.kmp.process.internal/events_EventEmitter { // io.mat
 }
 
 // Targets: [js]
+final fun (io.matthewnelson.kmp.process/Process.Builder).io.matthewnelson.kmp.process/detached(kotlin/Boolean): io.matthewnelson.kmp.process/Process.Builder // io.matthewnelson.kmp.process/detached|detached@io.matthewnelson.kmp.process.Process.Builder(kotlin.Boolean){}[0]
+
+// Targets: [js]
 final fun (io.matthewnelson.kmp.process/Process.Builder).io.matthewnelson.kmp.process/shell(kotlin/Boolean): io.matthewnelson.kmp.process/Process.Builder // io.matthewnelson.kmp.process/shell|shell@io.matthewnelson.kmp.process.Process.Builder(kotlin.Boolean){}[0]
 
 // Targets: [js]

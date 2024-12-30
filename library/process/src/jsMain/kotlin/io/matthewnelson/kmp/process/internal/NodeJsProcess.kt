@@ -24,6 +24,7 @@ import io.matthewnelson.kmp.process.*
 
 internal class NodeJsProcess internal constructor(
     private val jsProcess: child_process_ChildProcess,
+    private val isDetached: Boolean,
     command: String,
     args: List<String>,
     chdir: File?,
@@ -52,6 +53,8 @@ internal class NodeJsProcess internal constructor(
             val t = (err as? Throwable) ?: IOException("$err")
             onError(t, lazyContext = { "nodejs.on('error')" })
         }
+
+        if (isDetached) jsProcess.unref()
     }
 
     // @Throws(Throwable::class)
@@ -109,7 +112,7 @@ internal class NodeJsProcess internal constructor(
             null
         }
 
-        if (wasDestroyed) jsProcess.unref()
+        if (wasDestroyed && !isDetached) jsProcess.unref()
 
         error?.let { throw it }
     }
