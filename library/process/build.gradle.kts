@@ -76,7 +76,7 @@ kmpConfiguration {
                 }
                 findByName("unixMain")?.apply {
                     dependencies {
-                        implementation(libs.kotlincrypto.endians)
+                        implementation(kotlincrypto.bitops.endian)
                     }
                 }
 

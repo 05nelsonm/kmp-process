@@ -8,6 +8,26 @@ pluginManagement {
     }
 }
 
+dependencyResolutionManagement {
+    @Suppress("UnstableApiUsage")
+    repositories { mavenCentral() }
+
+    val vCatalogKC = rootDir
+        .resolve("gradle")
+        .resolve("libs.versions.toml")
+        .readLines()
+        .first { it.startsWith("kotlincrypto-catalog ") }
+        .substringAfter('"')
+        .substringBeforeLast('"')
+
+    versionCatalogs {
+        create("kotlincrypto") {
+            // https://github.com/KotlinCrypto/version-catalog/blob/master/gradle/kotlincrypto.versions.toml
+            from("org.kotlincrypto:version-catalog:$vCatalogKC")
+        }
+    }
+}
+
 includeBuild("build-logic")
 
 @Suppress("PrivatePropertyName")

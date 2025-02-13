@@ -4,7 +4,7 @@
 
 [![badge-kotlin]][url-kotlin]
 [![badge-coroutines]][url-coroutines]
-[![badge-endians]][url-endians]
+[![badge-bitops]][url-bitops]
 [![badge-immutable]][url-immutable]
 [![badge-kmp-file]][url-kmp-file]
 
@@ -228,7 +228,7 @@ dependencies {
 
 <!-- TAG_DEPENDENCIES -->
 [badge-coroutines]: https://img.shields.io/badge/kotlinx.coroutines-1.8.1-blue.svg?logo=kotlin
-[badge-endians]: https://img.shields.io/badge/kotlincrypto.endians-0.3.1-blue.svg?style=flat
+[badge-bitops]: https://img.shields.io/badge/kotlincrypto.bitops-0.1.2-blue.svg?style=flat
 [badge-immutable]: https://img.shields.io/badge/immutable-0.1.4-blue.svg?style=flat
 [badge-kmp-file]: https://img.shields.io/badge/kmp--file-0.1.1-blue.svg?style=flat
 [badge-kotlin]: https://img.shields.io/badge/kotlin-1.9.24-blue.svg?logo=kotlin
@@ -254,7 +254,7 @@ dependencies {
 [url-latest-release]: https://github.com/05nelsonm/kmp-process/releases/latest
 [url-license]: https://www.apache.org/licenses/LICENSE-2.0
 [url-coroutines]: https://github.com/Kotlin/kotlinx.coroutines
-[url-endians]: https://github.com/KotlinCrypto/endians
+[url-bitops]: https://github.com/KotlinCrypto/bitops
 [url-immutable]: https://github.com/05nelsonm/immutable
 [url-kmp-file]: https://github.com/05nelsonm/kmp-file
 [url-kotlin]: https://kotlinlang.org

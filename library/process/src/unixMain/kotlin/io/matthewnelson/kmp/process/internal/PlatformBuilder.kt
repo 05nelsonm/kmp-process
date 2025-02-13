@@ -33,8 +33,8 @@ import io.matthewnelson.kmp.process.internal.stdio.StdioDescriptor.Pipe.Companio
 import io.matthewnelson.kmp.process.internal.stdio.StdioHandle
 import io.matthewnelson.kmp.process.internal.stdio.StdioHandle.Companion.openHandle
 import kotlinx.cinterop.*
-import org.kotlincrypto.endians.BigEndian
-import org.kotlincrypto.endians.BigEndian.Companion.toBigEndian
+import org.kotlincrypto.bitops.endian.Endian.Big.beIntAt
+import org.kotlincrypto.bitops.endian.Endian.Big.bePackIntoUnsafe
 import platform.posix.*
 
 // unixMain
@@ -284,7 +284,7 @@ internal actual class PlatformBuilder private actual constructor() {
                 if (type == null) {
                     IOException("CLOEXEC pipe validation check failure")
                 } else {
-                    val errno = BigEndian(b[0], b[1], b[2], b[3]).toInt()
+                    val errno = b.beIntAt(0)
                     val msg = strerror(errno)?.toKString() ?: "errno: $errno"
                     IOException("Child process $type failure. $msg")
                 }
@@ -319,7 +319,7 @@ internal actual class PlatformBuilder private actual constructor() {
         private fun onError(errno: Int, type: Byte) {
             val b = ByteArray(5)
             b[4] = type
-            errno.toBigEndian().copyInto(b)
+            errno.bePackIntoUnsafe(b, destOffset = 0)
             try {
                 WriteStream.of(pipe).write(b)
             } catch (_: IOException) {}
