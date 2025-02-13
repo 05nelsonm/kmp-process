@@ -66,6 +66,7 @@ internal inline fun <T: ArrayBufferView> ByteArray.toJsArray(
     return array
 }
 
+@Suppress("NOTHING_TO_INLINE")
 internal inline fun ArrayBufferView.fill() {
     val len = byteLength
     if (len == 0) return

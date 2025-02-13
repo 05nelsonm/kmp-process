@@ -79,7 +79,11 @@ kmpConfiguration {
                         implementation(kotlincrypto.bitops.endian)
                     }
                 }
+            }
+        }
 
+        kotlin {
+            with(sourceSets) {
                 val jvmMain = findByName("jvmMain")
                 val nativeMain = findByName("nativeMain")
 
@@ -96,6 +100,9 @@ kmpConfiguration {
                 }
             }
 
+        }
+
+        kotlin {
             val cinteropDir = projectDir
                 .resolve("src")
                 .resolve("nativeInterop")
@@ -104,7 +111,6 @@ kmpConfiguration {
             targets.filterIsInstance<KotlinNativeTarget>()
                 .glibc_versionCInterop(cinteropDir)
                 .spawnCInterop(cinteropDir)
-
         }
     }
 }
@@ -117,7 +123,7 @@ fun List<KotlinNativeTarget>.glibc_versionCInterop(
         if (target.konanTarget.family != Family.LINUX) return@forEach
 
         target.compilations["main"].cinterops.create("glibc_version").apply {
-            defFile = cinteropDir.resolve("glibc_version.def")
+            definitionFile.set(cinteropDir.resolve("glibc_version.def"))
         }
     }
 
@@ -133,7 +139,7 @@ fun List<KotlinNativeTarget>.spawnCInterop(
         if (!target.konanTarget.family.isAppleFamily) return@forEach
 
         target.compilations["main"].cinterops.create("spawn").apply {
-            defFile = cinteropDir.resolve("spawn.def")
+            definitionFile.set(cinteropDir.resolve("spawn.def"))
         }
     }
 

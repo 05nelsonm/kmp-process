@@ -28,8 +28,8 @@ internal actual abstract class ReadStream private constructor(
     private val descriptor: StdioDescriptor,
 ) {
 
-    @Throws(IllegalArgumentException::class, IndexOutOfBoundsException::class, IOException::class)
-    internal actual open fun read(buf: ByteArray, offset: Int, len: Int): Int {
+    //@Throws(IllegalArgumentException::class, IndexOutOfBoundsException::class, IOException::class)
+    actual open fun read(buf: ByteArray, offset: Int, len: Int): Int {
         buf.checkBounds(offset, len)
         if (descriptor.isClosed) throw IOException("ReadStream is closed")
         if (len == 0) return 0
@@ -46,8 +46,8 @@ internal actual abstract class ReadStream private constructor(
         }
     }
 
-    @Throws(IOException::class)
-    internal actual fun read(buf: ByteArray): Int = read(buf, 0, buf.size)
+    //@Throws(IOException::class)
+    actual fun read(buf: ByteArray): Int = read(buf, 0, buf.size)
 
     internal companion object {
 

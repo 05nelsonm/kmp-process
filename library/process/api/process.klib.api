@@ -1,8 +1,6 @@
 // Klib ABI Dump
 // Targets: [iosArm64, iosSimulatorArm64, iosX64, js, linuxArm64, linuxX64, macosArm64, macosX64]
 // Alias: native => [iosArm64, iosSimulatorArm64, iosX64, linuxArm64, linuxX64, macosArm64, macosX64]
-// Alias: linux => [linuxArm64, linuxX64]
-// Alias: macos => [macosArm64, macosX64]
 // Rendering settings:
 // - Signature version: 2
 // - Show manifest properties: true
@@ -30,8 +28,6 @@ abstract fun interface io.matthewnelson.kmp.process/OutputFeed { // io.matthewne
     abstract fun onOutput(kotlin/String?) // io.matthewnelson.kmp.process/OutputFeed.onOutput|onOutput(kotlin.String?){}[0]
 
     sealed class Handler : io.matthewnelson.kmp.process/Blocking { // io.matthewnelson.kmp.process/OutputFeed.Handler|null[0]
-        constructor <init>(io.matthewnelson.kmp.process/Stdio.Config) // io.matthewnelson.kmp.process/OutputFeed.Handler.<init>|<init>(io.matthewnelson.kmp.process.Stdio.Config){}[0]
-
         final var isDestroyed // io.matthewnelson.kmp.process/OutputFeed.Handler.isDestroyed|{}isDestroyed[0]
             final fun <get-isDestroyed>(): kotlin/Boolean // io.matthewnelson.kmp.process/OutputFeed.Handler.isDestroyed.<get-isDestroyed>|<get-isDestroyed>(){}[0]
             final fun <set-isDestroyed>(kotlin/Boolean) // io.matthewnelson.kmp.process/OutputFeed.Handler.isDestroyed.<set-isDestroyed>|<set-isDestroyed>(kotlin.Boolean){}[0]
@@ -50,8 +46,6 @@ abstract fun interface io.matthewnelson.kmp.process/OutputFeed { // io.matthewne
     }
 
     sealed class Waiter : io.matthewnelson.kmp.process/Blocking.Waiter { // io.matthewnelson.kmp.process/OutputFeed.Waiter|null[0]
-        constructor <init>(io.matthewnelson.kmp.process/Process, kotlin/Boolean) // io.matthewnelson.kmp.process/OutputFeed.Waiter.<init>|<init>(io.matthewnelson.kmp.process.Process;kotlin.Boolean){}[0]
-
         final suspend fun awaitStopAsync(): io.matthewnelson.kmp.process/Process // io.matthewnelson.kmp.process/OutputFeed.Waiter.awaitStopAsync|awaitStopAsync(){}[0]
     }
 }
@@ -223,11 +217,7 @@ final value class io.matthewnelson.kmp.process/ReadBuffer { // io.matthewnelson.
 }
 
 sealed class io.matthewnelson.kmp.process/Blocking { // io.matthewnelson.kmp.process/Blocking|null[0]
-    constructor <init>() // io.matthewnelson.kmp.process/Blocking.<init>|<init>(){}[0]
-
     sealed class Waiter { // io.matthewnelson.kmp.process/Blocking.Waiter|null[0]
-        constructor <init>(io.matthewnelson.kmp.process/Process) // io.matthewnelson.kmp.process/Blocking.Waiter.<init>|<init>(io.matthewnelson.kmp.process.Process){}[0]
-
         final val process // io.matthewnelson.kmp.process/Blocking.Waiter.process|{}process[0]
             final fun <get-process>(): io.matthewnelson.kmp.process/Process // io.matthewnelson.kmp.process/Blocking.Waiter.process.<get-process>|<get-process>(){}[0]
 
@@ -276,8 +266,8 @@ sealed class io.matthewnelson.kmp.process/Stdio { // io.matthewnelson.kmp.proces
         final fun hashCode(): kotlin/Int // io.matthewnelson.kmp.process/Stdio.File.hashCode|hashCode(){}[0]
 
         final object Companion { // io.matthewnelson.kmp.process/Stdio.File.Companion|null[0]
-            final fun of(io.matthewnelson.kmp.file/File, kotlin/Boolean =...): io.matthewnelson.kmp.process/Stdio.File // io.matthewnelson.kmp.process/Stdio.File.Companion.of|of(io.matthewnelson.kmp.file.File;kotlin.Boolean){}[0]
-            final fun of(kotlin/String, kotlin/Boolean =...): io.matthewnelson.kmp.process/Stdio.File // io.matthewnelson.kmp.process/Stdio.File.Companion.of|of(kotlin.String;kotlin.Boolean){}[0]
+            final fun of(io.matthewnelson.kmp.file/File, kotlin/Boolean = ...): io.matthewnelson.kmp.process/Stdio.File // io.matthewnelson.kmp.process/Stdio.File.Companion.of|of(io.matthewnelson.kmp.file.File;kotlin.Boolean){}[0]
+            final fun of(kotlin/String, kotlin/Boolean = ...): io.matthewnelson.kmp.process/Stdio.File // io.matthewnelson.kmp.process/Stdio.File.Companion.of|of(kotlin.String;kotlin.Boolean){}[0]
         }
     }
 
@@ -297,6 +287,8 @@ sealed class io.matthewnelson.kmp.process/Stdio { // io.matthewnelson.kmp.proces
     }
 }
 
+final fun (io.matthewnelson.kmp.process/Process.Builder).io.matthewnelson.kmp.process/changeDir(io.matthewnelson.kmp.file/File?): io.matthewnelson.kmp.process/Process.Builder // io.matthewnelson.kmp.process/changeDir|changeDir@io.matthewnelson.kmp.process.Process.Builder(io.matthewnelson.kmp.file.File?){}[0]
+
 // Targets: [native]
 final class io.matthewnelson.kmp.process/AsyncWriteStream : io.matthewnelson.kmp.process/BufferedWriteStream { // io.matthewnelson.kmp.process/AsyncWriteStream|null[0]
     final suspend fun closeAsync() // io.matthewnelson.kmp.process/AsyncWriteStream.closeAsync|closeAsync(){}[0]
@@ -307,16 +299,11 @@ final class io.matthewnelson.kmp.process/AsyncWriteStream : io.matthewnelson.kmp
 
 // Targets: [native]
 sealed class io.matthewnelson.kmp.process/BufferedWriteStream { // io.matthewnelson.kmp.process/BufferedWriteStream|null[0]
-    constructor <init>(io.matthewnelson.kmp.process.internal/WriteStream) // io.matthewnelson.kmp.process/BufferedWriteStream.<init>|<init>(io.matthewnelson.kmp.process.internal.WriteStream){}[0]
-
     final fun close() // io.matthewnelson.kmp.process/BufferedWriteStream.close|close(){}[0]
     final fun flush() // io.matthewnelson.kmp.process/BufferedWriteStream.flush|flush(){}[0]
     final fun write(kotlin/ByteArray) // io.matthewnelson.kmp.process/BufferedWriteStream.write|write(kotlin.ByteArray){}[0]
     final fun write(kotlin/ByteArray, kotlin/Int, kotlin/Int) // io.matthewnelson.kmp.process/BufferedWriteStream.write|write(kotlin.ByteArray;kotlin.Int;kotlin.Int){}[0]
 }
-
-// Targets: [js, linux, macos]
-final fun (io.matthewnelson.kmp.process/Process.Builder).io.matthewnelson.kmp.process/changeDir(io.matthewnelson.kmp.file/File?): io.matthewnelson.kmp.process/Process.Builder // io.matthewnelson.kmp.process/changeDir|changeDir@io.matthewnelson.kmp.process.Process.Builder(io.matthewnelson.kmp.file.File?){}[0]
 
 // Targets: [js]
 final class io.matthewnelson.kmp.process/AsyncWriteStream { // io.matthewnelson.kmp.process/AsyncWriteStream|null[0]
