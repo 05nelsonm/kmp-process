@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-import io.matthewnelson.kmp.configuration.ExperimentalKmpConfigurationApi
 import io.matthewnelson.kmp.configuration.extension.KmpConfigurationExtension
 import io.matthewnelson.kmp.configuration.extension.container.target.KmpConfigurationContainerDsl
 import org.gradle.api.Action
@@ -41,10 +40,9 @@ fun KmpConfigurationExtension.configureShared(
             compileTargetCompatibility = JavaVersion.VERSION_1_8
 
             // windows always throws a fit if not using Java 11. This disables
-            // compilations of module-info.java. Nobody deploys from Windows
+            // compilation of module-info.java. Nobody deploys from Windows
             // anyway...
             if (!HostManager.hostIsMingw) {
-                @OptIn(ExperimentalKmpConfigurationApi::class)
                 java9ModuleInfoName = java9ModuleName
             }
         }

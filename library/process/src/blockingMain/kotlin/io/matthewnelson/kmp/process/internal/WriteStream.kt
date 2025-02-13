@@ -17,19 +17,17 @@
 
 package io.matthewnelson.kmp.process.internal
 
-import io.matthewnelson.kmp.file.IOException
-
 internal expect abstract class WriteStream {
 
-    @Throws(IllegalArgumentException::class, IndexOutOfBoundsException::class, IOException::class)
-    internal open fun write(buf: ByteArray, offset: Int, len: Int)
+    //@Throws(IllegalArgumentException::class, IndexOutOfBoundsException::class, IOException::class)
+    open fun write(buf: ByteArray, offset: Int, len: Int)
 
-    @Throws(IOException::class)
-    internal fun write(buf: ByteArray)
+    //@Throws(IOException::class)
+    fun write(buf: ByteArray)
 
-    @Throws(IOException::class)
-    internal open fun close()
+    //@Throws(IOException::class)
+    open fun close()
 
-    @Throws(IOException::class)
-    internal open fun flush()
+    //@Throws(IOException::class)
+    open fun flush()
 }

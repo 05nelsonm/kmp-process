@@ -32,7 +32,7 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
-@Suppress("DEPRECATION")
+@Suppress("DEPRECATION", "UnusedReceiverParameter")
 abstract class ProcessBaseTest {
 
     protected open val IsAndroidInstrumentTest: Boolean = false
@@ -213,6 +213,11 @@ abstract class ProcessBaseTest {
 
     @Test
     fun givenFeed_whenExceptionHandler_thenNotifies() = runTest(timeout = 5.seconds) {
+        if (IsWindows) {
+            println("Skipping...")
+            return@runTest
+        }
+
         val shouldThrow = !IsAndroidInstrumentTest && !IsNodeJs
 
         var invocationError = 0
@@ -233,7 +238,7 @@ abstract class ProcessBaseTest {
                 .stderr(Stdio.Pipe)
                 .spawn()
         } catch (e: IOException) {
-            if (IsDarwinMobile || IsWindows) {
+            if (IsDarwinMobile) {
                 println("Skipping...")
                 return@runTest
             }

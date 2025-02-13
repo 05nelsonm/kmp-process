@@ -17,13 +17,11 @@
 
 package io.matthewnelson.kmp.process.internal
 
-import io.matthewnelson.kmp.file.IOException
-
 internal expect abstract class ReadStream {
 
-    @Throws(IllegalArgumentException::class, IndexOutOfBoundsException::class, IOException::class)
-    internal open fun read(buf: ByteArray, offset: Int, len: Int): Int
+    //@Throws(IllegalArgumentException::class, IndexOutOfBoundsException::class, IOException::class)
+    open fun read(buf: ByteArray, offset: Int, len: Int): Int
 
-    @Throws(IOException::class)
-    internal fun read(buf: ByteArray): Int
+    //@Throws(IOException::class)
+    fun read(buf: ByteArray): Int
 }

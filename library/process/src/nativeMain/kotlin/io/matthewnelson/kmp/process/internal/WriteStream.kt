@@ -30,8 +30,8 @@ internal actual abstract class WriteStream private constructor(
 
     internal val isClosed: Boolean get() = descriptor.isClosed
 
-    @Throws(IllegalArgumentException::class, IndexOutOfBoundsException::class, IOException::class)
-    internal actual open fun write(buf: ByteArray, offset: Int, len: Int) {
+    //@Throws(IllegalArgumentException::class, IndexOutOfBoundsException::class, IOException::class)
+    actual open fun write(buf: ByteArray, offset: Int, len: Int) {
         buf.checkBounds(offset, len)
         if (descriptor.isClosed) throw IOException("WriteStream is closed")
         if (len == 0) return
@@ -56,14 +56,14 @@ internal actual abstract class WriteStream private constructor(
         }
     }
 
-    @Throws(IOException::class)
-    internal actual fun write(buf: ByteArray) { write(buf, 0, buf.size) }
+    //@Throws(IOException::class)
+    actual fun write(buf: ByteArray) { write(buf, 0, buf.size) }
 
-    @Throws(IOException::class)
-    internal actual open fun close() { descriptor.close() }
+    //@Throws(IOException::class)
+    actual open fun close() { descriptor.close() }
 
-    @Throws(IOException::class)
-    internal actual open fun flush() {}
+    //@Throws(IOException::class)
+    actual open fun flush() {}
 
     internal companion object {
 
