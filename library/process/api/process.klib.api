@@ -1,6 +1,8 @@
 // Klib ABI Dump
 // Targets: [iosArm64, iosSimulatorArm64, iosX64, js, linuxArm64, linuxX64, macosArm64, macosX64]
 // Alias: native => [iosArm64, iosSimulatorArm64, iosX64, linuxArm64, linuxX64, macosArm64, macosX64]
+// Alias: linux => [linuxArm64, linuxX64]
+// Alias: macos => [macosArm64, macosX64]
 // Rendering settings:
 // - Signature version: 2
 // - Show manifest properties: true
@@ -287,8 +289,6 @@ sealed class io.matthewnelson.kmp.process/Stdio { // io.matthewnelson.kmp.proces
     }
 }
 
-final fun (io.matthewnelson.kmp.process/Process.Builder).io.matthewnelson.kmp.process/changeDir(io.matthewnelson.kmp.file/File?): io.matthewnelson.kmp.process/Process.Builder // io.matthewnelson.kmp.process/changeDir|changeDir@io.matthewnelson.kmp.process.Process.Builder(io.matthewnelson.kmp.file.File?){}[0]
-
 // Targets: [native]
 final class io.matthewnelson.kmp.process/AsyncWriteStream : io.matthewnelson.kmp.process/BufferedWriteStream { // io.matthewnelson.kmp.process/AsyncWriteStream|null[0]
     final suspend fun closeAsync() // io.matthewnelson.kmp.process/AsyncWriteStream.closeAsync|closeAsync(){}[0]
@@ -304,6 +304,9 @@ sealed class io.matthewnelson.kmp.process/BufferedWriteStream { // io.matthewnel
     final fun write(kotlin/ByteArray) // io.matthewnelson.kmp.process/BufferedWriteStream.write|write(kotlin.ByteArray){}[0]
     final fun write(kotlin/ByteArray, kotlin/Int, kotlin/Int) // io.matthewnelson.kmp.process/BufferedWriteStream.write|write(kotlin.ByteArray;kotlin.Int;kotlin.Int){}[0]
 }
+
+// Targets: [js, linux, macos]
+final fun (io.matthewnelson.kmp.process/Process.Builder).io.matthewnelson.kmp.process/changeDir(io.matthewnelson.kmp.file/File?): io.matthewnelson.kmp.process/Process.Builder // io.matthewnelson.kmp.process/changeDir|changeDir@io.matthewnelson.kmp.process.Process.Builder(io.matthewnelson.kmp.file.File?){}[0]
 
 // Targets: [js]
 final class io.matthewnelson.kmp.process/AsyncWriteStream { // io.matthewnelson.kmp.process/AsyncWriteStream|null[0]
