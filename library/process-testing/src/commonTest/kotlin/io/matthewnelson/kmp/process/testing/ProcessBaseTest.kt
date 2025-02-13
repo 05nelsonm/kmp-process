@@ -32,7 +32,7 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
-@Suppress("DEPRECATION")
+@Suppress("DEPRECATION", "UnusedReceiverParameter")
 abstract class ProcessBaseTest {
 
     protected open val IsAndroidInstrumentTest: Boolean = false
