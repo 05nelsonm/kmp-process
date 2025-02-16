@@ -65,7 +65,7 @@ internal constructor(
         }
     }
 
-    private val destroyLock = Lock()
+    private val destroyLock = newLock()
     private val _exitCode = AtomicReference<Int?>(null)
 
     private val stdoutWorker = Instance(create = {

@@ -20,6 +20,7 @@ package io.matthewnelson.kmp.process
 import io.matthewnelson.kmp.process.ProcessException.Companion.CTX_FEED_STDERR
 import io.matthewnelson.kmp.process.ProcessException.Companion.CTX_FEED_STDOUT
 import io.matthewnelson.kmp.process.internal.SynchronizedSet
+import io.matthewnelson.kmp.process.internal.withLock
 import kotlinx.coroutines.delay
 import kotlin.concurrent.Volatile
 import kotlin.contracts.ExperimentalContracts

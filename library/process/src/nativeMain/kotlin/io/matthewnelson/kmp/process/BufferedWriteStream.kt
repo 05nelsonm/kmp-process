@@ -18,9 +18,10 @@
 package io.matthewnelson.kmp.process
 
 import io.matthewnelson.kmp.file.IOException
-import io.matthewnelson.kmp.process.internal.Lock
 import io.matthewnelson.kmp.process.internal.WriteStream
 import io.matthewnelson.kmp.process.internal.checkBounds
+import io.matthewnelson.kmp.process.internal.newLock
+import io.matthewnelson.kmp.process.internal.withLock
 import kotlin.concurrent.Volatile
 
 public actual sealed class BufferedWriteStream actual constructor(
@@ -28,8 +29,9 @@ public actual sealed class BufferedWriteStream actual constructor(
 ) {
 
     private val buf = ByteArray(1024 * 8)
-    @Volatile private var bufLen = 0
-    private val lock = Lock()
+    @Volatile
+    private var bufLen = 0
+    private val lock = newLock()
 
     @Throws(IllegalArgumentException::class, IndexOutOfBoundsException::class, IOException::class)
     public actual fun write(buf: ByteArray, offset: Int, len: Int) { lock.withLock { writeNoLock(buf, offset, len) } }

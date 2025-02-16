@@ -17,6 +17,19 @@
 
 package io.matthewnelson.kmp.process.internal
 
-internal expect class Lock internal constructor() {
-    internal fun <T: Any?> withLock(block: () -> T): T
+import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.InvocationKind
+import kotlin.contracts.contract
+
+internal expect class Lock
+
+internal expect fun newLock(): Lock
+
+@OptIn(ExperimentalContracts::class)
+@Suppress("WRONG_INVOCATION_KIND", "LEAKED_IN_PLACE_LAMBDA")
+internal inline fun <T: Any?> Lock.withLock(block: () -> T): T {
+    contract { callsInPlace(block, InvocationKind.EXACTLY_ONCE) }
+    return withLockImpl(block)
 }
+
+internal expect inline fun <T: Any?> Lock.withLockImpl(block: () -> T): T
