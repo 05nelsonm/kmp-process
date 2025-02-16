@@ -145,7 +145,7 @@ public abstract class Process internal constructor(
         try {
             destroyProtected(immediate = true)
         } catch (t: Throwable) {
-            onError(t, lazyContext = { CTX_DESTROY })
+            onError(t, context = CTX_DESTROY)
         }
 
         return this
@@ -226,7 +226,7 @@ public abstract class Process internal constructor(
      * */
     public suspend fun waitForAsync(
         duration: Duration,
-    ): Int? = commonWaitFor(duration) { delay(it) }
+    ): Int? = commonWaitFor(duration) { millis -> delay(millis) }
 
     /**
      * Creates a new [Process].
@@ -512,10 +512,8 @@ public abstract class Process internal constructor(
 
     /** @suppress */
     @Throws(Throwable::class)
-    protected final override fun onError(t: Throwable, lazyContext: () -> String) {
+    protected final override fun onError(t: Throwable, context: String) {
         if (handler == ProcessException.Handler.IGNORE) return
-
-        val context = lazyContext()
 
         val threw = try {
             handler.onException(ProcessException.of(context, t))

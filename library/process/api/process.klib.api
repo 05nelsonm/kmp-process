@@ -34,7 +34,7 @@ abstract fun interface io.matthewnelson.kmp.process/OutputFeed { // io.matthewne
             final fun <get-isDestroyed>(): kotlin/Boolean // io.matthewnelson.kmp.process/OutputFeed.Handler.isDestroyed.<get-isDestroyed>|<get-isDestroyed>(){}[0]
             final fun <set-isDestroyed>(kotlin/Boolean) // io.matthewnelson.kmp.process/OutputFeed.Handler.isDestroyed.<set-isDestroyed>|<set-isDestroyed>(kotlin.Boolean){}[0]
 
-        abstract fun onError(kotlin/Throwable, kotlin/Function0<kotlin/String>) // io.matthewnelson.kmp.process/OutputFeed.Handler.onError|onError(kotlin.Throwable;kotlin.Function0<kotlin.String>){}[0]
+        abstract fun onError(kotlin/Throwable, kotlin/String) // io.matthewnelson.kmp.process/OutputFeed.Handler.onError|onError(kotlin.Throwable;kotlin.String){}[0]
         abstract fun startStderr() // io.matthewnelson.kmp.process/OutputFeed.Handler.startStderr|startStderr(){}[0]
         abstract fun startStdout() // io.matthewnelson.kmp.process/OutputFeed.Handler.startStdout|startStdout(){}[0]
         final fun dispatchStderr(kotlin/String?) // io.matthewnelson.kmp.process/OutputFeed.Handler.dispatchStderr|dispatchStderr(kotlin.String?){}[0]
@@ -77,7 +77,7 @@ abstract class io.matthewnelson.kmp.process/Process : io.matthewnelson.kmp.proce
     abstract fun pid(): kotlin/Int // io.matthewnelson.kmp.process/Process.pid|pid(){}[0]
     final fun destroy(): io.matthewnelson.kmp.process/Process // io.matthewnelson.kmp.process/Process.destroy|destroy(){}[0]
     final fun exitCode(): kotlin/Int // io.matthewnelson.kmp.process/Process.exitCode|exitCode(){}[0]
-    final fun onError(kotlin/Throwable, kotlin/Function0<kotlin/String>) // io.matthewnelson.kmp.process/Process.onError|onError(kotlin.Throwable;kotlin.Function0<kotlin.String>){}[0]
+    final fun onError(kotlin/Throwable, kotlin/String) // io.matthewnelson.kmp.process/Process.onError|onError(kotlin.Throwable;kotlin.String){}[0]
     final fun toString(): kotlin/String // io.matthewnelson.kmp.process/Process.toString|toString(){}[0]
     final suspend fun waitForAsync(): kotlin/Int // io.matthewnelson.kmp.process/Process.waitForAsync|waitForAsync(){}[0]
     final suspend fun waitForAsync(kotlin.time/Duration): kotlin/Int? // io.matthewnelson.kmp.process/Process.waitForAsync|waitForAsync(kotlin.time.Duration){}[0]

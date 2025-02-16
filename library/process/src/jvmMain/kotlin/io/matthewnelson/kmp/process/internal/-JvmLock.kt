@@ -17,6 +17,8 @@
 
 package io.matthewnelson.kmp.process.internal
 
-internal actual class Lock internal actual constructor() {
-    internal actual fun <T> withLock(block: () -> T): T = block()
-}
+internal actual class Lock
+
+internal actual fun newLock(): Lock = Lock()
+
+internal actual inline fun <T: Any?> Lock.withLockImpl(block: () -> T): T = synchronized(this, block)

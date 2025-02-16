@@ -15,12 +15,31 @@
  **/
 package io.matthewnelson.kmp.process.internal
 
-internal class SynchronizedSet<E: Any?> internal constructor() {
+import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.InvocationKind
+import kotlin.contracts.contract
 
-    private val set = LinkedHashSet<E>(1, 1.0F)
-    private val lock = Lock()
+/**
+ * Internal reminder to not do stupid things
+ * */
+@MustBeDocumented
+@Target(AnnotationTarget.PROPERTY)
+@Retention(AnnotationRetention.BINARY)
+@RequiresOptIn("Use SynchronizedSet.withLock extension")
+internal annotation class UseWithLock
 
-    internal fun <T: Any?> withLock(
-        block: MutableSet<E>.() -> T
-    ): T = lock.withLock { block(set) }
+internal class SynchronizedSet<E: Any?> internal constructor(initialCapacity: Int = 1) {
+    @UseWithLock
+    internal val lock = newLock()
+    @UseWithLock
+    internal val set = LinkedHashSet<E>(initialCapacity.coerceAtLeast(1), 1.0F)
+}
+
+@OptIn(ExperimentalContracts::class)
+internal inline fun <T: Any?, E: Any?> SynchronizedSet<E>.withLock(
+    block: LinkedHashSet<E>.() -> T,
+): T {
+    contract { callsInPlace(block, InvocationKind.EXACTLY_ONCE) }
+    @OptIn(UseWithLock::class)
+    return lock.withLock { block(set) }
 }

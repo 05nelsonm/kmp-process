@@ -22,15 +22,14 @@ internal interface Closeable {
 
     @Throws(IOException::class)
     fun close()
+}
 
-    companion object {
-
-        internal fun Closeable.tryCloseSuppressed(t: Throwable) {
-            try {
-                close()
-            } catch (e: IOException) {
-                t.addSuppressed(e)
-            }
-        }
+@Suppress("NOTHING_TO_INLINE", "KotlinRedundantDiagnosticSuppress")
+internal inline fun <T: Throwable> Closeable.tryCloseSuppressed(throwable: T): T {
+    try {
+        close()
+    } catch (e: IOException) {
+        throwable.addSuppressed(e)
     }
+    return throwable
 }

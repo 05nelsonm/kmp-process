@@ -15,8 +15,11 @@
  **/
 package io.matthewnelson.kmp.process.internal
 
+import kotlin.concurrent.Volatile
+
 internal class Instance<T: Any?> internal constructor(create: () -> T) {
 
+    @Volatile
     private var create: (() -> T)? = create
     private val instance = SynchronizedSet<T>()
 

@@ -62,7 +62,7 @@ public actual sealed class Blocking protected actual constructor() {
     @Throws(InterruptedException::class)
     public fun waitFor(
         duration: Duration,
-    ): Int? = (this as Process).commonWaitFor(duration) { it.threadSleep() }
+    ): Int? = (this as Process).commonWaitFor(duration) { millis -> millis.threadSleep() }
 
     public companion object {
 

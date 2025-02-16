@@ -20,8 +20,12 @@ package io.matthewnelson.kmp.process
 import io.matthewnelson.kmp.process.ProcessException.Companion.CTX_FEED_STDERR
 import io.matthewnelson.kmp.process.ProcessException.Companion.CTX_FEED_STDOUT
 import io.matthewnelson.kmp.process.internal.SynchronizedSet
+import io.matthewnelson.kmp.process.internal.withLock
 import kotlinx.coroutines.delay
 import kotlin.concurrent.Volatile
+import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.InvocationKind
+import kotlin.contracts.contract
 import kotlin.jvm.JvmField
 import kotlin.jvm.JvmSynthetic
 import kotlin.time.Duration.Companion.milliseconds
@@ -209,7 +213,7 @@ public fun interface OutputFeed {
         protected fun dispatchStdout(line: String?) {
             stdoutFeeds.dispatch(
                 line,
-                lazyContext = { CTX_FEED_STDOUT },
+                onErrorContext = CTX_FEED_STDOUT,
                 onClosed = { stdoutStopped = true },
             )
         }
@@ -217,25 +221,32 @@ public fun interface OutputFeed {
         protected fun dispatchStderr(line: String?) {
             stderrFeeds.dispatch(
                 line,
-                lazyContext = { CTX_FEED_STDERR },
+                onErrorContext = CTX_FEED_STDERR,
                 onClosed = { stderrStopped = true },
             )
         }
 
         /** @suppress */
         @Throws(Throwable::class)
-        protected abstract fun onError(t: Throwable, lazyContext: () -> String)
+        protected abstract fun onError(t: Throwable, context: String)
         /** @suppress */
         protected abstract fun startStdout()
         /** @suppress */
         protected abstract fun startStderr()
 
-        private fun SynchronizedSet<OutputFeed>.addFeeds(
+        @Suppress("NOTHING_TO_INLINE")
+        @OptIn(ExperimentalContracts::class)
+        private inline fun SynchronizedSet<OutputFeed>.addFeeds(
             feeds: Array<out OutputFeed>,
             stdio: Stdio,
             isStopped: () -> Boolean,
             startStdio: () -> Unit,
         ): Process {
+            contract {
+                callsInPlace(isStopped, InvocationKind.UNKNOWN)
+                callsInPlace(startStdio, InvocationKind.AT_MOST_ONCE)
+            }
+
             if (isDestroyed) return This
             if (feeds.isEmpty()) return This
             if (stdio !is Stdio.Pipe) return This
@@ -260,11 +271,16 @@ public fun interface OutputFeed {
         private inline val This: Process get() = this as Process
 
         @Suppress("NOTHING_TO_INLINE")
+        @OptIn(ExperimentalContracts::class)
         private inline fun SynchronizedSet<OutputFeed>.dispatch(
             line: String?,
-            noinline lazyContext: () -> String,
-            crossinline onClosed: () -> Unit,
+            onErrorContext: String,
+            onClosed: () -> Unit,
         ) {
+            contract {
+                callsInPlace(onClosed, InvocationKind.AT_MOST_ONCE)
+            }
+
             var threw: Throwable? = null
 
             withLock { toSet() }.forEach { feed ->
@@ -277,7 +293,7 @@ public fun interface OutputFeed {
 
             threw?.let { t ->
                 try {
-                    onError(t, lazyContext)
+                    onError(t, context = onErrorContext)
                     // Handler swallowed it
                     threw = null
                 } catch (e: Throwable) {

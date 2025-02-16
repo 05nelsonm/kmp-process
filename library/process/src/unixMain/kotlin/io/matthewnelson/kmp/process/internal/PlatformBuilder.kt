@@ -19,7 +19,6 @@ package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.*
 import io.matthewnelson.kmp.process.*
-import io.matthewnelson.kmp.process.internal.Closeable.Companion.tryCloseSuppressed
 import io.matthewnelson.kmp.process.internal.fork.posixDup2
 import io.matthewnelson.kmp.process.internal.fork.posixExecve
 import io.matthewnelson.kmp.process.internal.fork.posixFork
@@ -72,8 +71,7 @@ internal actual class PlatformBuilder private actual constructor() {
         } catch (_: UnsupportedOperationException) {
             /* ignore and try fork/exec */
         } catch (e: IOException) {
-            handle.tryCloseSuppressed(e)
-            throw e
+            throw handle.tryCloseSuppressed(e)
         }
 
         try {
@@ -203,8 +201,7 @@ internal actual class PlatformBuilder private actual constructor() {
         val pipe = try {
             Stdio.Pipe.fdOpen()
         } catch (e: IOException) {
-            handle.tryCloseSuppressed(e)
-            throw e
+            throw handle.tryCloseSuppressed(e)
         }
 
         val pid = try {

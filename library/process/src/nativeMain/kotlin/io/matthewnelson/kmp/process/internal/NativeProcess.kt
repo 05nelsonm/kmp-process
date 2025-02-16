@@ -22,7 +22,6 @@ import io.matthewnelson.kmp.process.AsyncWriteStream
 import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.ProcessException
 import io.matthewnelson.kmp.process.Signal
-import io.matthewnelson.kmp.process.internal.Closeable.Companion.tryCloseSuppressed
 import io.matthewnelson.kmp.process.internal.stdio.StdioHandle
 import kotlinx.cinterop.*
 import kotlinx.coroutines.*
@@ -59,13 +58,11 @@ internal constructor(
 
     init {
         if (pid <= 0) {
-            val t = IOException("pid[$pid] must be greater than 0")
-            handle.tryCloseSuppressed(t)
-            throw t
+            throw handle.tryCloseSuppressed(IOException("pid[$pid] must be greater than 0"))
         }
     }
 
-    private val destroyLock = Lock()
+    private val destroyLock = newLock()
     private val _exitCode = AtomicReference<Int?>(null)
 
     private val stdoutWorker = Instance(create = {

@@ -17,9 +17,10 @@
 
 package io.matthewnelson.kmp.process.internal
 
-import kotlinx.atomicfu.locks.SynchronizedObject
-import kotlinx.atomicfu.locks.withLock as _withLock
+private val LOCK by lazy { Lock() }
 
-internal actual class Lock internal actual constructor(): SynchronizedObject() {
-    internal actual fun <T: Any?> withLock(block: () -> T): T = _withLock(block)
-}
+internal actual class Lock
+
+internal actual fun newLock(): Lock = LOCK
+
+internal actual inline fun <T: Any?> Lock.withLockImpl(block: () -> T): T = block()
