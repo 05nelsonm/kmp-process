@@ -61,6 +61,6 @@ apiValidation {
     if (CHECK_PUBLICATION) {
         ignoredProjects.add("check-publication")
     } else {
-        ignoredProjects.add("process-testing")
+        ignoredProjects.add("test-api")
     }
 }
