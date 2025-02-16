@@ -226,7 +226,7 @@ public abstract class Process internal constructor(
      * */
     public suspend fun waitForAsync(
         duration: Duration,
-    ): Int? = commonWaitFor(duration) { delay(it) }
+    ): Int? = commonWaitFor(duration) { millis -> delay(millis) }
 
     /**
      * Creates a new [Process].
