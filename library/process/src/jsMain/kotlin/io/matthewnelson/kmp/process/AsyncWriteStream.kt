@@ -23,8 +23,6 @@ import io.matthewnelson.kmp.process.internal.*
 import kotlinx.coroutines.CompletableJob
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.currentCoroutineContext
-import org.khronos.webgl.Uint8Array
-import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * A stream to write to.
