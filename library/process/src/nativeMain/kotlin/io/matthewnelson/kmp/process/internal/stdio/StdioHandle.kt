@@ -21,11 +21,6 @@ package io.matthewnelson.kmp.process.internal.stdio
 import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.process.Stdio
 import io.matthewnelson.kmp.process.internal.*
-import io.matthewnelson.kmp.process.internal.Closeable.Companion.tryCloseSuppressed
-import io.matthewnelson.kmp.process.internal.Instance
-import io.matthewnelson.kmp.process.internal.Lock
-import io.matthewnelson.kmp.process.internal.ReadStream
-import io.matthewnelson.kmp.process.internal.WriteStream
 import io.matthewnelson.kmp.process.internal.stdio.StdioDescriptor.Companion.fdOpen
 import io.matthewnelson.kmp.process.internal.stdio.StdioDescriptor.Pipe.Companion.fdOpen
 import platform.posix.STDERR_FILENO
@@ -40,7 +35,7 @@ internal class StdioHandle private constructor(
 ): Closeable {
 
     override val isClosed: Boolean get() = stdinFD.isClosed && stdoutFD.isClosed && stderrFD.isClosed
-    private val lock = Lock()
+    private val lock = newLock()
     private var threw: IOException? = null
 
     private val stdin: Instance<WriteStream?> = Instance(create = {
@@ -181,8 +176,7 @@ internal class StdioHandle private constructor(
                     is Stdio.Pipe -> s.fdOpen()
                 }
             } catch (e: IOException) {
-                stdinFD.tryCloseSuppressed(e)
-                throw e
+                throw stdinFD.tryCloseSuppressed(e)
             }
 
             val stderrFD = try {
