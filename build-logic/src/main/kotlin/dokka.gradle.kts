@@ -16,6 +16,7 @@
 import org.jetbrains.dokka.gradle.DokkaExtension
 import org.jetbrains.dokka.gradle.engine.parameters.VisibilityModifier
 import java.net.URI
+import java.time.LocalDate
 
 plugins {
     id("org.jetbrains.dokka")
@@ -32,8 +33,10 @@ extensions.configure<DokkaExtension> {
         includes.from("README.md")
         enableKotlinStdLibDocumentationLink.set(false)
 
-        externalDocumentationLinks.create("kmp-file") {
-            url.set(URI("https://kmp-file.matthewnelson.io/"))
+        externalDocumentationLinks {
+            register(project.path + ":kmp-file") {
+                url.set(URI("https://kmp-file.matthewnelson.io/"))
+            }
         }
 
         sourceLink {
@@ -46,5 +49,9 @@ extensions.configure<DokkaExtension> {
             VisibilityModifier.Public,
             VisibilityModifier.Protected,
         )
+    }
+
+    pluginsConfiguration.html {
+        footerMessage.set("© 2024-${LocalDate.now().year} Copyright Matthew Nelson")
     }
 }

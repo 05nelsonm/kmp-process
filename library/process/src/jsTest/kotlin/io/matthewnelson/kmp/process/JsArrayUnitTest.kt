@@ -15,11 +15,7 @@
  **/
 package io.matthewnelson.kmp.process
 
-import io.matthewnelson.kmp.process.internal.fill
-import io.matthewnelson.kmp.process.internal.toJsArray
-import org.khronos.webgl.Int8Array
-import org.khronos.webgl.Uint8Array
-import org.khronos.webgl.get
+import io.matthewnelson.kmp.process.internal.*
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -30,7 +26,7 @@ class JsArrayUnitTest {
         val b = ByteArray(50) { it.toByte() }
         val a = b.toJsArray { Int8Array(it) }
         for (i in b.indices) {
-            assertEquals(b[i], a[i])
+            assertEquals(b[i], a.asDynamic()[i])
         }
     }
 
@@ -40,10 +36,10 @@ class JsArrayUnitTest {
         val offset = 50
         val a = b.toJsArray(offset = offset) { Int8Array(it) }
 
-        assertEquals(b.size - offset, a.length)
+        assertEquals(b.size - offset, a.byteLength)
 
-        for (i in 0 until a.length) {
-            assertEquals(b[i + offset], a[i])
+        for (i in 0 until a.byteLength) {
+            assertEquals(b[i + offset], a.asDynamic()[i])
         }
     }
 
@@ -51,8 +47,8 @@ class JsArrayUnitTest {
     fun givenJsArray_whenFill_thenArrayIsZeroedOut() {
         val a = ByteArray(250) { it.toByte() }.toJsArray { Uint8Array(it) }
         a.fill()
-        for (i in 0 until a.length) {
-            assertEquals(0, a[i])
+        for (i in 0 until a.byteLength) {
+            assertEquals(0, a.asDynamic()[i])
         }
     }
 }

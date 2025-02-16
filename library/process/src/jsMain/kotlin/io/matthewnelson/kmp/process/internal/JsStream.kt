@@ -19,8 +19,6 @@
 
 package io.matthewnelson.kmp.process.internal
 
-import org.khronos.webgl.Uint8Array
-
 /** [docs](https://nodejs.org/api/stream.html#class-streamreadable) */
 @JsName("Readable")
 internal open external class stream_Readable {

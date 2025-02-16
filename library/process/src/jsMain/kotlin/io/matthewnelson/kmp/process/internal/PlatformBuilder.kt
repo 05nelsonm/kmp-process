@@ -20,7 +20,6 @@ package io.matthewnelson.kmp.process.internal
 import io.matthewnelson.kmp.file.*
 import io.matthewnelson.kmp.process.*
 import io.matthewnelson.kmp.process.internal.RealLineOutputFeed.Companion.LF
-import org.khronos.webgl.Int8Array
 
 // jsMain
 internal actual class PlatformBuilder private actual constructor() {
