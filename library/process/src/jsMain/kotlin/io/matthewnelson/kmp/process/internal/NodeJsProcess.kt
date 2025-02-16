@@ -51,7 +51,7 @@ internal class NodeJsProcess internal constructor(
         jsProcess.onError { err ->
             if (isDestroyed) return@onError
             val t = (err as? Throwable) ?: IOException("$err")
-            onError(t, lazyContext = { "nodejs.on('error')" })
+            onError(t, context = ERROR_CONTEXT)
         }
 
         if (isDetached) jsProcess.unref()
@@ -175,5 +175,9 @@ internal class NodeJsProcess internal constructor(
                 onData(data, data.capacity())
             }
         }
+    }
+
+    private companion object {
+        private const val ERROR_CONTEXT = "nodejs.on('error')"
     }
 }

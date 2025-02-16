@@ -83,7 +83,7 @@ public abstract class io/matthewnelson/kmp/process/OutputFeed$Handler : io/matth
 	public synthetic fun <init> (Lio/matthewnelson/kmp/process/Stdio$Config;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	protected final fun dispatchStderr (Ljava/lang/String;)V
 	protected final fun dispatchStdout (Ljava/lang/String;)V
-	protected abstract fun onError (Ljava/lang/Throwable;Lkotlin/jvm/functions/Function0;)V
+	protected abstract fun onError (Ljava/lang/Throwable;Ljava/lang/String;)V
 	protected abstract fun startStderr ()V
 	protected abstract fun startStdout ()V
 	public final fun stderrFeed (Lio/matthewnelson/kmp/process/OutputFeed;)Lio/matthewnelson/kmp/process/Process;
@@ -114,7 +114,7 @@ public abstract class io/matthewnelson/kmp/process/Process : io/matthewnelson/km
 	public final fun exitCode ()I
 	public abstract fun exitCodeOrNull ()Ljava/lang/Integer;
 	public final fun isAlive ()Z
-	protected final fun onError (Ljava/lang/Throwable;Lkotlin/jvm/functions/Function0;)V
+	protected final fun onError (Ljava/lang/Throwable;Ljava/lang/String;)V
 	public abstract fun pid ()I
 	public final fun toString ()Ljava/lang/String;
 	public final fun waitForAsync (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
