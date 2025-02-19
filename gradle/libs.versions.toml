@@ -14,7 +14,15 @@ gradle-publish-maven        = "0.30.0"
 immutable                   = "0.2.0-SNAPSHOT"
 
 kmp-file                    = "0.2.0-SNAPSHOT"
-kmp-tor-resource            = "408.13.2"
+
+# TODO:
+#  When updating to non-SNAPSHOT version, remove maven snapshot
+#  repository from the following locations:
+#  - settings.gradle.kts
+#  - build-logic/settings.gradle.kts
+#  - test-api/build.gradle.kts
+kmp-tor-resource            = "408.14.0-SNAPSHOT"
+
 kotlincrypto-catalog        = "0.7.0-SNAPSHOT" # Utilized from settings.gradle.kts
 kotlinx-coroutines          = "1.10.1"
 
