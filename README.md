@@ -218,17 +218,17 @@ builder.onError { e ->
 
 ```kotlin
 dependencies {
-    implementation("io.matthewnelson.kmp-process:process:0.1.2")
+    implementation("io.matthewnelson.kmp-process:process:0.2.0")
 }
 ```
 
 <!-- TAG_VERSION -->
-[badge-latest-release]: https://img.shields.io/badge/latest--release-0.1.2-blue.svg?style=flat
+[badge-latest-release]: https://img.shields.io/badge/latest--release-0.2.0-blue.svg?style=flat
 [badge-license]: https://img.shields.io/badge/license-Apache%20License%202.0-blue.svg?style=flat
 
 <!-- TAG_DEPENDENCIES -->
 [badge-coroutines]: https://img.shields.io/badge/kotlinx.coroutines-1.10.1-blue.svg?logo=kotlin
-[badge-bitops]: https://img.shields.io/badge/kotlincrypto.bitops-0.1.2-blue.svg?style=flat
+[badge-bitops]: https://img.shields.io/badge/kotlincrypto.bitops-0.2.0-blue.svg?style=flat
 [badge-immutable]: https://img.shields.io/badge/immutable-0.2.0-blue.svg?style=flat
 [badge-kmp-file]: https://img.shields.io/badge/kmp--file-0.2.0-blue.svg?style=flat
 [badge-kotlin]: https://img.shields.io/badge/kotlin-2.1.10-blue.svg?logo=kotlin

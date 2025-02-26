@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## Version 0.2.0 (2025-02-26)
+ - Updates `kotlin` to `2.1.10` [[#133]][133]
+ - Updates `immutable` to `0.2.0` [[#133]][133]
+ - Updates `kmp-file` to `0.2.0` [[#133]][133]
+ - Updates `kotlincrypto.bitops` to `0.2.0` [[#138]][138]
+ - Updates `kotlinx.coroutines` to `1.10.1` [[#133]][133]
+ - Replaces usage of `org.khronos.webgl` JS Array with locally defined types [[#136]][136]
+ - Performance improvements to internal lock/synchronization usage [[#137]][137]
+
 ## Version 0.1.2 (2024-12-30)
  - Fixes inability to configure `detached` option on `Node.js` [[#132]][132]
  - Use `ArrayDeque` instead of `ArrayList` when buffering `stdout`/`stderr` [[#131]][131]
@@ -30,7 +39,7 @@
  - Fixes issue for `Node.js` on Windows where `Process.destroy` may
    throw exception due to a bug in `libuv` version `1.48.0` which was
    introduced in `Node.js` version `21.6.2` [[#111]][111]
-     - See issue [[#108]][issue-108] for details.
+     - See issue [[#108]][108-issue] for details.
  - Adds the `Process.exitCodeOrNull` function to mitigate unnecessary
    production of stack traces [[#112]][112]
  - Adds an exception handling API for dealing with "internal-ish" `Process`
@@ -79,6 +88,7 @@
 [100]: https://github.com/05nelsonm/kmp-process/pull/100
 [106]: https://github.com/05nelsonm/kmp-process/pull/106
 [107]: https://github.com/05nelsonm/kmp-process/pull/107
+[108-issue]: https://github.com/05nelsonm/kmp-process/issues/108
 [111]: https://github.com/05nelsonm/kmp-process/pull/111
 [112]: https://github.com/05nelsonm/kmp-process/pull/112
 [113]: https://github.com/05nelsonm/kmp-process/pull/113
@@ -88,5 +98,7 @@
 [128]: https://github.com/05nelsonm/kmp-process/pull/128
 [131]: https://github.com/05nelsonm/kmp-process/pull/131
 [132]: https://github.com/05nelsonm/kmp-process/pull/132
-
-[issue-108]: https://github.com/05nelsonm/kmp-process/issues/108
+[133]: https://github.com/05nelsonm/kmp-process/pull/133
+[136]: https://github.com/05nelsonm/kmp-process/pull/136
+[137]: https://github.com/05nelsonm/kmp-process/pull/137
+[138]: https://github.com/05nelsonm/kmp-process/pull/138
