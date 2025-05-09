@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## Version 0.2.1 (2025-05-09)
+ - Updates `kotlinx.coroutines` to `1.10.2` [[#141]][141]
+ - Fixes `NoClassDefFoundException` when `Process.Current.pid` is called on Java9+ whereby 
+   module `java.management` is not present. An `UnsupportedOperationException` is now thrown
+   in this event. [[#140]][140]
+
 ## Version 0.2.0 (2025-02-26)
  - Updates `kotlin` to `2.1.10` [[#133]][133]
  - Updates `immutable` to `0.2.0` [[#133]][133]
@@ -102,3 +108,5 @@
 [136]: https://github.com/05nelsonm/kmp-process/pull/136
 [137]: https://github.com/05nelsonm/kmp-process/pull/137
 [138]: https://github.com/05nelsonm/kmp-process/pull/138
+[140]: https://github.com/05nelsonm/kmp-process/pull/140
+[141]: https://github.com/05nelsonm/kmp-process/pull/141

@@ -21,7 +21,7 @@ plugins {
 
 if (!version.toString().endsWith("-SNAPSHOT")) {
     extensions.configure<SigningExtension>("signing") {
-        useGpgCmd()
+//        useGpgCmd()
     }
 }
 
