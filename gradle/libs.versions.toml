@@ -16,7 +16,7 @@ immutable                   = "0.2.0"
 kmp-file                    = "0.2.0"
 kmp-tor-resource            = "408.16.0"
 kotlincrypto-catalog        = "0.7.0" # Utilized from settings.gradle.kts
-kotlinx-coroutines          = "1.10.1"
+kotlinx-coroutines          = "1.10.2"
 
 [libraries]
 gradle-android              = { module = "com.android.tools.build:gradle", version.ref = "gradle-android" }
