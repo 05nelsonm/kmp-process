@@ -110,9 +110,17 @@ public abstract class Process internal constructor(
      * */
     public object Current {
 
+        /**
+         * Retrieves the current process' environment
+         * */
         @JvmStatic
         public fun environment(): Map<String, String> = PlatformBuilder.get().env.toImmutableMap()
 
+        /**
+         * Retrieves the current process' ID
+         *
+         * @throws [UnsupportedOperationException] if on Java9+ and module 'java.management' is not present.
+         * */
         @JvmStatic
         public fun pid(): Int = PID.get()
     }

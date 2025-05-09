@@ -20,5 +20,6 @@ package io.matthewnelson.kmp.process.internal
 import platform.posix.getpid
 
 internal actual object PID {
+    @Throws(UnsupportedOperationException::class)
     internal actual fun get(): Int = getpid()
 }

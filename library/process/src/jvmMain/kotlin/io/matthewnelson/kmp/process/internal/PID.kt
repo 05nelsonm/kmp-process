@@ -25,6 +25,7 @@ internal actual object PID {
     private var SKIP_JAVA9: Boolean = false
 
     @JvmSynthetic
+    @Throws(UnsupportedOperationException::class)
     internal actual fun get(): Int {
         androidOrNull()?.let { return it }
 
@@ -42,7 +43,11 @@ internal actual object PID {
         }
 
         // Lastly, access java.management module
-        return java10OrNull() ?: java8()
+        return try {
+            java10OrNull() ?: java8()
+        } catch (t: NoClassDefFoundError) {
+            throw UnsupportedOperationException("Missing access to module java.management", t)
+        }
     }
 
     @JvmSynthetic

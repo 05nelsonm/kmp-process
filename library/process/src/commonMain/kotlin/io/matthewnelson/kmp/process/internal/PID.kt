@@ -18,5 +18,6 @@
 package io.matthewnelson.kmp.process.internal
 
 internal expect object PID {
+    @Throws(UnsupportedOperationException::class)
     internal fun get(): Int
 }
