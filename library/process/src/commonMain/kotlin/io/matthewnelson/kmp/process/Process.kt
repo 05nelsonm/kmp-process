@@ -19,6 +19,7 @@ import io.matthewnelson.immutable.collections.toImmutableList
 import io.matthewnelson.immutable.collections.toImmutableMap
 import io.matthewnelson.kmp.file.*
 import io.matthewnelson.kmp.process.ProcessException.Companion.CTX_DESTROY
+import io.matthewnelson.kmp.process.internal.PID
 import io.matthewnelson.kmp.process.internal.PlatformBuilder
 import io.matthewnelson.kmp.process.internal.SyntheticAccess
 import io.matthewnelson.kmp.process.internal.appendProcessInfo
@@ -109,11 +110,19 @@ public abstract class Process internal constructor(
      * */
     public object Current {
 
+        /**
+         * Retrieves the current process' environment
+         * */
         @JvmStatic
         public fun environment(): Map<String, String> = PlatformBuilder.get().env.toImmutableMap()
 
+        /**
+         * Retrieves the current process' ID
+         *
+         * @throws [UnsupportedOperationException] if on Java9+ and module 'java.management' is not present.
+         * */
         @JvmStatic
-        public fun pid(): Int = PlatformBuilder.myPid()
+        public fun pid(): Int = PID.get()
     }
 
     /**
