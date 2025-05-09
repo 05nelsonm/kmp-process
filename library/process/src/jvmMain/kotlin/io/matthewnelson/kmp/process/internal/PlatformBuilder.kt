@@ -149,28 +149,6 @@ internal actual class PlatformBuilder private actual constructor() {
         @JvmSynthetic
         internal actual fun get(): PlatformBuilder = PlatformBuilder()
 
-        @JvmSynthetic
-        internal actual fun myPid(): Int {
-            AndroidMyPidMethod?.let { myPid ->
-                return myPid.invoke(null) as Int
-            }
-
-            return java.lang.management.ManagementFactory
-                .getRuntimeMXBean()
-                .name
-                .split('@')[0]
-                .toInt()
-        }
-
-        private val AndroidMyPidMethod by lazy {
-            // Not Android Runtime
-            if (!IsMobile) return@lazy null
-
-            // Android runtime
-            Class.forName("android.os.Process")
-                .getMethod("myPid")
-        }
-
         @Suppress("NewApi")
         private fun Stdio.toRedirect(
             isStdin: Boolean,

@@ -380,7 +380,5 @@ internal actual class PlatformBuilder private actual constructor() {
         private const val ERR_EXEC: Byte = 3
 
         internal actual fun get(): PlatformBuilder = PlatformBuilder()
-
-        internal actual fun myPid(): Int = getpid()
     }
 }

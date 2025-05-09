@@ -19,6 +19,7 @@ import io.matthewnelson.immutable.collections.toImmutableList
 import io.matthewnelson.immutable.collections.toImmutableMap
 import io.matthewnelson.kmp.file.*
 import io.matthewnelson.kmp.process.ProcessException.Companion.CTX_DESTROY
+import io.matthewnelson.kmp.process.internal.PID
 import io.matthewnelson.kmp.process.internal.PlatformBuilder
 import io.matthewnelson.kmp.process.internal.SyntheticAccess
 import io.matthewnelson.kmp.process.internal.appendProcessInfo
@@ -113,7 +114,7 @@ public abstract class Process internal constructor(
         public fun environment(): Map<String, String> = PlatformBuilder.get().env.toImmutableMap()
 
         @JvmStatic
-        public fun pid(): Int = PlatformBuilder.myPid()
+        public fun pid(): Int = PID.get()
     }
 
     /**
