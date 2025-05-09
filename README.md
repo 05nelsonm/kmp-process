@@ -222,6 +222,8 @@ dependencies {
 }
 ```
 
+**NOTE:** For Java9+ consumers, module `java.management` is required. See [issue-139][url-issue-139]
+
 <!-- TAG_VERSION -->
 [badge-latest-release]: https://img.shields.io/badge/latest--release-0.2.0-blue.svg?style=flat
 [badge-license]: https://img.shields.io/badge/license-Apache%20License%202.0-blue.svg?style=flat
@@ -265,3 +267,4 @@ dependencies {
 [url-posix-fork]: https://man7.org/linux/man-pages/man2/fork.2.html
 [url-posix-spawn]: https://man7.org/linux/man-pages/man3/posix_spawn.3.html
 [url-rust-command]: https://doc.rust-lang.org/std/process/struct.Command.html
+[url-issue-139]: https://github.com/05nelsonm/kmp-process/issues/139
