@@ -17,7 +17,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <uses-sdk tools:overrideLibrary="io.matthewnelson.kmp.tor.resource.lib.tor,io.matthewnelson.kmp.tor.resource.exec.tor,io.matthewnelson.kmp.tor.resource.noexec.tor" />
+    <uses-sdk tools:overrideLibrary="io.matthewnelson.kmp.tor.resource.compilation.lib.tor,io.matthewnelson.kmp.tor.resource.compilation.exec.tor,io.matthewnelson.kmp.tor.resource.lib.tor,io.matthewnelson.kmp.tor.resource.exec.tor,io.matthewnelson.kmp.tor.resource.noexec.tor" />
 
     <uses-permission android:name="android.permission.INTERNET" />
 

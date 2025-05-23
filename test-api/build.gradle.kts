@@ -60,7 +60,9 @@ kmpConfiguration {
         js {
             sourceSetTest {
                 dependencies {
-                    implementation(npm("kmp-tor.resource-exec-tor.all", libs.versions.kmp.tor.resource.get()))
+                    // TODO: REMOVE[kmp-tor-resource]
+                    //  ./gradlew kotlinUpgradeYarnLock
+                    implementation(npm("kmp-tor.resource-exec-tor.all", libs.versions.kmp.tor.resource.get() + ".0"))
                 }
             }
         }
