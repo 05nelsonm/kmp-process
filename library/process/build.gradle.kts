@@ -46,7 +46,7 @@ kmpConfiguration {
                     "androidNative",
                     "linux",
                     "macos",
-                    "windows",
+                    "mingw",
                 ).mapNotNull { name ->
                     val main = findByName(name + "Main") ?: return@mapNotNull null
                     main to getByName(name + "Test")

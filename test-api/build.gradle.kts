@@ -28,8 +28,8 @@ kmpConfiguration {
     configureShared {
         androidLibrary {
             android {
-                buildToolsVersion = "34.0.0"
-                compileSdk = 34
+                buildToolsVersion = "35.0.1"
+                compileSdk = 35
                 namespace = "io.matthewnelson.kmp.process.test.api"
 
                 defaultConfig {
@@ -60,7 +60,9 @@ kmpConfiguration {
         js {
             sourceSetTest {
                 dependencies {
-                    implementation(npm("kmp-tor.resource-exec-tor.all", libs.versions.kmp.tor.resource.get()))
+                    // TODO: REMOVE[kmp-tor-resource]
+                    //  ./gradlew kotlinUpgradeYarnLock
+                    implementation(npm("kmp-tor.resource-exec-tor.all", libs.versions.kmp.tor.resource.get() + ".0"))
                 }
             }
         }
