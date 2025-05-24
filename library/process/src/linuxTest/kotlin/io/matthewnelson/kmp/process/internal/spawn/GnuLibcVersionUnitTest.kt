@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Matthew Nelson
+ * Copyright (c) 2025 Matthew Nelson
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,21 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-package io.matthewnelson.kmp.process.internal
+package io.matthewnelson.kmp.process.internal.spawn
 
-import io.matthewnelson.kmp.process.internal.spawn.GnuLibcVersion
 import kotlin.test.*
 
 class GnuLibcVersionUnitTest {
-
-    @Test
-    fun givenCheck_whenCalled_thenLambdaIsActuallyInvoked() {
-        // need to ensure that on Linux, the lambda is actually invoked
-        // with the version class.
-        var invocations = 0
-        GnuLibcVersion.check { invocations++; println(this) }
-        assertEquals(1, invocations)
-    }
 
     @Test
     fun givenVersion_whenIsAtLeast_thenReturnsExpected() {

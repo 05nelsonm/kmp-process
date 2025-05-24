@@ -21,63 +21,29 @@ import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.file.path
 import kotlinx.cinterop.AutofreeScope
 import kotlinx.cinterop.ByteVar
-import kotlinx.cinterop.ByteVarOf
-import kotlinx.cinterop.CFunction
-import kotlinx.cinterop.CPointer
 import kotlinx.cinterop.CPointerVar
 import kotlinx.cinterop.CValuesRef
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.MemScope
 import kotlinx.cinterop.NativePointed
-import kotlinx.cinterop.alloc
-import kotlinx.cinterop.cstr
-import kotlinx.cinterop.invoke
 import kotlinx.cinterop.memScoped
-import kotlinx.cinterop.ptr
-import platform.linux.posix_spawn
-import platform.linux.posix_spawn_file_actions_adddup2
-import platform.linux.posix_spawn_file_actions_destroy
-import platform.linux.posix_spawn_file_actions_init
-import platform.linux.posix_spawn_file_actions_t
-import platform.linux.posix_spawnattr_destroy
-import platform.linux.posix_spawnattr_init
-import platform.linux.posix_spawnattr_t
-import platform.linux.posix_spawnp
-import platform.posix.dlsym
 import platform.posix.pid_tVar
 
-// linux
+// macOS
 @OptIn(ExperimentalForeignApi::class)
 internal actual class PosixSpawnScope internal constructor(
-    internal val attrs: CValuesRef<posix_spawnattr_t>,
-    internal val fileActions: CValuesRef<posix_spawn_file_actions_t>,
+    internal val attrs: CValuesRef<posix_spawnattr_tVar>,
+    internal val fileActions: CValuesRef<posix_spawn_file_actions_tVar>,
     private val mem: MemScope,
 ): AutofreeScope() {
 
     actual override fun alloc(size: Long, align: Int): NativePointed = mem.alloc(size, align)
-
-    internal companion object {
-
-        // Normally one would not want to hold onto a function pointer reference
-        // statically, but it's from glibc which is not going to be hot reloaded
-        // or anything w/o this process terminating, so.
-        internal val ADDCHDIR_NP by lazy {
-            val ptr = dlsym(null, "posix_spawn_file_actions_addchdir_np")
-                ?: return@lazy null
-
-            @Suppress("UNCHECKED_CAST")
-            ptr as CPointer<CFunction<(CValuesRef<posix_spawn_file_actions_t>, CPointer<ByteVarOf<Byte>>) -> Int>>
-        }
-    }
 }
 
 @OptIn(ExperimentalForeignApi::class)
 @Throws(UnsupportedOperationException::class)
 internal actual inline fun PosixSpawnScope.file_actions_addchdir_np(chdir: File): Int {
-    val addchdir_np = PosixSpawnScope.ADDCHDIR_NP
-        ?: throw UnsupportedOperationException("posix_spawn_file_actions_addchdir_np is not available")
-
-    return addchdir_np.invoke(fileActions, chdir.path.cstr.getPointer(scope = this))
+    return posix_spawn_file_actions_addchdir_np(fileActions, chdir.path)
 }
 
 @OptIn(ExperimentalForeignApi::class)
@@ -101,35 +67,22 @@ internal actual inline fun PosixSpawnScope.spawn_p(
     envp: CValuesRef<CPointerVar<ByteVar>>,
 ): Int = posix_spawnp(pid, program, fileActions, attrs, argv, envp)
 
-@OptIn(ExperimentalForeignApi::class)
 @Throws(UnsupportedOperationException::class)
+@OptIn(ExperimentalForeignApi::class)
 internal actual inline fun <T: Any> posixSpawnScopeOrNull(
     requireChangeDir: Boolean,
     block: PosixSpawnScope.() -> T,
 ): T? {
-    if (requireChangeDir) {
-        // glibc 2.29+ supports posix_spawn_file_actions_addchdir_np
-        if (PosixSpawnScope.ADDCHDIR_NP == null) return null
-    } else {
-        // glibc 2.24+ supports posix_spawn returning ENOENT
-        val version = GnuLibcVersion.INSTANCE ?: return null
-        if (!version.isAtLeast(major = 2u, minor = 24u)) return null
-    }
+    // macOS's implementation of posix_spawn has a bug whereby if the command being executed
+    // is a relative file path, a chdir action can cause a successful spawn, but erroneously
+    // return failure for the posix_spawn_file_actions_addchdir_np. So, just fall back to
+    // using fork/exec whenever changing directories is needed.
+    if (requireChangeDir) return null
 
     return memScoped {
-        val attrs = alloc<posix_spawnattr_t>()
-        if (posix_spawnattr_init(attrs.ptr) != 0) {
-            return@memScoped null
-        }
-        defer { posix_spawnattr_destroy(attrs.ptr) }
-
-        val fileActions = alloc<posix_spawn_file_actions_t>()
-        if (posix_spawn_file_actions_init(fileActions.ptr) != 0) {
-            return@memScoped null
-        }
-        defer { posix_spawn_file_actions_destroy(fileActions.ptr) }
-
-        val scope = PosixSpawnScope(attrs.ptr, fileActions.ptr, this)
+        val attrs = posix_spawnattr_init() ?: return@memScoped null
+        val fileActions = posix_spawn_file_actions_init() ?: return@memScoped null
+        val scope = PosixSpawnScope(attrs, fileActions, this)
         block(scope)
     }
 }

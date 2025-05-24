@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Matthew Nelson
+ * Copyright (c) 2025 Matthew Nelson
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,22 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
-
 package io.matthewnelson.kmp.process.internal.spawn
 
-internal actual class GnuLibcVersion private constructor() {
+import kotlin.test.Test
+import kotlin.test.assertFailsWith
 
-    internal actual fun isAtLeast(
-        major: UByte,
-        minor: UByte,
-    ): Boolean {
-        throw UnsupportedOperationException()
-    }
+class SpawnIosUnitTest {
 
-    internal actual companion object {
-
-        @Suppress("ACTUAL_ANNOTATIONS_NOT_MATCH_EXPECT")
-        internal actual fun check(block: GnuLibcVersion.() -> Unit) { /* no-op */ }
+    @Test
+    fun givenPosixSpawnScopeOrNull_whenChangeDirRequired_thenThrowsException() {
+        assertFailsWith<UnsupportedOperationException> {
+            posixSpawnScopeOrNull(requireChangeDir = true) {}
+        }
     }
 }

@@ -41,12 +41,36 @@ kmpConfiguration {
         kotlin {
             with(sourceSets) {
                 val sources = listOf(
-                    "jvm",
-                    "js",
                     "androidNative",
                     "linux",
                     "macos",
+                ).mapNotNull { name ->
+                    val main = findByName(name + "Main") ?: return@mapNotNull null
+                    main to getByName(name + "Test")
+                }
+
+                if (sources.isEmpty()) return@kotlin
+
+                val main = maybeCreate("unixForkMain").apply {
+                    dependsOn(getByName("unixMain"))
+                }
+                val test = maybeCreate("unixForkTest").apply {
+                    dependsOn(getByName("unixTest"))
+                }
+                sources.forEach { (sourceMain, sourceTest) ->
+                    sourceMain.dependsOn(main)
+                    sourceTest.dependsOn(test)
+                }
+            }
+        }
+
+        kotlin {
+            with(sourceSets) {
+                val sources = listOf(
+                    "jvm",
+                    "js",
                     "mingw",
+                    "unixFork",
                 ).mapNotNull { name ->
                     val main = findByName(name + "Main") ?: return@mapNotNull null
                     main to getByName(name + "Test")
@@ -69,21 +93,6 @@ kmpConfiguration {
 
         kotlin {
             with(sourceSets) {
-                findByName("nonJvmMain")?.apply {
-                    dependencies {
-                        implementation(libs.kotlinx.coroutines.core)
-                    }
-                }
-                findByName("unixMain")?.apply {
-                    dependencies {
-                        implementation(kotlincrypto.bitops.endian)
-                    }
-                }
-            }
-        }
-
-        kotlin {
-            with(sourceSets) {
                 val jvmMain = findByName("jvmMain")
                 val nativeMain = findByName("nativeMain")
 
@@ -99,7 +108,21 @@ kmpConfiguration {
                     findByName("nativeTest")?.apply { dependsOn(blockingTest) }
                 }
             }
+        }
 
+        kotlin {
+            with(sourceSets) {
+                findByName("nonJvmMain")?.apply {
+                    dependencies {
+                        implementation(libs.kotlinx.coroutines.core)
+                    }
+                }
+                findByName("unixMain")?.apply {
+                    dependencies {
+                        implementation(kotlincrypto.bitops.endian)
+                    }
+                }
+            }
         }
 
         kotlin {
