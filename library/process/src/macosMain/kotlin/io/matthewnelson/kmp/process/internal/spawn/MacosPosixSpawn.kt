@@ -18,6 +18,7 @@
 package io.matthewnelson.kmp.process.internal.spawn
 
 import io.matthewnelson.kmp.file.File
+import io.matthewnelson.kmp.file.path
 import kotlinx.cinterop.AutofreeScope
 import kotlinx.cinterop.ByteVar
 import kotlinx.cinterop.CPointerVar
@@ -42,7 +43,7 @@ internal actual class PosixSpawnScope internal constructor(
 @OptIn(ExperimentalForeignApi::class)
 @Throws(UnsupportedOperationException::class)
 internal actual inline fun PosixSpawnScope.file_actions_addchdir_np(chdir: File): Int {
-    throw UnsupportedOperationException("TODO: Check support macOS 10.15")
+    return posix_spawn_file_actions_addchdir_np(fileActions, chdir.path)
 }
 
 @OptIn(ExperimentalForeignApi::class)
@@ -71,14 +72,9 @@ internal actual inline fun PosixSpawnScope.spawn_p(
 internal actual inline fun <T: Any> posixSpawnScopeOrNull(
     requireChangeDir: Boolean,
     block: PosixSpawnScope.() -> T,
-): T? {
-    // TODO: Check support macOS 10.15
-    if (requireChangeDir) return null
-
-    return memScoped {
-        val attrs = posix_spawnattr_init() ?: return@memScoped null
-        val fileActions = posix_spawn_file_actions_init() ?: return@memScoped null
-        val scope = PosixSpawnScope(attrs, fileActions, this)
-        block(scope)
-    }
+): T? = memScoped {
+    val attrs = posix_spawnattr_init() ?: return@memScoped null
+    val fileActions = posix_spawn_file_actions_init() ?: return@memScoped null
+    val scope = PosixSpawnScope(attrs, fileActions, this)
+    block(scope)
 }
