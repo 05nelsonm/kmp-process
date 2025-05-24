@@ -18,6 +18,7 @@
 package io.matthewnelson.kmp.process.internal.spawn
 
 import io.matthewnelson.kmp.file.File
+import io.matthewnelson.kmp.file.FileNotFoundException
 import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.file.SysDirSep
 import io.matthewnelson.kmp.file.absoluteFile
@@ -152,8 +153,15 @@ internal inline fun posixSpawn(
         // for chdir would result in this scenario.
         val pid = pidRef.value
         if (pid == -1) {
-            val name = if (isAbsolutePath) "posix_spawn" else "posix_spawnp"
-            throw IOException("$name failed in pre-exec/exec step. Bad arguments for '$program'?")
+            var msg = if (isAbsolutePath) "posix_spawn" else "posix_spawnp"
+            msg += " failed in pre-exec/exec steps."
+            throw if (chdir != null && !chdir.exists()) {
+                msg += " Directory specified does not exist"
+                FileNotFoundException(msg)
+            } else {
+                msg += " Bad arguments for '$program'?"
+                IOException(msg)
+            }
         }
         pid
     } catch (e: IOException) {
