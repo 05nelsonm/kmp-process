@@ -92,16 +92,16 @@ internal expect fun File.isProgramOrNull(): Boolean?
 @OptIn(ExperimentalForeignApi::class)
 internal fun List<String>.toArgv(
     program: String,
-    scope: MemScope,
+    scope: AutofreeScope,
 ): CArrayPointer<CPointerVar<ByteVar>> = with(scope) {
     val argv = allocArray<CPointerVar<ByteVar>>(size + 2)
 
-    argv[0] = program.substringAfterLast(SysDirSep).cstr.ptr
+    argv[0] = program.substringAfterLast(SysDirSep).cstr.getPointer(scope)
 
     var i = 1
     val iterator = iterator()
     while (iterator.hasNext()) {
-        argv[i++] = iterator.next().cstr.ptr
+        argv[i++] = iterator.next().cstr.getPointer(scope)
     }
 
     argv[i] = null
@@ -111,7 +111,7 @@ internal fun List<String>.toArgv(
 
 @OptIn(ExperimentalForeignApi::class)
 internal fun Map<String, String>.toEnvp(
-    scope: MemScope,
+    scope: AutofreeScope,
 ): CArrayPointer<CPointerVar<ByteVar>> = with(scope) {
     val envp = allocArray<CPointerVar<ByteVar>>(size + 1)
 
@@ -119,7 +119,7 @@ internal fun Map<String, String>.toEnvp(
     val iterator = entries.iterator()
     while (iterator.hasNext()) {
         val (k, v) = iterator.next()
-        envp[i++] = "$k=$v".cstr.ptr
+        envp[i++] = "$k=$v".cstr.getPointer(scope)
     }
 
     envp[i] = null

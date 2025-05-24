@@ -20,37 +20,36 @@ package io.matthewnelson.kmp.process.internal.spawn
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.toKString
 
-internal actual class GnuLibcVersion internal constructor(
+internal class GnuLibcVersion internal constructor(
     private val major: UByte,
     private val minor: UByte,
 ) {
 
-    internal actual fun isAtLeast(
-        major: UByte,
-        minor: UByte,
-    ): Boolean {
+    internal fun isAtLeast(major: UByte, minor: UByte): Boolean {
         if (this.major > major) return true
         if (this.major < major) return false
         return this.minor >= minor
     }
 
-    internal actual companion object {
+    internal companion object {
 
-        @Throws(NullPointerException::class)
-        internal actual fun check(block: GnuLibcVersion.() -> Unit) {
+        internal val INSTANCE: GnuLibcVersion? = run {
             @OptIn(ExperimentalForeignApi::class)
             val version = gnu_get_libc_version()
                 ?.toKString()
-                ?.split('.')!!
+                ?.split('.', limit = 3)
+                ?: return@run null
 
             val major = version
                 .elementAtOrNull(0)
-                ?.toUByteOrNull()!!
+                ?.toUByteOrNull()
+                ?: return@run null
             val minor = version
                 .elementAtOrNull(1)
-                ?.toUByteOrNull()!!
+                ?.toUByteOrNull()
+                ?: return@run null
 
-            block(GnuLibcVersion(major, minor))
+            GnuLibcVersion(major, minor)
         }
     }
 
