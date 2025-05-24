@@ -17,8 +17,10 @@ package io.matthewnelson.kmp.process.internal.spawn
 
 import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.file.SysTempDir
+import io.matthewnelson.kmp.file.canonicalPath
 import io.matthewnelson.kmp.file.path
 import io.matthewnelson.kmp.file.resolve
+import io.matthewnelson.kmp.file.toFile
 import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.ProcessException
 import io.matthewnelson.kmp.process.Signal
@@ -110,7 +112,7 @@ class PosixSpawnUnitTest {
 
         println(p)
         assertEquals(42, exitCode)
-        assertEquals(CHDIR.path, output.firstOrNull())
+        assertEquals(CHDIR.canonicalPath(), output.firstOrNull()?.toFile()?.canonicalPath())
     }
 
     @Test

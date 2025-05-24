@@ -25,11 +25,14 @@ import kotlinx.cinterop.CValuesRef
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.MemScope
 import kotlinx.cinterop.NativePointed
+import kotlinx.cinterop.memScoped
 import platform.posix.pid_tVar
 
 // macOS
 @OptIn(ExperimentalForeignApi::class)
 internal actual class PosixSpawnScope internal constructor(
+    internal val attrs: CValuesRef<posix_spawnattr_tVar>,
+    internal val fileActions: CValuesRef<posix_spawn_file_actions_tVar>,
     private val mem: MemScope,
 ): AutofreeScope() {
 
@@ -44,7 +47,7 @@ internal actual inline fun PosixSpawnScope.file_actions_addchdir_np(chdir: File)
 
 @OptIn(ExperimentalForeignApi::class)
 internal actual inline fun PosixSpawnScope.file_actions_adddup2(fd: Int, newFd: Int): Int {
-    TODO("Not yet implemented")
+    return posix_spawn_file_actions_adddup2(fileActions, fd, newFd)
 }
 
 @OptIn(ExperimentalForeignApi::class)
@@ -53,8 +56,7 @@ internal actual inline fun PosixSpawnScope.spawn(
     pid: CValuesRef<pid_tVar>,
     argv: CValuesRef<CPointerVar<ByteVar>>,
     envp: CValuesRef<CPointerVar<ByteVar>>,
-): Int = TODO("Not yet implemented")
-//    posix_spawn(pid, program, fileActions, attrs, argv, envp)
+): Int = posix_spawn(pid, program, fileActions, attrs, argv, envp)
 
 @OptIn(ExperimentalForeignApi::class)
 internal actual inline fun PosixSpawnScope.spawn_p(
@@ -62,8 +64,7 @@ internal actual inline fun PosixSpawnScope.spawn_p(
     pid: CValuesRef<pid_tVar>,
     argv: CValuesRef<CPointerVar<ByteVar>>,
     envp: CValuesRef<CPointerVar<ByteVar>>,
-): Int = TODO("Not yet implemented")
-//    posix_spawnp(pid, program, fileActions, attrs, argv, envp)
+): Int = posix_spawnp(pid, program, fileActions, attrs, argv, envp)
 
 @Throws(UnsupportedOperationException::class)
 @OptIn(ExperimentalForeignApi::class)
@@ -73,5 +74,11 @@ internal actual inline fun <T: Any> posixSpawnScopeOrNull(
 ): T? {
     // TODO: Check support macOS 10.15
     if (requireChangeDir) return null
-    TODO("Not yet implemented")
+
+    return memScoped {
+        val attrs = posix_spawnattr_init() ?: return@memScoped null
+        val fileActions = posix_spawn_file_actions_init() ?: return@memScoped null
+        val scope = PosixSpawnScope(attrs, fileActions, this)
+        block(scope)
+    }
 }

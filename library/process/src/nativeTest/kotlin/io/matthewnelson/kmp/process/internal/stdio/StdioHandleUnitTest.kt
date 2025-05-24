@@ -74,7 +74,6 @@ class StdioHandleUnitTest {
             }
 
             assertEquals(n, i)
-            println(i)
         }
     }
 }

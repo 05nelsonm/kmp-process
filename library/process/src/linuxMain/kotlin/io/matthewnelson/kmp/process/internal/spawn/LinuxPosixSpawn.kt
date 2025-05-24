@@ -129,6 +129,7 @@ internal actual inline fun <T: Any> posixSpawnScopeOrNull(
         }
         defer { posix_spawn_file_actions_destroy(fileActions.ptr) }
 
-        block(PosixSpawnScope(attrs.ptr, fileActions.ptr, this))
+        val scope = PosixSpawnScope(attrs.ptr, fileActions.ptr, this)
+        block(scope)
     }
 }
