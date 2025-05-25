@@ -23,7 +23,7 @@ import platform.posix._PATH_DEFPATH
 import platform.posix.getenv
 
 @OptIn(ExperimentalForeignApi::class)
-internal class PATHIterator(val PATH: String): Iterator<String> {
+internal class PATHIterator(internal val PATH: String): Iterator<String> {
     internal constructor(): this(getenv("PATH")?.toKString()?.ifBlank { null } ?: _PATH_DEFPATH)
 
     private var i: Int = 0

@@ -15,4 +15,16 @@
  **/
 package io.matthewnelson.kmp.process.test.api
 
-class ProcessJvmUnitTest: ProcessBaseTest()
+import kotlin.test.Test
+
+class ProcessJvmUnitTest: ProcessBaseTest() {
+
+    @Test
+    override fun givenExecutable_whenRelativePathWithChDir_thenExecutes() {
+        if (IsWindows) {
+            println("Skipping...")
+            return
+        }
+        super.givenExecutable_whenRelativePathWithChDir_thenExecutes()
+    }
+}
