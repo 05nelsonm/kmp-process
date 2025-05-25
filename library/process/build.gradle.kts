@@ -144,7 +144,7 @@ kmpConfiguration {
 
             val interopTaskInfo = targets.filterIsInstance<KotlinNativeTarget>().map { target ->
                 if (target.konanTarget.family == Family.ANDROID) {
-                    target.compilations["main"].cinterops.create("sys_pipe2").apply {
+                    target.compilations["main"].cinterops.create("kmp_process_sys").apply {
                         definitionFile.set(cinteropDir.resolve("$name.def"))
                         includeDirs(cinteropDir)
                     }
@@ -171,7 +171,7 @@ kmpConfiguration {
             project.extensions.configure<CompileToBitcodeExtension>("cklib") {
                 config.configure(libs)
 
-                create("sys_pipe2") {
+                create("kmp_process_sys") {
                     language = CompileToBitcode.Language.C
                     srcDirs = project.files(cinteropDir)
                     includeFiles = listOf("$compileName.c")

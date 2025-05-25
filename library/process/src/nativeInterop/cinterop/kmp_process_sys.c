@@ -14,7 +14,7 @@
  * limitations under the License.
  **/
 
-#include "sys_pipe2.h"
+#include "kmp_process_sys.h"
 
 #ifdef __ANDROID__
 #include <sys/syscall.h>
