@@ -13,6 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-package io.matthewnelson.kmp.process.test.api
+package io.matthewnelson.kmp.process.internal
 
-class ProcessNonJvmUnitTest: ProcessBaseTest()
+internal actual val IS_POSIX_SPAWN_AVAILABLE: Boolean = true

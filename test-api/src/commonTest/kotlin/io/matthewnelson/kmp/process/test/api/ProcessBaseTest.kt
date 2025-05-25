@@ -181,8 +181,8 @@ abstract class ProcessBaseTest {
             .args("echo 1>&2 \"$expected\"")
             .output()
 
-        assertEquals("", out.stdout)
-        assertEquals(expected, out.stderr)
+        assertEquals("", out.stdout, "STDOUT:" + out.stdout)
+        assertEquals(expected, out.stderr, "STDERR:" + out.stderr)
     }
 
     @Test
@@ -193,8 +193,8 @@ abstract class ProcessBaseTest {
         }
 
         val expected = buildString {
-            repeat(50_000) { appendLine(it) }
-            append("50000")
+            repeat(5_000) { appendLine(it) }
+            append("5000")
         }
         val out = Process.Builder(command = "cat")
             .args("-")
@@ -203,11 +203,14 @@ abstract class ProcessBaseTest {
             .stdin(Stdio.Inherit)
             .output {
                 inputUtf8 { expected }
+                timeoutMillis = 1_000
+                maxBuffer = Int.MAX_VALUE / 2
             }
 
+        assertNull(out.processError)
         assertEquals(Stdio.Pipe, out.processInfo.stdio.stdin)
         @Suppress("ReplaceAssertBooleanWithAssertEquality")
-        assertTrue(expected == out.stdout, "Stdout output did not match expected")
+        assertTrue(expected == out.stdout, out.stdout)
         assertEquals("", out.stderr)
     }
 

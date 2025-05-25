@@ -15,10 +15,13 @@
  **/
 package io.matthewnelson.kmp.process.internal.spawn
 
+import io.matthewnelson.kmp.process.internal.IS_POSIX_SPAWN_AVAILABLE
 import platform.posix.android_get_device_api_level
 import kotlin.test.Test
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class PosixSpawnAndroidNativeUnitTest {
 
@@ -27,8 +30,10 @@ class PosixSpawnAndroidNativeUnitTest {
         val result = posixSpawnScopeOrNull(requireChangeDir = false) { Unit }
         if (android_get_device_api_level() >= 28) {
             assertNotNull(result)
+            assertTrue(IS_POSIX_SPAWN_AVAILABLE)
         } else {
             assertNull(result)
+            assertFalse(IS_POSIX_SPAWN_AVAILABLE)
         }
     }
 }
