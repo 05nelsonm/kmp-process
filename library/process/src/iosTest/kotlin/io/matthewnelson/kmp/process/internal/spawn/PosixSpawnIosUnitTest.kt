@@ -18,7 +18,7 @@ package io.matthewnelson.kmp.process.internal.spawn
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
 
-class SpawnIosUnitTest {
+class PosixSpawnIosUnitTest {
 
     @Test
     fun givenPosixSpawnScopeOrNull_whenChangeDirRequired_thenThrowsException() {

@@ -358,6 +358,35 @@ abstract class ProcessBaseTest {
     }
 
     @Test
+    open fun givenExecutable_whenRelativePathWithChDir_thenExecutes() {
+        if (IsDarwinMobile) {
+            // chdir not supported
+            println("Skipping...")
+            return
+        }
+
+        val out = LOADER.process(TorResourceBinder) { tor, configureEnv ->
+            val parentDirName = tor.parentPath?.substringAfterLast(SysDirSep)
+            assertNotNull(parentDirName)
+
+            val command = "..".toFile()
+                .resolve(parentDirName)
+                .resolve(tor.name)
+
+            Process.Builder(command = command.path)
+                .args("--version")
+                .chdir(tor.parentFile)
+                .environment(configureEnv)
+        }.output { timeoutMillis = 2_000 }
+
+        println(out)
+        println(out.stdout)
+        println(out.stderr)
+
+        assertTrue(out.stdout.startsWith("Tor version "))
+    }
+
+    @Test
     open fun givenExecutable_whenOutputToFile_thenIsAsExpected() = runTest(timeout = 25.seconds) {
         val logsDir = homeDir.resolve("logs")
         val stdoutFile = logsDir.resolve("tor.log")

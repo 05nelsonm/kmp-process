@@ -16,11 +16,16 @@
 package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.IOException
+import io.matthewnelson.kmp.file.SysDirSep
 import io.matthewnelson.kmp.file.SysTempDir
 import io.matthewnelson.kmp.file.canonicalPath
+import io.matthewnelson.kmp.file.name
+import io.matthewnelson.kmp.file.parentFile
+import io.matthewnelson.kmp.file.parentPath
 import io.matthewnelson.kmp.file.path
 import io.matthewnelson.kmp.file.resolve
 import io.matthewnelson.kmp.file.toFile
+import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.ProcessException
 import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.Stdio
@@ -30,6 +35,8 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 
 class ForkUnitTest {
 
@@ -60,6 +67,49 @@ class ForkUnitTest {
             stdio = Stdio.Config.Builder.get().build(null),
             destroy = Signal.SIGTERM,
             handler = ProcessException.Handler.IGNORE,
+        )
+
+        val output = mutableListOf<String>()
+        val exitCode = try {
+            p.stdoutFeed { line ->
+                line ?: return@stdoutFeed
+                output.add(line)
+            }.waitFor()
+        } finally {
+            p.destroy()
+        }
+        p.stdoutWaiter().awaitStop()
+
+        println(p)
+        assertEquals(42, exitCode)
+        assertEquals(expected, output.firstOrNull())
+    }
+
+    @Test
+    fun givenExecutable_whenRelativePathWithChDir_thenExecutes() {
+        // Should be available on all platforms
+        val out = Process.Builder(command = "which").args("sh").output()
+        val expected = "Hello World!"
+        val sh = out.stdout.toFile()
+        assertTrue(sh.exists())
+        assertTrue(sh.isAbsolute())
+
+        val parentDirName = sh.parentPath?.substringAfterLast(SysDirSep)
+        assertNotNull(parentDirName)
+        val command = "..".toFile()
+            .resolve(parentDirName)
+            .resolve(sh.name)
+
+        val b = PlatformBuilder.get()
+
+        val p = b.forkExec(
+            command = command.path,
+            args = listOf("-c", "echo \"$expected\"; sleep 1; exit 42"),
+            chdir = sh.parentFile,
+            env = b.env,
+            stdio = Stdio.Config.Builder.get().build(null),
+            destroy = Signal.SIGTERM,
+            handler = ProcessException.Handler.IGNORE
         )
 
         val output = mutableListOf<String>()
