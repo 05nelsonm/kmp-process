@@ -18,4 +18,4 @@ package io.matthewnelson.kmp.process.internal
 import platform.posix.android_get_device_api_level
 
 internal actual val IS_POSIX_SPAWN_AVAILABLE: Boolean = android_get_device_api_level() >= 28
-internal actual val IS_COMMAND_WHICH_AVAILABLE: Boolean = android_get_device_api_level() >= 22
+internal actual val IS_COMMAND_WHICH_AVAILABLE: Boolean = android_get_device_api_level() >= 23
