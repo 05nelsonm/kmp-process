@@ -20,11 +20,7 @@ package io.matthewnelson.kmp.process.internal.spawn
 import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.file.FileNotFoundException
 import io.matthewnelson.kmp.file.IOException
-import io.matthewnelson.kmp.file.SysDirSep
-import io.matthewnelson.kmp.file.absoluteFile
 import io.matthewnelson.kmp.file.errnoToIOException
-import io.matthewnelson.kmp.file.normalize
-import io.matthewnelson.kmp.file.path
 import io.matthewnelson.kmp.file.toFile
 import io.matthewnelson.kmp.process.ProcessException
 import io.matthewnelson.kmp.process.Signal
@@ -111,15 +107,6 @@ internal inline fun posixSpawn(
         file_actions_addchdir_np(chdir).check()
     }
 
-    val (program, isAbsolutePath) = if (command.contains(SysDirSep)) {
-        // File system separator present, ensure it is absolute
-        // and normalized. Will use posix_spawn instead of the
-        // p variant.
-        command.toFile().absoluteFile.normalize().path to true
-    } else {
-        command to false
-    }
-
     val handle = stdio.openHandle()
 
     // handle closes automatically on any failures
@@ -137,13 +124,14 @@ internal inline fun posixSpawn(
         // a post-fork step failure (the best we can do atm).
         val pidRef = alloc<pid_tVar>().apply { value = -1 }
 
-        val argv = args.toArgv(program = program, scope = this)
+        val argv = args.toArgv(command = command, scope = this)
         val envp = env.toEnvp(scope = this)
 
-        if (isAbsolutePath) {
-            spawn(program, pidRef.ptr, argv, envp)
+        val isCommandPathAbsolute = command.toFile().isAbsolute()
+        if (isCommandPathAbsolute) {
+            spawn(command, pidRef.ptr, argv, envp)
         } else {
-            spawn_p(program, pidRef.ptr, argv, envp)
+            spawn_p(command, pidRef.ptr, argv, envp)
         }.check()
 
         // If there was a failure in the pre-exec or exec steps, the
@@ -153,13 +141,13 @@ internal inline fun posixSpawn(
         // for chdir would result in this scenario.
         val pid = pidRef.value
         if (pid == -1) {
-            var msg = if (isAbsolutePath) "posix_spawn" else "posix_spawnp"
+            var msg = if (isCommandPathAbsolute) "posix_spawn" else "posix_spawnp"
             msg += " failed in pre-exec/exec steps."
             throw if (chdir != null && !chdir.exists()) {
                 msg += " Directory specified does not exist"
                 FileNotFoundException(msg)
             } else {
-                msg += " Bad arguments for '$program'?"
+                msg += " Bad arguments for '$command'?"
                 IOException(msg)
             }
         }

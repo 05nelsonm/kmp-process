@@ -91,12 +91,12 @@ internal expect fun File.isProgramOrNull(): Boolean?
 
 @OptIn(ExperimentalForeignApi::class)
 internal fun List<String>.toArgv(
-    program: String,
+    command: String,
     scope: AutofreeScope,
 ): CArrayPointer<CPointerVar<ByteVar>> = with(scope) {
     val argv = allocArray<CPointerVar<ByteVar>>(size + 2)
 
-    argv[0] = program.substringAfterLast(SysDirSep).cstr.getPointer(scope)
+    argv[0] = command.substringAfterLast(SysDirSep).cstr.getPointer(scope)
 
     var i = 1
     val iterator = iterator()

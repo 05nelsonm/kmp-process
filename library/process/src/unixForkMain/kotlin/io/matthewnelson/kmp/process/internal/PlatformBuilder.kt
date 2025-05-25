@@ -271,7 +271,7 @@ internal actual class PlatformBuilder private actual constructor() {
 
             @OptIn(ExperimentalForeignApi::class)
             val errno = memScoped {
-                val argv = args.toArgv(program = programPaths.first(), scope = this)
+                val argv = args.toArgv(command = programPaths.first(), scope = this)
                 val envp = env.toEnvp(scope = this)
 
                 // Try all potential program paths. First one
