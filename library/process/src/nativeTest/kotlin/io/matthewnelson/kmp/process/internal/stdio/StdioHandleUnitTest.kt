@@ -18,7 +18,11 @@ package io.matthewnelson.kmp.process.internal.stdio
 import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.process.Stdio
 import io.matthewnelson.kmp.process.internal.stdio.StdioHandle.Companion.openHandle
+import platform.posix.STDERR_FILENO
+import platform.posix.STDIN_FILENO
+import platform.posix.STDOUT_FILENO
 import kotlin.test.Test
+import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
@@ -59,8 +63,9 @@ class StdioHandleUnitTest {
             var i = 0
             try {
                 assertFailsWith<IOException> {
-                    // Is invoked 3 times (stdin, stdout, stderr).
-                    // Check things are thrown for each...
+                    // Should be invoked 3 times (stdin, stdout, stderr)
+                    // because they're all using Stdio.Pipe so should have
+                    // different file descriptors.
                     handle.dup2 { _, _ ->
                         if (i == n) return@dup2 IOException()
                         i++
@@ -74,6 +79,29 @@ class StdioHandleUnitTest {
             }
 
             assertEquals(n, i)
+        }
+    }
+
+    @Test
+    fun givenHandle_whenStdioInherit_thenDoesNotInvokeDup2() {
+        arrayOf(
+            intArrayOf(STDOUT_FILENO, STDERR_FILENO),
+            intArrayOf(STDIN_FILENO, STDERR_FILENO),
+            intArrayOf(STDIN_FILENO, STDOUT_FILENO),
+        ).forEachIndexed { i, expected ->
+            val handle = Stdio.Config.Builder.get().apply {
+                when (i) {
+                    0 -> stdin = Stdio.Inherit
+                    1 -> stdout = Stdio.Inherit
+                    2 -> stderr = Stdio.Inherit
+                    else -> error("i[$i] unacceptable")
+                }
+            }.build(null).openHandle()
+
+            val actual = IntArray(2) { -10 }
+            var j = 0
+            handle.dup2 { _, newFd -> actual[j++] = newFd; null }
+            assertContentEquals(expected, actual)
         }
     }
 }

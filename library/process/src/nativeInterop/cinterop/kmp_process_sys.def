@@ -1,0 +1,3 @@
+package = io.matthewnelson.kmp.process.internal
+headers = kmp_process_sys.h
+headerFilter = kmp_process_sys.h

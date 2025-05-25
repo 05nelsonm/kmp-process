@@ -103,6 +103,23 @@ internal inline fun posixSpawn(
     destroy: Signal,
     handler: ProcessException.Handler,
 ): NativeProcess? = posixSpawnScopeOrNull(requireChangeDir = chdir != null) {
+    val isCommandPathAbsolute = command.toFile().let { commandFile ->
+        val isAbsolute = commandFile.isAbsolute()
+
+        // Some platforms do not check the command argument for existence,
+        // such as Android. This could lead to posix_spawn executing
+        // successfully whereby the child process then kills itself (an awful
+        // design?). So, we do it here just to be on the safe side before going
+        // any further for all platforms.
+        //
+        // This only covers absolute paths which use posix_spawn.
+        if (isAbsolute && !commandFile.exists()) {
+            throw FileNotFoundException("command[$commandFile]")
+        }
+
+        isAbsolute
+    }
+
     if (chdir != null) {
         file_actions_addchdir_np(chdir).check()
     }
@@ -127,7 +144,6 @@ internal inline fun posixSpawn(
         val argv = args.toArgv(command = command, scope = this)
         val envp = env.toEnvp(scope = this)
 
-        val isCommandPathAbsolute = command.toFile().isAbsolute()
         if (isCommandPathAbsolute) {
             spawn(command, pidRef.ptr, argv, envp)
         } else {

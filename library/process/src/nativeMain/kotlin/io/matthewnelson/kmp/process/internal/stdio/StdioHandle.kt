@@ -104,16 +104,21 @@ internal class StdioHandle private constructor(
             if (isClosed) throw IOException("StdioHandle is closed")
 
             try {
-                action(stdinFD.dup2FD(isStdin = true), STDIN_FILENO)?.let { throw it }
-                action(stdoutFD.dup2FD(isStdin = false), STDOUT_FILENO)?.let { throw it }
-                action(stderrFD.dup2FD(isStdin = false), STDERR_FILENO)?.let { throw it }
+                arrayOf(
+                    intArrayOf(stdinFD.dup2FD(isStdin = true), STDIN_FILENO),
+                    intArrayOf(stdoutFD.dup2FD(isStdin = false), STDOUT_FILENO),
+                    intArrayOf(stderrFD.dup2FD(isStdin = false), STDERR_FILENO),
+                ).forEach { fds ->
+                    // dup2 can return EINVAL if descriptors are the same.
+                    if (fds[0] == fds[1]) return@forEach
+                    action(fds[0], fds[1])?.let { throw it }
+                }
             } catch (e: IOException) {
                 try {
                     closeNoLock()
-                } catch (e: IOException) {
-                    e.addSuppressed(e)
+                } catch (ee: IOException) {
+                    e.addSuppressed(ee)
                 }
-
                 throw e
             }
         }

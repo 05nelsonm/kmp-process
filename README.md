@@ -26,14 +26,15 @@ and `Rust` [Command][url-rust-command]
 
 ## Info
 
-|           | Process Creation Method Used                                                        |
-|-----------|-------------------------------------------------------------------------------------|
-| `Android` | `java.lang.ProcessBuilder`                                                          |
-| `Jvm`     | `java.lang.ProcessBuilder`                                                          |
-| `Node.js` | [spawn][url-node-spawn] and [spawnSync][url-node-spawn-sync]                        |
-| `Linux`   | [posix_spawn][url-posix-spawn] or [fork][url-posix-fork]/[execve][url-posix-execve] |
-| `macOS`   | [posix_spawn][url-posix-spawn] or [fork][url-posix-fork]/[execve][url-posix-execve] |
-| `iOS`     | [posix_spawn][url-posix-spawn]                                                      |
+|                  | Process Creation Method Used                                                        |
+|------------------|-------------------------------------------------------------------------------------|
+| `Android`        | `java.lang.ProcessBuilder`                                                          |
+| `Jvm`            | `java.lang.ProcessBuilder`                                                          |
+| `Node.js`        | [spawn][url-node-spawn] and [spawnSync][url-node-spawn-sync]                        |
+| `Android Native` | [posix_spawn][url-posix-spawn] or [fork][url-posix-fork]/[execve][url-posix-execve] |
+| `Linux`          | [posix_spawn][url-posix-spawn] or [fork][url-posix-fork]/[execve][url-posix-execve] |
+| `macOS`          | [posix_spawn][url-posix-spawn] or [fork][url-posix-fork]/[execve][url-posix-execve] |
+| `iOS`            | [posix_spawn][url-posix-spawn]                                                      |
 
 **NOTE:** `java.lang.ProcessBuilder` and `java.lang.Process` Java 8 functionality is backported 
 for Android and tested against API 15+.

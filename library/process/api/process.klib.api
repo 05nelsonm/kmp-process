@@ -1,6 +1,7 @@
 // Klib ABI Dump
-// Targets: [iosArm64, iosSimulatorArm64, iosX64, js, linuxArm64, linuxX64, macosArm64, macosX64]
-// Alias: native => [iosArm64, iosSimulatorArm64, iosX64, linuxArm64, linuxX64, macosArm64, macosX64]
+// Targets: [androidNativeArm32, androidNativeArm64, androidNativeX64, androidNativeX86, iosArm64, iosSimulatorArm64, iosX64, js, linuxArm64, linuxX64, macosArm64, macosX64]
+// Alias: native => [androidNativeArm32, androidNativeArm64, androidNativeX64, androidNativeX86, iosArm64, iosSimulatorArm64, iosX64, linuxArm64, linuxX64, macosArm64, macosX64]
+// Alias: androidNative => [androidNativeArm32, androidNativeArm64, androidNativeX64, androidNativeX86]
 // Alias: linux => [linuxArm64, linuxX64]
 // Alias: macos => [macosArm64, macosX64]
 // Rendering settings:
@@ -305,7 +306,7 @@ sealed class io.matthewnelson.kmp.process/BufferedWriteStream { // io.matthewnel
     final fun write(kotlin/ByteArray, kotlin/Int, kotlin/Int) // io.matthewnelson.kmp.process/BufferedWriteStream.write|write(kotlin.ByteArray;kotlin.Int;kotlin.Int){}[0]
 }
 
-// Targets: [js, linux, macos]
+// Targets: [androidNative, js, linux, macos]
 final fun (io.matthewnelson.kmp.process/Process.Builder).io.matthewnelson.kmp.process/changeDir(io.matthewnelson.kmp.file/File?): io.matthewnelson.kmp.process/Process.Builder // io.matthewnelson.kmp.process/changeDir|changeDir@io.matthewnelson.kmp.process.Process.Builder(io.matthewnelson.kmp.file.File?){}[0]
 
 // Targets: [js]

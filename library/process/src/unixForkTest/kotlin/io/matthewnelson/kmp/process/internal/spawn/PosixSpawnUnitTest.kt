@@ -19,13 +19,13 @@ import io.matthewnelson.kmp.file.FileNotFoundException
 import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.file.SysTempDir
 import io.matthewnelson.kmp.file.canonicalPath
-import io.matthewnelson.kmp.file.path
 import io.matthewnelson.kmp.file.resolve
 import io.matthewnelson.kmp.file.toFile
 import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.ProcessException
 import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.Stdio
+import io.matthewnelson.kmp.process.internal.IS_POSIX_SPAWN_AVAILABLE
 import kotlin.random.Random
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -55,6 +55,11 @@ class PosixSpawnUnitTest {
 
     @Test
     fun givenSh_whenEcho_thenIsSuccessful() {
+        if (!IS_POSIX_SPAWN_AVAILABLE) {
+            println("Skipping...")
+            return
+        }
+
         val expected = "Hello World!"
 
         val p = posixSpawn(
@@ -86,7 +91,7 @@ class PosixSpawnUnitTest {
 
     @Test
     fun givenAddChdir_whenAvailableAndDirExists_thenIsSuccessful() {
-        if (CHDIR == null) {
+        if (!IS_POSIX_SPAWN_AVAILABLE || CHDIR == null) {
             println("Skipping...")
             return
         }
@@ -120,7 +125,7 @@ class PosixSpawnUnitTest {
 
     @Test
     fun givenAddChdir_whenAvailableAndDirDoesNotExist_thenThrowsException() {
-        if (CHDIR == null) {
+        if (!IS_POSIX_SPAWN_AVAILABLE || CHDIR == null) {
             println("Skipping...")
             return
         }
@@ -144,6 +149,11 @@ class PosixSpawnUnitTest {
 
     @Test
     fun givenInvalidProgramPath_whenSpawn_thenThrowsException() {
+        if (!IS_POSIX_SPAWN_AVAILABLE) {
+            println("Skipping...")
+            return
+        }
+
         assertFailsWith<IOException> {
             posixSpawn(
                 command = "/invalid/path/sh",

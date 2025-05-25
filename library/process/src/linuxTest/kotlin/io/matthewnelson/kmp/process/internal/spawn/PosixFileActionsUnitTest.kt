@@ -39,7 +39,7 @@ class PosixFileActionsUnitTest {
                 Unit
             }
         } catch (e: UnsupportedOperationException) {
-            if (PosixSpawnScope.ADDCHDIR_NP == null) return // pass
+            if (PosixSpawnScope.FILE_ACTIONS_ADDCHDIR_NP == null) return // pass
             fail("change dir should be available, but function call threw exception", e)
         }
 

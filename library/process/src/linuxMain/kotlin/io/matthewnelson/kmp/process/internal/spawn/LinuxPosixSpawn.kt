@@ -56,17 +56,20 @@ internal actual class PosixSpawnScope internal constructor(
 
     actual override fun alloc(size: Long, align: Int): NativePointed = mem.alloc(size, align)
 
+    // Normally one would not want to hold onto a function pointer reference
+    // statically, but it's from glibc which is not going to be hot reloaded
+    // or anything w/o this process terminating, so.
+    @Suppress("LocalVariableName", "UNCHECKED_CAST")
     internal companion object {
 
-        // Normally one would not want to hold onto a function pointer reference
-        // statically, but it's from glibc which is not going to be hot reloaded
-        // or anything w/o this process terminating, so.
-        internal val ADDCHDIR_NP by lazy {
+        internal val FILE_ACTIONS_ADDCHDIR_NP by lazy {
             val ptr = dlsym(null, "posix_spawn_file_actions_addchdir_np")
                 ?: return@lazy null
 
-            @Suppress("UNCHECKED_CAST")
-            ptr as CPointer<CFunction<(CValuesRef<posix_spawn_file_actions_t>, CPointer<ByteVarOf<Byte>>) -> Int>>
+            ptr as CPointer<CFunction<(
+                __actions: CValuesRef<posix_spawn_file_actions_t>,
+                __path: CPointer<ByteVarOf<Byte>>,
+            ) -> Int>>
         }
     }
 }
@@ -74,7 +77,7 @@ internal actual class PosixSpawnScope internal constructor(
 @OptIn(ExperimentalForeignApi::class)
 @Throws(UnsupportedOperationException::class)
 internal actual inline fun PosixSpawnScope.file_actions_addchdir_np(chdir: File): Int {
-    val addchdir_np = PosixSpawnScope.ADDCHDIR_NP
+    val addchdir_np = PosixSpawnScope.FILE_ACTIONS_ADDCHDIR_NP
         ?: throw UnsupportedOperationException("posix_spawn_file_actions_addchdir_np is not available")
 
     return addchdir_np.invoke(fileActions, chdir.path.cstr.getPointer(scope = this))
@@ -109,7 +112,7 @@ internal actual inline fun <T: Any> posixSpawnScopeOrNull(
 ): T? {
     if (requireChangeDir) {
         // glibc 2.29+ supports posix_spawn_file_actions_addchdir_np
-        if (PosixSpawnScope.ADDCHDIR_NP == null) return null
+        if (PosixSpawnScope.FILE_ACTIONS_ADDCHDIR_NP == null) return null
     } else {
         // glibc 2.24+ supports posix_spawn returning ENOENT
         val version = GnuLibcVersion.INSTANCE ?: return null

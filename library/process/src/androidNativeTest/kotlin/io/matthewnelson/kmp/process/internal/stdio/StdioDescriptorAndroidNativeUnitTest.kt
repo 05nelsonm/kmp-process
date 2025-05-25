@@ -13,6 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-package io.matthewnelson.kmp.process.test.api
+package io.matthewnelson.kmp.process.internal.stdio
 
-class ProcessNonJvmUnitTest: ProcessBaseTest()
+import io.matthewnelson.kmp.process.internal.__SYS_pipe2
+import io.matthewnelson.kmp.process.internal.testing.SYS_pipe2
+import kotlinx.cinterop.ExperimentalForeignApi
+import kotlin.test.Test
+import kotlin.test.assertEquals
+
+@OptIn(ExperimentalForeignApi::class)
+class StdioDescriptorAndroidNativeUnitTest {
+
+    @Test
+    fun givenSYSpipe2_whenCheckedAgainstHeaderDefinition_thenMatches() {
+        assertEquals(
+            SYS_pipe2,
+            __SYS_pipe2(),
+            "expected[${SYS_pipe2}] vs actual[${__SYS_pipe2()}]",
+        )
+    }
+}
