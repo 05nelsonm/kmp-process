@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Matthew Nelson
+ * Copyright (c) 2025 Matthew Nelson
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,19 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("KotlinRedundantDiagnosticSuppress")
+@file:Suppress("KotlinRedundantDiagnosticSuppress", "NOTHING_TO_INLINE")
 
-package io.matthewnelson.kmp.process.internal.stdio
+package io.matthewnelson.kmp.process.internal
 
-import kotlinx.cinterop.CPointer
 import kotlinx.cinterop.ExperimentalForeignApi
-import kotlinx.cinterop.IntVar
-import kotlinx.cinterop.convert
-import platform.linux.SYS_pipe2
-import platform.posix.syscall
+import kotlinx.cinterop.get
+import kotlinx.cinterop.toKString
+import platform.posix.environ
 
-@Suppress("NOTHING_TO_INLINE")
 @OptIn(ExperimentalForeignApi::class)
-internal actual inline fun CPointer<IntVar>.pipe2(
-    flags: Int,
-): Int = syscall(SYS_pipe2.convert(), this, flags).convert()
+internal actual inline fun PlatformBuilder.parentEnvironment(): MutableMap<String, String> {
+    val map = LinkedHashMap<String, String>(10, 1.0F)
+    val env = environ ?: return map
+    var i = 0
+    while (true) {
+        val arg = env[i++]?.toKString() ?: break
+        val key = arg.substringBefore('=')
+        val value = arg.substringAfter('=')
+        map[key] = value
+    }
+    return map
+}

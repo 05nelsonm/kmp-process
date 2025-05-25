@@ -20,6 +20,7 @@ package io.matthewnelson.kmp.process.internal
 import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.process.internal.stdio.StdioDescriptor
 import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.UnsafeNumber
 import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.convert
 import kotlinx.cinterop.usePinned
@@ -34,7 +35,8 @@ internal actual abstract class ReadStream private constructor(
         if (descriptor.isClosed) throw IOException("ReadStream is closed")
         if (len == 0) return 0
 
-        @OptIn(ExperimentalForeignApi::class)
+        @Suppress("RemoveRedundantCallsOfConversionMethods")
+        @OptIn(ExperimentalForeignApi::class, UnsafeNumber::class)
         return buf.usePinned { pinned ->
             descriptor.withFd(retries = 10, action = { fd ->
                 platform.posix.read(

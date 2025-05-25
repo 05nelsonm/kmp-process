@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Matthew Nelson
+ * Copyright (c) 2025 Matthew Nelson
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,12 +20,16 @@ package io.matthewnelson.kmp.process.internal.stdio
 import kotlinx.cinterop.CPointer
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.IntVar
+import kotlinx.cinterop.UnsafeNumber
 import kotlinx.cinterop.convert
-import platform.linux.SYS_pipe2
 import platform.posix.syscall
 
+// https://youtrack.jetbrains.com/issue/KT-75722
+@Suppress("ObjectPropertyName")
+private const val __SYS_pipe2: Int = 293
+
 @Suppress("NOTHING_TO_INLINE")
-@OptIn(ExperimentalForeignApi::class)
+@OptIn(ExperimentalForeignApi::class, UnsafeNumber::class)
 internal actual inline fun CPointer<IntVar>.pipe2(
     flags: Int,
-): Int = syscall(SYS_pipe2.convert(), this, flags).convert()
+): Int = syscall(__SYS_pipe2.convert(), this, flags).convert()

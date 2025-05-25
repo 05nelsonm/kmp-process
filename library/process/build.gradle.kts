@@ -156,12 +156,13 @@ fun List<KotlinNativeTarget>.glibc_versionCInterop(
 fun List<KotlinNativeTarget>.spawnCInterop(
     cinteropDir: File,
 ): List<KotlinNativeTarget> {
-    if (!HostManager.hostIsMac) return this
-
     forEach { target ->
-        if (!target.konanTarget.family.isAppleFamily) return@forEach
+        when (target.konanTarget.family) {
+            Family.ANDROID, Family.OSX, Family.IOS, Family.TVOS, Family.WATCHOS -> {}
+            Family.LINUX, Family.MINGW -> return@forEach
+        }
 
-        target.compilations["main"].cinterops.create("spawn").apply {
+        target.compilations["main"].cinterops.create("spawn") {
             definitionFile.set(cinteropDir.resolve("spawn.def"))
         }
     }
