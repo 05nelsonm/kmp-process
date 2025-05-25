@@ -1,0 +1,3 @@
+# SYS_getrandom for AndroidNative targets
+package = io.matthewnelson.kmp.process.internal.testing
+headers = sys/syscall.h

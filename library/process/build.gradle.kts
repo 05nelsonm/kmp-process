@@ -134,6 +134,7 @@ kmpConfiguration {
             targets.filterIsInstance<KotlinNativeTarget>()
                 .glibc_versionCInterop(cinteropDir)
                 .spawnCInterop(cinteropDir)
+                .syscallCInterop(cinteropDir)
         }
     }
 }
@@ -146,7 +147,7 @@ fun List<KotlinNativeTarget>.glibc_versionCInterop(
         if (target.konanTarget.family != Family.LINUX) return@forEach
 
         target.compilations["main"].cinterops.create("glibc_version").apply {
-            definitionFile.set(cinteropDir.resolve("glibc_version.def"))
+            definitionFile.set(cinteropDir.resolve("$name.def"))
         }
     }
 
@@ -163,7 +164,21 @@ fun List<KotlinNativeTarget>.spawnCInterop(
         }
 
         target.compilations["main"].cinterops.create("spawn") {
-            definitionFile.set(cinteropDir.resolve("spawn.def"))
+            definitionFile.set(cinteropDir.resolve("$name.def"))
+        }
+    }
+
+    return this
+}
+
+fun List<KotlinNativeTarget>.syscallCInterop(
+    cinteropDir: File,
+): List<KotlinNativeTarget> {
+    forEach { target ->
+        if (target.konanTarget.family != Family.ANDROID) return@forEach
+
+        target.compilations["test"].cinterops.create("syscall").apply {
+            definitionFile.set(cinteropDir.resolve("$name.def"))
         }
     }
 

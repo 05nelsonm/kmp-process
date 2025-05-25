@@ -13,23 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("KotlinRedundantDiagnosticSuppress")
-
 package io.matthewnelson.kmp.process.internal.stdio
 
-import kotlinx.cinterop.CPointer
+import io.matthewnelson.kmp.process.internal.testing.SYS_pipe2
 import kotlinx.cinterop.ExperimentalForeignApi
-import kotlinx.cinterop.IntVar
-import kotlinx.cinterop.UnsafeNumber
-import kotlinx.cinterop.convert
-import platform.posix.syscall
+import kotlin.test.Test
+import kotlin.test.assertEquals
 
-// https://youtrack.jetbrains.com/issue/KT-75722
-@Suppress("ObjectPropertyName")
-internal const val __SYS_pipe2: Int = 331
+@OptIn(ExperimentalForeignApi::class)
+class StdioDescriptorAndroidNativeUnitTest {
 
-@Suppress("NOTHING_TO_INLINE")
-@OptIn(ExperimentalForeignApi::class, UnsafeNumber::class)
-internal actual inline fun CPointer<IntVar>.pipe2(
-    flags: Int,
-): Int = syscall(__SYS_pipe2.convert(), this, flags).convert()
+    @Test
+    fun givenSYSpipe2_whenCheckedAgainstHeaderDefinition_thenMatches() {
+        assertEquals(SYS_pipe2, __SYS_pipe2)
+    }
+}
