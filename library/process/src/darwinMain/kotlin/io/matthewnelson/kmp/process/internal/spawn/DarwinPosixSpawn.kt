@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Matthew Nelson
+ * Copyright (c) 2025 Matthew Nelson
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,31 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("KotlinRedundantDiagnosticSuppress", "FunctionName")
+@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING", "KotlinRedundantDiagnosticSuppress", "NOTHING_TO_INLINE", "FunctionName")
 
 package io.matthewnelson.kmp.process.internal.spawn
 
-import kotlinx.cinterop.*
-import platform.posix.pid_tVar
+import kotlinx.cinterop.CValuesRef
+import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.MemScope
+import kotlinx.cinterop.alloc
+import kotlinx.cinterop.ptr
 
-@Suppress("NOTHING_TO_INLINE")
 @OptIn(ExperimentalForeignApi::class)
-internal actual inline fun MemScope.posixSpawn(
-    program: String,
-    pid: CValuesRef<pid_tVar>,
-    fileActions: PosixSpawnFileActions,
-    attrs: PosixSpawnAttrs,
-    argv: CValuesRef<CPointerVar<ByteVar>>,
-    envp: CValuesRef<CPointerVar<ByteVar>>,
-): Int = posix_spawn(pid, program, fileActions.ref, attrs.ref, argv, envp)
+internal inline fun MemScope.posix_spawnattr_init(): CValuesRef<posix_spawnattr_tVar>? {
+    val attrs = alloc<posix_spawnattr_tVar>()
+    if (posix_spawnattr_init(attrs.ptr) != 0) {
+        return null
+    }
+    defer { posix_spawnattr_destroy(attrs.ptr) }
+    return attrs.ptr
+}
 
-@Suppress("NOTHING_TO_INLINE")
 @OptIn(ExperimentalForeignApi::class)
-internal actual inline fun MemScope.posixSpawnP(
-    program: String,
-    pid: CValuesRef<pid_tVar>,
-    fileActions: PosixSpawnFileActions,
-    attrs: PosixSpawnAttrs,
-    argv: CValuesRef<CPointerVar<ByteVar>>,
-    envp: CValuesRef<CPointerVar<ByteVar>>,
-): Int = posix_spawnp(pid, program, fileActions.ref, attrs.ref, argv, envp)
+internal inline fun MemScope.posix_spawn_file_actions_init(): CValuesRef<posix_spawn_file_actions_tVar>? {
+    val fileActions = alloc<posix_spawn_file_actions_tVar>()
+    if (posix_spawn_file_actions_init(fileActions.ptr) != 0) {
+        return null
+    }
+    defer { posix_spawn_file_actions_destroy(fileActions.ptr) }
+    return fileActions.ptr
+}

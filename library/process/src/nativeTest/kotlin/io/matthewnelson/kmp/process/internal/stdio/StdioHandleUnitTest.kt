@@ -15,11 +15,15 @@
  **/
 package io.matthewnelson.kmp.process.internal.stdio
 
+import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.process.Stdio
 import io.matthewnelson.kmp.process.internal.stdio.StdioHandle.Companion.openHandle
 import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class StdioHandleUnitTest {
 
@@ -45,5 +49,31 @@ class StdioHandleUnitTest {
         assertNull(handle.stdinStream())
         assertNull(handle.stdoutReader())
         assertNull(handle.stderrReader())
+    }
+
+    @Test
+    fun givenHandle_whenDup2Failure_thenCloses() {
+        repeat(3) { n ->
+            val handle = Stdio.Config.Builder.get().build(null).openHandle()
+
+            var i = 0
+            try {
+                assertFailsWith<IOException> {
+                    // Is invoked 3 times (stdin, stdout, stderr).
+                    // Check things are thrown for each...
+                    handle.dup2 { _, _ ->
+                        if (i == n) return@dup2 IOException()
+                        i++
+                        null
+                    }
+                }
+
+                assertTrue(handle.isClosed)
+            } finally {
+                handle.close()
+            }
+
+            assertEquals(n, i)
+        }
     }
 }
