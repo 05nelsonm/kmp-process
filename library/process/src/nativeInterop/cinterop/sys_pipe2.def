@@ -1,0 +1,3 @@
+package = io.matthewnelson.kmp.process.internal
+headers = sys_pipe2.h
+headerFilter = sys_pipe2.h

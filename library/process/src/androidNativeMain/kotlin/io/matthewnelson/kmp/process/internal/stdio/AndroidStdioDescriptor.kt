@@ -17,6 +17,7 @@
 
 package io.matthewnelson.kmp.process.internal.stdio
 
+import io.matthewnelson.kmp.process.internal.__SYS_pipe2
 import kotlinx.cinterop.CPointer
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.IntVar
@@ -24,12 +25,8 @@ import kotlinx.cinterop.UnsafeNumber
 import kotlinx.cinterop.convert
 import platform.posix.syscall
 
-// https://youtrack.jetbrains.com/issue/KT-75722
-@Suppress("ObjectPropertyName")
-internal const val __SYS_pipe2: Int = 331
-
 @Suppress("NOTHING_TO_INLINE")
 @OptIn(ExperimentalForeignApi::class, UnsafeNumber::class)
 internal actual inline fun CPointer<IntVar>.pipe2(
     flags: Int,
-): Int = syscall(__SYS_pipe2.convert(), this, flags).convert()
+): Int = syscall(__SYS_pipe2().convert(), this, flags).convert()
