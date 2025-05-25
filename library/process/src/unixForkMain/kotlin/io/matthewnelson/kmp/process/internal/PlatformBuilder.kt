@@ -19,7 +19,11 @@ package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.file.IOException
+import io.matthewnelson.kmp.file.InterruptedException
+import io.matthewnelson.kmp.file.SysDirSep
 import io.matthewnelson.kmp.file.path
+import io.matthewnelson.kmp.file.resolve
+import io.matthewnelson.kmp.file.toFile
 import io.matthewnelson.kmp.process.Output
 import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.ProcessException
@@ -36,6 +40,8 @@ import kotlinx.cinterop.toKString
 import org.kotlincrypto.bitops.endian.Endian.Big.beIntAt
 import org.kotlincrypto.bitops.endian.Endian.Big.bePackIntoUnsafe
 import platform.posix.EBADF
+import platform.posix.ENOENT
+import platform.posix.ETXTBSY
 import platform.posix._exit
 import platform.posix.chdir
 import platform.posix.dup2
@@ -43,6 +49,7 @@ import platform.posix.errno
 import platform.posix.execve
 import platform.posix.fork
 import platform.posix.strerror
+import kotlin.time.Duration.Companion.milliseconds
 
 // unixForkMain
 internal actual class PlatformBuilder private actual constructor() {
@@ -97,19 +104,6 @@ internal actual class PlatformBuilder private actual constructor() {
         stdio: Stdio.Config,
         destroy: Signal,
         handler: ProcessException.Handler,
-    ): NativeProcess = forkExec(command, command.toProgramPaths(), args, chdir, env, stdio, destroy, handler)
-
-    @OptIn(ExperimentalForeignApi::class)
-    @Throws(IOException::class)
-    private fun forkExec(
-        command: String,
-        programPaths: Set<String>,
-        args: List<String>,
-        chdir: File?,
-        env: Map<String, String>,
-        stdio: Stdio.Config,
-        destroy: Signal,
-        handler: ProcessException.Handler,
     ): NativeProcess {
         val handle = stdio.openHandle()
 
@@ -128,7 +122,7 @@ internal actual class PlatformBuilder private actual constructor() {
         }
 
         if (pid == 0) {
-            ChildProcess(pid, pipe, handle, programPaths, args, chdir, env)
+            ChildProcess(pid, pipe, handle, command, args, chdir, env)
         }
 
         // Parent process
@@ -197,6 +191,7 @@ internal actual class PlatformBuilder private actual constructor() {
                     IOException("CLOEXEC pipe validation check failure")
                 } else {
                     val errno = b.beIntAt(0)
+                    @OptIn(ExperimentalForeignApi::class)
                     val msg = strerror(errno)?.toKString() ?: "errno: $errno"
                     IOException("Child process $type failure. $msg")
                 }
@@ -218,7 +213,7 @@ internal actual class PlatformBuilder private actual constructor() {
         pid: Int,
         private val pipe: StdioDescriptor.Pipe,
         private val handle: StdioHandle,
-        programPaths: Set<String>,
+        command: String,
         args: List<String>,
         chdir: File?,
         env: Map<String, String>,
@@ -271,17 +266,34 @@ internal actual class PlatformBuilder private actual constructor() {
 
             @OptIn(ExperimentalForeignApi::class)
             val errno = memScoped {
-                val argv = args.toArgv(program = programPaths.first(), scope = this)
+                val argv = args.toArgv(command = command, scope = this)
                 val envp = env.toEnvp(scope = this)
 
-                // Try all potential program paths. First one
-                // to successfully execute will win out
-                programPaths.forEach { path ->
-                    execve(path, argv, envp)
+                if (command.contains(SysDirSep)) {
+                    execve(command, argv, envp)
+                    return@memScoped errno
+                }
+
+                // Search for the programs using PATH. First to execute wins.
+                var _errno = ENOENT
+                PATHIterator().forEach { path ->
+                    if (path.isBlank()) return@forEach
+
+                    val arg0 = path.toFile().resolve(command).path
+                    execve(arg0, argv, envp)
+
+                    _errno = errno
+                    if (_errno == ETXTBSY) {
+                        try {
+                            3.milliseconds.threadSleep()
+                        } catch (_: InterruptedException) {}
+                        execve(arg0, argv, envp)
+                        _errno = errno
+                    }
                 }
 
                 // exec failed to replace child process with program
-                errno
+                _errno
             }
 
             onError(errno, ERR_EXEC)
