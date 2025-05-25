@@ -16,3 +16,4 @@
 package io.matthewnelson.kmp.process.internal
 
 internal actual val IS_POSIX_SPAWN_AVAILABLE: Boolean = true
+internal actual val IS_COMMAND_WHICH_AVAILABLE: Boolean = true

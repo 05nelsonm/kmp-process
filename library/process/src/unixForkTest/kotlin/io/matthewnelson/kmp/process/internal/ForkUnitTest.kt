@@ -87,7 +87,11 @@ class ForkUnitTest {
 
     @Test
     fun givenExecutable_whenRelativePathWithChDir_thenExecutes() {
-        // Should be available on all platforms
+        if (!IS_COMMAND_WHICH_AVAILABLE) {
+            println("Skipping...")
+            return
+        }
+
         val out = Process.Builder(command = "which").args("sh").output()
         val expected = "Hello World!"
         val sh = out.stdout.toFile()

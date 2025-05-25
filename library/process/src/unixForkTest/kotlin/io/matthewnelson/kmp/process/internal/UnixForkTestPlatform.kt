@@ -16,3 +16,4 @@
 package io.matthewnelson.kmp.process.internal
 
 internal expect val IS_POSIX_SPAWN_AVAILABLE: Boolean
+internal expect val IS_COMMAND_WHICH_AVAILABLE: Boolean
