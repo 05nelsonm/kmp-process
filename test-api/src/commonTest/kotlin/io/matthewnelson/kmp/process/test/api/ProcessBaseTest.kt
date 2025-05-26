@@ -210,7 +210,7 @@ abstract class ProcessBaseTest {
         assertNull(out.processError)
         assertEquals(Stdio.Pipe, out.processInfo.stdio.stdin)
         @Suppress("ReplaceAssertBooleanWithAssertEquality")
-        assertTrue(expected == out.stdout, out.stdout)
+        assertTrue(expected == out.stdout, "STDOUT did not match expected")
         assertEquals("", out.stderr)
     }
 

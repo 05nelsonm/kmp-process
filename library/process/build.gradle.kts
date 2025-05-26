@@ -128,7 +128,7 @@ kmpConfiguration {
                         implementation(libs.kotlinx.coroutines.core)
                     }
                 }
-                findByName("unixMain")?.apply {
+                findByName("unixForkMain")?.apply {
                     dependencies {
                         implementation(kotlincrypto.bitops.endian)
                     }
