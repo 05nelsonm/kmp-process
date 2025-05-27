@@ -19,13 +19,12 @@ import android.app.Application
 import android.os.Build
 import androidx.test.core.app.ApplicationProvider
 import io.matthewnelson.kmp.file.toFile
+import io.matthewnelson.kmp.process.Process
+import io.matthewnelson.kmp.process.Stdio
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
 import kotlin.time.Duration
-import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
-import kotlin.time.TimeSource
 
 class ProcessAndroidNativeTest {
 
@@ -48,63 +47,12 @@ class ProcessAndroidNativeTest {
             return
         }
 
-        val executable = nativeLibraryDir.resolve(libName)
+        val exitCode = Process.Builder(nativeLibraryDir.resolve(libName))
+            .stdin(Stdio.Null)
+            .stdout(Stdio.Inherit)
+            .stderr(Stdio.Inherit)
+            .spawn { process -> process.waitFor(timeout); process }.waitFor()
 
-        var p: Process? = null
-        val mark = TimeSource.Monotonic.markNow()
-        val output = StringBuilder()
-        try {
-            p = ProcessBuilder(listOf(executable.path))
-                .redirectErrorStream(true)
-                .start()
-
-            p.outputStream.close()
-
-            var isComplete = false
-            Thread {
-                try {
-                    p.inputStream.buffered().reader().use { s ->
-                        val buf = CharArray(DEFAULT_BUFFER_SIZE * 2)
-                        while (true) {
-                            val read = s.read(buf)
-                            if (read == -1) break
-                            output.append(buf, 0, read)
-                        }
-                    }
-                } finally {
-                    isComplete = true
-                }
-            }.apply {
-                isDaemon = true
-                priority = Thread.MAX_PRIORITY
-            }.start()
-
-            var remainder = timeout
-            while (true) {
-                if (isComplete) break
-                check(remainder > Duration.ZERO) { "Timed out\n${output}" }
-
-                Thread.sleep(100)
-                remainder -= 100.milliseconds
-            }
-        } finally {
-            p?.destroy()
-        }
-
-        assertNotNull(p)
-
-        var exitCode: Int? = null
-        while (exitCode == null) {
-            try {
-                exitCode = p.exitValue()
-            } catch (_: IllegalThreadStateException) {
-                Thread.sleep(50)
-            }
-        }
-
-        output.appendLine().append("RUN LENGTH: ${mark.elapsedNow().inWholeSeconds}s")
-        val out = output.toString()
-        assertEquals(0, exitCode, out)
-        println(out)
+        assertEquals(0, exitCode)
     }
 }
