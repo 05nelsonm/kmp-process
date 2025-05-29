@@ -289,7 +289,7 @@ abstract class ProcessBaseTest {
 
         val exitCode = Process.Builder(command = "cat")
             .args("-")
-            .spawn { p ->
+            .useSpawn { p ->
                 val data = expected
                     .joinToString("\n", postfix = "\n")
                     .encodeToByteArray()
@@ -348,7 +348,7 @@ abstract class ProcessBaseTest {
             .stdin(Stdio.Null)
             .stdout(Stdio.File.of(f))
             .stderr(Stdio.File.of(f))
-            .spawn { p ->
+            .useSpawn { p ->
                 p.waitForAsync()
 
                 delayTest(250.milliseconds)
@@ -405,7 +405,7 @@ abstract class ProcessBaseTest {
         LOADER.toProcessBuilder()
             .stdout(Stdio.File.of(stdoutFile, append = true))
             .stderr(Stdio.File.of(stderrFile))
-            .spawn { p ->
+            .useSpawn { p ->
                 println(p)
 
                 withContext(Dispatchers.Default) {
@@ -443,7 +443,7 @@ abstract class ProcessBaseTest {
 
     @Test
     open fun givenExecutable_whenPipeOutputFeeds_thenIsAsExpected() = runTest(timeout = 25.seconds) {
-        LOADER.toProcessBuilder().spawn { p ->
+        LOADER.toProcessBuilder().useSpawn { p ->
             val stdoutBuilder = StringBuilder()
             val stderrBuilder = StringBuilder()
 
