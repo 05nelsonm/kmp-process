@@ -105,6 +105,7 @@ abstract class io.matthewnelson.kmp.process/Process : io.matthewnelson.kmp.proce
         final fun stdin(io.matthewnelson.kmp.process/Stdio): io.matthewnelson.kmp.process/Process.Builder // io.matthewnelson.kmp.process/Process.Builder.stdin|stdin(io.matthewnelson.kmp.process.Stdio){}[0]
         final fun stdout(io.matthewnelson.kmp.process/Stdio): io.matthewnelson.kmp.process/Process.Builder // io.matthewnelson.kmp.process/Process.Builder.stdout|stdout(io.matthewnelson.kmp.process.Stdio){}[0]
         final inline fun <#A2: kotlin/Any?> spawn(kotlin/Function1<io.matthewnelson.kmp.process/Process, #A2>): #A2 // io.matthewnelson.kmp.process/Process.Builder.spawn|spawn(kotlin.Function1<io.matthewnelson.kmp.process.Process,0:0>){0§<kotlin.Any?>}[0]
+        final inline fun <#A2: kotlin/Any?> useSpawn(kotlin/Function1<io.matthewnelson.kmp.process/Process, #A2>): #A2 // io.matthewnelson.kmp.process/Process.Builder.useSpawn|useSpawn(kotlin.Function1<io.matthewnelson.kmp.process.Process,0:0>){0§<kotlin.Any?>}[0]
     }
 
     final object Companion // io.matthewnelson.kmp.process/Process.Companion|null[0]

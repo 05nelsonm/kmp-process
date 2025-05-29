@@ -57,8 +57,8 @@ val builder = Process.Builder(command = "cat")
     // Also accepts vararg and List<String>
     .args("--number", "--squeeze-blank")
 
-    // Change the process's working directory
-    // (extension available for non-apple mobile).
+    // Change the process's working directory (extension
+    // function available for non-apple mobile).
     .changeDir(myApplicationDir)
 
     // Modify the Signal to send the Process
@@ -101,10 +101,10 @@ builder.spawn().let { p ->
 // Spawned process (Async APIs for all platforms)
 myScope.launch {
 
-    // Use spawn {} (with lambda) which will
+    // Use the useSpawn {} (with lambda) which will
     // automatically call destroy upon lambda closure,
     // instead of needing the try/finally block.
-    builder.spawn { p ->
+    builder.useSpawn { p ->
 
         val exitCode: Int? = p.waitForAsync(500.milliseconds)
 
@@ -131,7 +131,7 @@ builder.output {
 }
 
 // Piping output (feeds are only functional with Stdio.Pipe)
-builder.stdout(Stdio.Pipe).stderr(Stdio.Pipe).spawn { p ->
+builder.stdout(Stdio.Pipe).stderr(Stdio.Pipe).useSpawn { p ->
 
     val exitCode = p.stdoutFeed { line ->
         // single feed lambda
@@ -157,7 +157,7 @@ builder.stdout(Stdio.Pipe).stderr(Stdio.Pipe).spawn { p ->
 // Wait for asynchronous stdout/stderr output to stop
 // after Process.destroy is called
 myScope.launch {
-    val exitCode = builder.spawn { p ->
+    val exitCode = builder.useSpawn { p ->
         p.stdoutFeed { line ->
             // do something
         }.stderrFeed { line ->
@@ -207,7 +207,7 @@ builder.onError { e ->
         // ChildProcess error listener.
         else -> e.printStackTrace()
     }
-}.spawn { p ->
+}.useSpawn { p ->
     p.stdoutFeed { line ->
         myOtherClassThatHasABugAndWillThrowException.parse(line)
     }.waitFor()

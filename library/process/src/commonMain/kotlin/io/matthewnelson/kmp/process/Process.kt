@@ -146,7 +146,7 @@ public abstract class Process internal constructor(
      * [ProcessException.context] is equal to [CTX_DESTROY].
      *
      * @see [Signal]
-     * @see [Builder.spawn]
+     * @see [Builder.useSpawn]
      * @see [OutputFeed.Waiter]
      * @return this [Process] instance
      * */
@@ -388,7 +388,7 @@ public abstract class Process internal constructor(
          *
          * Utilizes the default [Output.Options]
          *
-         * For a long-running [Process], [spawn] should be utilized.
+         * For a long-running [Process], [useSpawn] should be utilized.
          *
          * @return [Output]
          * @throws [IOException] if [Process] creation failed
@@ -401,7 +401,7 @@ public abstract class Process internal constructor(
          * [Output.Options.Builder.timeoutMillis] is exceeded,
          * or [Output.Options.Builder.maxBuffer] is exceeded.
          *
-         * For a long-running [Process], [spawn] should be utilized.
+         * For a long-running [Process], [useSpawn] should be utilized.
          *
          * @param [block] lambda to configure [Output.Options]
          * @return [Output]
@@ -453,9 +453,7 @@ public abstract class Process internal constructor(
          * */
         @Throws(IOException::class)
         @OptIn(ExperimentalContracts::class)
-        public inline fun <T: Any?> spawn(
-            block: (process: Process) -> T,
-        ): T {
+        public inline fun <T: Any?> useSpawn(block: (process: Process) -> T): T {
             contract {
                 callsInPlace(block, InvocationKind.AT_MOST_ONCE)
             }
@@ -474,6 +472,26 @@ public abstract class Process internal constructor(
         }
 
         /**
+         * Spawns the [Process] and calls [Process.destroy] upon [block] closure.
+         *
+         * @throws [IOException] if [Process] creation failed
+         * @suppress
+         * */
+        @Throws(IOException::class)
+        @OptIn(ExperimentalContracts::class)
+        @Deprecated(
+            message = "Replaced with better nomenclature.",
+            replaceWith = ReplaceWith("useSpawn(block)"),
+        )
+        public inline fun <T: Any?> spawn(block: (process: Process) -> T): T {
+            contract {
+                callsInPlace(block, InvocationKind.AT_MOST_ONCE)
+            }
+
+            return useSpawn(block)
+        }
+
+        /**
          * Changes the working directory of the spawned process.
          *
          * [directory] must exist, otherwise the process will fail
@@ -486,10 +504,7 @@ public abstract class Process internal constructor(
          * */
         @Deprecated(
             message = "Not available for apple mobile targets resulting in spawn failure. Use changeDir.",
-            replaceWith = ReplaceWith(
-                expression = "this.changeDir(directory)",
-                "io.matthewnelson.kmp.process.changeDir"
-            )
+            replaceWith = ReplaceWith("this.changeDir(directory)", "io.matthewnelson.kmp.process.changeDir")
         )
         public fun chdir(
             directory: File?,

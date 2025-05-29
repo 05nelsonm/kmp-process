@@ -48,7 +48,7 @@ class ProcessAndroidNativeTest {
 
         val process = Process.Builder(nativeLibraryDir.resolve(libName))
             .stdin(Stdio.Null)
-            .spawn { p ->
+            .useSpawn { p ->
                 // Cannot use Stdio.Inherit, otherwise will not be captured by logcat.
                 p.stdoutFeed { line ->
                     println(line ?: "STDOUT: END")

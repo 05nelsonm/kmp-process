@@ -156,37 +156,37 @@ class ProcessAndroidTest: ProcessBaseTest() {
 
         // Should fail for not existing
         b.stdin(stdioFile)
-        assertFailsWith<IOException> { b.spawn {} }
+        assertFailsWith<IOException> { b.useSpawn {} }
 
         assertTrue(f.createNewFile())
         assertTrue(f.setReadable(false))
         assertTrue(f.setWritable(false))
 
         // Should fail for not being able to read
-        assertFailsWith<IOException> { b.spawn {} }
+        assertFailsWith<IOException> { b.useSpawn {} }
 
         assertTrue(d.mkdirs())
 
         // Should fail for not being a file
         b.stdin(stdioDir)
-        assertFailsWith<IOException> { b.spawn {} }
+        assertFailsWith<IOException> { b.useSpawn {} }
         b.stdin(Stdio.Pipe)
 
         // Should fail for not being a file
         b.stdout(stdioDir)
-        assertFailsWith<IOException> { b.spawn {} }
+        assertFailsWith<IOException> { b.useSpawn {} }
 
         // Should fail for not being able to write
         b.stdout(stdioFile)
-        assertFailsWith<IOException> { b.spawn {} }
+        assertFailsWith<IOException> { b.useSpawn {} }
         b.stdout(Stdio.Pipe)
 
         // Should fail for not being a file
         b.stderr(stdioDir)
-        assertFailsWith<IOException> { b.spawn {} }
+        assertFailsWith<IOException> { b.useSpawn {} }
 
         // Should fail for not being able to write
         b.stderr(stdioFile)
-        assertFailsWith<IOException> { b.spawn {} }
+        assertFailsWith<IOException> { b.useSpawn {} }
     }
 }
