@@ -86,6 +86,8 @@ jobs:
             arch: x86
           - api-level: 21
             arch: x86_64
+          - api-level: 23
+            arch: x86_64
           - api-level: 24
             arch: x86_64
           - api-level: 29
