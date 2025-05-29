@@ -40,7 +40,7 @@ class ProcessAndroidTest: ProcessBaseTest() {
     override val homeDir: File get() = ctx.getDir("torservice", Context.MODE_PRIVATE)
     override val cacheDir: File get() = SysTempDir.resolve("torservice").resolve("cache")
 
-    private val sdkInt: Int = android.os.Build.VERSION.SDK_INT
+    private val sdkInt: Int = Build.VERSION.SDK_INT
 
     override fun assertExitCode(code: Int) {
         val expected = if (sdkInt < 24) Signal.SIGKILL.code else 0
@@ -49,7 +49,7 @@ class ProcessAndroidTest: ProcessBaseTest() {
 
     @Test
     fun givenAndroidOsEnvironment_whenModified_thenMatchesCurrentProcessEnvironment() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+        if (sdkInt < Build.VERSION_CODES.LOLLIPOP) {
             println("Skipping...")
             return
         }
@@ -60,7 +60,7 @@ class ProcessAndroidTest: ProcessBaseTest() {
         val environmentProcess = Process.Current.environment().map { (key, value) -> "$key=$value" }
         val environmentOs = Os.environ().toList()
 
-        assertEquals(Build.VERSION.SDK_INT !in 24..32, ProcessBuilder().environment().contains(envKey))
+        assertEquals(sdkInt !in 24..32, ProcessBuilder().environment().contains(envKey))
 
         val missingFromProcessEnv = mutableListOf<String>()
         environmentOs.forEach { line ->
