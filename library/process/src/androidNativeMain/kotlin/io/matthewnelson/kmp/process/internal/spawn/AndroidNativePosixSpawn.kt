@@ -33,7 +33,6 @@ import kotlinx.cinterop.cstr
 import kotlinx.cinterop.invoke
 import kotlinx.cinterop.memScoped
 import kotlinx.cinterop.ptr
-import platform.posix.RTLD_DEFAULT
 import platform.posix.RTLD_NEXT
 import platform.posix.android_get_device_api_level
 import platform.posix.dlsym

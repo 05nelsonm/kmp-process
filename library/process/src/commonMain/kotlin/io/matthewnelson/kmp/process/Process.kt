@@ -447,7 +447,7 @@ public abstract class Process internal constructor(
         }
 
         /**
-         * Spawns the [Process] and calls [_signal] upon [block] closure.
+         * Spawns the [Process] and calls [Process.destroy] upon [block] closure.
          *
          * @throws [IOException] if [Process] creation failed
          * */

@@ -22,7 +22,6 @@ import io.matthewnelson.kmp.file.toFile
 import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.Stdio
 import kotlin.test.Test
-import kotlin.test.assertEquals
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 
@@ -47,12 +46,23 @@ class ProcessAndroidNativeTest {
             return
         }
 
-        val exitCode = Process.Builder(nativeLibraryDir.resolve(libName))
+        val process = Process.Builder(nativeLibraryDir.resolve(libName))
             .stdin(Stdio.Null)
-            .stdout(Stdio.Inherit)
-            .stderr(Stdio.Inherit)
-            .spawn { process -> process.waitFor(timeout); process }.waitFor()
+            .spawn { p ->
+                // Cannot use Stdio.Inherit, otherwise will not be captured by logcat.
+                p.stdoutFeed { line ->
+                    println(line ?: "STDOUT: END")
+                }.stderrFeed { line ->
+                    System.err.println(line ?: "STDERR: END")
+                }.waitFor(timeout)
+                p
+            }
 
-        assertEquals(0, exitCode)
+        if (process.waitFor() == 0) return
+
+        System.err.println(process.toString())
+        System.err.println("--- ENVIRONMENT ---")
+        process.environment.forEach { (key, value) -> System.err.println("$key=$value") }
+        throw AssertionError("Process.exitCode[${process.exitCode()}] != 0")
     }
 }

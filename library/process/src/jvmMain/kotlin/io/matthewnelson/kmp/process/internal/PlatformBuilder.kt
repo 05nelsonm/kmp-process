@@ -22,13 +22,30 @@ import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.file.FileNotFoundException
 import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.process.*
+import java.lang.reflect.Method
 
 // jvmMain
 internal actual class PlatformBuilder private actual constructor() {
 
     private val jProcessBuilder = ProcessBuilder(emptyList())
     internal actual val env: MutableMap<String, String> by lazy {
-        jProcessBuilder.environment()
+        val e = jProcessBuilder.environment()
+
+        // Android API 24 to 32 caches the C environment in ProcessEnvironment and
+        // does not update with any modifications that may have taken place via native
+        // code or via android.system.Os (API 21+). That is insane...
+        val eOS = ANDROID_OS_ENVIRON?.invoke(null) ?: return@lazy e
+
+        // Clear out the stale environment and replace with the proper one.
+        e.clear()
+        @Suppress("UNCHECKED_CAST")
+        (eOS as Array<out String>).forEach { line ->
+            val i = line.indexOf('=')
+            if (i == -1) return@forEach
+            e[line.substring(0, i)] = line.substring(i + 1, line.length)
+        }
+
+        e
     }
 
     @Throws(IOException::class)
@@ -167,6 +184,12 @@ internal actual class PlatformBuilder private actual constructor() {
             }
         }
 
+        private val ANDROID_OS_ENVIRON: Method? by lazy {
+            if (ANDROID.SDK_INT?.let { it in 24..32 } != true) return@lazy null
+            @Suppress("UNNECESSARY_SAFE_CALL")
+            Class.forName("android.system.Os")?.getMethod("environ")
+        }
+
         @Suppress("NewApi")
         private val REDIRECT_NULL_READ: ProcessBuilder.Redirect by lazy {
             ProcessBuilder.Redirect.from(REDIRECT_NULL_WRITE.file())
@@ -175,6 +198,7 @@ internal actual class PlatformBuilder private actual constructor() {
         @Suppress("NewApi")
         private val REDIRECT_NULL_WRITE: ProcessBuilder.Redirect by lazy {
             val discard = try {
+                @Suppress("UNNECESSARY_SAFE_CALL")
                 Class.forName("java.lang.ProcessBuilder\$Redirect")
                     ?.getField("DISCARD")
                     ?.get(null) as? ProcessBuilder.Redirect
