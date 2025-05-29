@@ -17,6 +17,8 @@ package io.matthewnelson.kmp.process.test.api
 
 import android.app.Application
 import android.content.Context
+import android.os.Build
+import android.system.Os
 import androidx.test.core.app.ApplicationProvider
 import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.file.IOException
@@ -43,6 +45,61 @@ class ProcessAndroidTest: ProcessBaseTest() {
     override fun assertExitCode(code: Int) {
         val expected = if (sdkInt < 24) Signal.SIGKILL.code else 0
         assertEquals(expected, code)
+    }
+
+    @Test
+    fun givenAndroidOsEnvironment_whenModified_thenMatchesCurrentProcessEnvironment() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+            println("Skipping...")
+            return
+        }
+
+        val envKey = "process_env_test"
+        Os.setenv(envKey, "anything", true)
+
+        val environmentProcess = Process.Current.environment().map { (key, value) -> "$key=$value" }
+        val environmentOs = Os.environ().toList()
+
+        assertEquals(Build.VERSION.SDK_INT !in 24..32, ProcessBuilder().environment().contains(envKey))
+
+        val missingFromProcessEnv = mutableListOf<String>()
+        environmentOs.forEach { line ->
+            if (environmentProcess.contains(line)) return@forEach
+            missingFromProcessEnv.add(line)
+        }
+
+        val missingFromOsEnv = mutableListOf<String>()
+        environmentProcess.forEach { line ->
+            if (environmentOs.contains(line)) return@forEach
+            missingFromOsEnv.add(line)
+        }
+
+        Os.unsetenv(envKey)
+        if (missingFromProcessEnv.isEmpty() && missingFromOsEnv.isEmpty()) return
+
+        buildString {
+            append("Missing From Os.environ: [")
+            if (missingFromOsEnv.isEmpty()) {
+                appendLine(']')
+            } else {
+                appendLine()
+                missingFromOsEnv.forEach { line ->
+                    append("    ").appendLine(line)
+                }
+                appendLine(']')
+            }
+
+            append("Missing From ProcessBuilder.environment: [")
+            if (missingFromProcessEnv.isEmpty()) {
+                appendLine(']')
+            } else {
+                appendLine()
+                missingFromProcessEnv.forEach { line ->
+                    append("    ").appendLine(line)
+                }
+                appendLine(']')
+            }
+        }.let { throw AssertionError(it) }
     }
 
     @Test
