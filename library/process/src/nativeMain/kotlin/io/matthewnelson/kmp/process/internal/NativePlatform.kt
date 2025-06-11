@@ -40,10 +40,22 @@ internal actual val IsMobile: Boolean get() {
 @Suppress("NOTHING_TO_INLINE")
 @Throws(InterruptedException::class)
 internal actual inline fun Duration.threadSleep() {
-    if (usleep(inWholeMicroseconds.toUInt()) == -1) {
-        throw when (errno) {
-            EINVAL -> IllegalArgumentException()
-            else -> InterruptedException()
+    if (isNegative()) throw IllegalArgumentException("duration cannot be negative")
+
+    // usleep does not like durations greater than 1s
+    // on some systems. Break it up over multiple calls.
+    var remainingMicros: Long = inWholeMicroseconds
+    while (remainingMicros > 1_000_000L) {
+        if (usleep(999_999u) == -1) {
+            // EINTR
+            throw InterruptedException()
+        }
+        remainingMicros -= 1_000_000L
+    }
+    if (remainingMicros > 0) {
+        if (usleep(remainingMicros.toUInt()) == -1) {
+            // EINTR
+            throw InterruptedException()
         }
     }
 }
