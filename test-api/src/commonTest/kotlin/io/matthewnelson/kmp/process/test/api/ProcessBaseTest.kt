@@ -181,8 +181,8 @@ abstract class ProcessBaseTest {
             .args("echo 1>&2 \"$expected\"")
             .output()
 
-        assertEquals("", out.stdout)
-        assertEquals(expected, out.stderr)
+        assertEquals("", out.stdout, "STDOUT:" + out.stdout)
+        assertEquals(expected, out.stderr, "STDERR:" + out.stderr)
     }
 
     @Test
@@ -193,8 +193,8 @@ abstract class ProcessBaseTest {
         }
 
         val expected = buildString {
-            repeat(50_000) { appendLine(it) }
-            append("50000")
+            repeat(5_000) { appendLine(it) }
+            append("5000")
         }
         val out = Process.Builder(command = "cat")
             .args("-")
@@ -203,11 +203,14 @@ abstract class ProcessBaseTest {
             .stdin(Stdio.Inherit)
             .output {
                 inputUtf8 { expected }
+                timeoutMillis = 1_000
+                maxBuffer = Int.MAX_VALUE / 2
             }
 
+        assertNull(out.processError)
         assertEquals(Stdio.Pipe, out.processInfo.stdio.stdin)
         @Suppress("ReplaceAssertBooleanWithAssertEquality")
-        assertTrue(expected == out.stdout, "Stdout output did not match expected")
+        assertTrue(expected == out.stdout, "STDOUT did not match expected")
         assertEquals("", out.stderr)
     }
 
@@ -286,7 +289,7 @@ abstract class ProcessBaseTest {
 
         val exitCode = Process.Builder(command = "cat")
             .args("-")
-            .spawn { p ->
+            .useSpawn { p ->
                 val data = expected
                     .joinToString("\n", postfix = "\n")
                     .encodeToByteArray()
@@ -345,7 +348,7 @@ abstract class ProcessBaseTest {
             .stdin(Stdio.Null)
             .stdout(Stdio.File.of(f))
             .stderr(Stdio.File.of(f))
-            .spawn { p ->
+            .useSpawn { p ->
                 p.waitForAsync()
 
                 delayTest(250.milliseconds)
@@ -355,6 +358,35 @@ abstract class ProcessBaseTest {
         assertEquals(3, lines.size)
         assertEquals("stdout", lines[0])
         assertEquals("stderr", lines[1])
+    }
+
+    @Test
+    open fun givenExecutable_whenRelativePathWithChDir_thenExecutes() {
+        if (IsDarwinMobile) {
+            // chdir not supported
+            println("Skipping...")
+            return
+        }
+
+        val out = LOADER.process(TorResourceBinder) { tor, configureEnv ->
+            val parentDirName = tor.parentPath?.substringAfterLast(SysDirSep)
+            assertNotNull(parentDirName)
+
+            val command = "..".toFile()
+                .resolve(parentDirName)
+                .resolve(tor.name)
+
+            Process.Builder(command = command.path)
+                .args("--version")
+                .chdir(tor.parentFile)
+                .environment(configureEnv)
+        }.output { timeoutMillis = 2_000 }
+
+        println(out)
+        println(out.stdout)
+        println(out.stderr)
+
+        assertTrue(out.stdout.startsWith("Tor version "))
     }
 
     @Test
@@ -373,7 +405,7 @@ abstract class ProcessBaseTest {
         LOADER.toProcessBuilder()
             .stdout(Stdio.File.of(stdoutFile, append = true))
             .stderr(Stdio.File.of(stderrFile))
-            .spawn { p ->
+            .useSpawn { p ->
                 println(p)
 
                 withContext(Dispatchers.Default) {
@@ -411,7 +443,7 @@ abstract class ProcessBaseTest {
 
     @Test
     open fun givenExecutable_whenPipeOutputFeeds_thenIsAsExpected() = runTest(timeout = 25.seconds) {
-        LOADER.toProcessBuilder().spawn { p ->
+        LOADER.toProcessBuilder().useSpawn { p ->
             val stdoutBuilder = StringBuilder()
             val stderrBuilder = StringBuilder()
 

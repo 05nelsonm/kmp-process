@@ -14,6 +14,7 @@
 ![badge-platform-linux]
 ![badge-platform-ios]
 ![badge-platform-macos]
+![badge-support-android-native]
 ![badge-support-apple-silicon]
 ![badge-support-linux-arm]
 
@@ -26,14 +27,15 @@ and `Rust` [Command][url-rust-command]
 
 ## Info
 
-|           | Process Creation Method Used                                                        |
-|-----------|-------------------------------------------------------------------------------------|
-| `Android` | `java.lang.ProcessBuilder`                                                          |
-| `Jvm`     | `java.lang.ProcessBuilder`                                                          |
-| `Node.js` | [spawn][url-node-spawn] and [spawnSync][url-node-spawn-sync]                        |
-| `Linux`   | [posix_spawn][url-posix-spawn] or [fork][url-posix-fork]/[execve][url-posix-execve] |
-| `macOS`   | [posix_spawn][url-posix-spawn] or [fork][url-posix-fork]/[execve][url-posix-execve] |
-| `iOS`     | [posix_spawn][url-posix-spawn]                                                      |
+|                  | Process Creation Method Used                                                        |
+|------------------|-------------------------------------------------------------------------------------|
+| `Android`        | `java.lang.ProcessBuilder`                                                          |
+| `Jvm`            | `java.lang.ProcessBuilder`                                                          |
+| `Node.js`        | [spawn][url-node-spawn] and [spawnSync][url-node-spawn-sync]                        |
+| `Android Native` | [posix_spawn][url-posix-spawn] or [fork][url-posix-fork]/[execve][url-posix-execve] |
+| `Linux`          | [posix_spawn][url-posix-spawn] or [fork][url-posix-fork]/[execve][url-posix-execve] |
+| `macOS`          | [posix_spawn][url-posix-spawn] or [fork][url-posix-fork]/[execve][url-posix-execve] |
+| `iOS`            | [posix_spawn][url-posix-spawn]                                                      |
 
 **NOTE:** `java.lang.ProcessBuilder` and `java.lang.Process` Java 8 functionality is backported 
 for Android and tested against API 15+.
@@ -55,8 +57,8 @@ val builder = Process.Builder(command = "cat")
     // Also accepts vararg and List<String>
     .args("--number", "--squeeze-blank")
 
-    // Change the process's working directory
-    // (extension available for non-apple mobile).
+    // Change the process's working directory (extension
+    // function available for non-apple mobile).
     .changeDir(myApplicationDir)
 
     // Modify the Signal to send the Process
@@ -99,10 +101,10 @@ builder.spawn().let { p ->
 // Spawned process (Async APIs for all platforms)
 myScope.launch {
 
-    // Use spawn {} (with lambda) which will
+    // Use the useSpawn {} (with lambda) which will
     // automatically call destroy upon lambda closure,
     // instead of needing the try/finally block.
-    builder.spawn { p ->
+    builder.useSpawn { p ->
 
         val exitCode: Int? = p.waitForAsync(500.milliseconds)
 
@@ -129,7 +131,7 @@ builder.output {
 }
 
 // Piping output (feeds are only functional with Stdio.Pipe)
-builder.stdout(Stdio.Pipe).stderr(Stdio.Pipe).spawn { p ->
+builder.stdout(Stdio.Pipe).stderr(Stdio.Pipe).useSpawn { p ->
 
     val exitCode = p.stdoutFeed { line ->
         // single feed lambda
@@ -155,7 +157,7 @@ builder.stdout(Stdio.Pipe).stderr(Stdio.Pipe).spawn { p ->
 // Wait for asynchronous stdout/stderr output to stop
 // after Process.destroy is called
 myScope.launch {
-    val exitCode = builder.spawn { p ->
+    val exitCode = builder.useSpawn { p ->
         p.stdoutFeed { line ->
             // do something
         }.stderrFeed { line ->
@@ -205,7 +207,7 @@ builder.onError { e ->
         // ChildProcess error listener.
         else -> e.printStackTrace()
     }
-}.spawn { p ->
+}.useSpawn { p ->
     p.stdoutFeed { line ->
         myOtherClassThatHasABugAndWillThrowException.parse(line)
     }.waitFor()
@@ -218,22 +220,22 @@ builder.onError { e ->
 
 ```kotlin
 dependencies {
-    implementation("io.matthewnelson.kmp-process:process:0.2.1")
+    implementation("io.matthewnelson.kmp-process:process:0.3.0-SNAPSHOT")
 }
 ```
 
 **NOTE:** For Java9+ consumers, module `java.management` is required. See [issue-139][url-issue-139]
 
 <!-- TAG_VERSION -->
-[badge-latest-release]: https://img.shields.io/badge/latest--release-0.2.1-blue.svg?style=flat
+[badge-latest-release]: https://img.shields.io/badge/latest--release-0.3.0--SNAPSHOT-blue.svg?style=flat
 [badge-license]: https://img.shields.io/badge/license-Apache%20License%202.0-blue.svg?style=flat
 
 <!-- TAG_DEPENDENCIES -->
 [badge-coroutines]: https://img.shields.io/badge/kotlinx.coroutines-1.10.2-blue.svg?logo=kotlin
 [badge-bitops]: https://img.shields.io/badge/kotlincrypto.bitops-0.2.0-blue.svg?style=flat
 [badge-immutable]: https://img.shields.io/badge/immutable-0.2.0-blue.svg?style=flat
-[badge-kmp-file]: https://img.shields.io/badge/kmp--file-0.2.0-blue.svg?style=flat
-[badge-kotlin]: https://img.shields.io/badge/kotlin-2.1.10-blue.svg?logo=kotlin
+[badge-kmp-file]: https://img.shields.io/badge/kmp--file-0.3.0-blue.svg?style=flat
+[badge-kotlin]: https://img.shields.io/badge/kotlin-2.1.21-blue.svg?logo=kotlin
 
 <!-- TAG_PLATFORMS -->
 [badge-platform-android]: http://img.shields.io/badge/-android-6EDB8D.svg?style=flat

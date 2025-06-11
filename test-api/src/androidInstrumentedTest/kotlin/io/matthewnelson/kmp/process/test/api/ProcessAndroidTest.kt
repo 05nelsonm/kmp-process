@@ -17,6 +17,8 @@ package io.matthewnelson.kmp.process.test.api
 
 import android.app.Application
 import android.content.Context
+import android.os.Build
+import android.system.Os
 import androidx.test.core.app.ApplicationProvider
 import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.file.IOException
@@ -38,11 +40,66 @@ class ProcessAndroidTest: ProcessBaseTest() {
     override val homeDir: File get() = ctx.getDir("torservice", Context.MODE_PRIVATE)
     override val cacheDir: File get() = SysTempDir.resolve("torservice").resolve("cache")
 
-    private val sdkInt: Int = android.os.Build.VERSION.SDK_INT
+    private val sdkInt: Int = Build.VERSION.SDK_INT
 
     override fun assertExitCode(code: Int) {
         val expected = if (sdkInt < 24) Signal.SIGKILL.code else 0
         assertEquals(expected, code)
+    }
+
+    @Test
+    fun givenAndroidOsEnvironment_whenModified_thenMatchesCurrentProcessEnvironment() {
+        if (sdkInt < Build.VERSION_CODES.LOLLIPOP) {
+            println("Skipping...")
+            return
+        }
+
+        val envKey = "process_env_test"
+        Os.setenv(envKey, "anything", true)
+
+        val environmentProcess = Process.Current.environment().map { (key, value) -> "$key=$value" }
+        val environmentOs = Os.environ().toList()
+
+        assertEquals(sdkInt !in 24..32, ProcessBuilder().environment().contains(envKey))
+
+        val missingFromProcessEnv = mutableListOf<String>()
+        environmentOs.forEach { line ->
+            if (environmentProcess.contains(line)) return@forEach
+            missingFromProcessEnv.add(line)
+        }
+
+        val missingFromOsEnv = mutableListOf<String>()
+        environmentProcess.forEach { line ->
+            if (environmentOs.contains(line)) return@forEach
+            missingFromOsEnv.add(line)
+        }
+
+        Os.unsetenv(envKey)
+        if (missingFromProcessEnv.isEmpty() && missingFromOsEnv.isEmpty()) return
+
+        buildString {
+            append("Missing From Os.environ: [")
+            if (missingFromOsEnv.isEmpty()) {
+                appendLine(']')
+            } else {
+                appendLine()
+                missingFromOsEnv.forEach { line ->
+                    append("    ").appendLine(line)
+                }
+                appendLine(']')
+            }
+
+            append("Missing From ProcessBuilder.environment: [")
+            if (missingFromProcessEnv.isEmpty()) {
+                appendLine(']')
+            } else {
+                appendLine()
+                missingFromProcessEnv.forEach { line ->
+                    append("    ").appendLine(line)
+                }
+                appendLine(']')
+            }
+        }.let { throw AssertionError(it) }
     }
 
     @Test
@@ -51,6 +108,12 @@ class ProcessAndroidTest: ProcessBaseTest() {
 
         val expected = android.os.Process.myPid()
         assertEquals(expected, Process.Current.pid())
+    }
+
+    @Test
+    override fun givenExecutable_whenRelativePathWithChDir_thenExecutes() {
+        if (sdkInt < 21) return
+        super.givenExecutable_whenRelativePathWithChDir_thenExecutes()
     }
 
     @Test
@@ -93,37 +156,37 @@ class ProcessAndroidTest: ProcessBaseTest() {
 
         // Should fail for not existing
         b.stdin(stdioFile)
-        assertFailsWith<IOException> { b.spawn {} }
+        assertFailsWith<IOException> { b.useSpawn {} }
 
         assertTrue(f.createNewFile())
         assertTrue(f.setReadable(false))
         assertTrue(f.setWritable(false))
 
         // Should fail for not being able to read
-        assertFailsWith<IOException> { b.spawn {} }
+        assertFailsWith<IOException> { b.useSpawn {} }
 
         assertTrue(d.mkdirs())
 
         // Should fail for not being a file
         b.stdin(stdioDir)
-        assertFailsWith<IOException> { b.spawn {} }
+        assertFailsWith<IOException> { b.useSpawn {} }
         b.stdin(Stdio.Pipe)
 
         // Should fail for not being a file
         b.stdout(stdioDir)
-        assertFailsWith<IOException> { b.spawn {} }
+        assertFailsWith<IOException> { b.useSpawn {} }
 
         // Should fail for not being able to write
         b.stdout(stdioFile)
-        assertFailsWith<IOException> { b.spawn {} }
+        assertFailsWith<IOException> { b.useSpawn {} }
         b.stdout(Stdio.Pipe)
 
         // Should fail for not being a file
         b.stderr(stdioDir)
-        assertFailsWith<IOException> { b.spawn {} }
+        assertFailsWith<IOException> { b.useSpawn {} }
 
         // Should fail for not being able to write
         b.stderr(stdioFile)
-        assertFailsWith<IOException> { b.spawn {} }
+        assertFailsWith<IOException> { b.useSpawn {} }
     }
 }

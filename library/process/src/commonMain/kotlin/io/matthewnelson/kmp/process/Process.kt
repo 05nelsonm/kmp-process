@@ -60,7 +60,7 @@ public abstract class Process internal constructor(
 
     /**
      * The current working directory, or `null` if one was
-     * not set via [io.matthewnelson.kmp.process.changeDir].
+     * not set via [Process.Builder.changeDir](https://kmp-process.matthewnelson.io/library/process/io.matthewnelson.kmp.process/change-dir.html).
      * */
     @JvmField
     public val cwd: File?,
@@ -146,7 +146,7 @@ public abstract class Process internal constructor(
      * [ProcessException.context] is equal to [CTX_DESTROY].
      *
      * @see [Signal]
-     * @see [Builder.spawn]
+     * @see [Builder.useSpawn]
      * @see [OutputFeed.Waiter]
      * @return this [Process] instance
      * */
@@ -206,7 +206,8 @@ public abstract class Process internal constructor(
      * **NOTE:** Care must be had when using Async APIs such that,
      * upon cancellation, [Process.destroy] is still called.
      *
-     * @see [io.matthewnelson.kmp.process.Blocking.waitFor]
+     * See: [Blocking.waitFor](https://kmp-process.matthewnelson.io/library/process/io.matthewnelson.kmp.process/-blocking/wait-for.html)
+     *
      * @return The [Process.exitCode]
      * */
     public suspend fun waitForAsync(): Int {
@@ -228,8 +229,9 @@ public abstract class Process internal constructor(
      * **NOTE:** Care must be had when using Async APIs such that,
      * upon cancellation, [Process.destroy] is still called.
      *
+     * See: [Blocking.waitFor](https://kmp-process.matthewnelson.io/library/process/io.matthewnelson.kmp.process/-blocking/wait-for.html)
+     *
      * @param [duration] the [Duration] to wait
-     * @see [io.matthewnelson.kmp.process.Blocking.waitFor]
      * @return The [Process.exitCode], or null if [duration] is
      *   exceeded without [Process] completion.
      * */
@@ -388,7 +390,7 @@ public abstract class Process internal constructor(
          *
          * Utilizes the default [Output.Options]
          *
-         * For a long-running [Process], [spawn] should be utilized.
+         * For a long-running [Process], [useSpawn] should be utilized.
          *
          * @return [Output]
          * @throws [IOException] if [Process] creation failed
@@ -401,7 +403,7 @@ public abstract class Process internal constructor(
          * [Output.Options.Builder.timeoutMillis] is exceeded,
          * or [Output.Options.Builder.maxBuffer] is exceeded.
          *
-         * For a long-running [Process], [spawn] should be utilized.
+         * For a long-running [Process], [useSpawn] should be utilized.
          *
          * @param [block] lambda to configure [Output.Options]
          * @return [Output]
@@ -428,8 +430,7 @@ public abstract class Process internal constructor(
          *
          * **NOTE:** [Process.destroy] **MUST** be called before de-referencing
          * the [Process] instance in order to close resources. This is best done
-         * via try/finally, or utilizing the other [spawn] function which handles
-         * it automatically for you.
+         * via try/finally, or the [useSpawn] function which handles it for you.
          *
          * @throws [IOException] if [Process] creation failed
          * */
@@ -447,15 +448,13 @@ public abstract class Process internal constructor(
         }
 
         /**
-         * Spawns the [Process] and calls [_signal] upon [block] closure.
+         * Spawns the [Process] and calls [Process.destroy] upon [block] closure.
          *
          * @throws [IOException] if [Process] creation failed
          * */
         @Throws(IOException::class)
         @OptIn(ExperimentalContracts::class)
-        public inline fun <T: Any?> spawn(
-            block: (process: Process) -> T,
-        ): T {
+        public inline fun <T: Any?> useSpawn(block: (process: Process) -> T): T {
             contract {
                 callsInPlace(block, InvocationKind.AT_MOST_ONCE)
             }
@@ -474,6 +473,26 @@ public abstract class Process internal constructor(
         }
 
         /**
+         * Spawns the [Process] and calls [Process.destroy] upon [block] closure.
+         *
+         * @throws [IOException] if [Process] creation failed
+         * @suppress
+         * */
+        @Throws(IOException::class)
+        @OptIn(ExperimentalContracts::class)
+        @Deprecated(
+            message = "Replaced with better nomenclature.",
+            replaceWith = ReplaceWith("useSpawn(block)"),
+        )
+        public inline fun <T: Any?> spawn(block: (process: Process) -> T): T {
+            contract {
+                callsInPlace(block, InvocationKind.AT_MOST_ONCE)
+            }
+
+            return useSpawn(block)
+        }
+
+        /**
          * Changes the working directory of the spawned process.
          *
          * [directory] must exist, otherwise the process will fail
@@ -486,10 +505,7 @@ public abstract class Process internal constructor(
          * */
         @Deprecated(
             message = "Not available for apple mobile targets resulting in spawn failure. Use changeDir.",
-            replaceWith = ReplaceWith(
-                expression = "this.changeDir(directory)",
-                "io.matthewnelson.kmp.process.changeDir"
-            )
+            replaceWith = ReplaceWith("this.changeDir(directory)", "io.matthewnelson.kmp.process.changeDir")
         )
         public fun chdir(
             directory: File?,

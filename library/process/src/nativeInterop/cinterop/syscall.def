@@ -1,0 +1,11 @@
+# SYS_pipe2 for AndroidNative testing
+package = io.matthewnelson.kmp.process.internal.testing
+---
+#ifndef KMP_PROCESS_SYSCALL_TESTING_H
+#define KMP_PROCESS_SYSCALL_TESTING_H
+
+#ifdef __ANDROID__
+#include <sys/syscall.h>
+#endif /* !defined(__ANDROID__) */
+
+#endif /* !defined(KMP_PROCESS_SYSCALL_TESTING_H) */

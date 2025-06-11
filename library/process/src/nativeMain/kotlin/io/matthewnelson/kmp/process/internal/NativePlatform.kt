@@ -17,8 +17,6 @@
 
 package io.matthewnelson.kmp.process.internal
 
-import io.matthewnelson.immutable.collections.immutableSetOf
-import io.matthewnelson.immutable.collections.toImmutableSet
 import io.matthewnelson.kmp.file.*
 import kotlinx.cinterop.*
 import platform.posix.*
@@ -42,66 +40,39 @@ internal actual val IsMobile: Boolean get() {
 @Suppress("NOTHING_TO_INLINE")
 @Throws(InterruptedException::class)
 internal actual inline fun Duration.threadSleep() {
-    if (usleep(inWholeMicroseconds.toUInt()) == -1) {
-        throw when (errno) {
-            EINVAL -> IllegalArgumentException()
-            else -> InterruptedException()
+    if (isNegative()) throw IllegalArgumentException("duration cannot be negative")
+
+    // usleep does not like durations greater than 1s
+    // on some systems. Break it up over multiple calls.
+    var remainingMicros: Long = inWholeMicroseconds
+    while (remainingMicros > 1_000_000L) {
+        if (usleep(999_999u) == -1) {
+            // EINTR
+            throw InterruptedException()
+        }
+        remainingMicros -= 1_000_000L
+    }
+    if (remainingMicros > 0) {
+        if (usleep(remainingMicros.toUInt()) == -1) {
+            // EINTR
+            throw InterruptedException()
         }
     }
 }
 
-@Throws(IOException::class)
-internal fun String.toProgramPaths(): Set<String> {
-    val file = toFile()
-
-    if (file.isAbsolute()) {
-        return immutableSetOf(file.normalize().path)
-    }
-
-    // Relative path
-    if (file.path.contains(SysDirSep)) {
-        return immutableSetOf(file.absoluteFile.normalize().path)
-    }
-
-    // Try finding via PATH
-    @OptIn(ExperimentalForeignApi::class)
-    val paths = getenv("PATH")
-        ?.toKString()
-        ?.split(if (IsWindows) ';' else ':')
-        ?.iterator()
-        ?: throw IOException("PATH environment variable not found. Unable to locate program[$this]")
-
-    val programPaths = ArrayList<String>(1)
-
-    while (paths.hasNext()) {
-        val target = paths.next().toFile().resolve(file)
-
-        if (target.isProgramOrNull() != true) continue
-        programPaths.add(target.path)
-    }
-
-    if (programPaths.isEmpty()) {
-        throw IOException("Failed to locate program[$this]")
-    }
-
-    return programPaths.toImmutableSet()
-}
-
-internal expect fun File.isProgramOrNull(): Boolean?
-
 @OptIn(ExperimentalForeignApi::class)
 internal fun List<String>.toArgv(
-    program: String,
-    scope: MemScope,
+    command: String,
+    scope: AutofreeScope,
 ): CArrayPointer<CPointerVar<ByteVar>> = with(scope) {
     val argv = allocArray<CPointerVar<ByteVar>>(size + 2)
 
-    argv[0] = program.substringAfterLast(SysDirSep).cstr.ptr
+    argv[0] = command.substringAfterLast(SysDirSep).cstr.getPointer(scope)
 
     var i = 1
     val iterator = iterator()
     while (iterator.hasNext()) {
-        argv[i++] = iterator.next().cstr.ptr
+        argv[i++] = iterator.next().cstr.getPointer(scope)
     }
 
     argv[i] = null
@@ -111,7 +82,7 @@ internal fun List<String>.toArgv(
 
 @OptIn(ExperimentalForeignApi::class)
 internal fun Map<String, String>.toEnvp(
-    scope: MemScope,
+    scope: AutofreeScope,
 ): CArrayPointer<CPointerVar<ByteVar>> = with(scope) {
     val envp = allocArray<CPointerVar<ByteVar>>(size + 1)
 
@@ -119,7 +90,7 @@ internal fun Map<String, String>.toEnvp(
     val iterator = entries.iterator()
     while (iterator.hasNext()) {
         val (k, v) = iterator.next()
-        envp[i++] = "$k=$v".cstr.ptr
+        envp[i++] = "$k=$v".cstr.getPointer(scope)
     }
 
     envp[i] = null

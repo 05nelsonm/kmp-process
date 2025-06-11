@@ -15,16 +15,18 @@
  **/
 package io.matthewnelson.kmp.process.internal
 
+import io.matthewnelson.kmp.file.SysTempDir
 import io.matthewnelson.kmp.file.resolve
-import io.matthewnelson.kmp.file.toFile
-import io.matthewnelson.kmp.process.PROJECT_DIR_PATH
+import io.matthewnelson.kmp.file.writeUtf8
 import io.matthewnelson.kmp.process.Stdio
+import io.matthewnelson.kmp.process.internal.stdio.StdioDescriptor
 import io.matthewnelson.kmp.process.internal.stdio.StdioDescriptor.Companion.fdOpen
 import io.matthewnelson.kmp.process.internal.stdio.StdioDescriptor.Pipe.Companion.fdOpen
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.usePinned
 import platform.posix.*
+import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
@@ -34,13 +36,24 @@ class UnixStdioDescriptorUnitTest {
 
     @Test
     fun givenStdioFile_whenFdOpen_thenHasFDCLOEXEC() {
-        val f = PROJECT_DIR_PATH.toFile().resolve("build.gradle.kts")
-        val descriptor = Stdio.File.of(f).fdOpen(isStdin = true)
+        @OptIn(ExperimentalStdlibApi::class)
+        val d = Random.Default.nextBytes(8).toHexString().let { name ->
+            SysTempDir.resolve(name)
+        }
+        val f = d.resolve("test.txt")
+
+        var descriptor: StdioDescriptor? = null
 
         try {
+            d.mkdirs()
+            f.writeUtf8("Hello World!")
+
+            descriptor = Stdio.File.of(f).fdOpen(isStdin = true)
             assertTrue(descriptor.withFd { it }.hasCLOEXEC())
         } finally {
-            descriptor.close()
+            descriptor?.close()
+            f.delete()
+            d.delete()
         }
     }
 

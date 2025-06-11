@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
+import com.android.build.gradle.tasks.MergeSourceSetFolders
 import io.matthewnelson.kmp.tor.common.api.GeoipFiles
 import io.matthewnelson.kmp.tor.common.api.ResourceLoader
 import io.matthewnelson.kmp.tor.resource.exec.tor.ResourceLoaderTorExec
@@ -26,10 +27,20 @@ repositories { google() }
 
 kmpConfiguration {
     configureShared {
+        val jniLibsDir = projectDir
+            .resolve("src")
+            .resolve("androidInstrumentedTest")
+            .resolve("jniLibs")
+
+        project.tasks.all {
+            if (name != "clean") return@all
+            doLast { jniLibsDir.deleteRecursively() }
+        }
+
         androidLibrary {
             android {
-                buildToolsVersion = "34.0.0"
-                compileSdk = 34
+                buildToolsVersion = "35.0.1"
+                compileSdk = 35
                 namespace = "io.matthewnelson.kmp.process.test.api"
 
                 defaultConfig {
@@ -38,6 +49,8 @@ kmpConfiguration {
                     testInstrumentationRunnerArguments["disableAnalytics"] = true.toString()
                     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
                 }
+
+                sourceSets["androidTest"].jniLibs.srcDir(jniLibsDir)
             }
 
             kotlinJvmTarget = JavaVersion.VERSION_1_8
@@ -86,8 +99,7 @@ kmpConfiguration {
             val buildDir = project
                 .layout
                 .buildDirectory
-                .asFile
-                .get()
+                .asFile.get()
 
             var files: Pair<GeoipFiles, File>? = null
 
@@ -126,6 +138,59 @@ kmpConfiguration {
             """.trimIndent())
 
             iosTest.kotlin.srcDir(kotlinSrc)
+        }
+
+        kotlin {
+            if (!project.plugins.hasPlugin("com.android.base")) return@kotlin
+
+            try {
+                project.evaluationDependsOn(":library:process")
+            } catch (_: Throwable) {}
+
+            project.afterEvaluate {
+                val nativeTestBinaryTasks = listOf(
+                    project to "libTestApiExec.so",
+                    project(":library:process") to "libTestProcessExec.so"
+                ).flatMap { (project, libName) ->
+
+                    val buildDir = project
+                        .layout
+                        .buildDirectory
+                        .asFile.get()
+
+                    listOf(
+                        "Arm32" to "armeabi-v7a",
+                        "Arm64" to "arm64-v8a",
+                        "X64" to "x86_64",
+                        "X86" to "x86",
+                    ).mapNotNull { (arch, abi) ->
+                        val nativeTestBinariesTask = project
+                            .tasks
+                            .findByName("androidNative${arch}TestBinaries")
+                            ?: return@mapNotNull null
+
+                        val abiDir = jniLibsDir.resolve(abi)
+                        if (!abiDir.exists() && !abiDir.mkdirs()) throw RuntimeException("mkdirs[$abiDir]")
+
+                        val testExecutable = buildDir
+                            .resolve("bin")
+                            .resolve("androidNative$arch")
+                            .resolve("debugTest")
+                            .resolve("test.kexe")
+
+                        nativeTestBinariesTask.doLast {
+                            testExecutable.copyTo(abiDir.resolve(libName), overwrite = true)
+                        }
+
+                        nativeTestBinariesTask
+                    }
+                }
+
+                project.tasks.withType(MergeSourceSetFolders::class.java).all {
+                    if (name != "mergeDebugAndroidTestJniLibFolders") return@all
+                    nativeTestBinaryTasks.forEach { task -> dependsOn(task) }
+                }
+            }
         }
     }
 }

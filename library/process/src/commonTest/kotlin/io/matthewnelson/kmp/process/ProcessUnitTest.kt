@@ -34,7 +34,7 @@ class ProcessUnitTest {
             Process.Builder(command = "sleep")
                 .args("3")
                 .destroySignal(Signal.SIGTERM)
-                .spawn { process ->
+                .useSpawn { process ->
                     process.waitForAsync(250.milliseconds)
                     process
                     // destroy called on lambda closure
@@ -62,7 +62,7 @@ class ProcessUnitTest {
             Process.Builder(command = "sleep")
                 .args("3")
                 .destroySignal(Signal.SIGKILL)
-                .spawn { process ->
+                .useSpawn { process ->
                     process.waitForAsync(250.milliseconds)
                     process
                     // destroy called on lambda closure
@@ -90,7 +90,7 @@ class ProcessUnitTest {
             Process.Builder(command = "sleep")
                 .args("3")
                 .destroySignal(Signal.SIGKILL)
-                .spawn { process ->
+                .useSpawn { process ->
 
                     process.stdoutFeed {}
                     process.stderrFeed {}
@@ -98,20 +98,20 @@ class ProcessUnitTest {
                     assertEquals(1, process.stdoutFeedsSize())
                     assertEquals(1, process.stderrFeedsSize())
 
-                    val feed = OutputFeed {  }
+                    val feed = OutputFeed { }
 
                     process.stdoutFeed(
                         // Ensures that only added once
                         feed,
                         feed,
-                        OutputFeed {  },
+                        OutputFeed { },
                     )
                     process.stderrFeed(
                         // Ensures that only added once
                         feed,
                         feed,
-                        OutputFeed {  },
-                        OutputFeed {  },
+                        OutputFeed { },
+                        OutputFeed { },
                     )
 
                     assertEquals(1 + 2, process.stdoutFeedsSize())
@@ -154,17 +154,17 @@ class ProcessUnitTest {
                 .destroySignal(Signal.SIGKILL)
                 .stdout(Stdio.Inherit)
                 .stderr(Stdio.Inherit)
-                .spawn { p ->
+                .useSpawn { p ->
 
                     p.stdoutFeed(
-                        OutputFeed {  },
-                        OutputFeed {  },
+                        OutputFeed { },
+                        OutputFeed { },
                     )
 
                     p.stderrFeed(
-                        OutputFeed {  },
-                        OutputFeed {  },
-                        OutputFeed {  },
+                        OutputFeed { },
+                        OutputFeed { },
+                        OutputFeed { },
                     )
 
                     assertEquals(0, p.stdoutFeedsSize())

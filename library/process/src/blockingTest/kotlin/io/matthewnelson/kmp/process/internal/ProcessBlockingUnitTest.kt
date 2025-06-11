@@ -38,7 +38,7 @@ class ProcessBlockingUnitTest {
             Process.Builder(command = "sleep")
                 .args("0.25")
                 .destroySignal(Signal.SIGKILL)
-                .spawn { p ->
+                .useSpawn { p ->
                     assertNull(p.waitFor(100.milliseconds))
                     assertTrue(p.isAlive)
                     assertEquals(0, p.waitFor(2.seconds))
@@ -61,7 +61,7 @@ class ProcessBlockingUnitTest {
             Process.Builder(command = "sleep")
                 .args("0.25")
                 .destroySignal(Signal.SIGKILL)
-                .spawn { p -> p.waitFor() }
+                .useSpawn { p -> p.waitFor() }
         } catch (e: IOException) {
             // Host (Window) did not have sleep available
             if (IsWindows) {

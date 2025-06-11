@@ -140,6 +140,7 @@ public final class io/matthewnelson/kmp/process/Process$Builder {
 	public final fun stderr (Lio/matthewnelson/kmp/process/Stdio;)Lio/matthewnelson/kmp/process/Process$Builder;
 	public final fun stdin (Lio/matthewnelson/kmp/process/Stdio;)Lio/matthewnelson/kmp/process/Process$Builder;
 	public final fun stdout (Lio/matthewnelson/kmp/process/Stdio;)Lio/matthewnelson/kmp/process/Process$Builder;
+	public final fun useSpawn (Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
 }
 
 protected final class io/matthewnelson/kmp/process/Process$Companion {

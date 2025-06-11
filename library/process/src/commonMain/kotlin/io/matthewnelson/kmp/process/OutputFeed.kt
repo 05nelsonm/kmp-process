@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("KotlinRedundantDiagnosticSuppress")
+@file:Suppress("KotlinRedundantDiagnosticSuppress", "RemoveRedundantQualifierName")
 
 package io.matthewnelson.kmp.process
 
@@ -343,8 +343,9 @@ public fun interface OutputFeed {
          * **NOTE:** For Jvm & Android the `kotlinx.coroutines.core`
          * dependency is needed.
          *
+         * See: [Blocking.Waiter.awaitStop](https://kmp-process.matthewnelson.io/library/process/io.matthewnelson.kmp.process/-blocking/-waiter/await-stop.html)
+         *
          * @return [Process] for chaining calls
-         * @see [io.matthewnelson.kmp.process.Blocking.Waiter.awaitStop]
          * */
         public suspend fun awaitStopAsync(): Process {
             while (isStarted() && !isStopped()) {
