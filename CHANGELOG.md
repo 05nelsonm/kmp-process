@@ -1,5 +1,27 @@
 # CHANGELOG
 
+## Version 0.3.0 (2025-06-11)
+ - Updates `kotlin` to `2.1.21` [[#143]][143]
+ - Updates `kmp-file` to `0.3.0` [[#143]][143] [[#154]][154]
+ - Cleans up internal Kotlin/Native implementation by separating out `iOS` internals from 
+   other targets where `fork`/`execve` APIs are available [[#144]][144]
+ - Fixes cross-platform behavior differences when utilizing a relative file path command in 
+   combination with `changeDir` [[#146]][146]
+ - Adds support for the following targets [[#147]][147]
+     - `androidNativeArm32`
+     - `androidNativeArm64`
+     - `androidNativeX64`
+     - `androidNativeX86`
+ - Fixes Android API 24 to 32 `ProcessBuilder.environment` not reflecting that of the 
+   `Os.environ` [[#150]][150]
+     - The Android `ProcessEnvironment` implementation for those API versions were caching 
+       the native `environ` on first invocation and never updating to reflect the actual 
+       environment for the lifetime of the application.
+ - Deprecates `spawn {}` and replaces it with `useSpawn {}` [[#151]][151]
+ - Fixes `Blocking.threadSleep` Kotlin/Native implementation when duration is greater than 
+   1 second by invoking `usleep` in durations smaller than 1 second multiple times until
+   the total duration desired has passed [[#153]][153]
+
 ## Version 0.2.1 (2025-05-09)
  - Updates `kotlinx.coroutines` to `1.10.2` [[#141]][141]
  - Fixes `NoClassDefFoundException` when `Process.Current.pid` is called on Java9+ whereby 
@@ -110,3 +132,11 @@
 [138]: https://github.com/05nelsonm/kmp-process/pull/138
 [140]: https://github.com/05nelsonm/kmp-process/pull/140
 [141]: https://github.com/05nelsonm/kmp-process/pull/141
+[143]: https://github.com/05nelsonm/kmp-process/pull/143
+[144]: https://github.com/05nelsonm/kmp-process/pull/144
+[146]: https://github.com/05nelsonm/kmp-process/pull/146
+[147]: https://github.com/05nelsonm/kmp-process/pull/147
+[150]: https://github.com/05nelsonm/kmp-process/pull/150
+[151]: https://github.com/05nelsonm/kmp-process/pull/151
+[153]: https://github.com/05nelsonm/kmp-process/pull/153
+[154]: https://github.com/05nelsonm/kmp-process/pull/154

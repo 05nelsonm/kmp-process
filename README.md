@@ -220,14 +220,14 @@ builder.onError { e ->
 
 ```kotlin
 dependencies {
-    implementation("io.matthewnelson.kmp-process:process:0.3.0-SNAPSHOT")
+    implementation("io.matthewnelson.kmp-process:process:0.3.0")
 }
 ```
 
 **NOTE:** For Java9+ consumers, module `java.management` is required. See [issue-139][url-issue-139]
 
 <!-- TAG_VERSION -->
-[badge-latest-release]: https://img.shields.io/badge/latest--release-0.3.0--SNAPSHOT-blue.svg?style=flat
+[badge-latest-release]: https://img.shields.io/badge/latest--release-0.3.0-blue.svg?style=flat
 [badge-license]: https://img.shields.io/badge/license-Apache%20License%202.0-blue.svg?style=flat
 
 <!-- TAG_DEPENDENCIES -->
