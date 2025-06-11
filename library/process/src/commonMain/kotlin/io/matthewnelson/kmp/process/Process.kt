@@ -60,7 +60,7 @@ public abstract class Process internal constructor(
 
     /**
      * The current working directory, or `null` if one was
-     * not set via [io.matthewnelson.kmp.process.changeDir].
+     * not set via [Process.Builder.changeDir](https://kmp-process.matthewnelson.io/library/process/io.matthewnelson.kmp.process/change-dir.html).
      * */
     @JvmField
     public val cwd: File?,
@@ -206,7 +206,8 @@ public abstract class Process internal constructor(
      * **NOTE:** Care must be had when using Async APIs such that,
      * upon cancellation, [Process.destroy] is still called.
      *
-     * @see [io.matthewnelson.kmp.process.Blocking.waitFor]
+     * See: [Blocking.waitFor](https://kmp-process.matthewnelson.io/library/process/io.matthewnelson.kmp.process/-blocking/wait-for.html)
+     *
      * @return The [Process.exitCode]
      * */
     public suspend fun waitForAsync(): Int {
@@ -228,8 +229,9 @@ public abstract class Process internal constructor(
      * **NOTE:** Care must be had when using Async APIs such that,
      * upon cancellation, [Process.destroy] is still called.
      *
+     * See: [Blocking.waitFor](https://kmp-process.matthewnelson.io/library/process/io.matthewnelson.kmp.process/-blocking/wait-for.html)
+     *
      * @param [duration] the [Duration] to wait
-     * @see [io.matthewnelson.kmp.process.Blocking.waitFor]
      * @return The [Process.exitCode], or null if [duration] is
      *   exceeded without [Process] completion.
      * */
@@ -428,8 +430,7 @@ public abstract class Process internal constructor(
          *
          * **NOTE:** [Process.destroy] **MUST** be called before de-referencing
          * the [Process] instance in order to close resources. This is best done
-         * via try/finally, or utilizing the other [spawn] function which handles
-         * it automatically for you.
+         * via try/finally, or the [useSpawn] function which handles it for you.
          *
          * @throws [IOException] if [Process] creation failed
          * */
