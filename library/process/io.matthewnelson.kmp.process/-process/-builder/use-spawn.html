@@ -2,7 +2,7 @@
 <html class="no-js">
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8">
-    <title>destroySignal</title>
+    <title>useSpawn</title>
 <link href="../../../../../images/logo-icon.svg" rel="icon" type="image/svg">    <script>var pathToRoot = "../../../../../";</script>
     <script>document.documentElement.classList.replace("no-js","js");</script>
     <script>const storage = localStorage.getItem("dokka-dark-mode")
@@ -90,12 +90,12 @@
                 </div>
             </div>
             <div id="main">
-<div class="main-content" data-page-type="member" id="content" pageids="process::io.matthewnelson.kmp.process/Process.Builder/destroySignal/#io.matthewnelson.kmp.process.Signal/PointingToDeclaration//1506791849">
-  <div class="breadcrumbs"><a href="../../../index.html">process</a><span class="delimiter">/</span><a href="../../index.html">io.matthewnelson.kmp.process</a><span class="delimiter">/</span><a href="../index.html">Process</a><span class="delimiter">/</span><a href="index.html">Builder</a><span class="delimiter">/</span><span class="current">destroySignal</span></div>
+<div class="main-content" data-page-type="member" id="content" pageids="process::io.matthewnelson.kmp.process/Process.Builder/useSpawn/#kotlin.Function1[io.matthewnelson.kmp.process.Process,TypeParam(bounds=[kotlin.Any?])]/PointingToDeclaration//1506791849">
+  <div class="breadcrumbs"><a href="../../../index.html">process</a><span class="delimiter">/</span><a href="../../index.html">io.matthewnelson.kmp.process</a><span class="delimiter">/</span><a href="../index.html">Process</a><span class="delimiter">/</span><a href="index.html">Builder</a><span class="delimiter">/</span><span class="current">useSpawn</span></div>
   <div class="cover ">
-    <h1 class="cover"><span>destroy</span><wbr><span><span>Signal</span></span></h1>
+    <h1 class="cover"><span>use</span><wbr><span><span>Spawn</span></span></h1>
   </div>
-  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library:process/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="destroy-signal.html"><span class="token function">destroySignal</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">signal<span class="token operator">: </span><a href="../../-signal/index.html">Signal</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">Process.Builder</a><span class="clearfix"><span class="floating-right">(<a href="https://github.com/05nelsonm/kmp-process/tree/master/library/process/src/commonMain/kotlin/io/matthewnelson/kmp/process/Process.kt#L318">source</a>)</span></span></div><p class="paragraph">Set the <a href="../../-signal/index.html">Signal</a> to use when <a href="../destroy.html">Process.destroy</a> is called.</p></div></div>
+  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library:process/commonMain"><div class="symbol monospace"><span class="token keyword">inline </span><span class="token keyword">fun </span><span class="token operator">&lt;</span><a href="use-spawn.html">T</a><span class="token operator">&gt; </span><a href="use-spawn.html"><span class="token function">useSpawn</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">block<span class="token operator">: </span><span class="token punctuation">(</span>process<span class="token operator">: </span><a href="../index.html">Process</a><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="use-spawn.html">T</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="use-spawn.html">T</a><span class="clearfix"><span class="floating-right">(<a href="https://github.com/05nelsonm/kmp-process/tree/master/library/process/src/commonMain/kotlin/io/matthewnelson/kmp/process/Process.kt#L457">source</a>)</span></span></div><p class="paragraph">Spawns the <a href="../index.html">Process</a> and calls <a href="../destroy.html">Process.destroy</a> upon <a href="use-spawn.html">block</a> closure.</p><h4 class="">Throws</h4><div class="table"><div class="table-row" data-filterable-current=":library:process/commonMain" data-filterable-set=":library:process/commonMain"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="https://kmp-file.matthewnelson.io/library/file/io.matthewnelson.kmp.file/-i-o-exception/index.html"><span><span>IOException</span></span></a></div></span></div><div><div class="title"><p class="paragraph">if <a href="../index.html">Process</a> creation failed</p></div></div></div></div></div></div></div>
 </div>
     <div class="footer">
         <a href="#content" id="go-to-top-link" class="footer--button footer--button_go-to-top"></a>
