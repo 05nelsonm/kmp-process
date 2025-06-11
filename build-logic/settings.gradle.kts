@@ -22,8 +22,6 @@ dependencyResolutionManagement {
         mavenCentral()
         google()
         gradlePluginPortal()
-        // TODO: REMOVE[kmp-tor-resource]
-        maven("https://s01.oss.sonatype.org/content/repositories/snapshots/")
     }
 
     versionCatalogs {
