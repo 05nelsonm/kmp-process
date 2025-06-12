@@ -102,16 +102,13 @@ internal fun Map<String, String>.toEnvp(
 @Throws(IOException::class)
 @OptIn(ExperimentalContracts::class)
 internal inline fun Int.check(
-    block: (result: Int) -> Boolean = { it >= 0 },
+    condition: (result: Int) -> Boolean = { it >= 0 },
 ): Int {
     contract {
-        callsInPlace(block, InvocationKind.EXACTLY_ONCE)
+        callsInPlace(condition, InvocationKind.EXACTLY_ONCE)
     }
 
-    if (!block(this)) {
-        @OptIn(ExperimentalForeignApi::class)
-        throw errnoToIOException(errno)
-    }
-
-    return this
+    if (condition(this)) return this
+    @OptIn(ExperimentalForeignApi::class)
+    throw errnoToIOException(errno)
 }

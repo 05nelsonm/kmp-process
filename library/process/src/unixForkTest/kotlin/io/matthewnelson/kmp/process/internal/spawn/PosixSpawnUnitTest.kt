@@ -16,7 +16,6 @@
 package io.matthewnelson.kmp.process.internal.spawn
 
 import io.matthewnelson.kmp.file.FileNotFoundException
-import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.file.SysTempDir
 import io.matthewnelson.kmp.file.canonicalPath
 import io.matthewnelson.kmp.file.resolve
@@ -32,9 +31,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
-import kotlin.test.assertIs
 import kotlin.test.assertNotNull
-import kotlin.test.fail
 
 class PosixSpawnUnitTest {
 
@@ -130,7 +127,7 @@ class PosixSpawnUnitTest {
             return
         }
 
-        try {
+        assertFailsWith<FileNotFoundException> {
             posixSpawn(
                 command = "sh",
                 args = listOf("-c", "echo \"$(pwd)\"; sleep 1; exit 42"),
@@ -140,10 +137,6 @@ class PosixSpawnUnitTest {
                 destroy = Signal.SIGTERM,
                 handler = ProcessException.Handler.IGNORE,
             )?.destroy() // for posterity...
-            fail("posix_spawn should have failed due to directory not existing")
-        } catch (e: IOException) {
-            assertIs<FileNotFoundException>(e)
-            assertEquals(true, e.message?.contains("Directory specified does not exist"))
         }
     }
 
@@ -154,7 +147,7 @@ class PosixSpawnUnitTest {
             return
         }
 
-        assertFailsWith<IOException> {
+        assertFailsWith<FileNotFoundException> {
             posixSpawn(
                 command = "/invalid/path/sh",
                 args = listOf("-c", "echo \"$(pwd)\"; sleep 1; exit 42"),
