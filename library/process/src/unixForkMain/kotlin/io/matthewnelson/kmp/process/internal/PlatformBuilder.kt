@@ -18,6 +18,7 @@
 package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.File
+import io.matthewnelson.kmp.file.FileNotFoundException
 import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.file.InterruptedException
 import io.matthewnelson.kmp.file.SysDirSep
@@ -144,24 +145,24 @@ internal actual class PlatformBuilder private actual constructor() {
             // read will never pop out with a value of 0 when the
             // child process' exec is successful.
             p.destroy()
-            pipe.read.tryCloseSuppressed(e)
+            pipe.tryCloseSuppressed(e)
             throw IOException("CLOEXEC pipe failure", e)
         }
 
         // Below is sort of like vfork on Linux where we
         // wait for the child process exec, but with error
         // validation and cleanup on our end.
-        val b = ByteArray(5)
+        val buf = ByteArray(5)
         var threw: IOException? = null
 
         val read = try {
-            ReadStream.of(pipe).read(b)
+            ReadStream.of(pipe).read(buf)
         } catch (e: IOException) {
             threw = IOException("CLOEXEC pipe failure", e)
         }
 
         try {
-            pipe.read.close()
+            pipe.close()
         } catch (e: IOException) {
             if (threw != null) {
                 threw.addSuppressed(e)
@@ -179,8 +180,8 @@ internal actual class PlatformBuilder private actual constructor() {
             0 -> null
 
             // Something happened in the child process
-            b.size -> {
-                val type = when (b[4]) {
+            buf.size -> {
+                val type = when (buf[4]) {
                     ERR_DUP2 -> "dup2"
                     ERR_CHDIR -> "chdir"
                     ERR_EXEC -> "exec"
@@ -190,10 +191,15 @@ internal actual class PlatformBuilder private actual constructor() {
                 if (type == null) {
                     IOException("CLOEXEC pipe validation check failure")
                 } else {
-                    val errno = b.beIntAt(0)
+                    val errno = buf.beIntAt(0)
                     @OptIn(ExperimentalForeignApi::class)
-                    val msg = strerror(errno)?.toKString() ?: "errno: $errno"
-                    IOException("Child process $type failure. $msg")
+                    var msg = strerror(errno)?.toKString() ?: "errno: $errno"
+                    msg = "Child process $type failure. $msg"
+                    if (errno == ENOENT) {
+                        FileNotFoundException(msg)
+                    } else {
+                        IOException(msg)
+                    }
                 }
             }
 
@@ -270,11 +276,14 @@ internal actual class PlatformBuilder private actual constructor() {
                 val envp = env.toEnvp(scope = this)
 
                 if (command.contains(SysDirSep)) {
+                    // Relative path to w/e the CWD is, or absolute.
                     execve(command, argv, envp)
                     return@memScoped errno
                 }
 
                 // Search for the programs using PATH. First to execute wins.
+                // Unfortunately execvpe is not available on some platforms, so
+                // we do it here manually...
                 var _errno = ENOENT
                 PATHIterator().forEach { path ->
                     if (path.isBlank()) return@forEach

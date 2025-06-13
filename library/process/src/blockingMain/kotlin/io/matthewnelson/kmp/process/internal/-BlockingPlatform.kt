@@ -40,7 +40,6 @@ internal fun PlatformBuilder.blockingOutput(
 ): Output {
 
     val p = try {
-        // TODO: Exception Handler
         spawn(command, args, chdir, env, stdio, destroy, ProcessException.Handler.IGNORE)
     } catch (e: IOException) {
         options.dropInput()
@@ -70,17 +69,19 @@ internal fun PlatformBuilder.blockingOutput(
             }
         }
 
+        // TODO: Rework to check thread start at intervals for a maximum of 150ms
+        //  from the time the Process.startTime
         try {
             // This is necessary to "guarantee" the stdout and
             // stderr threads start producing output before
             // potentially hopping out of waitFor and destroying
             // the process if it ended already.
-            100.milliseconds.threadSleep()
+            150.milliseconds.threadSleep()
         } catch (_: InterruptedException) {}
 
         // Output.Options.timeout is a minimum of 250 ms,
         // so will never be a negative value; we good.
-        waitForCode = p.commonWaitFor(options.timeout - 100.milliseconds) { millis ->
+        waitForCode = p.commonWaitFor(options.timeout - 150.milliseconds) { millis ->
             if (stdoutBuffer.maxSizeExceeded || stderrBuffer.maxSizeExceeded) {
                 throw IllegalStateException()
             }

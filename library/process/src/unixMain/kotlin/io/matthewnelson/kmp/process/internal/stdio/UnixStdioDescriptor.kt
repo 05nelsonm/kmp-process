@@ -19,7 +19,6 @@ package io.matthewnelson.kmp.process.internal.stdio
 
 import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.file.errnoToIOException
-import io.matthewnelson.kmp.process.Stdio
 import io.matthewnelson.kmp.process.internal.check
 import kotlinx.cinterop.*
 import platform.posix.*
@@ -30,39 +29,61 @@ internal actual inline fun Int.orOCloExec(): Int = this or O_CLOEXEC
 @Throws(IOException::class)
 @OptIn(ExperimentalForeignApi::class)
 internal actual fun ((fdRead: Int, fdWrite: Int) -> StdioDescriptor.Pipe).fdOpen(
-    stdio: Stdio.Pipe,
+    nonBlock: Boolean,
 ): StdioDescriptor.Pipe {
     val pipeFD = IntArray(2) { -1 }
 
     val isPipe2 = pipeFD.usePinned { pinned ->
         val p0: CPointer<IntVar> = pinned.addressOf(0)
-
-        if (p0.pipe2(O_CLOEXEC) == 0) return@usePinned true
+        var flags = O_CLOEXEC
+        if (nonBlock) flags = flags or O_NONBLOCK
+        if (p0.pipe2(flags) == 0) return@usePinned true
 
         pipe(p0).check()
         false
     }
 
     if (!isPipe2) {
-        pipeFD.forEach { fd ->
-//            val prev = fcntl(fd, F_GETFD)
-//            if (prev < 0) {\
-//                val e = errnoToIOException(errno)
-//                fdClose(pipeFD[0])
-//                fdClose(pipeFD[1])
-//                throw e
-//            }
+        arrayOf(
+            // Want to ensure FD_CLOEXEC is configured first and foremost, before
+            // configuring anything else. Unfortunately this cannot be done atomically
+            // like with pipe2.
+            F_SETFD to FD_CLOEXEC,
+            if (nonBlock) F_SETFL to O_NONBLOCK else null,
+        ).forEach {
+            if (it == null) return@forEach
 
-            // no need to check F_GETFD b/c it was just
-            // created via pipe1 with no flags set.
-            val result = fcntl(fd, F_SETFD, FD_CLOEXEC)
+            val (cmd, flags) = it
+
+            pipeFD.forEach pipeFD@ { fd ->
+                if (fcntl(fd, cmd, flags) == 0) return@pipeFD
+
+                val e = errnoToIOException(errno)
+                if (close(pipeFD[0]) == -1) {
+                    val ee = errnoToIOException(errno)
+                    e.addSuppressed(ee)
+                }
+                if (close(pipeFD[1]) == -1) {
+                    val ee = errnoToIOException(errno)
+                    e.addSuppressed(ee)
+                }
+                throw e
+            }
+        }
+        pipeFD.forEach { fd ->
+            var result = fcntl(fd, F_SETFD, FD_CLOEXEC)
+            if (result == 0 && nonBlock) {
+                result = fcntl(fd, F_SETFL, O_NONBLOCK)
+            }
             if (result != 0) {
                 val e = errnoToIOException(errno)
                 if (close(pipeFD[0]) == -1) {
-                    e.addSuppressed(errnoToIOException(errno))
+                    val ee = errnoToIOException(errno)
+                    e.addSuppressed(ee)
                 }
                 if (close(pipeFD[1]) == -1) {
-                    e.addSuppressed(errnoToIOException(errno))
+                    val ee = errnoToIOException(errno)
+                    e.addSuppressed(ee)
                 }
                 throw e
             }
