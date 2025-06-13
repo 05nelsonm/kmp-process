@@ -14,10 +14,12 @@
  * limitations under the License.
  **/
 @file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING", "KotlinRedundantDiagnosticSuppress", "NOTHING_TO_INLINE", "FunctionName")
+@file:OptIn(DoNotReferenceDirectly::class)
 
 package io.matthewnelson.kmp.process.internal.spawn
 
 import io.matthewnelson.kmp.file.File
+import io.matthewnelson.kmp.process.internal.DoNotReferenceDirectly
 import kotlinx.cinterop.AutofreeScope
 import kotlinx.cinterop.ByteVar
 import kotlinx.cinterop.CPointerVar
@@ -31,7 +33,9 @@ import platform.posix.pid_tVar
 // iOS
 @OptIn(ExperimentalForeignApi::class)
 internal actual class PosixSpawnScope internal constructor(
+    @property:DoNotReferenceDirectly(useInstead = "PosixSpawnScope extension functions")
     internal val attrs: CValuesRef<posix_spawnattr_tVar>,
+    @property:DoNotReferenceDirectly(useInstead = "PosixSpawnScope extension functions")
     internal val fileActions: CValuesRef<posix_spawn_file_actions_tVar>,
     private val mem: MemScope,
 ): AutofreeScope() {

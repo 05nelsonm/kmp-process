@@ -18,6 +18,7 @@ package io.matthewnelson.kmp.process.internal.spawn
 import io.matthewnelson.kmp.file.resolve
 import io.matthewnelson.kmp.file.toFile
 import io.matthewnelson.kmp.process.PROJECT_DIR_PATH
+import io.matthewnelson.kmp.process.internal.DoNotReferenceDirectly
 import io.matthewnelson.kmp.process.internal.IS_POSIX_SPAWN_AVAILABLE
 import io.matthewnelson.kmp.process.internal.check
 import kotlinx.cinterop.ExperimentalForeignApi
@@ -29,7 +30,7 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.test.fail
 
-@OptIn(ExperimentalForeignApi::class)
+@OptIn(DoNotReferenceDirectly::class, ExperimentalForeignApi::class)
 class PosixSpawnAndroidNativeUnitTest {
 
     @Test

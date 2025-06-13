@@ -14,11 +14,13 @@
  * limitations under the License.
  **/
 @file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING", "KotlinRedundantDiagnosticSuppress", "NOTHING_TO_INLINE", "FunctionName")
+@file:OptIn(DoNotReferenceDirectly::class)
 
 package io.matthewnelson.kmp.process.internal.spawn
 
 import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.file.path
+import io.matthewnelson.kmp.process.internal.DoNotReferenceDirectly
 import kotlinx.cinterop.AutofreeScope
 import kotlinx.cinterop.ByteVar
 import kotlinx.cinterop.ByteVarOf
@@ -35,7 +37,6 @@ import kotlinx.cinterop.invoke
 import kotlinx.cinterop.memScoped
 import kotlinx.cinterop.ptr
 import platform.posix.RTLD_NEXT
-import platform.posix.android_get_device_api_level
 import platform.posix.dlsym
 import platform.posix.pid_tVar
 
@@ -43,9 +44,12 @@ import platform.posix.pid_tVar
 @OptIn(ExperimentalForeignApi::class)
 @Suppress("LocalVariableName", "PropertyName")
 internal actual class PosixSpawnScope internal constructor(
+    @property:DoNotReferenceDirectly(useInstead = "PosixSpawnScope extension functions")
     internal val attrs: CValuesRef<posix_spawnattr_tVar>,
+    @property:DoNotReferenceDirectly(useInstead = "PosixSpawnScope extension functions")
     internal val fileActions: CValuesRef<posix_spawn_file_actions_tVar>,
     private val mem: MemScope,
+    @property:DoNotReferenceDirectly(useInstead = "PosixSpawnScope.spawn")
     internal val _posix_spawn: CPointer<CFunction<(
         __pid: CValuesRef<pid_tVar>?,
         __path: CPointer<ByteVarOf<Byte>>?,
@@ -54,6 +58,7 @@ internal actual class PosixSpawnScope internal constructor(
         __argv: CValuesRef<CPointerVar<ByteVar>>?,
         __env: CValuesRef<CPointerVar<ByteVar>>?,
     ) -> Int>>,
+    @property:DoNotReferenceDirectly(useInstead = "PosixSpawnScope.spawn_p")
     internal val _posix_spawn_p: CPointer<CFunction<(
         __pid: CValuesRef<pid_tVar>?,
         __file: CPointer<ByteVarOf<Byte>>?,
@@ -62,6 +67,7 @@ internal actual class PosixSpawnScope internal constructor(
         __argv: CValuesRef<CPointerVar<ByteVar>>?,
         __env: CValuesRef<CPointerVar<ByteVar>>?,
     ) -> Int>>,
+    @property:DoNotReferenceDirectly(useInstead = "PosixSpawnScope.file_actions_adddup2")
     internal val _file_actions_adddup2: CPointer<CFunction<(
         __actions: CValuesRef<posix_spawn_file_actions_tVar>?,
         __fd: Int,
@@ -77,6 +83,7 @@ internal actual class PosixSpawnScope internal constructor(
     @Suppress("LocalVariableName", "UNCHECKED_CAST")
     internal companion object {
 
+        @DoNotReferenceDirectly(useInstead = "PosixSpawnScope.spawn")
         internal val POSIX_SPAWN by lazy {
             val ptr = dlsym(RTLD_NEXT, "posix_spawn")
                 ?: return@lazy null
@@ -91,6 +98,7 @@ internal actual class PosixSpawnScope internal constructor(
             ) -> Int>>
         }
 
+        @DoNotReferenceDirectly(useInstead = "PosixSpawnScope.spawn_p")
         internal val POSIX_SPAWN_P by lazy {
             val ptr = dlsym(RTLD_NEXT, "posix_spawnp")
                 ?: return@lazy null
@@ -105,6 +113,7 @@ internal actual class PosixSpawnScope internal constructor(
             ) -> Int>>
         }
 
+        @DoNotReferenceDirectly(useInstead = "posixSpawnScopeOrNull")
         internal val SPAWNATTR_INIT by lazy {
             val ptr = dlsym(RTLD_NEXT, "posix_spawnattr_init")
                 ?: return@lazy null
@@ -114,6 +123,7 @@ internal actual class PosixSpawnScope internal constructor(
             ) -> Int>>
         }
 
+        @DoNotReferenceDirectly(useInstead = "posixSpawnScopeOrNull")
         internal val SPAWNATTR_DESTROY by lazy {
             val ptr = dlsym(RTLD_NEXT, "posix_spawnattr_destroy")
                 ?: return@lazy null
@@ -123,6 +133,7 @@ internal actual class PosixSpawnScope internal constructor(
             ) -> Int>>
         }
 
+        @DoNotReferenceDirectly(useInstead = "posixSpawnScopeOrNull")
         internal val FILE_ACTIONS_INIT by lazy {
             val ptr = dlsym(RTLD_NEXT, "posix_spawn_file_actions_init")
                 ?: return@lazy null
@@ -132,6 +143,7 @@ internal actual class PosixSpawnScope internal constructor(
             ) -> Int>>
         }
 
+        @DoNotReferenceDirectly(useInstead = "posixSpawnScopeOrNull")
         internal val FILE_ACTIONS_DESTROY by lazy {
             val ptr = dlsym(RTLD_NEXT, "posix_spawn_file_actions_destroy")
                 ?: return@lazy null
@@ -141,6 +153,7 @@ internal actual class PosixSpawnScope internal constructor(
             ) -> Int>>
         }
 
+        @DoNotReferenceDirectly(useInstead = "PosixSpawnScope.file_actions_addchdir_np")
         internal val FILE_ACTIONS_ADDCHDIR_NP by lazy {
             val ptr = dlsym(RTLD_NEXT, "posix_spawn_file_actions_addchdir_np")
                 ?: return@lazy null
@@ -151,6 +164,7 @@ internal actual class PosixSpawnScope internal constructor(
             ) -> Int>>
         }
 
+        @DoNotReferenceDirectly(useInstead = "PosixSpawnScope.file_actions_adddup2")
         internal val FILE_ACTIONS_ADDDUP2 by lazy {
             val ptr = dlsym(RTLD_NEXT, "posix_spawn_file_actions_adddup2")
                 ?: return@lazy null
@@ -204,11 +218,9 @@ internal actual inline fun <T: Any> posixSpawnScopeOrNull(
     if (requireChangeDir) {
         // Android API 34+ supports posix_spawn_file_actions_addchdir_np
         if (PosixSpawnScope.FILE_ACTIONS_ADDCHDIR_NP == null) return null
-    } else {
-        // Android API 28+ supports posix_spawn
-        if (android_get_device_api_level() < 28) return null
     }
 
+    // Android API 28+ supports posix_spawn
     val _posix_spawn = PosixSpawnScope.POSIX_SPAWN ?: return null
     val _posix_spawn_p = PosixSpawnScope.POSIX_SPAWN_P ?: return null
     val _posix_spawnattr_init = PosixSpawnScope.SPAWNATTR_INIT ?: return null

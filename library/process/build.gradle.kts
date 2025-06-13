@@ -149,11 +149,6 @@ kmpConfiguration {
                         includeDirs(cinteropDir)
                     }
                 }
-                if (target.konanTarget.family == Family.LINUX) {
-                    target.compilations["main"].cinterops.create("glibc_version").apply {
-                        definitionFile.set(cinteropDir.resolve("$name.def"))
-                    }
-                }
                 when (target.konanTarget.family) {
                     Family.ANDROID, Family.OSX, Family.IOS, Family.TVOS, Family.WATCHOS -> {
                         target.compilations["main"].cinterops.create("spawn") {
@@ -166,6 +161,15 @@ kmpConfiguration {
                 target.compilations["test"].cinterops.create("syscall").apply {
                     definitionFile.set(cinteropDir.resolve("$name.def"))
                 }.interopProcessingTaskName to target.konanTarget
+            }
+
+            project.afterEvaluate {
+                val commonizeTask = project.tasks.findByName("commonizeCInterop") ?: return@afterEvaluate
+
+                project.tasks.all {
+                    if (!name.endsWith("MetadataElements")) return@all
+                    dependsOn(commonizeTask)
+                }
             }
 
             project.extensions.configure<CompileToBitcodeExtension>("cklib") {
