@@ -1,3 +1,0 @@
-package = io.matthewnelson.kmp.process.internal.spawn
-headers = gnu/libc-version.h
-headerFilter = gnu/libc-version.h

@@ -14,11 +14,13 @@
  * limitations under the License.
  **/
 @file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING", "KotlinRedundantDiagnosticSuppress", "NOTHING_TO_INLINE", "FunctionName")
+@file:OptIn(DoNotReferenceDirectly::class)
 
 package io.matthewnelson.kmp.process.internal.spawn
 
 import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.file.path
+import io.matthewnelson.kmp.process.internal.DoNotReferenceDirectly
 import kotlinx.cinterop.AutofreeScope
 import kotlinx.cinterop.ByteVar
 import kotlinx.cinterop.ByteVarOf
@@ -49,7 +51,9 @@ import platform.posix.pid_tVar
 // linux
 @OptIn(ExperimentalForeignApi::class)
 internal actual class PosixSpawnScope internal constructor(
+    @property:DoNotReferenceDirectly(useInstead = "PosixSpawnScope extension functions")
     internal val attrs: CValuesRef<posix_spawnattr_t>,
+    @property:DoNotReferenceDirectly(useInstead = "PosixSpawnScope extension functions")
     internal val fileActions: CValuesRef<posix_spawn_file_actions_t>,
     private val mem: MemScope,
 ): AutofreeScope() {
@@ -62,6 +66,7 @@ internal actual class PosixSpawnScope internal constructor(
     @Suppress("LocalVariableName", "UNCHECKED_CAST")
     internal companion object {
 
+        @DoNotReferenceDirectly(useInstead = "PosixSpawnScope.file_actions_addchdir_np")
         internal val FILE_ACTIONS_ADDCHDIR_NP by lazy {
             val ptr = dlsym(null, "posix_spawn_file_actions_addchdir_np")
                 ?: return@lazy null
@@ -113,10 +118,6 @@ internal actual inline fun <T: Any> posixSpawnScopeOrNull(
     if (requireChangeDir) {
         // glibc 2.29+ supports posix_spawn_file_actions_addchdir_np
         if (PosixSpawnScope.FILE_ACTIONS_ADDCHDIR_NP == null) return null
-    } else {
-        // glibc 2.24+ supports posix_spawn returning ENOENT
-        val version = GnuLibcVersion.INSTANCE ?: return null
-        if (!version.isAtLeast(major = 2u, minor = 24u)) return null
     }
 
     return memScoped {

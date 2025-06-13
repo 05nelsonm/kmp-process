@@ -18,13 +18,14 @@ package io.matthewnelson.kmp.process.internal.spawn
 import io.matthewnelson.kmp.file.resolve
 import io.matthewnelson.kmp.file.toFile
 import io.matthewnelson.kmp.process.PROJECT_DIR_PATH
+import io.matthewnelson.kmp.process.internal.DoNotReferenceDirectly
 import io.matthewnelson.kmp.process.internal.check
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlin.test.Test
 import kotlin.test.assertNotNull
 import kotlin.test.fail
 
-@OptIn(ExperimentalForeignApi::class)
+@OptIn(DoNotReferenceDirectly::class, ExperimentalForeignApi::class)
 class PosixFileActionsUnitTest {
 
     @Test
@@ -43,8 +44,7 @@ class PosixFileActionsUnitTest {
             fail("change dir should be available, but function call threw exception", e)
         }
 
-        // Only way this would be non-null is if host machine is:
-        //  - glibc 2.23 or lower (not likely)
+        // Only way this would be non-null is if:
         //  - posix_spawn_file_actions_init failed
         //  - posix_spawnattr_init failed
         assertNotNull(unit)

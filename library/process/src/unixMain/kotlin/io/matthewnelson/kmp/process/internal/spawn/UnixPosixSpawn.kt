@@ -159,9 +159,11 @@ internal fun posixSpawn(
         val envp = env.toEnvp(scope = this)
 
         // posix_spawn & posix_spawnp return a non-zero value to indicate an error
-        // with fork/vfork. Linux can actually return ENOENT here and won't even
-        // spawn the child, whereas Android/iOS/macOS will only return a failure
-        // when fork/vfork fail.
+        // with its fork/vfork step.
+        //
+        // Linux can actually return ENOENT here for glibc 2.24+ and won't even spawn
+        // the child process, whereas Android/iOS/macOS will only return a failure if
+        // fork/vfork fail.
         val ret = if (command.contains(SysDirSep)) {
             // Under the hood, implementations will use execve
             spawn(command, pidRef.ptr, argv, envp)
