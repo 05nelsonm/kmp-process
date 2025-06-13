@@ -18,7 +18,7 @@ package io.matthewnelson.kmp.process.test.api
 import kotlin.experimental.ExperimentalNativeApi
 
 @OptIn(ExperimentalNativeApi::class)
-internal actual val IsDarwinMobile: Boolean = when (Platform.osFamily) {
+internal actual val IsAppleSimulator: Boolean = when (Platform.osFamily) {
     OsFamily.IOS,
     OsFamily.TVOS,
     OsFamily.WATCHOS -> true

@@ -31,6 +31,7 @@ import kotlin.test.*
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.TimeSource
 
 @Suppress("DEPRECATION", "UnusedReceiverParameter")
 abstract class ProcessBaseTest {
@@ -58,7 +59,7 @@ abstract class ProcessBaseTest {
 
     @Test
     fun givenStdin_whenFile_thenOutputIsAsExpected() {
-        if (IsDarwinMobile || IsWindows) {
+        if (IsWindows) {
             println("Skipping...")
             return
         }
@@ -78,9 +79,9 @@ abstract class ProcessBaseTest {
 
         testCat.writeUtf8(expected)
 
-        val out = Process.Builder(command = "cat")
+        val out = Process.Builder(command = if (IsAppleSimulator) "/bin/cat" else "cat")
             .args("-")
-            .chdir(tempDir)
+            .chdir(if (IsAppleSimulator) null else tempDir)
             .stdin(Stdio.File.of(testCat))
             .output()
 
@@ -96,19 +97,19 @@ abstract class ProcessBaseTest {
 
     @Test
     fun givenExitCode_whenCompleted_thenIsStatusCode() {
-        if (IsDarwinMobile || IsWindows) {
+        if (IsWindows) {
             println("Skipping...")
             return
         }
 
         val expected = 42
 
-        val actual = Process.Builder(command = "sh")
+        val actual = Process.Builder(command = if (IsAppleSimulator) "/bin/sh" else "sh")
             .args("-c")
             .args("sleep 0.25; exit $expected")
             .destroySignal(Signal.SIGKILL)
             // Should complete and exit before timing out
-            .output { timeoutMillis = 1_000 }
+            .output { timeoutMillis = 1.seconds.inWholeMilliseconds.toInt() }
             .processInfo
             .exitCode
 
@@ -117,14 +118,14 @@ abstract class ProcessBaseTest {
 
     @Test
     fun givenExitCode_whenTerminated_thenIsSignalCode() {
-        if (IsDarwinMobile || IsWindows) {
+        if (IsAppleSimulator || IsWindows) {
             println("Skipping...")
             return
         }
 
         val output = Process.Builder(command = "sh")
             .args("-c")
-            .args("sleep 1; exit 42")
+            .args("sleep 2; exit 42")
             .destroySignal(Signal.SIGKILL)
             // Should be killed before completing via signal
             .output{ timeoutMillis = 250 }
@@ -146,7 +147,8 @@ abstract class ProcessBaseTest {
 
     @Test
     fun givenChdir_whenExpressed_thenChangesDirectories() {
-        if (IsDarwinMobile || IsWindows) {
+        if (IsAppleSimulator || IsWindows) {
+            // no chdir on apple simulator
             println("Skipping...")
             return
         }
@@ -170,13 +172,13 @@ abstract class ProcessBaseTest {
 
     @Test
     fun givenOutput_whenStderrOutput_thenIsAsExpected() {
-        if (IsDarwinMobile || IsWindows) {
+        if (IsWindows) {
             println("Skipping...")
             return
         }
 
         val expected = "Hello World!"
-        val out = Process.Builder(command = "sh")
+        val out = Process.Builder(command = if (IsAppleSimulator) "/bin/sh" else "sh")
             .args("-c")
             .args("echo 1>&2 \"$expected\"")
             .output()
@@ -187,23 +189,23 @@ abstract class ProcessBaseTest {
 
     @Test
     fun givenOutput_whenInput_thenStdoutIsAsExpected() {
-        if (IsDarwinMobile || IsWindows) {
+        if (IsWindows) {
             println("Skipping...")
             return
         }
 
         val expected = buildString {
-            repeat(5_000) { appendLine(it) }
-            append("5000")
+            repeat(100_000) { appendLine(it) }
+            append("100000")
         }
-        val out = Process.Builder(command = "cat")
+        val out = Process.Builder(command = if (IsAppleSimulator) "/bin/cat" else "cat")
             .args("-")
             // should be automatically set
             // to Pipe because there is input
             .stdin(Stdio.Inherit)
             .output {
                 inputUtf8 { expected }
-                timeoutMillis = 1_000
+                timeoutMillis = 1.seconds.inWholeMilliseconds.toInt()
                 maxBuffer = Int.MAX_VALUE / 2
             }
 
@@ -215,6 +217,32 @@ abstract class ProcessBaseTest {
     }
 
     @Test
+    fun givenOutput_whenNoOutput_thenReturnsBeforeTimeout() {
+        if (IsAppleSimulator || IsWindows) {
+            println("Skipping...")
+            return
+        }
+
+        // Test to see that, if the program ends, threads that are reading
+        // stdout and stderr pop out on their own and does not wait the
+        // entire 10-second timeout.
+        val mark = TimeSource.Monotonic.markNow()
+        val out = Process.Builder(command = "sh")
+            .args("-c")
+            .args("sleep 1; exit 42")
+            .output { timeoutMillis = 10.seconds.inWholeMilliseconds.toInt() }
+
+        val elapsed = mark.elapsedNow()
+        println("elapsed[${elapsed.inWholeMilliseconds}ms]")
+
+        assertNull(out.processError, "processError != null")
+        assertEquals(42, out.processInfo.exitCode, "code[${out.processInfo.exitCode}]")
+        assertTrue(out.stdout.isEmpty(), "stdout was not empty")
+        assertTrue(out.stderr.isEmpty(), "stderr was not empty")
+        assertTrue(elapsed in 975.milliseconds..1_500.seconds)
+    }
+
+    @Test
     fun givenFeed_whenExceptionHandler_thenNotifies() = runTest(timeout = 5.seconds) {
         if (IsWindows) {
             println("Skipping...")
@@ -223,32 +251,25 @@ abstract class ProcessBaseTest {
 
         val shouldThrow = !IsAndroidInstrumentTest && !IsNodeJs
 
+        var p: Process? = null
+        currentCoroutineContext().job.invokeOnCompletion { p?.destroy() }
+
         var invocationError = 0
-        val p = try {
-            Process.Builder(command = "sh")
-                .args("-c")
-                .args("echo \"something\"; sleep 1; exit 42")
-                .onError { t ->
-                    invocationError++
-                    assertEquals(CTX_FEED_STDOUT, t.context)
-                    assertIs<IllegalStateException>(t.cause)
+        p = Process.Builder(command = if (IsAppleSimulator) "/bin/sh" else "sh")
+            .args("-c")
+            .args("echo \"something\"; sleep 1; exit 42")
+            .onError { t ->
+                invocationError++
+                assertEquals(CTX_FEED_STDOUT, t.context)
+                assertIs<IllegalStateException>(t.cause)
 
-                    // Node.js will crash (expected)
-                    if (shouldThrow) throw t
-                }
-                .stdin(Stdio.Null)
-                .stdout(Stdio.Pipe)
-                .stderr(Stdio.Pipe)
-                .spawn()
-        } catch (e: IOException) {
-            if (IsDarwinMobile) {
-                println("Skipping...")
-                return@runTest
+                // Node.js will crash (expected)
+                if (shouldThrow) throw t
             }
-            throw e
-        }
-
-        currentCoroutineContext().job.invokeOnCompletion { p.destroy() }
+            .stdin(Stdio.Null)
+            .stdout(Stdio.Pipe)
+            .stderr(Stdio.Pipe)
+            .spawn()
 
         p.stdoutFeed { line ->
             throw IllegalStateException(line)
@@ -276,7 +297,7 @@ abstract class ProcessBaseTest {
 
     @Test
     fun givenSpawn_whenInput_thenStdoutIsAsExpected() = runTest {
-        if (IsDarwinMobile || IsWindows) {
+        if (IsWindows) {
             println("Skipping...")
             return@runTest
         }
@@ -287,7 +308,7 @@ abstract class ProcessBaseTest {
         }
         val actual = ArrayList<String>(size * 2)
 
-        val exitCode = Process.Builder(command = "cat")
+        val exitCode = Process.Builder(command = if (IsAppleSimulator) "/bin/cat" else "cat")
             .args("-")
             .useSpawn { p ->
                 val data = expected
@@ -329,7 +350,7 @@ abstract class ProcessBaseTest {
 
     @Test
     fun givenStderrFile_whenSameAsStdout_thenStderrRedirectedToStdout() = runTest {
-        if (IsDarwinMobile || IsWindows) {
+        if (IsWindows) {
             println("Skipping...")
             return@runTest
         }
@@ -342,7 +363,7 @@ abstract class ProcessBaseTest {
             fail("Failed to delete test file[$f]")
         }
 
-        Process.Builder(command = "sh")
+        Process.Builder(command = if (IsAppleSimulator) "/bin/sh" else "sh")
             .args("-c")
             .args("echo \"stdout\"; echo 1>&2 \"stderr\"")
             .stdin(Stdio.Null)
@@ -362,7 +383,7 @@ abstract class ProcessBaseTest {
 
     @Test
     open fun givenExecutable_whenRelativePathWithChDir_thenExecutes() {
-        if (IsDarwinMobile) {
+        if (IsAppleSimulator) {
             // chdir not supported
             println("Skipping...")
             return
@@ -539,7 +560,7 @@ abstract class ProcessBaseTest {
                 .stderr(Stdio.Pipe)
         }
 
-        if (!IsDarwinMobile) {
+        if (!IsAppleSimulator) {
             b.chdir(homeDir)
         }
 

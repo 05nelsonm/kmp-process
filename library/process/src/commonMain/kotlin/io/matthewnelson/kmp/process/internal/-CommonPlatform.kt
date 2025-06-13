@@ -13,22 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("KotlinRedundantDiagnosticSuppress")
+@file:Suppress("KotlinRedundantDiagnosticSuppress", "NOTHING_TO_INLINE")
 
 package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.*
+import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.Stdio
+import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.InvocationKind
+import kotlin.contracts.contract
+import kotlin.math.min
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.nanoseconds
+import kotlin.time.TimeSource
 
 internal expect val STDIO_NULL: File
 
 internal expect val IsMobile: Boolean
 
-@Suppress("NOTHING_TO_INLINE")
 internal inline val IsWindows: Boolean get() = STDIO_NULL.path == "NUL"
 
-@Suppress("NOTHING_TO_INLINE")
 internal inline fun File.isCanonicallyEqualTo(other: File): Boolean {
     if (this == other) return true
 
@@ -92,14 +99,60 @@ internal fun StringBuilder.appendProcessInfo(
 }
 
 @Throws(IllegalArgumentException::class, IndexOutOfBoundsException::class)
-internal fun ByteArray.checkBounds(offset: Int, len: Int) {
+internal inline fun ByteArray.checkBounds(offset: Int, len: Int) {
     size.checkBounds(offset, len)
 }
 
-@Suppress("NOTHING_TO_INLINE")
 @Throws(IllegalArgumentException::class, IndexOutOfBoundsException::class)
 internal inline fun Int.checkBounds(offset: Int, len: Int) {
     val size = this
     if (size - offset < len) throw IllegalArgumentException("Input too short")
     if (offset < 0 || len < 0 || offset > size - len) throw IndexOutOfBoundsException()
+}
+
+// @Throws(CancellationException::class, InterruptedException::class)
+@OptIn(ExperimentalContracts::class)
+internal inline fun Process.commonWaitFor(
+    timeout: Duration,
+    sleep: (millis: Duration) -> Unit,
+): Int? {
+    contract {
+        callsInPlace(sleep, InvocationKind.UNKNOWN)
+    }
+
+    return commonWaitForCondition(timeout, sleep, ::exitCodeOrNull)
+}
+
+// @Throws(CancellationException::class, InterruptedException::class)
+@OptIn(ExperimentalContracts::class)
+internal inline fun <T: Any> commonWaitForCondition(
+    timeout: Duration,
+    sleep: (millis: Duration) -> Unit,
+    conditionOrNull: () -> T?,
+): T? {
+    contract {
+        callsInPlace(sleep, InvocationKind.UNKNOWN)
+        callsInPlace(conditionOrNull, InvocationKind.UNKNOWN)
+    }
+
+    val startMark = TimeSource.Monotonic.markNow()
+    var remainingNanos = timeout.inWholeNanoseconds
+
+    do {
+        val condition = conditionOrNull()
+        if (condition != null) return condition
+
+        if (remainingNanos > 0) {
+            val millis = min(
+                (remainingNanos.nanoseconds.inWholeMilliseconds + 1).toDouble(),
+                100.0
+            ).toLong().milliseconds
+
+            sleep(millis)
+        }
+
+        remainingNanos = (timeout - startMark.elapsedNow()).inWholeNanoseconds
+    } while (remainingNanos > 0)
+
+    return null
 }

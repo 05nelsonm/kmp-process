@@ -20,23 +20,23 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-class OutputFeedReaderUnitTest {
+class OutputFeedBufferUnitTest {
 
     @Test
-    fun givenReader_whenMaxSizeSet_thenReturnsExpected() {
+    fun givenFeedBuffer_whenMaxSizeSet_thenReturnsExpected() {
         val expectedSize = 20
-        val r = OutputFeedBuffer.of(expectedSize)
-        r.onOutput("          ")
-        r.onOutput("       ")
-        assertFalse(r.maxSizeExceeded)
+        val buf = OutputFeedBuffer.of(expectedSize)
+        buf.onOutput("          ")
+        buf.onOutput("       ")
+        assertFalse(buf.maxSizeExceeded)
 
-        r.onOutput("123")
-        assertTrue(r.maxSizeExceeded)
+        buf.onOutput("123")
+        assertTrue(buf.maxSizeExceeded)
 
-        r.onOutput("")
-        assertTrue(r.maxSizeExceeded)
+        buf.onOutput("")
+        assertTrue(buf.maxSizeExceeded)
 
-        r.doFinal().let { final ->
+        buf.doFinal().let { final ->
             val lines = final.lines()
             assertEquals(expectedSize, final.length)
             assertEquals(3, lines.size)
@@ -45,17 +45,27 @@ class OutputFeedReaderUnitTest {
         }
 
         // lines were blanked after calling doFinal once
-        assertTrue(r.doFinal().isEmpty())
+        assertTrue(buf.doFinal().isEmpty())
 
-        r.onOutput("                  abc")
-        assertTrue(r.maxSizeExceeded)
-        r.doFinal().let { final ->
+        buf.onOutput("                  abc")
+        assertTrue(buf.maxSizeExceeded)
+        buf.doFinal().let { final ->
             assertEquals(expectedSize, final.length)
             assertEquals('b', final.last())
             assertEquals(1, final.lines().size)
         }
 
-        r.onOutput("123")
-        assertEquals("123", r.doFinal())
+        buf.onOutput("123")
+        assertEquals("123", buf.doFinal())
+    }
+
+    @Test
+    fun givenBuffer_whenObserveNullLine_thenHasEndedIsTrue() {
+        val buf = OutputFeedBuffer.of(20)
+        assertFalse(buf.hasEnded)
+        buf.onOutput(null)
+        assertTrue(buf.hasEnded)
+        buf.doFinal()
+        assertFalse(buf.hasEnded)
     }
 }

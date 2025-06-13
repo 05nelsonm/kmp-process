@@ -18,7 +18,7 @@ package io.matthewnelson.kmp.process.test.api
 import io.matthewnelson.kmp.tor.common.api.ResourceLoader
 import io.matthewnelson.kmp.tor.resource.exec.tor.ResourceLoaderTorExec
 
-internal actual val IsDarwinMobile: Boolean = false
+internal actual val IsAppleSimulator: Boolean = false
 
 internal actual val IsNodeJs: Boolean = false
 

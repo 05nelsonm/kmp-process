@@ -16,9 +16,8 @@
 package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.IOException
-import io.matthewnelson.kmp.process.IsDarwinMobile
+import io.matthewnelson.kmp.process.IsAppleSimulator
 import io.matthewnelson.kmp.process.Process
-import io.matthewnelson.kmp.process.ProcessUnitTest.Companion.skipping
 import io.matthewnelson.kmp.process.Signal
 import kotlin.test.*
 import kotlin.time.Duration.Companion.milliseconds
@@ -29,13 +28,13 @@ class ProcessBlockingUnitTest {
 
     @Test
     fun givenWaitFor_whenProcessCompletes_thenReturnsEarly() {
-        if (IsDarwinMobile || IsWindows) {
-            skipping()
+        if (IsWindows) {
+            println("Skipping...")
             return
         }
 
         val runTime = measureTime {
-            Process.Builder(command = "sleep")
+            Process.Builder(command = if (IsAppleSimulator) "/bin/sleep" else "sleep")
                 .args("0.25")
                 .destroySignal(Signal.SIGKILL)
                 .useSpawn { p ->
@@ -52,20 +51,15 @@ class ProcessBlockingUnitTest {
 
     @Test
     fun givenWaitFor_whenCompletion_thenReturnsExitCode() {
-        if (IsDarwinMobile) {
-            skipping()
-            return
-        }
-
         val exitCode = try {
-            Process.Builder(command = "sleep")
+            Process.Builder(command = if (IsAppleSimulator) "/bin/sleep" else "sleep")
                 .args("0.25")
                 .destroySignal(Signal.SIGKILL)
                 .useSpawn { p -> p.waitFor() }
         } catch (e: IOException) {
             // Host (Window) did not have sleep available
             if (IsWindows) {
-                skipping()
+                println("Skipping...")
                 return
             }
             throw e

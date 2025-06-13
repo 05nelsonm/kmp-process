@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
+@file:Suppress("RemoveRedundantQualifierName", "RedundantVisibilityModifier")
+
 package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.ANDROID
@@ -79,6 +81,15 @@ internal class JvmProcess private constructor(
     @Volatile
     private var _stdinThread: Thread? = null
 
+    @Volatile
+    @get:JvmName("wasStdoutThreadStarted")
+    internal var wasStdoutThreadStarted: Boolean = false
+        private set
+    @Volatile
+    @get:JvmName("wasStderrThreadStarted")
+    internal var wasStderrThreadStarted: Boolean = false
+        private set
+
     // @Throws(Throwable::class)
     protected override fun destroyProtected(immediate: Boolean) {
         isDestroyed = true
@@ -115,12 +126,14 @@ internal class JvmProcess private constructor(
 
     protected override fun startStdout() {
         Runnable {
+            wasStdoutThreadStarted = true
             jProcess.inputStream.scanLines(::dispatchStdout)
         }.execute(stdio = "stdout")
     }
 
     protected override fun startStderr() {
         Runnable {
+            wasStderrThreadStarted = true
             jProcess.errorStream.scanLines(::dispatchStderr)
         }.execute(stdio = "stderr")
     }

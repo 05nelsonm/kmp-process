@@ -13,11 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("KotlinRedundantDiagnosticSuppress")
+@file:Suppress("KotlinRedundantDiagnosticSuppress", "NOTHING_TO_INLINE")
 
 package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.*
+import io.matthewnelson.kmp.process.Process
 import kotlinx.cinterop.*
 import platform.posix.*
 import kotlin.contracts.ExperimentalContracts
@@ -37,7 +38,6 @@ internal actual val IsMobile: Boolean get() {
     }
 }
 
-@Suppress("NOTHING_TO_INLINE")
 @Throws(InterruptedException::class)
 internal actual inline fun Duration.threadSleep() {
     if (isNegative()) throw IllegalArgumentException("duration cannot be negative")
@@ -59,6 +59,9 @@ internal actual inline fun Duration.threadSleep() {
         }
     }
 }
+
+internal actual inline fun Process.wasStdoutThreadStarted(): Boolean = (this as NativeProcess).wasStdoutThreadStarted
+internal actual inline fun Process.wasStderrThreadStarted(): Boolean = (this as NativeProcess).wasStderrThreadStarted
 
 @OptIn(ExperimentalForeignApi::class)
 internal fun List<String>.toArgv(
@@ -98,7 +101,6 @@ internal fun Map<String, String>.toEnvp(
     envp
 }
 
-@Suppress("NOTHING_TO_INLINE")
 @Throws(IOException::class)
 @OptIn(ExperimentalContracts::class)
 internal inline fun Int.check(

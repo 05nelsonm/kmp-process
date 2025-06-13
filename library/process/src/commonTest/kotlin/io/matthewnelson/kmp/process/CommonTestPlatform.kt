@@ -15,4 +15,4 @@
  **/
 package io.matthewnelson.kmp.process
 
-internal expect val IsDarwinMobile: Boolean
+internal expect val IsAppleSimulator: Boolean

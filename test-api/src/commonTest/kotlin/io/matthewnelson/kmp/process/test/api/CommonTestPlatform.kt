@@ -24,7 +24,7 @@ import io.matthewnelson.kmp.tor.common.api.ResourceLoader
 
 internal val IsWindows = Stdio.Null.file.path == "NUL"
 
-internal expect val IsDarwinMobile: Boolean
+internal expect val IsAppleSimulator: Boolean
 
 internal expect val IsNodeJs: Boolean
 
