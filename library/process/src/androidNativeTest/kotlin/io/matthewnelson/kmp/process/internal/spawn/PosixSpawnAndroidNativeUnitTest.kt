@@ -15,14 +15,21 @@
  **/
 package io.matthewnelson.kmp.process.internal.spawn
 
+import io.matthewnelson.kmp.file.resolve
+import io.matthewnelson.kmp.file.toFile
+import io.matthewnelson.kmp.process.PROJECT_DIR_PATH
 import io.matthewnelson.kmp.process.internal.IS_POSIX_SPAWN_AVAILABLE
+import io.matthewnelson.kmp.process.internal.check
+import kotlinx.cinterop.ExperimentalForeignApi
 import platform.posix.android_get_device_api_level
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlin.test.fail
 
+@OptIn(ExperimentalForeignApi::class)
 class PosixSpawnAndroidNativeUnitTest {
 
     @Test
@@ -35,5 +42,42 @@ class PosixSpawnAndroidNativeUnitTest {
             assertNull(result)
             assertFalse(IS_POSIX_SPAWN_AVAILABLE)
         }
+    }
+
+    @Test
+    fun givenDeviceApi_when34OrGreater_thenChdirIsAvailable() {
+        val result = posixSpawnScopeOrNull(requireChangeDir = true) { Unit }
+        if (android_get_device_api_level() >= 34) {
+            assertNotNull(result)
+        } else {
+            assertNull(result)
+        }
+    }
+
+    @Test
+    fun givenAddChDirNp_ifAvailable_thenIsSuccessful() {
+        if (!IS_POSIX_SPAWN_AVAILABLE) {
+            println("Skipping...")
+            return
+        }
+
+        val d = PROJECT_DIR_PATH.toFile()
+            .resolve("src")
+            .resolve("androidNativeTest")
+
+        val unit = try {
+            posixSpawnScopeOrNull(requireChangeDir = false) {
+                file_actions_addchdir_np(d).check { it == 0 }
+                Unit
+            }
+        } catch (e: UnsupportedOperationException) {
+            if (PosixSpawnScope.FILE_ACTIONS_ADDCHDIR_NP == null) return // pass
+            fail("change dir should be available, but function call threw exception", e)
+        }
+
+        // Only way this would be non-null is if:
+        //  - posix_spawn_file_actions_init failed
+        //  - posix_spawnattr_init failed
+        assertNotNull(unit)
     }
 }
