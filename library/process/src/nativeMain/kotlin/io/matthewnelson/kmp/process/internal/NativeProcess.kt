@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
+@file:Suppress("RedundantVisibilityModifier")
+
 package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.File
@@ -27,9 +29,11 @@ import kotlinx.cinterop.*
 import kotlinx.coroutines.*
 import platform.posix.*
 import kotlin.concurrent.AtomicReference
+import kotlin.concurrent.Volatile
 import kotlin.native.concurrent.ObsoleteWorkersApi
 import kotlin.native.concurrent.TransferMode
 import kotlin.native.concurrent.Worker
+import kotlin.reflect.KMutableProperty0
 import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ObsoleteWorkersApi::class)
@@ -62,6 +66,12 @@ internal constructor(
         }
     }
 
+    @Volatile
+    internal var wasStdoutThreadStarted: Boolean = false
+        private set
+    @Volatile
+    internal var wasStderrThreadStarted: Boolean = false
+        private set
     private val destroyLock = newLock()
     private val _exitCode = AtomicReference<Int?>(null)
 
@@ -69,14 +79,14 @@ internal constructor(
         if (isDestroyed) return@Instance null
         val reader = handle.stdoutReader() ?: return@Instance null
 
-        Worker.execute("stdout", reader, ::dispatchStdout)
+        Worker.execute("stdout", ::wasStdoutThreadStarted, reader, ::dispatchStdout)
     })
 
     private val stderrWorker = Instance(create = {
         if (isDestroyed) return@Instance null
         val reader = handle.stderrReader() ?: return@Instance null
 
-        Worker.execute("stderr", reader, ::dispatchStderr)
+        Worker.execute("stderr", ::wasStderrThreadStarted, reader, ::dispatchStderr)
     })
 
     @Throws(Throwable::class)
@@ -191,12 +201,13 @@ internal constructor(
 
     private fun Worker.Companion.execute(
         name: String,
+        p: KMutableProperty0<Boolean>,
         r: ReadStream,
         d: (line: String?) -> Unit,
     ): Worker {
         val w = start(name = "Process[pid=$pid, stdio=$name]")
-
-        w.execute(TransferMode.SAFE, { Pair(r, d) }) { (reader, dispatch) ->
+        w.execute(mode = TransferMode.SAFE, producer = { Triple(r, p, d) }) { (reader, started, dispatch) ->
+            started.set(true)
             reader.scanLines(dispatch)
         }
 

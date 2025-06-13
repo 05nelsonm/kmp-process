@@ -13,11 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
+@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING", "NOTHING_TO_INLINE")
 
 package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.*
+import io.matthewnelson.kmp.process.Process
 import kotlin.time.Duration
 
 internal actual val STDIO_NULL: File = (System.getProperty("os.name")
@@ -29,11 +30,13 @@ internal actual val STDIO_NULL: File = (System.getProperty("os.name")
 
 internal actual val IsMobile: Boolean get() = ANDROID.SDK_INT != null
 
-@Suppress("NOTHING_TO_INLINE")
 @Throws(InterruptedException::class)
 internal actual inline fun Duration.threadSleep() {
     Thread.sleep(inWholeMilliseconds)
 }
+
+internal actual inline fun Process.wasStdoutThreadStarted(): Boolean = (this as JvmProcess).wasStdoutThreadStarted
+internal actual inline fun Process.wasStderrThreadStarted(): Boolean = (this as JvmProcess).wasStderrThreadStarted
 
 internal actual typealias ReadStream = java.io.InputStream
 internal actual typealias WriteStream = java.io.OutputStream

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("KotlinRedundantDiagnosticSuppress")
+@file:Suppress("KotlinRedundantDiagnosticSuppress", "NOTHING_TO_INLINE")
 
 package io.matthewnelson.kmp.process.internal
 
@@ -24,9 +24,11 @@ import io.matthewnelson.kmp.process.*
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 
-@Suppress("NOTHING_TO_INLINE")
 @Throws(InterruptedException::class)
 internal expect inline fun Duration.threadSleep()
+
+internal expect inline fun Process.wasStdoutThreadStarted(): Boolean
+internal expect inline fun Process.wasStderrThreadStarted(): Boolean
 
 @Throws(IOException::class)
 internal fun PlatformBuilder.blockingOutput(
