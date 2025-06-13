@@ -16,10 +16,12 @@
 package io.matthewnelson.kmp.process.internal.spawn
 
 import io.matthewnelson.kmp.file.FileNotFoundException
+import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.file.SysTempDir
 import io.matthewnelson.kmp.file.canonicalPath
 import io.matthewnelson.kmp.file.resolve
 import io.matthewnelson.kmp.file.toFile
+import io.matthewnelson.kmp.process.IsAppleSimulator
 import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.ProcessException
 import io.matthewnelson.kmp.process.Signal
@@ -37,10 +39,15 @@ class PosixSpawnUnitTest {
 
     private companion object {
         // Will be null if not currently supported
-        val CHDIR = posixSpawnScopeOrNull(requireChangeDir = true) {
-            @OptIn(ExperimentalStdlibApi::class)
-            val rand = Random.Default.nextBytes(8).toHexString()
-            SysTempDir.resolve("pspawn_$rand")
+        val CHDIR = try {
+            posixSpawnScopeOrNull(requireChangeDir = true) {
+                @OptIn(ExperimentalStdlibApi::class)
+                val rand = Random.Default.nextBytes(8).toHexString()
+                SysTempDir.resolve("pspawn_$rand")
+            }
+        } catch (_: UnsupportedOperationException) {
+            // iOS
+            null
         }
     }
 
@@ -60,7 +67,7 @@ class PosixSpawnUnitTest {
         val expected = "Hello World!"
 
         val p = posixSpawn(
-            command = "sh",
+            command = if (IsAppleSimulator) "/bin/sh" else "sh",
             args = listOf("-c", "echo \"$expected\"; sleep 1; exit 42"),
             chdir = null,
             env = Process.Current.environment(),
@@ -94,7 +101,7 @@ class PosixSpawnUnitTest {
         }
 
         val p = posixSpawn(
-            command = "sh",
+            command = if (IsAppleSimulator) "/bin/sh" else "sh",
             args = listOf("-c", "echo \"$(pwd)\"; sleep 1; exit 42"),
             chdir = CHDIR,
             env = Process.Current.environment(),
@@ -129,7 +136,7 @@ class PosixSpawnUnitTest {
 
         assertFailsWith<FileNotFoundException> {
             posixSpawn(
-                command = "sh",
+                command = if (IsAppleSimulator) "/bin/sh" else "sh",
                 args = listOf("-c", "echo \"$(pwd)\"; sleep 1; exit 42"),
                 chdir = CHDIR.resolve("does_not_exist"),
                 env = Process.Current.environment(),
@@ -150,6 +157,18 @@ class PosixSpawnUnitTest {
         assertFailsWith<FileNotFoundException> {
             posixSpawn(
                 command = "/invalid/path/sh",
+                args = listOf("-c", "echo \"$(pwd)\"; sleep 1; exit 42"),
+                chdir = null,
+                env = Process.Current.environment(),
+                stdio = Stdio.Config.Builder.get().build(null),
+                destroy = Signal.SIGTERM,
+                handler = ProcessException.Handler.IGNORE,
+            )?.destroy() // for posterity...
+        }
+
+        assertFailsWith<IOException> {
+            posixSpawn(
+                command = "not_a_program_123",
                 args = listOf("-c", "echo \"$(pwd)\"; sleep 1; exit 42"),
                 chdir = null,
                 env = Process.Current.environment(),
