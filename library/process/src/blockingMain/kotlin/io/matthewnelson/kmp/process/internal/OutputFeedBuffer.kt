@@ -32,12 +32,19 @@ internal class OutputFeedBuffer private constructor(maxSize: Int): OutputFeed {
         private set
 
     @Volatile
+    @get:JvmName("hasEnded")
+    internal var hasEnded: Boolean = false
+        private set
+    @Volatile
     @get:JvmName("maxSizeExceeded")
     internal var maxSizeExceeded: Boolean = false
         private set
 
     override fun onOutput(line: String?) {
-        if (line == null) return
+        if (line == null) {
+            hasEnded = true
+            return
+        }
         if (maxSizeExceeded) return
 
         // do we need to add a new line character
@@ -73,6 +80,7 @@ internal class OutputFeedBuffer private constructor(maxSize: Int): OutputFeed {
         sb.clear()
         repeat(size) { sb.append(' ') }
         size = 0
+        hasEnded = false
         maxSizeExceeded = false
         return s
     }
