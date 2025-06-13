@@ -18,6 +18,7 @@
 package io.matthewnelson.kmp.process.internal.spawn
 
 import io.matthewnelson.kmp.file.File
+import io.matthewnelson.kmp.file.path
 import kotlinx.cinterop.AutofreeScope
 import kotlinx.cinterop.ByteVar
 import kotlinx.cinterop.ByteVarOf
@@ -140,6 +141,16 @@ internal actual class PosixSpawnScope internal constructor(
             ) -> Int>>
         }
 
+        internal val FILE_ACTIONS_ADDCHDIR_NP by lazy {
+            val ptr = dlsym(RTLD_NEXT, "posix_spawn_file_actions_addchdir_np")
+                ?: return@lazy null
+
+            ptr as CPointer<CFunction<(
+                __actions: CValuesRef<posix_spawn_file_actions_tVar>?,
+                __path: CPointer<ByteVarOf<Byte>>,
+            ) -> Int>>
+        }
+
         internal val FILE_ACTIONS_ADDDUP2 by lazy {
             val ptr = dlsym(RTLD_NEXT, "posix_spawn_file_actions_adddup2")
                 ?: return@lazy null
@@ -156,7 +167,10 @@ internal actual class PosixSpawnScope internal constructor(
 @OptIn(ExperimentalForeignApi::class)
 @Throws(UnsupportedOperationException::class)
 internal actual inline fun PosixSpawnScope.file_actions_addchdir_np(chdir: File): Int {
-    throw UnsupportedOperationException("posix_spawn_file_actions_addchdir is not supported on android")
+    val addchdir_np = PosixSpawnScope.FILE_ACTIONS_ADDCHDIR_NP
+        ?: throw UnsupportedOperationException("posix_spawn_file_actions_addchdir is not available")
+
+    return addchdir_np.invoke(fileActions, chdir.path.cstr.getPointer(scope = this))
 }
 
 @OptIn(ExperimentalForeignApi::class)
@@ -187,8 +201,13 @@ internal actual inline fun <T: Any> posixSpawnScopeOrNull(
     requireChangeDir: Boolean,
     block: PosixSpawnScope.() -> T,
 ): T? {
-    if (requireChangeDir) return null
-    if (android_get_device_api_level() < 28) return null
+    if (requireChangeDir) {
+        // Android API 34+ supports posix_spawn_file_actions_addchdir_np
+        if (PosixSpawnScope.FILE_ACTIONS_ADDCHDIR_NP == null) return null
+    } else {
+        // Android API 28+ supports posix_spawn
+        if (android_get_device_api_level() < 28) return null
+    }
 
     val _posix_spawn = PosixSpawnScope.POSIX_SPAWN ?: return null
     val _posix_spawn_p = PosixSpawnScope.POSIX_SPAWN_P ?: return null

@@ -36,4 +36,16 @@ class PosixSpawnAndroidNativeUnitTest {
             assertFalse(IS_POSIX_SPAWN_AVAILABLE)
         }
     }
+
+    @Test
+    fun givenDeviceApi_when34OrGreater_thenChdirIsAvailable() {
+        val result = posixSpawnScopeOrNull(requireChangeDir = true) { Unit }
+        if (android_get_device_api_level() >= 34) {
+            assertNotNull(result)
+            assertTrue(IS_POSIX_SPAWN_AVAILABLE)
+        } else {
+            assertNull(result)
+            assertFalse(IS_POSIX_SPAWN_AVAILABLE)
+        }
+    }
 }

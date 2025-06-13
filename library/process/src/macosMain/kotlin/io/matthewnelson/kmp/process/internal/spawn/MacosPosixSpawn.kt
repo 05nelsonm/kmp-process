@@ -72,17 +72,9 @@ internal actual inline fun PosixSpawnScope.spawn_p(
 internal actual inline fun <T: Any> posixSpawnScopeOrNull(
     requireChangeDir: Boolean,
     block: PosixSpawnScope.() -> T,
-): T? {
-    // macOS's implementation of posix_spawn has a bug whereby if the command being executed
-    // is a relative file path, a chdir action can cause a successful spawn, but erroneously
-    // return failure for the posix_spawn_file_actions_addchdir_np. So, just fall back to
-    // using fork/exec whenever changing directories is needed.
-    if (requireChangeDir) return null
-
-    return memScoped {
-        val attrs = posix_spawnattr_init() ?: return@memScoped null
-        val fileActions = posix_spawn_file_actions_init() ?: return@memScoped null
-        val scope = PosixSpawnScope(attrs, fileActions, this)
-        block(scope)
-    }
+): T? = memScoped {
+    val attrs = posix_spawnattr_init() ?: return@memScoped null
+    val fileActions = posix_spawn_file_actions_init() ?: return@memScoped null
+    val scope = PosixSpawnScope(attrs, fileActions, this)
+    block(scope)
 }
