@@ -71,25 +71,32 @@ internal fun PlatformBuilder.blockingOutput(
             }
         }
 
-        // TODO: Rework to check thread start at intervals for a maximum of 150ms
-        //  from the time the Process.startTime
-        try {
-            // This is necessary to "guarantee" the stdout and
-            // stderr threads start producing output before
-            // potentially hopping out of waitFor and destroying
-            // the process if it ended already.
-            150.milliseconds.threadSleep()
-        } catch (_: InterruptedException) {}
+        commonWaitForCondition(
+            timeout = ((options.timeout - 25.milliseconds) - p.startTime.elapsedNow()).coerceAtLeast(1.milliseconds),
+            sleep = { it.threadSleep() },
+            conditionOrNull = {
+                if (p.wasStdoutThreadStarted() && p.wasStderrThreadStarted()) {
+                    // One final sleep before handing it off to Process.waitFor
+                    // JUST to be certain that lines are flowing.
+                    5.milliseconds.threadSleep()
+                } else {
+                    null
+                }
+            },
+        )
 
-        // Output.Options.timeout is a minimum of 250 ms,
-        // so will never be a negative value; we good.
-        waitForCode = p.commonWaitFor(options.timeout - 150.milliseconds) { millis ->
-            if (stdoutBuffer.maxSizeExceeded || stderrBuffer.maxSizeExceeded) {
-                throw IllegalStateException()
-            }
-
-            millis.threadSleep()
-        }
+        commonWaitForCondition(
+            timeout = (options.timeout - p.startTime.elapsedNow()).coerceAtLeast(1.milliseconds),
+            sleep = { millis ->
+                if (stdoutBuffer.maxSizeExceeded || stderrBuffer.maxSizeExceeded) throw IllegalStateException()
+                millis.threadSleep()
+            },
+            conditionOrNull = {
+                val code = p.exitCodeOrNull()
+                waitForCode = code
+                if (stdoutBuffer.hasEnded && stderrBuffer.hasEnded) code else null
+            },
+        )
     } catch (_: IllegalStateException) {
         // max buffer exceeded and it hopped out of waitFor
     } catch (e: InterruptedException) {
