@@ -51,9 +51,8 @@ class ProcessBlockingUnitTest {
 
     @Test
     fun givenWaitFor_whenCompletion_thenReturnsExitCode() {
-
         val exitCode = try {
-            Process.Builder(command = "sleep")
+            Process.Builder(command = if (IsAppleSimulator) "/bin/sleep" else "sleep")
                 .args("0.25")
                 .destroySignal(Signal.SIGKILL)
                 .useSpawn { p -> p.waitFor() }

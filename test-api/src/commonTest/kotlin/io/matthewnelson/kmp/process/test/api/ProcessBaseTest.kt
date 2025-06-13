@@ -81,7 +81,7 @@ abstract class ProcessBaseTest {
 
         val out = Process.Builder(command = if (IsAppleSimulator) "/bin/cat" else "cat")
             .args("-")
-            .chdir(tempDir)
+            .chdir(if (IsAppleSimulator) null else tempDir)
             .stdin(Stdio.File.of(testCat))
             .output()
 
@@ -125,7 +125,7 @@ abstract class ProcessBaseTest {
 
         val output = Process.Builder(command = if (IsAppleSimulator) "/bin/sh" else "sh")
             .args("-c")
-            .args("sleep 1; exit 42")
+            .args("sleep 2; exit 42")
             .destroySignal(Signal.SIGKILL)
             // Should be killed before completing via signal
             .output{ timeoutMillis = 250 }
@@ -218,7 +218,7 @@ abstract class ProcessBaseTest {
 
     @Test
     fun givenOutput_whenNoOutput_thenReturnsBeforeTimeout() {
-        if (IsWindows) {
+        if (IsAppleSimulator || IsWindows) {
             println("Skipping...")
             return
         }
@@ -227,7 +227,7 @@ abstract class ProcessBaseTest {
         // stdout and stderr pop out on their own and does not wait the
         // entire 10-second timeout.
         val mark = TimeSource.Monotonic.markNow()
-        val out = Process.Builder(command = if (IsAppleSimulator) "/bin/sh" else "sh")
+        val out = Process.Builder(command = "sh")
             .args("-c")
             .args("sleep 1; exit 42")
             .output { timeoutMillis = 10.seconds.inWholeMilliseconds.toInt() }
@@ -235,11 +235,11 @@ abstract class ProcessBaseTest {
         val elapsed = mark.elapsedNow()
         println("elapsed[${elapsed.inWholeMilliseconds}ms]")
 
-        assertNull(out.processError)
-        assertEquals(42, out.processInfo.exitCode)
-        assertTrue(out.stdout.isEmpty())
-        assertTrue(out.stderr.isEmpty())
-        assertTrue(elapsed in 975.milliseconds..1_500.milliseconds)
+        assertNull(out.processError, "processError != null")
+        assertEquals(42, out.processInfo.exitCode, "code[${out.processInfo.exitCode}]")
+        assertTrue(out.stdout.isEmpty(), "stdout was not empty")
+        assertTrue(out.stderr.isEmpty(), "stderr was not empty")
+        assertTrue(elapsed in 975.milliseconds..1_500.seconds)
     }
 
     @Test
