@@ -20,13 +20,20 @@ package io.matthewnelson.kmp.process.internal.spawn
 import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.file.FileNotFoundException
 import io.matthewnelson.kmp.file.IOException
+import io.matthewnelson.kmp.file.InterruptedException
+import io.matthewnelson.kmp.file.SysDirSep
 import io.matthewnelson.kmp.file.errnoToIOException
+import io.matthewnelson.kmp.file.path
 import io.matthewnelson.kmp.file.toFile
 import io.matthewnelson.kmp.process.ProcessException
 import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.Stdio
 import io.matthewnelson.kmp.process.internal.NativeProcess
+import io.matthewnelson.kmp.process.internal.stdio.StdioDescriptor
+import io.matthewnelson.kmp.process.internal.stdio.StdioDescriptor.Pipe.Companion.fdOpen
 import io.matthewnelson.kmp.process.internal.stdio.StdioHandle.Companion.openHandle
+import io.matthewnelson.kmp.process.internal.stdio.withFd
+import io.matthewnelson.kmp.process.internal.threadSleep
 import io.matthewnelson.kmp.process.internal.toArgv
 import io.matthewnelson.kmp.process.internal.toEnvp
 import io.matthewnelson.kmp.process.internal.tryCloseSuppressed
@@ -36,13 +43,25 @@ import kotlinx.cinterop.CPointerVar
 import kotlinx.cinterop.CValuesRef
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.NativePointed
+import kotlinx.cinterop.UnsafeNumber
+import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.alloc
+import kotlinx.cinterop.convert
+import kotlinx.cinterop.pin
 import kotlinx.cinterop.ptr
 import kotlinx.cinterop.toKString
 import kotlinx.cinterop.value
+import platform.posix.EAGAIN
+import platform.posix.EINTR
 import platform.posix.ENOENT
+import platform.posix.EWOULDBLOCK
+import platform.posix.X_OK
+import platform.posix.access
+import platform.posix.errno
 import platform.posix.pid_tVar
+import platform.posix.read
 import platform.posix.strerror
+import kotlin.time.Duration.Companion.microseconds
 
 @OptIn(ExperimentalForeignApi::class)
 internal expect class PosixSpawnScope: AutofreeScope {
@@ -96,7 +115,7 @@ internal expect inline fun <T: Any> posixSpawnScopeOrNull(
  * */
 @OptIn(ExperimentalForeignApi::class)
 @Throws(IOException::class, UnsupportedOperationException::class)
-internal inline fun posixSpawn(
+internal fun posixSpawn(
     command: String,
     args: List<String>,
     chdir: File?,
@@ -105,23 +124,6 @@ internal inline fun posixSpawn(
     destroy: Signal,
     handler: ProcessException.Handler,
 ): NativeProcess? = posixSpawnScopeOrNull(requireChangeDir = chdir != null) {
-    val isCommandPathAbsolute = command.toFile().let { commandFile ->
-        val isAbsolute = commandFile.isAbsolute()
-
-        // Some platforms do not check the command argument for existence,
-        // such as Android. This could lead to posix_spawn executing
-        // successfully whereby the child process then kills itself (an awful
-        // design?). So, we do it here just to be on the safe side before going
-        // any further for all platforms.
-        //
-        // This only covers absolute paths which use posix_spawn.
-        if (isAbsolute && !commandFile.exists()) {
-            throw FileNotFoundException("command[$commandFile]")
-        }
-
-        isAbsolute
-    }
-
     if (chdir != null) {
         // posix_spawn_file_actions_addchdir returns a non-zero value to indicate the error.
         val ret = file_actions_addchdir_np(chdir)
@@ -144,57 +146,40 @@ internal inline fun posixSpawn(
         }
     })
 
-    // TODO: Setup a non-blocking pipe and use posix_spawn_file_actions_addclose_np as the last
-    //  action such that platforms which do not block (Android/iOS/macOS) until the Child process
-    //  successfully executes execve/execvpe we can loop until either closure via OCLOEXEC (success)
-    //  or check the process exit code for a 127 (failure).
+    val pipeNonBlock = try {
+        Stdio.Pipe.fdOpen(nonBlock = true)
+    } catch (e: IOException) {
+        throw handle.tryCloseSuppressed(e)
+    }
 
     val pid = try {
-        // pre-setting to -1 will allow detection of
-        // a post-fork step failure (the best we can do atm).
         val pidRef = alloc<pid_tVar>().apply { value = -1 }
 
         val argv = args.toArgv(command = command, scope = this)
         val envp = env.toEnvp(scope = this)
 
-        // posix_spawn & posix_spawnp return a non-zero value to indicate the error.
-        val ret = if (isCommandPathAbsolute) {
+        // posix_spawn & posix_spawnp return a non-zero value to indicate an error
+        // with fork/vfork. Linux can actually return ENOENT here and won't even
+        // spawn the child, whereas Android/iOS/macOS will only return a failure
+        // when fork/vfork fail.
+        val ret = if (command.contains(SysDirSep)) {
             // Under the hood, implementations will use execve
             spawn(command, pidRef.ptr, argv, envp)
         } else {
-            // Under the hood, implementations will use execvpe which
-            // will "search" for the command using CWD and PATH.
+            // Under the hood, implementations will use execvpe
             spawn_p(command, pidRef.ptr, argv, envp)
         }
 
-        // If there was a failure in the pre-exec or exec steps, the
-        // return value will not be 0 and the pid reference will not be modified.
-        //
-        // Something like using an invalid directory location (non-existent)
-        // for chdir would result in this scenario.
         val pid = pidRef.value
-        if (ret != 0 || pid == -1) {
-            var msg = if (isCommandPathAbsolute) "posix_spawn" else "posix_spawnp"
-            msg += " failed in pre-exec/exec steps."
-            val ioException: (String) -> IOException = if (chdir != null && !chdir.exists()) {
-                msg += " Directory specified for changeDir does not seem to exist."
-                ::FileNotFoundException
-            } else {
-                msg += " Bad arguments for '$command'?"
-                if (ret == ENOENT) ::FileNotFoundException else ::IOException
-            }
-
-            if (ret != 0) {
-                msg += " >> "
-                msg += strerror(ret)?.toKString() ?: "errno: $ret"
-            }
-
-            throw ioException(msg)
+        if (ret != 0 || pid <= 0) {
+            throw spawnFailureToIOException(command, chdir, spawnRet = ret)
         }
 
         pid
     } catch (e: IOException) {
-        throw handle.tryCloseSuppressed(e)
+        handle.tryCloseSuppressed(e)
+        pipeNonBlock.tryCloseSuppressed(e)
+        throw e
     }
 
     NativeProcess(
@@ -206,5 +191,116 @@ internal inline fun posixSpawn(
         env,
         destroy,
         handler,
-    )
+    ).awaitExecOrFailure(pipeNonBlock)
+}
+
+@OptIn(ExperimentalForeignApi::class, UnsafeNumber::class)
+private fun NativeProcess.awaitExecOrFailure(pipeNonBlock: StdioDescriptor.Pipe): NativeProcess {
+    val fd = try {
+        pipeNonBlock.write.close()
+        pipeNonBlock.read.withFd { it }
+    } catch (e: IOException) {
+        // If we cannot close the write end of the pipe then
+        // read will never pop out with a value of 0 when the
+        // child process' exec is successful.
+        destroy()
+        pipeNonBlock.tryCloseSuppressed(e)
+        throw IOException("CLOEXEC pipe failure", e)
+    }
+
+    var threw: IOException? = null
+
+    val pinned = ByteArray(1).pin()
+
+    while (true) {
+        @Suppress("RemoveRedundantCallsOfConversionMethods")
+        val ret = read(fd, pinned.addressOf(0), 1.convert()).toInt()
+        if (ret >= 0) {
+            // execve/execvpe was successful and CLOEXEC pipe's write end was closed
+            // in the child process, resulting in the read end here in the parent
+            // process stopping.
+            break
+        }
+
+        when (val e = errno) {
+            EINTR, EAGAIN, EWOULDBLOCK -> {
+                try {
+                    250.microseconds.threadSleep()
+                } catch (_: InterruptedException) {}
+
+                val code = exitCodeOrNull() ?: continue
+                if (code == 127) {
+                    threw = spawnFailureToIOException(command, cwd, spawnRet = 0)
+                }
+
+                // There's an exit code. Whether it is 127 or not, pop out.
+                break
+            }
+            // Something else went wrong
+            else -> threw = errnoToIOException(e)
+        }
+    }
+
+    pinned.unpin()
+
+    try {
+        pipeNonBlock.close()
+    } catch (e: IOException) {
+        if (threw != null) {
+            threw.addSuppressed(e)
+        } else {
+            threw = IOException("CLOEXEC pipe failure", e)
+        }
+    }
+
+    threw?.let { destroy(); throw it }
+
+    return this
+}
+
+/*
+* This is where we try to figure out, based off of inputs, what went wrong in the
+* posix_spawn call to provide as detailed an error message as possible.
+* */
+private fun spawnFailureToIOException(command: String, chdir: File?, spawnRet: Int): IOException {
+    val commandFile = command.toFile()
+    var msg = if (command.contains(SysDirSep)) "posix_spawn" else "posix_spawnp"
+
+    if (spawnRet != 0) {
+        msg += " failed to spawn the process >> "
+        @OptIn(ExperimentalForeignApi::class)
+        msg += strerror(spawnRet)?.toKString() ?: "errno: $spawnRet"
+        msg += "."
+    } else {
+        msg += " failed in its pre-exec/exec steps and exited the child process with code[127]."
+    }
+
+    var ioException: (String) -> IOException = if (spawnRet == ENOENT) ::FileNotFoundException else ::IOException
+
+    if (chdir != null && chdir.isAbsolute() && !chdir.exists()) {
+        msg += " Directory specified for changeDir does not seem to exist."
+        ioException = ::FileNotFoundException
+    }
+
+    if (
+        // Relative path command whereby the child process' CWD
+        // was the same as ours here (the parent process).
+        (chdir == null && command.contains(SysDirSep))
+        // Alternatively, can also check if it's an absolute path.
+        || commandFile.isAbsolute()
+    ) {
+        when {
+            !commandFile.exists() -> {
+                msg += "Command[$command] does not seem to exist."
+                ioException = ::FileNotFoundException
+            }
+            access(commandFile.path, X_OK) != 0 -> {
+                msg += "Command[$command] does not seem to have executable permissions."
+            }
+        }
+    } else {
+        msg += " Bad arguments for '$command'?"
+    }
+
+    return ioException(msg)
 }
