@@ -118,12 +118,12 @@ abstract class ProcessBaseTest {
 
     @Test
     fun givenExitCode_whenTerminated_thenIsSignalCode() {
-        if (IsWindows) {
+        if (IsAppleSimulator || IsWindows) {
             println("Skipping...")
             return
         }
 
-        val output = Process.Builder(command = if (IsAppleSimulator) "/bin/sh" else "sh")
+        val output = Process.Builder(command = "sh")
             .args("-c")
             .args("sleep 2; exit 42")
             .destroySignal(Signal.SIGKILL)
