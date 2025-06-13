@@ -311,7 +311,7 @@ abstract class ProcessBaseTest {
 
                 p.input!!.close()
 
-                delayTest(250.milliseconds)
+                delayTest(500.milliseconds)
 
                 p
             }

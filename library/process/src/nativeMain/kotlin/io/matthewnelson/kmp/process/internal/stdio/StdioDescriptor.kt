@@ -22,14 +22,19 @@ import io.matthewnelson.kmp.file.errnoToIOException
 import io.matthewnelson.kmp.file.path
 import io.matthewnelson.kmp.process.Stdio
 import io.matthewnelson.kmp.process.internal.Closeable
+import io.matthewnelson.kmp.process.internal.DoNotReferenceDirectly
 import io.matthewnelson.kmp.process.internal.STDIO_NULL
 import io.matthewnelson.kmp.process.internal.check
 import kotlinx.cinterop.ExperimentalForeignApi
 import platform.posix.*
 import kotlin.concurrent.Volatile
+import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.InvocationKind
+import kotlin.contracts.contract
 
 internal class StdioDescriptor private constructor(
-    private val fd: Int,
+    @property:DoNotReferenceDirectly(useInstead = "withFd")
+    internal val fd: Int,
     internal val canRead: Boolean,
     internal val canWrite: Boolean,
 ): Closeable {
@@ -42,11 +47,12 @@ internal class StdioDescriptor private constructor(
     override fun close() {
         if (_isClosed) return
 
+        @OptIn(DoNotReferenceDirectly::class)
         val result = when (fd) {
             STDIN_FILENO,
             STDOUT_FILENO,
-            STDERR_FILENO -> { 0 /* do not actually close */ }
-            else -> withFd(retries = 10, action =  { fd -> close(fd) })
+            STDERR_FILENO -> 0 // do not actually close
+            else -> withFd { fd -> close(fd) }
         }
 
         _isClosed = true
@@ -55,31 +61,6 @@ internal class StdioDescriptor private constructor(
             @OptIn(ExperimentalForeignApi::class)
             throw errnoToIOException(errno)
         }
-    }
-
-    @Throws(IOException::class)
-    internal fun withFd(
-        retries: Int = 3,
-        action: (fd: Int) -> Int,
-    ): Int {
-        val tries = if (retries < 3) 3 else retries
-        var eintr = 0
-
-        while (eintr++ < tries) {
-            if (_isClosed) throw IOException("StdioDescriptor is closed")
-
-            val result = action(fd)
-            if (result == -1 && errno == EINTR) {
-                // retry
-                continue
-            }
-
-            // non-EINTR result
-            return result
-        }
-
-        // retries ran out
-        return -1
     }
 
     internal companion object {
@@ -139,8 +120,9 @@ internal class StdioDescriptor private constructor(
 
         internal companion object {
 
+            @Suppress("UnusedReceiverParameter")
             @Throws(IOException::class)
-            internal fun Stdio.Pipe.fdOpen(): Pipe = ::Pipe.fdOpen(this)
+            internal fun Stdio.Pipe.fdOpen(nonBlock: Boolean = false): Pipe = ::Pipe.fdOpen(nonBlock)
         }
     }
 }
@@ -150,5 +132,37 @@ internal expect inline fun Int.orOCloExec(): Int
 
 @Throws(IOException::class)
 internal expect fun ((fdRead: Int, fdWrite: Int) -> StdioDescriptor.Pipe).fdOpen(
-    stdio: Stdio.Pipe,
+    nonBlock: Boolean,
 ): StdioDescriptor.Pipe
+
+/**
+ * Performs retries (minimum of 3) for [action] in the event [action] returns
+ * -1 and [errno] is [EINTR] (that action was interrupted). Returns the result
+ * of [action].
+ * */
+@Throws(IOException::class)
+@OptIn(ExperimentalContracts::class)
+internal inline fun StdioDescriptor.withFd(retries: Int = 3, action: (fd: Int) -> Int): Int {
+    contract {
+        callsInPlace(action, InvocationKind.UNKNOWN)
+    }
+
+    var tries = retries.coerceAtLeast(3)
+
+    while (tries-- > 0) {
+        if (isClosed) throw IOException("StdioDescriptor is closed")
+
+        @OptIn(DoNotReferenceDirectly::class)
+        val result = action(fd)
+        if (result == -1 && errno == EINTR) {
+            // retry
+            continue
+        }
+
+        // non-EINTR result
+        return result
+    }
+
+    // retries ran out (errno will be EINTR)
+    return -1
+}

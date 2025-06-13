@@ -19,6 +19,7 @@ package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.process.internal.stdio.StdioDescriptor
+import io.matthewnelson.kmp.process.internal.stdio.withFd
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.UnsafeNumber
 import kotlinx.cinterop.addressOf

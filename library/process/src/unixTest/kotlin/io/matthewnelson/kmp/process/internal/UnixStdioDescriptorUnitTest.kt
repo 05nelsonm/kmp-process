@@ -22,6 +22,7 @@ import io.matthewnelson.kmp.process.Stdio
 import io.matthewnelson.kmp.process.internal.stdio.StdioDescriptor
 import io.matthewnelson.kmp.process.internal.stdio.StdioDescriptor.Companion.fdOpen
 import io.matthewnelson.kmp.process.internal.stdio.StdioDescriptor.Pipe.Companion.fdOpen
+import io.matthewnelson.kmp.process.internal.stdio.withFd
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.usePinned
@@ -64,6 +65,22 @@ class UnixStdioDescriptorUnitTest {
         try {
             assertTrue(pipe.read.withFd { it }.hasCLOEXEC())
             assertTrue(pipe.write.withFd { it }.hasCLOEXEC())
+            assertFalse(pipe.read.withFd { it }.hasNONBLOCK())
+            assertFalse(pipe.write.withFd { it }.hasNONBLOCK())
+        } finally {
+            pipe.close()
+        }
+    }
+
+    @Test
+    fun givenStdioPipe_whenFdOpenNonBlockTrue_thenHasNONBLOCK() {
+        val pipe = Stdio.Pipe.fdOpen(nonBlock = true)
+
+        try {
+            assertTrue(pipe.read.withFd { it }.hasCLOEXEC())
+            assertTrue(pipe.write.withFd { it }.hasCLOEXEC())
+            assertTrue(pipe.read.withFd { it }.hasNONBLOCK())
+            assertTrue(pipe.write.withFd { it }.hasNONBLOCK())
         } finally {
             pipe.close()
         }
@@ -71,8 +88,7 @@ class UnixStdioDescriptorUnitTest {
 
     @Test
     fun givenPosixPipe1_whenTestFunctionHasCLOEXEC_thenIsFalse() {
-        // Tests the hasCLOEXEC function to ensure
-        // that it works as expected.
+        // Tests the hasCLOEXEC function to ensure that it works as expected.
         val fds = IntArray(2) { -1 }
         fds.usePinned { pinned ->
             pipe(pinned.addressOf(0)).check()
@@ -87,8 +103,30 @@ class UnixStdioDescriptorUnitTest {
         }
     }
 
+    @Test
+    fun givenPosixPipe1_whenTestFunctionHasNONBLOCK_thenIsFalse() {
+        // Tests the hasNONBLOCK function to ensure that it works as expected.
+        val fds = IntArray(2) { -1 }
+        fds.usePinned { pinned ->
+            pipe(pinned.addressOf(0)).check()
+        }
+
+        try {
+            assertFalse(fds[0].hasNONBLOCK())
+            assertFalse(fds[1].hasNONBLOCK())
+        } finally {
+            close(fds[0])
+            close(fds[1])
+        }
+    }
+
     private fun Int.hasCLOEXEC(): Boolean {
         val stat = fcntl(this, F_GETFD).check()
         return (stat or FD_CLOEXEC) == stat
+    }
+
+    private fun Int.hasNONBLOCK(): Boolean {
+        val stat = fcntl(this, F_GETFL).check()
+        return (stat or O_NONBLOCK) == stat
     }
 }
