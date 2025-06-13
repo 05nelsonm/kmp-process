@@ -25,13 +25,8 @@ class ProcessUnitTest {
 
     @Test
     fun givenDestroy_whenSIGTERM_thenReturnsCorrectExitCode() = runTest {
-        if (IsDarwinMobile) {
-            skipping()
-            return@runTest
-        }
-
         val exitCode = try {
-            Process.Builder(command = "sleep")
+            Process.Builder(command = if (IsAppleSimulator) "/bin/sleep" else "sleep")
                 .args("3")
                 .destroySignal(Signal.SIGTERM)
                 .useSpawn { process ->
@@ -42,7 +37,7 @@ class ProcessUnitTest {
         } catch (e: IOException) {
             // Host (Window) did not have sleep available
             if (IsWindows) {
-                skipping()
+                println("Skipping...")
                 return@runTest
             }
             throw e
@@ -53,13 +48,8 @@ class ProcessUnitTest {
 
     @Test
     fun givenDestroy_whenSIGKILL_thenReturnsCorrectExitCode() = runTest {
-        if (IsDarwinMobile) {
-            skipping()
-            return@runTest
-        }
-
         val exitCode = try {
-            Process.Builder(command = "sleep")
+            Process.Builder(command = if (IsAppleSimulator) "/bin/sleep" else "sleep")
                 .args("3")
                 .destroySignal(Signal.SIGKILL)
                 .useSpawn { process ->
@@ -70,7 +60,7 @@ class ProcessUnitTest {
         } catch (e: IOException) {
             // Host (Window) did not have sleep available
             if (IsWindows) {
-                skipping()
+                println("Skipping...")
                 return@runTest
             }
             throw e
@@ -81,13 +71,8 @@ class ProcessUnitTest {
 
     @Test
     fun givenOutputFeeds_whenDestroyed_thenAreEjected() = runTest {
-        if (IsDarwinMobile) {
-            skipping()
-            return@runTest
-        }
-
         val process = try {
-            Process.Builder(command = "sleep")
+            Process.Builder(command = if (IsAppleSimulator) "/bin/sleep" else "sleep")
                 .args("3")
                 .destroySignal(Signal.SIGKILL)
                 .useSpawn { process ->
@@ -125,7 +110,7 @@ class ProcessUnitTest {
         } catch (e: IOException) {
             // Host (Window) did not have sleep available
             if (IsWindows) {
-                skipping()
+                println("Skipping...")
                 return@runTest
             }
             throw e
@@ -143,13 +128,8 @@ class ProcessUnitTest {
 
     @Test
     fun givenOutputFeeds_whenStdioNotPipe_thenAreNotAttached() = runTest {
-        if (IsDarwinMobile) {
-            skipping()
-            return@runTest
-        }
-
         try {
-            Process.Builder(command = "sleep")
+            Process.Builder(command = if (IsAppleSimulator) "/bin/sleep" else "sleep")
                 .args("3")
                 .destroySignal(Signal.SIGKILL)
                 .stdout(Stdio.Inherit)
@@ -175,16 +155,10 @@ class ProcessUnitTest {
         } catch (e: IOException) {
             // Host (Window) did not have sleep available
             if (IsWindows) {
-                skipping()
+                println("Skipping...")
                 return@runTest
             }
             throw e
-        }
-    }
-
-    internal companion object {
-        internal fun skipping() {
-            println("Skipping...")
         }
     }
 }
