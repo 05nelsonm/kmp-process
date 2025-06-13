@@ -46,23 +46,20 @@ class ProcessAndroidNativeTest {
             return
         }
 
-        val process = Process.Builder(nativeLibraryDir.resolve(libName))
+        val out = Process.Builder(executable = nativeLibraryDir.resolve(libName))
             .stdin(Stdio.Null)
-            .useSpawn { p ->
-                // Cannot use Stdio.Inherit, otherwise will not be captured by logcat.
-                p.stdoutFeed { line ->
-                    println(line ?: "STDOUT: END")
-                }.stderrFeed { line ->
-                    System.err.println(line ?: "STDERR: END")
-                }.waitFor(timeout)
-                p
+            .output {
+                maxBuffer = Int.MAX_VALUE / 2
+                timeoutMillis = timeout.inWholeMilliseconds.toInt()
             }
 
-        if (process.waitFor() == 0) return
+        if (out.processInfo.exitCode == 0) return
 
-        System.err.println(process.toString())
+        System.err.println(out.toString())
+        System.err.println(out.stdout)
+        System.err.println(out.stderr)
         System.err.println("--- ENVIRONMENT ---")
-        process.environment.forEach { (key, value) -> System.err.println("$key=$value") }
-        throw AssertionError("Process.exitCode[${process.exitCode()}] != 0")
+        out.processInfo.environment.forEach { (key, value) -> System.err.println("$key=$value") }
+        throw AssertionError("Process.exitCode[${out.processInfo.exitCode}] != 0")
     }
 }
