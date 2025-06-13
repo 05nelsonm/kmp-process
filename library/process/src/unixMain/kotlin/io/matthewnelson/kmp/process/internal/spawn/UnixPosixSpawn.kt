@@ -26,7 +26,6 @@ import io.matthewnelson.kmp.process.ProcessException
 import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.Stdio
 import io.matthewnelson.kmp.process.internal.NativeProcess
-import io.matthewnelson.kmp.process.internal.check
 import io.matthewnelson.kmp.process.internal.stdio.StdioHandle.Companion.openHandle
 import io.matthewnelson.kmp.process.internal.toArgv
 import io.matthewnelson.kmp.process.internal.toEnvp
@@ -39,8 +38,11 @@ import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.NativePointed
 import kotlinx.cinterop.alloc
 import kotlinx.cinterop.ptr
+import kotlinx.cinterop.toKString
 import kotlinx.cinterop.value
+import platform.posix.ENOENT
 import platform.posix.pid_tVar
+import platform.posix.strerror
 
 @OptIn(ExperimentalForeignApi::class)
 internal expect class PosixSpawnScope: AutofreeScope {
@@ -121,20 +123,31 @@ internal inline fun posixSpawn(
     }
 
     if (chdir != null) {
-        file_actions_addchdir_np(chdir).check()
+        // posix_spawn_file_actions_addchdir returns a non-zero value to indicate the error.
+        val ret = file_actions_addchdir_np(chdir)
+        if (ret != 0) {
+            // strdup failed or something
+            val msg = strerror(ret)?.toKString() ?: "errno: $ret"
+            throw IOException("posix_spawn_file_actions_addchdir_np failed >> $msg")
+        }
     }
 
     val handle = stdio.openHandle()
 
     // handle closes automatically on any failures
     handle.dup2(action = { fd, newFd ->
-        // posix_spawn_file_actions_adddup2 returns a non-zero
-        // value to indicate the error.
-        when (val result = file_actions_adddup2(fd, newFd)) {
+        // posix_spawn_file_actions_adddup2 returns a non-zero value to indicate the error.
+        when (val ret = file_actions_adddup2(fd, newFd)) {
             0 -> null
-            else -> errnoToIOException(result)
+            // EBADF
+            else -> errnoToIOException(ret)
         }
     })
+
+    // TODO: Setup a non-blocking pipe and use posix_spawn_file_actions_addclose_np as the last
+    //  action such that platforms which do not block (Android/iOS/macOS) until the Child process
+    //  successfully executes execve/execvpe we can loop until either closure via OCLOEXEC (success)
+    //  or check the process exit code for a 127 (failure).
 
     val pid = try {
         // pre-setting to -1 will allow detection of
@@ -144,29 +157,41 @@ internal inline fun posixSpawn(
         val argv = args.toArgv(command = command, scope = this)
         val envp = env.toEnvp(scope = this)
 
-        if (isCommandPathAbsolute) {
+        // posix_spawn & posix_spawnp return a non-zero value to indicate the error.
+        val ret = if (isCommandPathAbsolute) {
+            // Under the hood, implementations will use execve
             spawn(command, pidRef.ptr, argv, envp)
         } else {
+            // Under the hood, implementations will use execvpe which
+            // will "search" for the command using CWD and PATH.
             spawn_p(command, pidRef.ptr, argv, envp)
-        }.check()
+        }
 
         // If there was a failure in the pre-exec or exec steps, the
-        // pid reference will not be modified.
+        // return value will not be 0 and the pid reference will not be modified.
         //
         // Something like using an invalid directory location (non-existent)
         // for chdir would result in this scenario.
         val pid = pidRef.value
-        if (pid == -1) {
+        if (ret != 0 || pid == -1) {
             var msg = if (isCommandPathAbsolute) "posix_spawn" else "posix_spawnp"
             msg += " failed in pre-exec/exec steps."
-            throw if (chdir != null && !chdir.exists()) {
-                msg += " Directory specified does not exist"
-                FileNotFoundException(msg)
+            val ioException: (String) -> IOException = if (chdir != null && !chdir.exists()) {
+                msg += " Directory specified for changeDir does not seem to exist."
+                ::FileNotFoundException
             } else {
                 msg += " Bad arguments for '$command'?"
-                IOException(msg)
+                if (ret == ENOENT) ::FileNotFoundException else ::IOException
             }
+
+            if (ret != 0) {
+                msg += " >> "
+                msg += strerror(ret)?.toKString() ?: "errno: $ret"
+            }
+
+            throw ioException(msg)
         }
+
         pid
     } catch (e: IOException) {
         throw handle.tryCloseSuppressed(e)
