@@ -310,6 +310,9 @@ sealed class io.matthewnelson.kmp.process/BufferedWriteStream { // io.matthewnel
 // Targets: [androidNative, js, linux, macos]
 final fun (io.matthewnelson.kmp.process/Process.Builder).io.matthewnelson.kmp.process/changeDir(io.matthewnelson.kmp.file/File?): io.matthewnelson.kmp.process/Process.Builder // io.matthewnelson.kmp.process/changeDir|changeDir@io.matthewnelson.kmp.process.Process.Builder(io.matthewnelson.kmp.file.File?){}[0]
 
+// Targets: [androidNative, linux, macos]
+final fun (io.matthewnelson.kmp.process/Process.Builder).io.matthewnelson.kmp.process/usePosixSpawn(kotlin/Boolean): io.matthewnelson.kmp.process/Process.Builder // io.matthewnelson.kmp.process/usePosixSpawn|usePosixSpawn@io.matthewnelson.kmp.process.Process.Builder(kotlin.Boolean){}[0]
+
 // Targets: [js]
 final class io.matthewnelson.kmp.process/AsyncWriteStream { // io.matthewnelson.kmp.process/AsyncWriteStream|null[0]
     final fun close() // io.matthewnelson.kmp.process/AsyncWriteStream.close|close(){}[0]

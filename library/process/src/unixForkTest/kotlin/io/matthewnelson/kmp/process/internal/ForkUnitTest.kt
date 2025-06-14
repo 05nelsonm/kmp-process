@@ -15,6 +15,7 @@
  **/
 package io.matthewnelson.kmp.process.internal
 
+import io.matthewnelson.kmp.file.FileNotFoundException
 import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.file.SysDirSep
 import io.matthewnelson.kmp.file.SysTempDir
@@ -29,14 +30,18 @@ import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.ProcessException
 import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.Stdio
+import io.matthewnelson.kmp.process.internal.spawn.posixSpawnScopeOrNull
+import io.matthewnelson.kmp.process.usePosixSpawn
 import kotlin.random.Random
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import kotlin.test.fail
 
 class ForkUnitTest {
 
@@ -176,6 +181,37 @@ class ForkUnitTest {
                 destroy = Signal.SIGTERM,
                 handler = ProcessException.Handler.IGNORE,
             ).destroy() // for posterity...
+        }
+    }
+
+    @Test
+    fun givenUsePosixSpawn_whenFalse_thenUsesForkExecve() {
+        if (!IS_POSIX_SPAWN_AVAILABLE) {
+            // Need posixSpawn available for the platform, otherwise would
+            // always fall back to the forkExec implementation and show a
+            // false positive for our usePosixSpawn = false setting.
+            println("Skipping...")
+            return
+        }
+
+        val b = Process.Builder(command = "does_not_exist_123")
+
+        try {
+            b.spawn().destroy()
+            fail("spawn should have failed due to program not existing...")
+        } catch (e: IOException) {
+            // Check that the error message format is that of the posixSpawn implementation's.
+            assertEquals(true, e.message?.startsWith("posix_spawnp failed"))
+            assertTrue(b.platform().usePosixSpawn)
+        }
+
+        try {
+            b.usePosixSpawn(use = false).spawn().destroy()
+            fail("spawn should have failed due to program not existing...")
+        } catch (e: FileNotFoundException) {
+            // Check that the error message format is that of the forkExec implementation's.
+            assertEquals(true, e.message?.startsWith("Child process exec failure."))
+            assertFalse(b.platform().usePosixSpawn)
         }
     }
 }

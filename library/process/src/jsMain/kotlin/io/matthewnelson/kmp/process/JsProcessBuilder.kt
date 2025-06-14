@@ -18,6 +18,8 @@ package io.matthewnelson.kmp.process
 /**
  * Configures the `detached` option for `spawn`.
  *
+ * **NOTE:** This setting is ignored when using [Process.Builder.output].
+ *
  * **NOTE:** `unref` will be called immediately on the underlying child process.
  * It is upon API consumers to ensure an appropriate [Stdio] configuration is had
  * for their detached [Process], as detailed in the documentation linked below.
