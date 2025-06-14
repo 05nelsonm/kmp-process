@@ -76,8 +76,7 @@ internal fun PlatformBuilder.blockingOutput(
             sleep = { it.threadSleep() },
             conditionOrNull = {
                 if (p.wasStdoutThreadStarted() && p.wasStderrThreadStarted()) {
-                    // One final sleep before handing it off to Process.waitFor
-                    // JUST to be certain that lines are flowing.
+                    // One final sleep before handing it off.
                     5.milliseconds.threadSleep()
                 } else {
                     null
@@ -85,16 +84,38 @@ internal fun PlatformBuilder.blockingOutput(
             },
         )
 
+        var postExitTicks = 0
+
         commonWaitForCondition(
             timeout = (options.timeout - p.startTime.elapsedNow()).coerceAtLeast(1.milliseconds),
             sleep = { millis ->
                 if (stdoutBuffer.maxSizeExceeded || stderrBuffer.maxSizeExceeded) throw IllegalStateException()
                 millis.threadSleep()
             },
-            conditionOrNull = {
+            conditionOrNull = condition@ {
                 val code = p.exitCodeOrNull()
                 waitForCode = code
-                if (stdoutBuffer.hasEnded && stderrBuffer.hasEnded) code else null
+
+                // Only allow a maximum of 5 ticks after the process has exited
+                // before returning a non-null condition, regardless of whether
+                // the buffers have seen a last line. Each sleep is for a duration
+                // of 100ms, totaling in an additional 500ms after process exit
+                // unless we've reached the timeout.
+                //
+                // If the underlying pipe was created in a non-atomic manner with
+                // pipe(1), then there is a potential for the write end to have
+                // been leaked to another process. Our read end that is blocking,
+                // waiting for more data, will not "pop out" from the read unless
+                // we close the descriptor. So, popping out here will destroy the
+                // process and close it for us.
+                //
+                // If the configured timeout is something wildly inappropriate like
+                // Int.MAX_VALUE, this matters because we'd never time out.
+                if (code != null && ++postExitTicks >= 5) return@condition code
+
+                if (stdoutBuffer.hasEnded && stderrBuffer.hasEnded) return@condition code
+
+                null
             },
         )
     } catch (_: IllegalStateException) {

@@ -98,9 +98,9 @@ internal actual class PlatformBuilder private actual constructor() {
         if (process != null) return process
 
         // posix_spawn was:
-        //  - not supported
-        //  - there was some sort of initialization failure
-        //  - it was disabled by posixSpawn variable
+        //  - Not supported
+        //  - There was some sort of initialization failure
+        //  - It was disabled by usePosixSpawn variable
         //
         // Try fork/exec.
         return forkExec(command, args, chdir, env, stdio, destroy, handler)
@@ -186,8 +186,8 @@ internal actual class PlatformBuilder private actual constructor() {
             else -> when (p.exitCodeOrNull()) {
                 // pipe1 and we timed-out waiting for the read
                 EXIT_127 -> IOException("Invalid read[$read] on CLOEXEC pipe")
-                // Either it's still running (null) or the program exited
-                // by some other manner other than our 127.
+                // Either it's still running (null) or the program
+                // exited by some manner other than 127.
                 else -> null
             }
         }?.let { e: IOException ->
