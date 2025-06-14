@@ -32,20 +32,18 @@ import kotlin.time.TimeSource
 
 internal expect val STDIO_NULL: File
 
-internal expect val IsMobile: Boolean
+internal expect val IsDesktop: Boolean
 
 internal inline val IsWindows: Boolean get() = STDIO_NULL.path == "NUL"
 
 internal inline fun File.isCanonicallyEqualTo(other: File): Boolean {
     if (this == other) return true
 
-    val (thisFile, otherFile) = try {
-        canonicalFile() to other.canonicalFile()
+    return try {
+        canonicalFile() == other.canonicalFile()
     } catch (_: IOException) {
-        absoluteFile.normalize() to other.absoluteFile.normalize()
+        absoluteFile.normalize() == other.absoluteFile.normalize()
     }
-
-    return thisFile == otherFile
 }
 
 internal fun StringBuilder.appendProcessInfo(

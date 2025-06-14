@@ -17,6 +17,7 @@
 
 package io.matthewnelson.kmp.process.internal
 
+import io.matthewnelson.kmp.file.ANDROID
 import kotlin.concurrent.Volatile
 
 internal actual object PID {
@@ -84,7 +85,7 @@ internal actual object PID {
 
     // Android
     private val AndroidMyPidMethod by lazy {
-        if (!IsMobile) return@lazy null
+        if (ANDROID.SDK_INT == null) return@lazy null
         Class.forName("android.os.Process")
             .getMethod("myPid")
     }

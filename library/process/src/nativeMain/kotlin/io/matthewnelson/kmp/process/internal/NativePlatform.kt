@@ -27,14 +27,21 @@ import kotlin.contracts.contract
 import kotlin.experimental.ExperimentalNativeApi
 import kotlin.time.Duration
 
-internal actual val IsMobile: Boolean get() {
+internal actual val IsDesktop: Boolean get() {
     @OptIn(ExperimentalNativeApi::class)
     return when (Platform.osFamily) {
         OsFamily.ANDROID,
         OsFamily.IOS,
         OsFamily.TVOS,
-        OsFamily.WATCHOS -> true
-        else -> false
+        OsFamily.WASM,
+        OsFamily.WATCHOS -> false
+        OsFamily.MACOSX,
+        OsFamily.LINUX,
+        OsFamily.WINDOWS -> true
+        // Unknown, but this is experimental so if they ever
+        // expand the enum with more options, we want to
+        // mitigate the compile time error.
+        else -> true
     }
 }
 
