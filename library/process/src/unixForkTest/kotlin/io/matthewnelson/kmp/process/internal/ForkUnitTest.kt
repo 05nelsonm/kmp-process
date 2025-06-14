@@ -27,10 +27,7 @@ import io.matthewnelson.kmp.file.path
 import io.matthewnelson.kmp.file.resolve
 import io.matthewnelson.kmp.file.toFile
 import io.matthewnelson.kmp.process.Process
-import io.matthewnelson.kmp.process.ProcessException
-import io.matthewnelson.kmp.process.Signal
-import io.matthewnelson.kmp.process.Stdio
-import io.matthewnelson.kmp.process.internal.spawn.posixSpawnScopeOrNull
+import io.matthewnelson.kmp.process.changeDir
 import io.matthewnelson.kmp.process.usePosixSpawn
 import kotlin.random.Random
 import kotlin.test.AfterTest
@@ -62,17 +59,10 @@ class ForkUnitTest {
     @Test
     fun givenSh_whenEcho_thenIsSuccessful() {
         val expected = "Hello World!"
-        val b = PlatformBuilder.get()
-
-        val p = b.forkExec(
-            command = "sh",
-            args = listOf("-c", "echo \"$expected\"; sleep 1; exit 42"),
-            chdir = null,
-            env = b.env,
-            stdio = Stdio.Config.Builder.get().build(null),
-            destroy = Signal.SIGTERM,
-            handler = ProcessException.Handler.IGNORE,
-        )
+        val p = Process.Builder(command = "sh")
+            .usePosixSpawn(use = false)
+            .args("-c", "echo \"$expected\"; sleep 1; exit 42")
+            .spawn()
 
         val output = mutableListOf<String>()
         val exitCode = try {
@@ -97,9 +87,8 @@ class ForkUnitTest {
             return
         }
 
-        val out = Process.Builder(command = "which").args("sh").output()
+        val sh = Process.Builder(command = "which").args("sh").output().stdout.toFile()
         val expected = "Hello World!"
-        val sh = out.stdout.toFile()
         assertTrue(sh.exists())
         assertTrue(sh.isAbsolute())
 
@@ -109,17 +98,11 @@ class ForkUnitTest {
             .resolve(parentDirName)
             .resolve(sh.name)
 
-        val b = PlatformBuilder.get()
-
-        val p = b.forkExec(
-            command = command.path,
-            args = listOf("-c", "echo \"$expected\"; sleep 1; exit 42"),
-            chdir = sh.parentFile,
-            env = b.env,
-            stdio = Stdio.Config.Builder.get().build(null),
-            destroy = Signal.SIGTERM,
-            handler = ProcessException.Handler.IGNORE
-        )
+        val p = Process.Builder(command = command.path)
+            .usePosixSpawn(use = false)
+            .args("-c", "echo \"$expected\"; sleep 1; exit 42")
+            .changeDir(sh.parentFile)
+            .spawn()
 
         val output = mutableListOf<String>()
         val exitCode = try {
@@ -139,17 +122,11 @@ class ForkUnitTest {
 
     @Test
     fun givenChdir_whenDirExists_thenIsSuccessful() {
-        val b = PlatformBuilder.get()
-
-        val p = b.forkExec(
-            command = "sh",
-            args = listOf("-c", "echo \"$(pwd)\"; sleep 1; exit 42"),
-            chdir = CHDIR,
-            env = b.env,
-            stdio = Stdio.Config.Builder.get().build(null),
-            destroy = Signal.SIGTERM,
-            handler = ProcessException.Handler.IGNORE,
-        )
+        val p = Process.Builder(command = "sh")
+            .usePosixSpawn(use = false)
+            .args("-c", "echo \"$(pwd)\"; sleep 1; exit 42")
+            .changeDir(CHDIR)
+            .spawn()
 
         val output = mutableListOf<String>()
         val exitCode = try {
@@ -170,17 +147,12 @@ class ForkUnitTest {
     @Test
     fun givenChdir_whenDirDoesNotExist_thenThrowsException() {
         assertFailsWith<IOException> {
-            val b = PlatformBuilder.get()
-
-            b.forkExec(
-                command = "sh",
-                args = listOf("-c", "echo \"$(pwd)\"; sleep 1; exit 42"),
-                chdir = CHDIR.resolve("does_not_exist"),
-                env = b.env,
-                stdio = Stdio.Config.Builder.get().build(null),
-                destroy = Signal.SIGTERM,
-                handler = ProcessException.Handler.IGNORE,
-            ).destroy() // for posterity...
+            Process.Builder(command = "sh")
+                .usePosixSpawn(use = false)
+                .args("-c", "echo \"$(pwd)\"; sleep 1; exit 42")
+                .changeDir(CHDIR.resolve("does_not_exist"))
+                .spawn()
+                .destroy() // for posterity
         }
     }
 
