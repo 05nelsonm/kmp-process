@@ -38,6 +38,15 @@ internal actual val IsMobile: Boolean get() {
     }
 }
 
+internal inline fun NativeProcess.destroySuppressed(other: Throwable): Throwable {
+    try {
+        destroy()
+    } catch (t: Throwable) {
+        other.addSuppressed(t)
+    }
+    return other
+}
+
 @Throws(InterruptedException::class)
 internal actual inline fun Duration.threadSleep() {
     if (isNegative()) throw IllegalArgumentException("duration cannot be negative")

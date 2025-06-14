@@ -36,6 +36,7 @@ import io.matthewnelson.kmp.process.internal.stdio.StdioDescriptor.Pipe.Companio
 import io.matthewnelson.kmp.process.internal.stdio.StdioHandle
 import io.matthewnelson.kmp.process.internal.stdio.StdioHandle.Companion.openHandle
 import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.UnsafeNumber
 import kotlinx.cinterop.memScoped
 import kotlinx.cinterop.toKString
 import org.kotlincrypto.bitops.endian.Endian.Big.beIntAt
@@ -105,9 +106,9 @@ internal actual class PlatformBuilder private actual constructor() {
         return forkExec(command, args, chdir, env, stdio, destroy, handler)
     }
 
-    // internal for testing
     @Throws(IOException::class)
-    internal fun forkExec(
+    @OptIn(ExperimentalForeignApi::class, UnsafeNumber::class)
+    private fun forkExec(
         command: String,
         args: List<String>,
         chdir: File?,
@@ -119,7 +120,7 @@ internal actual class PlatformBuilder private actual constructor() {
         val handle = stdio.openHandle()
 
         val pipe = try {
-            Stdio.Pipe.fdOpen()
+            Stdio.Pipe.fdOpen(readEndNonBlock = true)
         } catch (e: IOException) {
             throw handle.tryCloseSuppressed(e)
         }
@@ -148,40 +149,8 @@ internal actual class PlatformBuilder private actual constructor() {
             handler,
         )
 
-        try {
-            pipe.write.close()
-        } catch (e: IOException) {
-            // If we cannot close the write end of the pipe then
-            // read will never pop out with a value of 0 when the
-            // child process' exec is successful.
-            p.destroy()
-            pipe.tryCloseSuppressed(e)
-            throw IOException("CLOEXEC pipe failure", e)
-        }
-
-        // Below is sort of like vfork on Linux where we
-        // wait for the child process exec, but with error
-        // validation and cleanup on our end.
         val buf = ByteArray(5)
-        var threw: IOException? = null
-
-        val read = try {
-            ReadStream.of(pipe).read(buf)
-        } catch (e: IOException) {
-            threw = IOException("CLOEXEC pipe failure", e)
-        }
-
-        try {
-            pipe.close()
-        } catch (e: IOException) {
-            if (threw != null) {
-                threw.addSuppressed(e)
-            } else {
-                threw = IOException("CLOEXEC pipe failure", e)
-            }
-        }
-
-        threw?.let { p.destroy(); throw it }
+        val read = p.awaitExecOrFailure(buf, pipe, onNonZeroExitCode = { null })
 
         when (read) {
             // execve successful and CLOEXEC pipe's write end
@@ -213,11 +182,16 @@ internal actual class PlatformBuilder private actual constructor() {
                 }
             }
 
-            // should never really happen?
-            else -> IOException("invalid read on CLOEXEC pipe")
+            // This should only ever be the scenario when pipe1 is being used (iOS/macOS)
+            else -> when (p.exitCodeOrNull()) {
+                // pipe1 and we timed-out waiting for the read
+                EXIT_127 -> IOException("Invalid read[$read] on CLOEXEC pipe")
+                // Either it's still running (null) or the program exited
+                // by some other manner other than our 127.
+                else -> null
+            }
         }?.let { e: IOException ->
-            p.destroy()
-            throw e
+            throw p.destroySuppressed(e)
         }
 
         return p
@@ -252,7 +226,7 @@ internal actual class PlatformBuilder private actual constructor() {
             try {
                 pipe.close()
             } catch (_: IOException) {}
-            _exit(1)
+            _exit(EXIT_127)
         }
 
         init {
@@ -321,9 +295,13 @@ internal actual class PlatformBuilder private actual constructor() {
 
     internal actual companion object {
 
+        // Must be greater than 0, otherwise may mistake a blanked
+        // array (all 0's) when validating the error type.
         private const val ERR_DUP2: Byte = 1
         private const val ERR_CHDIR: Byte = 2
         private const val ERR_EXEC: Byte = 3
+
+        private const val EXIT_127: Int = 127
 
         internal actual fun get(): PlatformBuilder = PlatformBuilder()
     }
