@@ -109,6 +109,7 @@ internal inline fun NativeProcess.awaitExecOrFailure(
     var limit = if (pipe.isPipe1) 100 else Int.MAX_VALUE
     val micros = 500u // 100 * 0.5ms = 50ms
 
+    var code: Int? = null
     var threw: IOException? = null
     val pinned = buf.pin()
     var ret = -1
@@ -121,7 +122,7 @@ internal inline fun NativeProcess.awaitExecOrFailure(
         when (val e = errno) {
             EINTR, EAGAIN, EWOULDBLOCK -> {
                 usleep(micros)
-                val code = exitCodeOrNull() ?: continue
+                code = exitCodeOrNull() ?: continue
                 if (code != 0) threw = onNonZeroExitCode(code)
                 break
             }
@@ -135,14 +136,21 @@ internal inline fun NativeProcess.awaitExecOrFailure(
     if (ret == -1 && threw == null) {
         // Attempt 1 more read before closing things down.
         //
-        // The fork/execve implementation will always return null
-        // for onExitCode because its Child process implementation
-        // passes its errno via the pipe before calling _exit
+        // The fork/execve implementation will always return null for
+        // onNonZeroExitCode because its Child process implementation
+        // passes its errno via the pipe before calling _exit.
         @Suppress("RemoveRedundantCallsOfConversionMethods")
         ret = read(fdRead, pinned.addressOf(0), buf.size.convert()).toInt()
     }
 
     pinned.unpin()
+
+    // We've popped out with a successful read (or time out), but no
+    // error or code yet. Need to check 1 final time before returning.
+    if (code == null && threw == null) {
+        code = exitCodeOrNull()
+        if (code != null && code != 0) threw = onNonZeroExitCode(code)
+    }
 
     try {
         pipe.close()
