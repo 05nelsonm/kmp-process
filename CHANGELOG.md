@@ -1,5 +1,22 @@
 # CHANGELOG
 
+## Version 0.3.1 (2025-06-14)
+ - Ensure `posix_spawn` function return values are checked for non-zero error value, 
+   not greater than or equal to 0 [[#158]][158]
+ - Ensure `posix_spawn` child process `exec` success or failure is observed before 
+   returning `Process` [[#159]][159]
+ - Add `posix_spawn_file_actions_addchdir_np` support for `macOS`/AndroidNative [[#161]][161]
+ - Fix `Process.Builder.output` truncation of `stdout` & `stderr` data due to destroying 
+   the process too early for Jvm/Native [[#165]][165]
+ - Add ability to always prefer using `fork` & `execve` implementation over `posix_spawn`, 
+   regardless of its availability, for `macOS`/Linux/AndroidNative [[#166]][166]
+ - Fix potential deadlocks and/or infinite loops in the event a `pipe(1)` descriptor gets 
+   leaked to another `fork` call on a different thread, before it can be configured with 
+   `FD_CLOEXEC` [[#168]][168]
+     - This only affects `iOS` and `macOS`, as Linux & AndroidNative have `pipe(2)` 
+       available such that `O_CLOEXEC` can be configured atomically upon open, instead of 
+       having to use `fcntl` like with `pipe(1)`.
+
 ## Version 0.3.0 (2025-06-11)
  - Updates `kotlin` to `2.1.21` [[#143]][143]
  - Updates `kmp-file` to `0.3.0` [[#143]][143] [[#154]][154]
@@ -140,3 +157,9 @@
 [151]: https://github.com/05nelsonm/kmp-process/pull/151
 [153]: https://github.com/05nelsonm/kmp-process/pull/153
 [154]: https://github.com/05nelsonm/kmp-process/pull/154
+[158]: https://github.com/05nelsonm/kmp-process/pull/158
+[159]: https://github.com/05nelsonm/kmp-process/pull/159
+[161]: https://github.com/05nelsonm/kmp-process/pull/161
+[165]: https://github.com/05nelsonm/kmp-process/pull/165
+[166]: https://github.com/05nelsonm/kmp-process/pull/166
+[168]: https://github.com/05nelsonm/kmp-process/pull/168
