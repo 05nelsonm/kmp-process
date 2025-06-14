@@ -101,7 +101,7 @@ internal class JvmProcess private constructor(
             // call destroy under the hood. Very sad that there
             // is no choice in the termination signal which is
             // what destroyForcibly was intended for.
-            IsMobile -> jProcess.destroy()
+            ANDROID.SDK_INT != null -> jProcess.destroy()
 
             else -> when (destroySignal) {
                 Signal.SIGTERM -> jProcess.destroy()

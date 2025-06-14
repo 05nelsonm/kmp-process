@@ -17,7 +17,7 @@ package io.matthewnelson.kmp.process
 
 import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.file.IOException
-import io.matthewnelson.kmp.process.internal.IsMobile
+import io.matthewnelson.kmp.process.internal.IsDesktop
 import io.matthewnelson.kmp.process.internal.appendProcessInfo
 import kotlin.concurrent.Volatile
 import kotlin.jvm.JvmField
@@ -130,7 +130,7 @@ public class Output private constructor(
              * - Maximum: 2147483647
              * */
             @JvmField
-            public var maxBuffer: Int = if (IsMobile) 1024 * 5000 else Int.MAX_VALUE / 2
+            public var maxBuffer: Int = if (!IsDesktop) 1024 * 5000 else Int.MAX_VALUE / 2
 
             /**
              * Maximum number of milliseconds the [Process] is

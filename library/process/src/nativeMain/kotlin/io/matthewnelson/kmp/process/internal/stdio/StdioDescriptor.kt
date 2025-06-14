@@ -39,6 +39,11 @@ internal class StdioDescriptor private constructor(
     internal val canWrite: Boolean,
 ): Closeable {
 
+    init {
+        @OptIn(DoNotReferenceDirectly::class)
+        if (fd < 0) throw AssertionError("fd[$fd] < 0")
+    }
+
     @Volatile
     private var _isClosed: Boolean = false
     override val isClosed: Boolean get() = _isClosed
@@ -91,10 +96,14 @@ internal class StdioDescriptor private constructor(
         }
     }
 
-    internal class Pipe private constructor(fdRead: Int, fdWrite: Int): Closeable {
+    internal class Pipe private constructor(
+        internal val isPipe1: Boolean,
+        fd0: Int,
+        fd1: Int,
+    ): Closeable {
 
-        internal val read = StdioDescriptor(fdRead, canRead = true, canWrite = false)
-        internal val write = StdioDescriptor(fdWrite, canRead = false, canWrite = true)
+        internal val read = StdioDescriptor(fd0, canRead = true, canWrite = false)
+        internal val write = StdioDescriptor(fd1, canRead = false, canWrite = true)
 
         override val isClosed: Boolean get() = read.isClosed && write.isClosed
 
@@ -122,7 +131,7 @@ internal class StdioDescriptor private constructor(
 
             @Suppress("UnusedReceiverParameter")
             @Throws(IOException::class)
-            internal fun Stdio.Pipe.fdOpen(nonBlock: Boolean = false): Pipe = ::Pipe.fdOpen(nonBlock)
+            internal fun Stdio.Pipe.fdOpen(readEndNonBlock: Boolean = false): Pipe = ::Pipe.fdOpen(readEndNonBlock)
         }
     }
 }
@@ -131,8 +140,8 @@ internal class StdioDescriptor private constructor(
 internal expect inline fun Int.orOCloExec(): Int
 
 @Throws(IOException::class)
-internal expect fun ((fdRead: Int, fdWrite: Int) -> StdioDescriptor.Pipe).fdOpen(
-    nonBlock: Boolean,
+internal expect fun ((isPipe1: Boolean, fd0: Int, fd1: Int) -> StdioDescriptor.Pipe).fdOpen(
+    readEndNonBlock: Boolean
 ): StdioDescriptor.Pipe
 
 /**
@@ -147,20 +156,17 @@ internal inline fun StdioDescriptor.withFd(retries: Int = 3, action: (fd: Int) -
         callsInPlace(action, InvocationKind.UNKNOWN)
     }
 
-    var tries = retries.coerceAtLeast(3)
+    var limit = retries.coerceAtLeast(3)
 
-    while (tries-- > 0) {
+    while (limit-- > 0) {
         if (isClosed) throw IOException("StdioDescriptor is closed")
 
         @OptIn(DoNotReferenceDirectly::class)
-        val result = action(fd)
-        if (result == -1 && errno == EINTR) {
-            // retry
-            continue
-        }
+        val ret = action(fd)
+        if (ret == -1 && errno == EINTR) continue
 
         // non-EINTR result
-        return result
+        return ret
     }
 
     // retries ran out (errno will be EINTR)

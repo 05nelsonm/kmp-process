@@ -18,34 +18,23 @@
 package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.*
-import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.Stdio
-import kotlin.contracts.ExperimentalContracts
-import kotlin.contracts.InvocationKind
-import kotlin.contracts.contract
-import kotlin.math.min
-import kotlin.time.Duration
-import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.Duration.Companion.nanoseconds
-import kotlin.time.TimeSource
 
 internal expect val STDIO_NULL: File
 
-internal expect val IsMobile: Boolean
+internal expect val IsDesktop: Boolean
 
 internal inline val IsWindows: Boolean get() = STDIO_NULL.path == "NUL"
 
 internal inline fun File.isCanonicallyEqualTo(other: File): Boolean {
     if (this == other) return true
 
-    val (thisFile, otherFile) = try {
-        canonicalFile() to other.canonicalFile()
+    return try {
+        canonicalFile() == other.canonicalFile()
     } catch (_: IOException) {
-        absoluteFile.normalize() to other.absoluteFile.normalize()
+        absoluteFile.normalize() == other.absoluteFile.normalize()
     }
-
-    return thisFile == otherFile
 }
 
 internal fun StringBuilder.appendProcessInfo(
@@ -108,51 +97,4 @@ internal inline fun Int.checkBounds(offset: Int, len: Int) {
     val size = this
     if (size - offset < len) throw IllegalArgumentException("Input too short")
     if (offset < 0 || len < 0 || offset > size - len) throw IndexOutOfBoundsException()
-}
-
-// @Throws(CancellationException::class, InterruptedException::class)
-@OptIn(ExperimentalContracts::class)
-internal inline fun Process.commonWaitFor(
-    timeout: Duration,
-    sleep: (millis: Duration) -> Unit,
-): Int? {
-    contract {
-        callsInPlace(sleep, InvocationKind.UNKNOWN)
-    }
-
-    return commonWaitForCondition(timeout, sleep, ::exitCodeOrNull)
-}
-
-// @Throws(CancellationException::class, InterruptedException::class)
-@OptIn(ExperimentalContracts::class)
-internal inline fun <T: Any> commonWaitForCondition(
-    timeout: Duration,
-    sleep: (millis: Duration) -> Unit,
-    conditionOrNull: () -> T?,
-): T? {
-    contract {
-        callsInPlace(sleep, InvocationKind.UNKNOWN)
-        callsInPlace(conditionOrNull, InvocationKind.UNKNOWN)
-    }
-
-    val startMark = TimeSource.Monotonic.markNow()
-    var remainingNanos = timeout.inWholeNanoseconds
-
-    do {
-        val condition = conditionOrNull()
-        if (condition != null) return condition
-
-        if (remainingNanos > 0) {
-            val millis = min(
-                (remainingNanos.nanoseconds.inWholeMilliseconds + 1).toDouble(),
-                100.0
-            ).toLong().milliseconds
-
-            sleep(millis)
-        }
-
-        remainingNanos = (timeout - startMark.elapsedNow()).inWholeNanoseconds
-    } while (remainingNanos > 0)
-
-    return null
 }

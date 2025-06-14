@@ -28,7 +28,7 @@ internal actual val STDIO_NULL: File = (System.getProperty("os.name")
     .let { isWindows -> if (isWindows) "NUL" else "/dev/null" }
     .toFile()
 
-internal actual val IsMobile: Boolean get() = ANDROID.SDK_INT != null
+internal actual val IsDesktop: Boolean get() = ANDROID.SDK_INT == null
 
 @Throws(InterruptedException::class)
 internal actual inline fun Duration.threadSleep() {

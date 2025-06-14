@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Matthew Nelson
+ * Copyright (c) 2025 Matthew Nelson
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,22 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-package io.matthewnelson.kmp.process.internal
+package io.matthewnelson.kmp.process.internal.stdio
 
 import io.matthewnelson.kmp.file.SysTempDir
 import io.matthewnelson.kmp.file.resolve
 import io.matthewnelson.kmp.file.writeUtf8
 import io.matthewnelson.kmp.process.Stdio
-import io.matthewnelson.kmp.process.internal.stdio.StdioDescriptor
+import io.matthewnelson.kmp.process.internal.check
 import io.matthewnelson.kmp.process.internal.stdio.StdioDescriptor.Companion.fdOpen
 import io.matthewnelson.kmp.process.internal.stdio.StdioDescriptor.Pipe.Companion.fdOpen
-import io.matthewnelson.kmp.process.internal.stdio.withFd
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.usePinned
-import platform.posix.*
+import platform.posix.FD_CLOEXEC
+import platform.posix.F_GETFD
+import platform.posix.F_GETFL
+import platform.posix.O_NONBLOCK
+import platform.posix.close
+import platform.posix.fcntl
+import platform.posix.pipe
+import kotlin.experimental.ExperimentalNativeApi
 import kotlin.random.Random
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
@@ -73,14 +80,32 @@ class UnixStdioDescriptorUnitTest {
     }
 
     @Test
-    fun givenStdioPipe_whenFdOpenNonBlockTrue_thenHasNONBLOCK() {
-        val pipe = Stdio.Pipe.fdOpen(nonBlock = true)
+    fun givenStdioPipe_whenConfigureReadEndNonBlock_thenHasNONBLOCK() {
+        val pipe = Stdio.Pipe.fdOpen(readEndNonBlock = true)
 
         try {
             assertTrue(pipe.read.withFd { it }.hasCLOEXEC())
             assertTrue(pipe.write.withFd { it }.hasCLOEXEC())
             assertTrue(pipe.read.withFd { it }.hasNONBLOCK())
-            assertTrue(pipe.write.withFd { it }.hasNONBLOCK())
+            assertFalse(pipe.write.withFd { it }.hasNONBLOCK())
+        } finally {
+            pipe.close()
+        }
+    }
+
+    @Test
+    fun givenPlatform_whenPipe2Available_thenUsesPipe2() {
+        @OptIn(ExperimentalNativeApi::class)
+        val expected = when (Platform.osFamily) {
+            OsFamily.ANDROID,
+            OsFamily.LINUX -> false
+            else -> true
+        }
+
+        val pipe = Stdio.Pipe.fdOpen()
+
+        try {
+            assertEquals(expected, pipe.isPipe1)
         } finally {
             pipe.close()
         }

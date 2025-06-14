@@ -20,7 +20,6 @@ package io.matthewnelson.kmp.process.internal.spawn
 import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.file.FileNotFoundException
 import io.matthewnelson.kmp.file.IOException
-import io.matthewnelson.kmp.file.InterruptedException
 import io.matthewnelson.kmp.file.SysDirSep
 import io.matthewnelson.kmp.file.errnoToIOException
 import io.matthewnelson.kmp.file.path
@@ -29,11 +28,9 @@ import io.matthewnelson.kmp.process.ProcessException
 import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.Stdio
 import io.matthewnelson.kmp.process.internal.NativeProcess
-import io.matthewnelson.kmp.process.internal.stdio.StdioDescriptor
+import io.matthewnelson.kmp.process.internal.awaitExecOrFailure
 import io.matthewnelson.kmp.process.internal.stdio.StdioDescriptor.Pipe.Companion.fdOpen
 import io.matthewnelson.kmp.process.internal.stdio.StdioHandle.Companion.openHandle
-import io.matthewnelson.kmp.process.internal.stdio.withFd
-import io.matthewnelson.kmp.process.internal.threadSleep
 import io.matthewnelson.kmp.process.internal.toArgv
 import io.matthewnelson.kmp.process.internal.toEnvp
 import io.matthewnelson.kmp.process.internal.tryCloseSuppressed
@@ -43,25 +40,15 @@ import kotlinx.cinterop.CPointerVar
 import kotlinx.cinterop.CValuesRef
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.NativePointed
-import kotlinx.cinterop.UnsafeNumber
-import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.alloc
-import kotlinx.cinterop.convert
-import kotlinx.cinterop.pin
 import kotlinx.cinterop.ptr
 import kotlinx.cinterop.toKString
 import kotlinx.cinterop.value
-import platform.posix.EAGAIN
-import platform.posix.EINTR
 import platform.posix.ENOENT
-import platform.posix.EWOULDBLOCK
 import platform.posix.X_OK
 import platform.posix.access
-import platform.posix.errno
 import platform.posix.pid_tVar
-import platform.posix.read
 import platform.posix.strerror
-import kotlin.time.Duration.Companion.microseconds
 
 @OptIn(ExperimentalForeignApi::class)
 internal expect class PosixSpawnScope: AutofreeScope {
@@ -146,8 +133,8 @@ internal fun posixSpawn(
         }
     })
 
-    val pipeNonBlock = try {
-        Stdio.Pipe.fdOpen(nonBlock = true)
+    val pipe = try {
+        Stdio.Pipe.fdOpen(readEndNonBlock = true)
     } catch (e: IOException) {
         throw handle.tryCloseSuppressed(e)
     }
@@ -180,11 +167,11 @@ internal fun posixSpawn(
         pid
     } catch (e: IOException) {
         handle.tryCloseSuppressed(e)
-        pipeNonBlock.tryCloseSuppressed(e)
+        pipe.tryCloseSuppressed(e)
         throw e
     }
 
-    NativeProcess(
+    val p = NativeProcess(
         pid,
         handle,
         command,
@@ -193,71 +180,23 @@ internal fun posixSpawn(
         env,
         destroy,
         handler,
-    ).awaitExecOrFailure(pipeNonBlock)
-}
+    )
 
-@OptIn(ExperimentalForeignApi::class, UnsafeNumber::class)
-private fun NativeProcess.awaitExecOrFailure(pipeNonBlock: StdioDescriptor.Pipe): NativeProcess {
-    val fd = try {
-        pipeNonBlock.write.close()
-        pipeNonBlock.read.withFd { it }
-    } catch (e: IOException) {
-        // If we cannot close the write end of the pipe then
-        // read will never pop out with a value of 0 when the
-        // child process' exec is successful.
-        destroy()
-        pipeNonBlock.tryCloseSuppressed(e)
-        throw IOException("CLOEXEC pipe failure", e)
-    }
-
-    var threw: IOException? = null
-
-    val pinned = ByteArray(1).pin()
-
-    while (true) {
-        @Suppress("RemoveRedundantCallsOfConversionMethods")
-        val ret = read(fd, pinned.addressOf(0), 1.convert()).toInt()
-        if (ret >= 0) {
-            // execve/execvpe was successful and CLOEXEC pipe's write end was closed
-            // in the child process, resulting in the read end here in the parent
-            // process stopping.
-            break
-        }
-
-        when (val e = errno) {
-            EINTR, EAGAIN, EWOULDBLOCK -> {
-                try {
-                    250.microseconds.threadSleep()
-                } catch (_: InterruptedException) {}
-
-                val code = exitCodeOrNull() ?: continue
-                if (code == 127) {
-                    threw = spawnFailureToIOException(command, cwd, spawnRet = 0)
-                }
-
-                // There's an exit code. Whether it is 127 or not, pop out.
-                break
+    p.awaitExecOrFailure(
+        ByteArray(1),
+        pipe,
+        onNonZeroExitCode = { code ->
+            // Any failures with the post-fork, pre-exec/exec steps will
+            // result in code 127 (according to the POSIX standard).
+            if (code == 127) {
+                spawnFailureToIOException(command, chdir, spawnRet = 0)
+            } else {
+                null
             }
-            // Something else went wrong
-            else -> threw = errnoToIOException(e)
         }
-    }
+    )
 
-    pinned.unpin()
-
-    try {
-        pipeNonBlock.close()
-    } catch (e: IOException) {
-        if (threw != null) {
-            threw.addSuppressed(e)
-        } else {
-            threw = IOException("CLOEXEC pipe failure", e)
-        }
-    }
-
-    threw?.let { destroy(); throw it }
-
-    return this
+    p
 }
 
 /*

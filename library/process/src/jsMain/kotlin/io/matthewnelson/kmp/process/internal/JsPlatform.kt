@@ -31,8 +31,8 @@ internal actual val STDIO_NULL: File by lazy {
     (if (isWindows) "NUL" else "/dev/null").toFile()
 }
 
-internal actual val IsMobile: Boolean get() = try {
-    os_platform() == "android"
+internal actual val IsDesktop: Boolean get() = try {
+    os_platform() != "android"
 } catch (_: Throwable) {
     false
 }
