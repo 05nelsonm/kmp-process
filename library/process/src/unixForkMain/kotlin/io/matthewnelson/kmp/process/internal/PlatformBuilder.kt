@@ -55,6 +55,8 @@ import kotlin.time.Duration.Companion.milliseconds
 // unixForkMain
 internal actual class PlatformBuilder private actual constructor() {
 
+    internal var usePosixSpawn: Boolean = true
+
     internal actual val env: MutableMap<String, String> by lazy { parentEnvironment() }
 
     @Throws(IOException::class)
@@ -78,20 +80,28 @@ internal actual class PlatformBuilder private actual constructor() {
         destroy: Signal,
         handler: ProcessException.Handler,
     ): Process {
-        val process = posixSpawn(
-            command,
-            args,
-            chdir,
-            env,
-            stdio,
-            destroy,
-            handler,
-        )
+        val process = if (usePosixSpawn) {
+            posixSpawn(
+                command,
+                args,
+                chdir,
+                env,
+                stdio,
+                destroy,
+                handler,
+            )
+        } else {
+            null
+        }
 
         if (process != null) return process
 
-        // posix_spawn was not supported or there was some
-        // sort of initialization failure. Try fork/exec.
+        // posix_spawn was:
+        //  - not supported
+        //  - there was some sort of initialization failure
+        //  - it was disabled by posixSpawn variable
+        //
+        // Try fork/exec.
         return forkExec(command, args, chdir, env, stdio, destroy, handler)
     }
 
