@@ -155,11 +155,7 @@ internal inline fun NativeProcess.awaitExecOrFailure(
     try {
         pipe.close()
     } catch (e: IOException) {
-        if (threw != null) {
-            threw.addSuppressed(e)
-        } else {
-            threw = IOException("CLOEXEC pipe failure", e)
-        }
+        threw?.addSuppressed(e)
     }
 
     threw?.let { t -> throw destroySuppressed(t) }
