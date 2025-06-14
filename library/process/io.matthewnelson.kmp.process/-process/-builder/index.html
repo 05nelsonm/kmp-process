@@ -41,13 +41,14 @@
             </a>        <button class="navigation-controls--btn navigation-controls--btn_toc ui-kit_mobile-only" id="toc-toggle" type="button">Toggle table of contents
         </button>
         <div class="navigation-controls--break ui-kit_mobile-only"></div>
-        <div class="library-version" id="library-version">0.3.0
+        <div class="library-version" id="library-version">0.3.1
         </div>
         <div class="navigation-controls">
         <div class="filter-section filter-section_loading" id="filter-section">
                 <button class="platform-tag platform-selector common-like" data-active="" data-filter=":library:process/commonMain">common</button>
                 <button class="platform-tag platform-selector js-like" data-active="" data-filter=":library:process/jsMain">js</button>
                 <button class="platform-tag platform-selector common-like" data-active="" data-filter=":library:process/nonAppleMobileMain">nonAppleMobile</button>
+                <button class="platform-tag platform-selector common-like" data-active="" data-filter=":library:process/unixForkMain">unixFork</button>
             <div class="dropdown filter-section--dropdown" data-role="dropdown" id="filter-section-dropdown">
                 <button class="button button_dropdown filter-section--dropdown-toggle" role="combobox" data-role="dropdown-toggle" aria-controls="platform-tags-listbox" aria-haspopup="listbox" aria-expanded="false" aria-label="Toggle source sets"></button>
                 <ul role="listbox" id="platform-tags-listbox" class="dropdown--list" data-role="dropdown-listbox">
@@ -75,6 +76,13 @@
                                 <input type="checkbox" class="checkbox--input" id=":library:process/nonAppleMobileMain" data-filter=":library:process/nonAppleMobileMain">
                                 <span class="checkbox--icon"></span>
                                 nonAppleMobile
+                            </label>
+                        </li>
+                        <li role="option" class="dropdown--option platform-selector-option common-like" tabindex="0">
+                            <label class="checkbox">
+                                <input type="checkbox" class="checkbox--input" id=":library:process/unixForkMain" data-filter=":library:process/unixForkMain">
+                                <span class="checkbox--icon"></span>
+                                unixFork
                             </label>
                         </li>
                 </ul>
@@ -355,6 +363,23 @@ assertEquals(5, out.processInfo.exitCode)</code></pre><span class="top-right-pos
               <div>
                 <div class="title">
                   <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library:process/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="stdout.html"><span class="token function">stdout</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">destination<span class="token operator">: </span><a href="../../-stdio/index.html">Stdio</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">Process.Builder</a></div><div class="brief "><p class="paragraph">Modify the standard output destination</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1697285879%2FFunctions%2F-216287351" anchor-label="usePosixSpawn" id="-1697285879%2FFunctions%2F-216287351" data-filterable-set=":library:process/unixForkMain"></a>
+          <div class="table-row" data-togglable="EXTENSION_FUNCTION" data-filterable-current=":library:process/unixForkMain" data-filterable-set=":library:process/unixForkMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="../../use-posix-spawn.html"><span>use</span><wbr><span>Posix</span><wbr><span><span>Spawn</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1697285879%2FFunctions%2F-216287351"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":library:process/unixForkMain" data-filterable-set=":library:process/unixForkMain" data-active="" data-toggle=":library:process/unixForkMain">unixFork</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":library:process/unixForkMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="index.html#75451656%2FMain%2F-216287351">Process.Builder</a><span class="token punctuation">.</span><a href="../../use-posix-spawn.html"><span class="token function">usePosixSpawn</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">use<span class="token operator">: </span><span data-unresolved-link="kotlin/Boolean///PointingToDeclaration/">Boolean</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html#75451656%2FMain%2F-216287351">Process.Builder</a></div><div class="brief "><p class="paragraph">By default, <a href="https://man7.org/linux/man-pages/man3/posix_spawn.3.html">posix_spawn</a> and <a href="https://man7.org/linux/man-pages/man3/posix_spawn.3.html">posix_spawnp</a> are always preferred when spawning processes, given that the necessary API availability is present (e.g. Android Native requires a device API of 28+, or 34+ if changing the process' working directory via <a href="../../change-dir.html">changeDir</a>). If API availability is <strong>not</strong> present, then an alternative implementation using <a href="https://man7.org/linux/man-pages/man2/fork.2.html">fork</a> and <a href="https://man7.org/linux/man-pages/man2/execve.2.html">execve</a> is fallen back to. This option allows you to skip over <a href="https://man7.org/linux/man-pages/man3/posix_spawn.3.html">posix_spawn</a>, regardless of its API availability, and go directly to the alternative implementation using <a href="https://man7.org/linux/man-pages/man2/fork.2.html">fork</a> and <a href="https://man7.org/linux/man-pages/man2/execve.2.html">execve</a>.</p></div></div>                  </div>
                 </div>
               </div>
             </div>
