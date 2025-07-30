@@ -20,6 +20,8 @@ pluginManagement {
         mavenCentral()
         google()
         gradlePluginPortal()
+        // TODO: REMOVE kmp-tor-resource (SNAPSHOT)
+        maven("https://central.sonatype.com/repository/maven-snapshots/")
     }
 }
 
@@ -35,7 +37,7 @@ dependencyResolutionManagement {
             // Only allow snapshot dependencies for non-release versions.
             // This would cause a build failure if attempting to make a release
             // while depending on a -SNAPSHOT version (such as core).
-            maven("https://s01.oss.sonatype.org/content/repositories/snapshots/")
+            maven("https://central.sonatype.com/repository/maven-snapshots/")
         }
     }
 

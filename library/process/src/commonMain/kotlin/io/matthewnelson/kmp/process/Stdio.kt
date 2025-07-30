@@ -13,9 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
+@file:Suppress("RedundantVisibilityModifier")
+
 package io.matthewnelson.kmp.process
 
 import io.matthewnelson.kmp.file.IOException
+import io.matthewnelson.kmp.file.mkdirs2
 import io.matthewnelson.kmp.file.normalize
 import io.matthewnelson.kmp.file.parentFile
 import io.matthewnelson.kmp.file.toFile
@@ -157,9 +160,7 @@ public sealed class Stdio private constructor() {
                         .parentFile
                         ?: return@forEach
 
-                    if (!parent.exists() && !parent.mkdirs()) {
-                        throw IOException("Failed to create parent directory for $name[${stdio.file}]")
-                    }
+                    parent.mkdirs2(mode = null, mustCreate = false)
                 }
 
                 return Config(stdin, stdout, stderr)
@@ -172,8 +173,9 @@ public sealed class Stdio private constructor() {
             }
         }
 
-        @get:JvmSynthetic
-        internal val isStderrSameFileAsStdout: Boolean get() {
+        @JvmSynthetic
+        @Throws(IOException::class)
+        internal fun isStderrSameFileAsStdout(): Boolean {
             if (stdout !is File) return false
             if (stderr !is File) return false
 

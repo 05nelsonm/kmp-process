@@ -19,7 +19,10 @@ import io.matthewnelson.kmp.file.FileNotFoundException
 import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.file.SysDirSep
 import io.matthewnelson.kmp.file.SysTempDir
-import io.matthewnelson.kmp.file.canonicalPath
+import io.matthewnelson.kmp.file.canonicalPath2
+import io.matthewnelson.kmp.file.delete2
+import io.matthewnelson.kmp.file.exists2
+import io.matthewnelson.kmp.file.mkdirs2
 import io.matthewnelson.kmp.file.name
 import io.matthewnelson.kmp.file.parentFile
 import io.matthewnelson.kmp.file.parentPath
@@ -51,10 +54,10 @@ class ForkUnitTest {
     }
 
     @AfterTest
-    fun teardownTest() { CHDIR.delete() }
+    fun teardownTest() { CHDIR.delete2(ignoreReadOnly = true) }
 
     @BeforeTest
-    fun setupTest() { CHDIR.mkdirs() }
+    fun setupTest() { CHDIR.mkdirs2(mode = null) }
 
     @Test
     fun givenSh_whenEcho_thenIsSuccessful() {
@@ -89,7 +92,7 @@ class ForkUnitTest {
 
         val sh = Process.Builder(command = "which").args("sh").output().stdout.toFile()
         val expected = "Hello World!"
-        assertTrue(sh.exists())
+        assertTrue(sh.exists2())
         assertTrue(sh.isAbsolute())
 
         val parentDirName = sh.parentPath?.substringAfterLast(SysDirSep)
@@ -141,7 +144,7 @@ class ForkUnitTest {
 
         println(p)
         assertEquals(42, exitCode)
-        assertEquals(CHDIR.canonicalPath(), output.firstOrNull()?.toFile()?.canonicalPath())
+        assertEquals(CHDIR.canonicalPath2(), output.firstOrNull()?.toFile()?.canonicalPath2())
     }
 
     @Test

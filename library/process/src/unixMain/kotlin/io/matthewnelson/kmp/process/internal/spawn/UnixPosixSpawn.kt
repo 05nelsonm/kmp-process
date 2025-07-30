@@ -22,6 +22,7 @@ import io.matthewnelson.kmp.file.FileNotFoundException
 import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.file.SysDirSep
 import io.matthewnelson.kmp.file.errnoToIOException
+import io.matthewnelson.kmp.file.exists2
 import io.matthewnelson.kmp.file.path
 import io.matthewnelson.kmp.file.toFile
 import io.matthewnelson.kmp.process.ProcessException
@@ -218,9 +219,13 @@ private fun spawnFailureToIOException(command: String, chdir: File?, spawnRet: I
 
     var ioException: (String) -> IOException = if (spawnRet == ENOENT) ::FileNotFoundException else ::IOException
 
-    if (chdir != null && chdir.isAbsolute() && !chdir.exists()) {
-        msg += " Directory specified for changeDir does not seem to exist."
-        ioException = ::FileNotFoundException
+    if (chdir != null && chdir.isAbsolute()) {
+        try {
+            if (!chdir.exists2()) {
+                msg += " Directory specified for changeDir does not seem to exist."
+                ioException = ::FileNotFoundException
+            }
+        } catch (_: IOException) {}
     }
 
     if (
@@ -230,8 +235,15 @@ private fun spawnFailureToIOException(command: String, chdir: File?, spawnRet: I
         // Alternatively, can also check if it's an absolute path.
         || commandFile.isAbsolute()
     ) {
+        val commandFileExists = try {
+            commandFile.exists2()
+        } catch (_: IOException) {
+            // permissions?
+            false
+        }
+
         when {
-            !commandFile.exists() -> {
+            !commandFileExists -> {
                 msg += "Command[$command] does not seem to exist."
                 ioException = ::FileNotFoundException
             }

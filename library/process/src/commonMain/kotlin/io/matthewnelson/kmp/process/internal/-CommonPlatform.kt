@@ -27,13 +27,14 @@ internal expect val IsDesktop: Boolean
 
 internal inline val IsWindows: Boolean get() = STDIO_NULL.path == "NUL"
 
+@Throws(IOException::class)
 internal inline fun File.isCanonicallyEqualTo(other: File): Boolean {
     if (this == other) return true
 
     return try {
-        canonicalFile() == other.canonicalFile()
+        canonicalFile2() == other.canonicalFile2()
     } catch (_: IOException) {
-        absoluteFile.normalize() == other.absoluteFile.normalize()
+        absoluteFile2().normalize() == other.absoluteFile2().normalize()
     }
 }
 

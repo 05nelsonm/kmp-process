@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
+@file:Suppress("RedundantVisibilityModifier")
+
 package io.matthewnelson.kmp.process
 
 import io.matthewnelson.immutable.collections.toImmutableList
@@ -281,8 +283,11 @@ public abstract class Process internal constructor(
         /**
          * Alternate constructor for an executable [File]. Will take the
          * absolute + normalized path to use for [command].
+         *
+         * @throws [IOException] If [absoluteFile2] has to reference the filesystem to construct
+         *   an absolute path and fails due to a filesystem security exception.
          * */
-        public constructor(executable: File): this(executable.absoluteFile.normalize().path)
+        public constructor(executable: File): this(executable.absoluteFile2().normalize().path)
 
         private val _args = mutableListOf<String>()
         private var _chdir: File? = null

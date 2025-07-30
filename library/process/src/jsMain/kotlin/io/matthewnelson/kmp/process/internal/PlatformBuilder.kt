@@ -198,7 +198,7 @@ internal actual class PlatformBuilder private actual constructor() {
             jsStdio.closeDescriptorsOnFailure {
                 jsStdio[0] = stdin.toJsStdio(isStdin = true)
                 jsStdio[1] = stdout.toJsStdio(isStdin = false)
-                jsStdio[2] = if (isStderrSameFileAsStdout) {
+                jsStdio[2] = if (isStderrSameFileAsStdout()) {
                     // use the same file descriptor
                     jsStdio[1]
                 } else {

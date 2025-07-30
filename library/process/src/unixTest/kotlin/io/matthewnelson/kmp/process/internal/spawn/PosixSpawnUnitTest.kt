@@ -18,7 +18,9 @@ package io.matthewnelson.kmp.process.internal.spawn
 import io.matthewnelson.kmp.file.FileNotFoundException
 import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.file.SysTempDir
-import io.matthewnelson.kmp.file.canonicalPath
+import io.matthewnelson.kmp.file.canonicalPath2
+import io.matthewnelson.kmp.file.delete2
+import io.matthewnelson.kmp.file.mkdirs2
 import io.matthewnelson.kmp.file.resolve
 import io.matthewnelson.kmp.file.toFile
 import io.matthewnelson.kmp.process.IsAppleSimulator
@@ -52,10 +54,10 @@ class PosixSpawnUnitTest {
     }
 
     @AfterTest
-    fun teardownTest() { CHDIR?.delete() }
+    fun teardownTest() { CHDIR?.delete2() }
 
     @BeforeTest
-    fun setupTest() { CHDIR?.mkdirs() }
+    fun setupTest() { CHDIR?.mkdirs2(mode = null) }
 
     @Test
     fun givenSh_whenEcho_thenIsSuccessful() {
@@ -124,7 +126,7 @@ class PosixSpawnUnitTest {
 
         println(p)
         assertEquals(42, exitCode)
-        assertEquals(CHDIR.canonicalPath(), output.firstOrNull()?.toFile()?.canonicalPath())
+        assertEquals(CHDIR.canonicalPath2(), output.firstOrNull()?.toFile()?.canonicalPath2())
     }
 
     @Test

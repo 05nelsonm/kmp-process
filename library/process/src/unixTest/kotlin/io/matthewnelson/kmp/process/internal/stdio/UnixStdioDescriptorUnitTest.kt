@@ -16,6 +16,8 @@
 package io.matthewnelson.kmp.process.internal.stdio
 
 import io.matthewnelson.kmp.file.SysTempDir
+import io.matthewnelson.kmp.file.delete2
+import io.matthewnelson.kmp.file.mkdirs2
 import io.matthewnelson.kmp.file.resolve
 import io.matthewnelson.kmp.file.writeUtf8
 import io.matthewnelson.kmp.process.Stdio
@@ -53,15 +55,15 @@ class UnixStdioDescriptorUnitTest {
         var descriptor: StdioDescriptor? = null
 
         try {
-            d.mkdirs()
-            f.writeUtf8("Hello World!")
+            d.mkdirs2(mode = null)
+            f.writeUtf8(excl = null, "Hello World!")
 
             descriptor = Stdio.File.of(f).fdOpen(isStdin = true)
             assertTrue(descriptor.withFd { it }.hasCLOEXEC())
         } finally {
             descriptor?.close()
-            f.delete()
-            d.delete()
+            f.delete2()
+            d.delete2()
         }
     }
 

@@ -10,12 +10,12 @@ gradle-cklib                = "0.3.3"
 gradle-dokka                = "2.0.0"
 gradle-kmp-configuration    = "0.4.1"
 gradle-kotlin               = "2.1.21"
-gradle-publish-maven        = "0.32.0"
+gradle-publish-maven        = "0.33.0"
 
 immutable                   = "0.2.0"
 
-kmp-file                    = "0.3.0"
-kmp-tor-resource            = "408.16.4"
+kmp-file                    = "0.4.0-SNAPSHOT"
+kmp-tor-resource            = "408.17.0-SNAPSHOT" # TODO: REMOVE kmp-tor-resource (SNAPSHOT)
 kotlincrypto-catalog        = "0.7.1" # Utilized from settings.gradle.kts
 kotlinx-coroutines          = "1.10.2"
 

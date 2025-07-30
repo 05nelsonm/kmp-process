@@ -187,7 +187,7 @@ internal class StdioHandle private constructor(
             val stderrFD = try {
                 when (val s = stderr) {
                     is Stdio.Inherit -> StdioDescriptor.STDERR
-                    is Stdio.File -> if (isStderrSameFileAsStdout) {
+                    is Stdio.File -> if (isStderrSameFileAsStdout()) {
                         stdoutFD
                     } else {
                         s.fdOpen(isStdin = false)
