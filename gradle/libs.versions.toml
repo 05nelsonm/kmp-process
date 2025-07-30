@@ -10,7 +10,7 @@ gradle-cklib                = "0.3.3"
 gradle-dokka                = "2.0.0"
 gradle-kmp-configuration    = "0.4.1"
 gradle-kotlin               = "2.1.21"
-gradle-publish-maven        = "0.32.0"
+gradle-publish-maven        = "0.33.0"
 
 immutable                   = "0.2.0"
 
