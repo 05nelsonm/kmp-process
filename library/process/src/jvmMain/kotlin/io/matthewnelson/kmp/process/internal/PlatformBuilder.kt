@@ -70,7 +70,7 @@ internal actual class PlatformBuilder private actual constructor() {
         handler: ProcessException.Handler,
     ): Process {
 
-        val isStderrSameFileAsStdout = stdio.isStderrSameFileAsStdout
+        val isStderrSameFileAsStdout = stdio.isStderrSameFileAsStdout()
         jProcessBuilder.redirectErrorStream(isStderrSameFileAsStdout)
 
         @Suppress("NewApi")
@@ -86,8 +86,10 @@ internal actual class PlatformBuilder private actual constructor() {
                 jProcessBuilder.redirectError(stdio.stderr.toRedirect(isStdin = false))
             }
         } else {
+            // TODO: Open file streams to pass to JvmProcess
+            //
             // Android 23 and below
-
+            //
             // Check Stdio.Config for file existence (stdin) and
             // read/write permissions.
             //

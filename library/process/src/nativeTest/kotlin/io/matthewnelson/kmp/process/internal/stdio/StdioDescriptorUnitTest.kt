@@ -17,6 +17,8 @@ package io.matthewnelson.kmp.process.internal.stdio
 
 import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.file.SysTempDir
+import io.matthewnelson.kmp.file.delete2
+import io.matthewnelson.kmp.file.mkdirs2
 import io.matthewnelson.kmp.file.resolve
 import io.matthewnelson.kmp.file.writeUtf8
 import io.matthewnelson.kmp.process.Stdio
@@ -45,15 +47,15 @@ class StdioDescriptorUnitTest {
         val f = d.resolve("test.txt")
 
         try {
-            d.mkdirs()
-            f.writeUtf8("Hello World!")
+            d.mkdirs2(mode = null)
+            f.writeUtf8(excl = null, "Hello World!")
 
             val descriptor = Stdio.File.of(f).fdOpen(isStdin = true)
             descriptor.close()
             assertFailsWith<IOException> { descriptor.withFd { it } }
         } finally {
-            f.delete()
-            d.delete()
+            f.delete2()
+            d.delete2()
         }
     }
 }
