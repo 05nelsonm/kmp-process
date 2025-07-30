@@ -19,19 +19,10 @@ import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
 
-/**
- * Internal reminder to not do stupid things
- * */
-@MustBeDocumented
-@Target(AnnotationTarget.PROPERTY)
-@Retention(AnnotationRetention.BINARY)
-@RequiresOptIn("Use SynchronizedSet.withLock extension")
-internal annotation class UseWithLock
-
 internal class SynchronizedSet<E: Any?> internal constructor(initialCapacity: Int = 1) {
-    @UseWithLock
+    @DoNotReferenceDirectly("SynchronizedSet.withLock")
     internal val lock = newLock()
-    @UseWithLock
+    @DoNotReferenceDirectly("SynchronizedSet.withLock")
     internal val set = LinkedHashSet<E>(initialCapacity.coerceAtLeast(1), 1.0F)
 }
 
@@ -40,6 +31,6 @@ internal inline fun <T: Any?, E: Any?> SynchronizedSet<E>.withLock(
     block: LinkedHashSet<E>.() -> T,
 ): T {
     contract { callsInPlace(block, InvocationKind.EXACTLY_ONCE) }
-    @OptIn(UseWithLock::class)
+    @OptIn(DoNotReferenceDirectly::class)
     return lock.withLock { block(set) }
 }
