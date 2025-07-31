@@ -26,3 +26,7 @@ internal external fun fs_openSync(path: String, flags: String): Number
 /** [docs](https://nodejs.org/api/fs.html#fsopensyncpath-flags-mode) */
 @JsName("closeSync")
 internal external fun fs_closeSync(fd: Number)
+
+/** [docs](https://nodejs.org/api/fs.html#fsfstatsyncfd-options) */
+@JsName("fstatSync")
+internal external fun fs_fstatSync(fd: Number): dynamic

@@ -18,6 +18,7 @@ package io.matthewnelson.kmp.process
 import io.matthewnelson.kmp.file.*
 import io.matthewnelson.kmp.process.internal.IsWindows
 import kotlinx.coroutines.test.runTest
+import kotlin.random.Random
 import kotlin.test.*
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -67,6 +68,25 @@ class ProcessUnitTest {
         }
 
         assertEquals(Signal.SIGKILL.code, exitCode)
+    }
+
+    @Test
+    fun givenStdinFile_whenIsDirectory_thenSpawnThrowsIOException() {
+        @OptIn(ExperimentalStdlibApi::class)
+        val d = Random.Default.nextBytes(8).toHexString().let { name ->
+            SysTempDir.resolve(name)
+        }.mkdirs2(mode = null, mustCreate = true)
+
+        try {
+            Process.Builder(command = if (IsAppleSimulator) "/bin/sleep" else "sleep")
+                .args("3")
+                .stdin(Stdio.File.of(d))
+                .useSpawn { fail("spawn should have failed...") }
+        } catch (_: IOException) {
+            // pass
+        } finally {
+            d.delete2()
+        }
     }
 
     @Test
