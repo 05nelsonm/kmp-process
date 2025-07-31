@@ -19,14 +19,14 @@ package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.ANDROID
 import io.matthewnelson.kmp.file.File
+import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.process.*
-import java.io.FileOutputStream
 import java.io.PrintStream
 import kotlin.concurrent.Volatile
 
 internal class JvmProcess private constructor(
     private val jProcess: java.lang.Process,
-    isStderrRedirectedToStdout: Boolean,
+    androidApi23Stdio: AndroidApi23Stdio?,
     command: String,
     args: List<String>,
     chdir: File?,
@@ -192,12 +192,9 @@ internal class JvmProcess private constructor(
             } catch (_: Throwable) {}
         }
 
-        ANDROID.SDK_INT?.let { sdkInt ->
-            if (sdkInt >= 24) return@let
+        if (androidApi23Stdio != null) {
 
-            // Android API 23 and below does not have redirect
-            // capabilities. Below is a supplemental implementation
-
+            @Throws(IOException::class)
             fun ReadStream.writeTo(oStream: WriteStream) {
                 val iStream = this
                 val buf = ByteArray(DEFAULT_BUFFER_SIZE)
@@ -211,11 +208,11 @@ internal class JvmProcess private constructor(
                 buf.fill(0)
             }
 
-            when (val s = stdio.stdin) {
-                is Stdio.File -> if (s.file != STDIO_NULL) {
+            when (stdio.stdin) {
+                is Stdio.File -> androidApi23Stdio.stdinFS?.let { stream ->
                     _stdinThread = Runnable {
                         try {
-                            s.file.inputStream().use { iStream ->
+                            stream.use { iStream ->
                                 jProcess.outputStream.use { oStream ->
                                     iStream.writeTo(oStream)
                                 }
@@ -226,43 +223,49 @@ internal class JvmProcess private constructor(
                 is Stdio.Inherit -> {
                     // TODO: Need to think about...
                 }
-                is Stdio.Pipe -> { /* do nothing */ }
+                is Stdio.Pipe -> { /* no-op */ }
             }
 
-            fun ReadStream.redirectTo(stdio: String, file: Stdio.File) {
+            fun ReadStream.redirectToFile(stdio: String, fileStream: WriteStream) {
                 Runnable {
                     try {
                         use { iStream ->
-                            FileOutputStream(file.file, file.append).use { oStream ->
+                            fileStream.use { oStream ->
                                 iStream.writeTo(oStream)
                             }
                         }
                     } catch (_: Throwable) {}
-                }.execute(stdio = stdio)
+                }.execute(stdio)
             }
 
-            fun ReadStream.redirectTo(stdio: String, oStream: PrintStream) {
+            fun ReadStream.redirectToConsole(stdio: String, oStream: PrintStream) {
                 Runnable {
                     try {
                         use { iStream ->
                             iStream.writeTo(oStream)
                         }
                     } catch (_: Throwable) {}
-                }.execute(stdio = stdio)
+                }.execute(stdio)
             }
 
-            when (val o = stdio.stdout) {
-                is Stdio.File -> jProcess.inputStream.redirectTo("stdout-redirect", o)
-                is Stdio.Inherit -> jProcess.inputStream.redirectTo("stdout-redirect", System.out)
-                is Stdio.Pipe -> { /* do nothing */ }
-            }
-
-            if (!isStderrRedirectedToStdout) {
-                when (val o = stdio.stderr) {
-                    is Stdio.File -> jProcess.errorStream.redirectTo("stderr-redirect", o)
-                    is Stdio.Inherit -> jProcess.errorStream.redirectTo("stderr-redirect", System.err)
-                    is Stdio.Pipe -> { /* do nothing */ }
+            when (stdio.stdout) {
+                is Stdio.File -> androidApi23Stdio.stdoutFS?.let { stream ->
+                    jProcess.inputStream.redirectToFile("stdout-redirect", stream)
                 }
+                is Stdio.Inherit -> {
+                    jProcess.inputStream.redirectToConsole("stdout-redirect", System.out)
+                }
+                is Stdio.Pipe -> { /* no-op */ }
+            }
+
+            when (stdio.stderr) {
+                is Stdio.File -> androidApi23Stdio.stderrFS?.let { stream ->
+                    jProcess.errorStream.redirectToFile("stderr-redirect", stream)
+                }
+                is Stdio.Inherit -> {
+                    jProcess.errorStream.redirectToConsole("stderr-redirect", System.err)
+                }
+                is Stdio.Pipe -> { /* no-op */ }
             }
         }
     }
@@ -272,7 +275,7 @@ internal class JvmProcess private constructor(
         @JvmSynthetic
         internal fun of(
             jProcess: java.lang.Process,
-            isStderrRedirectedToStdout: Boolean,
+            androidApi23Stdio: AndroidApi23Stdio?,
             command: String,
             args: List<String>,
             chdir: File?,
@@ -282,7 +285,7 @@ internal class JvmProcess private constructor(
             handler: ProcessException.Handler,
         ): JvmProcess = JvmProcess(
             jProcess,
-            isStderrRedirectedToStdout,
+            androidApi23Stdio,
             command,
             args,
             chdir,

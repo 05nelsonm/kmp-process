@@ -182,13 +182,6 @@ public sealed class Stdio private constructor() {
             return stdout.file.isCanonicallyEqualTo(stderr.file)
         }
 
-        @JvmSynthetic
-        internal fun iterator(): Iterator<Pair<String, Stdio>> = listOf(
-            "stdin" to stdin,
-            "stdout" to stdout,
-            "stderr" to stderr,
-        ).iterator()
-
         /** @suppress */
         override fun equals(other: Any?): Boolean {
             return  other is Config

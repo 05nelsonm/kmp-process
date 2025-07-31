@@ -19,8 +19,8 @@ package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.ANDROID
 import io.matthewnelson.kmp.file.File
-import io.matthewnelson.kmp.file.FileNotFoundException
 import io.matthewnelson.kmp.file.IOException
+import io.matthewnelson.kmp.file.wrapIOException
 import io.matthewnelson.kmp.process.*
 import java.lang.reflect.Method
 
@@ -71,54 +71,21 @@ internal actual class PlatformBuilder private actual constructor() {
     ): Process {
 
         val isStderrSameFileAsStdout = stdio.isStderrSameFileAsStdout()
-        jProcessBuilder.redirectErrorStream(isStderrSameFileAsStdout)
+        val android23Stdio = AndroidApi23Stdio.getOrNull(isStderrSameFileAsStdout, stdio)
+        jProcessBuilder.redirectErrorStream(/* redirectErrorStream = */ isStderrSameFileAsStdout)
 
         @Suppress("NewApi")
-        if (ANDROID.SDK_INT?.let { sdkInt -> sdkInt >= 24 } != false) {
-            // Only available on Android Runtime 24+ & Java 8+
+        if (android23Stdio == null) {
+            // Android API 24+ or Java 8+
             jProcessBuilder.redirectInput(stdio.stdin.toRedirect(isStdin = true))
             jProcessBuilder.redirectOutput(stdio.stdout.toRedirect(isStdin = false))
 
             if (isStderrSameFileAsStdout) {
                 // Always set to default in case this builder is being reused
-                jProcessBuilder.redirectError(ProcessBuilder.Redirect.PIPE)
+                ProcessBuilder.Redirect.PIPE
             } else {
-                jProcessBuilder.redirectError(stdio.stderr.toRedirect(isStdin = false))
-            }
-        } else {
-            // TODO: Open file streams to pass to JvmProcess
-            //
-            // Android 23 and below
-            //
-            // Check Stdio.Config for file existence (stdin) and
-            // read/write permissions.
-            //
-            // This is to mitigate any potential failures of the
-            // supplemental redirect implementation before Process
-            // creation. Not perfect by any means, but does the job.
-            stdio.iterator().forEach { (name, stdio) ->
-                if (stdio !is Stdio.File) return@forEach
-                if (stdio.file == STDIO_NULL) return@forEach
-
-                // no need to check twice
-                if (name == "stderr" && isStderrSameFileAsStdout) return@forEach
-
-                if (name == "stdin") {
-                    if (!stdio.file.exists()) {
-                        throw FileNotFoundException("stdin[${stdio.file}]")
-                    }
-                    if (!stdio.file.isFile || !stdio.file.canRead()) {
-                        throw IOException("stdin[${stdio.file}]: must be a readable file")
-                    }
-                } else {
-                    // Will be created when stream opens
-                    if (!stdio.file.exists()) return@forEach
-
-                    if (!stdio.file.isFile || !stdio.file.canWrite()) {
-                        throw IOException("$name[${stdio.file}]: must be a writable file")
-                    }
-                }
-            }
+                stdio.stderr.toRedirect(isStdin = false)
+            }.let { redirect -> jProcessBuilder.redirectError(redirect) }
         }
 
         val jCommands = ArrayList<String>(args.size + 1)
@@ -147,12 +114,20 @@ internal actual class PlatformBuilder private actual constructor() {
             }
         } ?: destroy
 
-        val isStderrRedirectedToStdout = jProcessBuilder.redirectErrorStream()
-        val jProcess = jProcessBuilder.start()
+        val jProcess = try {
+            jProcessBuilder.start()
+        } catch (t: Throwable) {
+            try {
+                android23Stdio?.close()
+            } catch (tt: Throwable) {
+                t.addSuppressed(tt)
+            }
+            throw t.wrapIOException()
+        }
 
         return JvmProcess.of(
             jProcess,
-            isStderrRedirectedToStdout,
+            android23Stdio,
             command,
             args,
             chdir,
