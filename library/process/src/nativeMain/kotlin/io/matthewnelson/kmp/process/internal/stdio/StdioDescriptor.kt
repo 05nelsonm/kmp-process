@@ -25,7 +25,12 @@ import io.matthewnelson.kmp.process.internal.Closeable
 import io.matthewnelson.kmp.process.internal.DoNotReferenceDirectly
 import io.matthewnelson.kmp.process.internal.STDIO_NULL
 import io.matthewnelson.kmp.process.internal.check
+import io.matthewnelson.kmp.process.internal.tryCloseSuppressed
 import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.UnsafeNumber
+import kotlinx.cinterop.alloc
+import kotlinx.cinterop.memScoped
+import kotlinx.cinterop.ptr
 import platform.posix.*
 import kotlin.concurrent.Volatile
 import kotlin.contracts.ExperimentalContracts
@@ -79,20 +84,37 @@ internal class StdioDescriptor private constructor(
             var mode = 0
             var flags = if (isStdin) O_RDONLY else O_WRONLY
 
-            if (!isStdin && append) {
-                flags = flags or O_APPEND
-            }
-
             flags = flags.orOCloExec()
 
             if (!isStdin && file != STDIO_NULL) {
                 // File may need to be created if it does not currently exist
                 mode = S_IRUSR or S_IWUSR or S_IRGRP or S_IWGRP or S_IROTH
-                flags = flags or O_CREAT
+                flags = flags or O_CREAT or (if (append) O_APPEND else O_TRUNC)
             }
 
             val fd = open(file.path, flags, mode).check()
-            return StdioDescriptor(fd, canRead = isStdin, canWrite = !isStdin)
+
+            val descriptor = StdioDescriptor(fd, canRead = isStdin, canWrite = !isStdin)
+
+            if (isStdin) {
+                // Need to verify that the file being opened using O_RDONLY is not a directory,
+                // otherwise ReadStream.read will fail.
+                @OptIn(ExperimentalForeignApi::class, UnsafeNumber::class)
+                memScoped {
+                    val stat = alloc<stat>()
+                    if (fstat(fd, stat.ptr) == -1) {
+                        val e = errnoToIOException(errno)
+                        throw descriptor.tryCloseSuppressed(e)
+                    }
+                    val isDirectory = (stat.st_mode.toInt() and S_IFMT) == S_IFDIR
+                    if (!isDirectory) return@memScoped
+
+                    val e = errnoToIOException(EISDIR, file)
+                    throw descriptor.tryCloseSuppressed(e)
+                }
+            }
+
+            return descriptor
         }
     }
 

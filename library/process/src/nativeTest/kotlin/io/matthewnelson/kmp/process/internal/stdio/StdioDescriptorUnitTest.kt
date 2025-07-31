@@ -28,6 +28,7 @@ import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.fail
 
 class StdioDescriptorUnitTest {
 
@@ -55,6 +56,26 @@ class StdioDescriptorUnitTest {
             assertFailsWith<IOException> { descriptor.withFd { it } }
         } finally {
             f.delete2()
+            d.delete2()
+        }
+    }
+
+    @Test
+    fun givenStdinFile_whenIsExistingDirectory_thenOpenFails() {
+        @OptIn(ExperimentalStdlibApi::class)
+        val d = Random.Default.nextBytes(8).toHexString().let { name ->
+            SysTempDir.resolve(name)
+        }.mkdirs2(mode = null, mustCreate = true)
+
+        var fd: StdioDescriptor? = null
+        try {
+            fd = Stdio.File.of(d).fdOpen(isStdin = true)
+            fail("fdOpen should have failed to open O_RDONLY file b/c it's a directory...")
+        } catch (e: IOException) {
+            // pass
+            assertEquals(true, e.message?.contains("EISDIR"))
+        } finally {
+            fd?.close()
             d.delete2()
         }
     }

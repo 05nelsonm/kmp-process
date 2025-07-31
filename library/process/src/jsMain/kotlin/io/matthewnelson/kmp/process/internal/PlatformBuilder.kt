@@ -217,7 +217,23 @@ internal actual class PlatformBuilder private actual constructor() {
             is Stdio.Pipe -> "pipe"
             is Stdio.File -> when {
                 file == STDIO_NULL -> "ignore"
-                isStdin -> fs_openSync(file.path, "r")
+                isStdin -> {
+                    val fd = fs_openSync(file.path, "r")
+
+                    try {
+                        val isDirectory = fs_fstatSync(fd).isDirectory() as Boolean
+                        if (isDirectory) throw FileSystemException(file, null, "EISDIR: Is a Directory")
+                    } catch (t: Throwable) {
+                        try {
+                            fs_closeSync(fd)
+                        } catch (tt: Throwable) {
+                            t.addSuppressed(tt)
+                        }
+                        throw t
+                    }
+
+                    fd
+                }
                 append -> fs_openSync(file.path, "a")
                 else -> fs_openSync(file.path, "w")
             }
@@ -235,7 +251,9 @@ internal actual class PlatformBuilder private actual constructor() {
 
                     try {
                         fs_closeSync(fd)
-                    } catch (_: Throwable) {}
+                    } catch (tt: Throwable) {
+                        t.addSuppressed(tt)
+                    }
                 }
 
                 throw t.toIOException()
