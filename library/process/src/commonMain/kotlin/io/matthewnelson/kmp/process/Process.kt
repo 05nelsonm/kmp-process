@@ -23,7 +23,6 @@ import io.matthewnelson.kmp.file.*
 import io.matthewnelson.kmp.process.ProcessException.Companion.CTX_DESTROY
 import io.matthewnelson.kmp.process.internal.PID
 import io.matthewnelson.kmp.process.internal.PlatformBuilder
-import io.matthewnelson.kmp.process.internal.SyntheticAccess
 import io.matthewnelson.kmp.process.internal.appendProcessInfo
 import io.matthewnelson.kmp.process.internal.commonWaitFor
 import kotlinx.coroutines.delay
@@ -95,7 +94,7 @@ public abstract class Process internal constructor(
     public val destroySignal: Signal,
 
     private val handler: ProcessException.Handler,
-    init: SyntheticAccess,
+    init: Any,
 ): OutputFeed.Handler(stdio) {
 
     /**
@@ -577,7 +576,7 @@ public abstract class Process internal constructor(
     protected companion object {
 
         @JvmSynthetic
-        internal val INIT = SyntheticAccess.new()
+        internal val INIT = Any()
     }
 
     init {
