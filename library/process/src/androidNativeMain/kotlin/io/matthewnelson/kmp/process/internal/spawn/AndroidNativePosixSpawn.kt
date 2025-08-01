@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING", "KotlinRedundantDiagnosticSuppress", "NOTHING_TO_INLINE", "FunctionName")
+@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING", "NOTHING_TO_INLINE", "FunctionName")
 @file:OptIn(DoNotReferenceDirectly::class)
 
 package io.matthewnelson.kmp.process.internal.spawn
@@ -134,6 +134,17 @@ internal actual class PosixSpawnScope internal constructor(
         }
 
         @DoNotReferenceDirectly(useInstead = "posixSpawnScopeOrNull")
+        internal val SPAWNATTR_SETSIGMASK by lazy {
+            val ptr = dlsym(RTLD_NEXT, "posix_spawnattr_setsigmask")
+                ?: return@lazy null
+
+            ptr as CPointer<CFunction<(
+                __attr: CValuesRef<posix_spawnattr_tVar>?,
+                __mask: CValuesRef<*>? /* CValuesRef<sigset_t>? */,
+            ) -> Int>>
+        }
+
+        @DoNotReferenceDirectly(useInstead = "posixSpawnScopeOrNull")
         internal val FILE_ACTIONS_INIT by lazy {
             val ptr = dlsym(RTLD_NEXT, "posix_spawn_file_actions_init")
                 ?: return@lazy null
@@ -225,6 +236,7 @@ internal actual inline fun <T: Any> posixSpawnScopeOrNull(
     val _posix_spawn_p = PosixSpawnScope.POSIX_SPAWN_P ?: return null
     val _posix_spawnattr_init = PosixSpawnScope.SPAWNATTR_INIT ?: return null
     val _posix_spawnattr_destroy = PosixSpawnScope.SPAWNATTR_DESTROY ?: return null
+    val _posix_spawnattr_setsigmask = PosixSpawnScope.SPAWNATTR_SETSIGMASK ?: return null
     val _posix_spawn_file_actions_init = PosixSpawnScope.FILE_ACTIONS_INIT ?: return null
     val _posix_spawn_file_actions_destroy = PosixSpawnScope.FILE_ACTIONS_DESTROY ?: return null
     val _posix_spawn_file_actions_adddup2 = PosixSpawnScope.FILE_ACTIONS_ADDDUP2 ?: return null
@@ -235,6 +247,11 @@ internal actual inline fun <T: Any> posixSpawnScopeOrNull(
             return@memScoped null
         }
         defer { _posix_spawnattr_destroy.invoke(attrs.ptr) }
+
+        val ret = sigsetInitEmpty { sigset ->
+            if (_posix_spawnattr_setsigmask(attrs.ptr, sigset) != 0) -1 else 0
+        }
+        if (ret == -1) return@memScoped null
 
         val fileActions = alloc<posix_spawn_file_actions_tVar>()
         if (_posix_spawn_file_actions_init.invoke(fileActions.ptr) != 0) {
@@ -253,3 +270,7 @@ internal actual inline fun <T: Any> posixSpawnScopeOrNull(
         block(scope)
     }
 }
+
+// Returns -1 on sigemptyset error, otherwise action result.
+@OptIn(ExperimentalForeignApi::class)
+internal expect inline fun MemScope.sigsetInitEmpty(action: (CValuesRef<*>) -> Int): Int

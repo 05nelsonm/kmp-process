@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING", "KotlinRedundantDiagnosticSuppress", "NOTHING_TO_INLINE", "FunctionName")
+@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING", "NOTHING_TO_INLINE", "FunctionName")
 @file:OptIn(DoNotReferenceDirectly::class)
 
 package io.matthewnelson.kmp.process.internal.spawn
@@ -28,8 +28,12 @@ import kotlinx.cinterop.CValuesRef
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.MemScope
 import kotlinx.cinterop.NativePointed
+import kotlinx.cinterop.alloc
 import kotlinx.cinterop.memScoped
+import kotlinx.cinterop.ptr
 import platform.posix.pid_tVar
+import platform.posix.sigemptyset
+import platform.posix.sigset_tVar
 
 // macOS
 @OptIn(ExperimentalForeignApi::class)
@@ -78,6 +82,11 @@ internal actual inline fun <T: Any> posixSpawnScopeOrNull(
     block: PosixSpawnScope.() -> T,
 ): T? = memScoped {
     val attrs = posix_spawnattr_init() ?: return@memScoped null
+
+    val sigset = alloc<sigset_tVar>()
+    if (sigemptyset(sigset.ptr) == -1) return@memScoped null
+    if (posix_spawnattr_setsigmask(attrs, sigset.ptr)!= 0) return@memScoped null
+
     val fileActions = posix_spawn_file_actions_init() ?: return@memScoped null
     val scope = PosixSpawnScope(attrs, fileActions, this)
     block(scope)

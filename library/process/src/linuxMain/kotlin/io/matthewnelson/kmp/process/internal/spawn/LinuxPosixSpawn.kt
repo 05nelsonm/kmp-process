@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING", "KotlinRedundantDiagnosticSuppress", "NOTHING_TO_INLINE", "FunctionName")
+@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING", "NOTHING_TO_INLINE", "FunctionName")
 @file:OptIn(DoNotReferenceDirectly::class)
 
 package io.matthewnelson.kmp.process.internal.spawn
@@ -43,10 +43,13 @@ import platform.linux.posix_spawn_file_actions_init
 import platform.linux.posix_spawn_file_actions_t
 import platform.linux.posix_spawnattr_destroy
 import platform.linux.posix_spawnattr_init
+import platform.linux.posix_spawnattr_setsigmask
 import platform.linux.posix_spawnattr_t
 import platform.linux.posix_spawnp
 import platform.posix.dlsym
 import platform.posix.pid_tVar
+import platform.posix.sigemptyset
+import platform.posix.sigset_t
 
 // linux
 @OptIn(ExperimentalForeignApi::class)
@@ -126,6 +129,10 @@ internal actual inline fun <T: Any> posixSpawnScopeOrNull(
             return@memScoped null
         }
         defer { posix_spawnattr_destroy(attrs.ptr) }
+
+        val sigset = alloc<sigset_t>()
+        if (sigemptyset(sigset.ptr) == -1) return null
+        if (posix_spawnattr_setsigmask(attrs.ptr, sigset.ptr) != 0) return null
 
         val fileActions = alloc<posix_spawn_file_actions_t>()
         if (posix_spawn_file_actions_init(fileActions.ptr) != 0) {

@@ -13,8 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING", "NOTHING_TO_INLINE", "FunctionName")
-
 package io.matthewnelson.kmp.process.internal.spawn
 
 import kotlinx.cinterop.CValuesRef
@@ -22,23 +20,12 @@ import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.MemScope
 import kotlinx.cinterop.alloc
 import kotlinx.cinterop.ptr
+import platform.posix.sigemptyset
+import platform.posix.sigset_t
 
 @OptIn(ExperimentalForeignApi::class)
-internal inline fun MemScope.posix_spawnattr_init(): CValuesRef<posix_spawnattr_tVar>? {
-    val attrs = alloc<posix_spawnattr_tVar>()
-    if (posix_spawnattr_init(attrs.ptr) != 0) {
-        return null
-    }
-    defer { posix_spawnattr_destroy(attrs.ptr) }
-    return attrs.ptr
-}
-
-@OptIn(ExperimentalForeignApi::class)
-internal inline fun MemScope.posix_spawn_file_actions_init(): CValuesRef<posix_spawn_file_actions_tVar>? {
-    val fileActions = alloc<posix_spawn_file_actions_tVar>()
-    if (posix_spawn_file_actions_init(fileActions.ptr) != 0) {
-        return null
-    }
-    defer { posix_spawn_file_actions_destroy(fileActions.ptr) }
-    return fileActions.ptr
+internal actual inline fun MemScope.sigsetInitEmpty(action: (CValuesRef<*>) -> Int): Int {
+    val sigset = alloc<sigset_t>()
+    if (sigemptyset(sigset.ptr) == -1) return -1
+    return action(sigset.ptr)
 }
