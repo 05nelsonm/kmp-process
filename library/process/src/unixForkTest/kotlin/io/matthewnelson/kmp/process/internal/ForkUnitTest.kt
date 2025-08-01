@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
+@file:Suppress("RemoveRedundantCallsOfConversionMethods")
+
 package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.FileNotFoundException
@@ -21,6 +23,7 @@ import io.matthewnelson.kmp.file.SysDirSep
 import io.matthewnelson.kmp.file.SysTempDir
 import io.matthewnelson.kmp.file.canonicalPath2
 import io.matthewnelson.kmp.file.delete2
+import io.matthewnelson.kmp.file.errnoToIOException
 import io.matthewnelson.kmp.file.exists2
 import io.matthewnelson.kmp.file.mkdirs2
 import io.matthewnelson.kmp.file.name
@@ -32,6 +35,20 @@ import io.matthewnelson.kmp.file.toFile
 import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.changeDir
 import io.matthewnelson.kmp.process.usePosixSpawn
+import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.UnsafeNumber
+import kotlinx.cinterop.addressOf
+import kotlinx.cinterop.convert
+import kotlinx.cinterop.usePinned
+import platform.posix.EAGAIN
+import platform.posix.EWOULDBLOCK
+import platform.posix.F_SETFL
+import platform.posix.O_NONBLOCK
+import platform.posix.close
+import platform.posix.errno
+import platform.posix.fcntl
+import platform.posix.pipe
+import platform.posix.read
 import kotlin.random.Random
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -43,6 +60,7 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlin.test.fail
 
+@OptIn(ExperimentalForeignApi::class, UnsafeNumber::class)
 class ForkUnitTest {
 
     private companion object {
@@ -81,6 +99,59 @@ class ForkUnitTest {
         println(p)
         assertEquals(42, exitCode)
         assertEquals(expected, output.firstOrNull())
+    }
+
+    @Test
+    fun givenProcess_whenSpawned_thenClosesDescriptors() {
+        val fds = IntArray(2) { -1 }
+        fds.usePinned { pinned ->
+            pipe(pinned.addressOf(0)).check()
+        }
+
+        var p: Process? = null
+        try {
+            fcntl(fds[0], F_SETFL, O_NONBLOCK).check()
+
+            // Verify that it would block
+            val buf = ByteArray(1)
+            var ret = buf.usePinned { pinned ->
+                read(fds[0], pinned.addressOf(0), buf.size.convert()).toInt()
+            }
+            assertEquals(-1, ret)
+            when (errno) {
+                EWOULDBLOCK, EAGAIN -> {} // pass
+                else -> throw errnoToIOException(errno)
+            }
+
+            p = Process.Builder(command = "sh")
+                .usePosixSpawn(use = false)
+                .args("-c", "sleep 3; exit 42")
+                .spawn()
+
+            close(fds[1]).check()
+            fds[1] = -1
+
+            ret = buf.usePinned { pinned ->
+                read(fds[0], pinned.addressOf(0), buf.size.convert()).toInt()
+            }
+
+            // If our test pipe's write end was leaked to the ChildProcess, read
+            // would return -1 and set errno to EAGAIN.
+            //
+            // This confirms that after the fork call, the ChildProcess looped through
+            // all descriptors and marked them with FD_CLOEXEC (if they weren't already).
+            if (ret != 0) throw errnoToIOException(errno)
+
+            // Verify that read was performed while the process is still alive. Otherwise,
+            // this test would succeed but be a false positive.
+            assertTrue(p.isAlive)
+        } finally {
+            fds.forEach { fd ->
+                if (fd == -1) return@forEach
+                close(fd)
+            }
+            p?.destroy()
+        }
     }
 
     @Test

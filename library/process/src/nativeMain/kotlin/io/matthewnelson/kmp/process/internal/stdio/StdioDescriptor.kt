@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("KotlinRedundantDiagnosticSuppress")
+@file:Suppress("KotlinRedundantDiagnosticSuppress", "VariableInitializerIsRedundant")
 
 package io.matthewnelson.kmp.process.internal.stdio
 
@@ -24,7 +24,6 @@ import io.matthewnelson.kmp.process.Stdio
 import io.matthewnelson.kmp.process.internal.Closeable
 import io.matthewnelson.kmp.process.internal.DoNotReferenceDirectly
 import io.matthewnelson.kmp.process.internal.STDIO_NULL
-import io.matthewnelson.kmp.process.internal.check
 import io.matthewnelson.kmp.process.internal.tryCloseSuppressed
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.UnsafeNumber
@@ -80,6 +79,7 @@ internal class StdioDescriptor private constructor(
         internal val STDERR get() = StdioDescriptor(STDERR_FILENO, canRead = true, canWrite = false)
 
         @Throws(IOException::class)
+        @OptIn(ExperimentalForeignApi::class, UnsafeNumber::class)
         internal fun Stdio.File.fdOpen(isStdin: Boolean): StdioDescriptor {
             var mode = 0
             var flags = if (isStdin) O_RDONLY else O_WRONLY
@@ -92,14 +92,19 @@ internal class StdioDescriptor private constructor(
                 flags = flags or O_CREAT or (if (append) O_APPEND else O_TRUNC)
             }
 
-            val fd = open(file.path, flags, mode).check()
+            var fd = -1
+            while (true) {
+                fd = open(file.path, flags, mode)
+                if (fd != -1) break
+                if (errno == EINTR) continue
+                throw errnoToIOException(errno, file)
+            }
 
             val descriptor = StdioDescriptor(fd, canRead = isStdin, canWrite = !isStdin)
 
             if (isStdin) {
                 // Need to verify that the file being opened using O_RDONLY is not a directory,
                 // otherwise ReadStream.read will fail.
-                @OptIn(ExperimentalForeignApi::class, UnsafeNumber::class)
                 memScoped {
                     val stat = alloc<stat>()
                     if (fstat(fd, stat.ptr) == -1) {

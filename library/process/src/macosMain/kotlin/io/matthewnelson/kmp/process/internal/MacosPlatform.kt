@@ -19,31 +19,14 @@ package io.matthewnelson.kmp.process.internal
 
 import kotlinx.cinterop.CPointer
 import kotlinx.cinterop.ExperimentalForeignApi
-import kotlinx.cinterop.get
-import kotlinx.cinterop.toKString
 import platform.posix.EINTR
 import platform.posix.closedir
 import platform.posix.dirent
-import platform.posix.environ
 import platform.posix.errno
 import platform.posix.fdopendir
 import platform.posix.readdir
 
-@OptIn(ExperimentalForeignApi::class)
-internal actual inline fun PlatformBuilder.parentEnvironment(): MutableMap<String, String> {
-    val map = LinkedHashMap<String, String>(10, 1.0F)
-    val env = environ ?: return map
-    var i = 0
-    while (true) {
-        val arg = env[i++]?.toKString() ?: break
-        val key = arg.substringBefore('=')
-        val value = arg.substringAfter('=')
-        map[key] = value
-    }
-    return map
-}
-
-internal actual inline val ChildProcess.FD_DIR: String get() = "/proc/self/fd"
+internal actual inline val ChildProcess.FD_DIR: String get() = "/dev/fd"
 
 /**
  * [action] return [Unit] to break from loop, or `null` to continue.

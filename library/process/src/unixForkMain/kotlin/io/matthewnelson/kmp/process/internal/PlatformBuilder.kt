@@ -20,6 +20,7 @@ package io.matthewnelson.kmp.process.internal
 import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.file.FileNotFoundException
 import io.matthewnelson.kmp.file.IOException
+import io.matthewnelson.kmp.file.errnoToIOException
 import io.matthewnelson.kmp.process.Output
 import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.ProcessException
@@ -30,11 +31,9 @@ import io.matthewnelson.kmp.process.internal.stdio.StdioDescriptor.Pipe.Companio
 import io.matthewnelson.kmp.process.internal.stdio.StdioHandle.Companion.openHandle
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.UnsafeNumber
-import kotlinx.cinterop.toKString
 import org.kotlincrypto.bitops.endian.Endian.Big.beIntAt
 import platform.posix.ENOENT
 import platform.posix.fork
-import platform.posix.strerror
 
 // unixForkMain
 internal actual class PlatformBuilder private actual constructor() {
@@ -145,7 +144,7 @@ internal actual class PlatformBuilder private actual constructor() {
             buf.size -> {
                 val type = when (buf[4]) {
                     ChildProcess.ERR_DUP2 -> "dup2"
-                    ChildProcess.ERR_CLOEXEC -> "cloexec"
+                    ChildProcess.ERR_FD_CLOEXEC -> "fd_cloexec"
                     ChildProcess.ERR_CHDIR -> "chdir"
                     ChildProcess.ERR_EXEC -> "exec"
                     else -> null
@@ -155,9 +154,8 @@ internal actual class PlatformBuilder private actual constructor() {
                     IOException("CLOEXEC pipe validation check failure")
                 } else {
                     val errno = buf.beIntAt(0)
-                    @OptIn(ExperimentalForeignApi::class)
-                    var msg = strerror(errno)?.toKString() ?: "errno: $errno"
-                    msg = "Child process $type failure. $msg"
+                    var msg = "Child process $type failure."
+                    errnoToIOException(errno).message?.let { msg += " $it" }
                     if (errno == ENOENT) {
                         FileNotFoundException(msg)
                     } else {
