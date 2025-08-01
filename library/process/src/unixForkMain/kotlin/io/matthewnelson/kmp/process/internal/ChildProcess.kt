@@ -170,6 +170,12 @@ internal constructor(
     }
 
     init {
+        if (resetSignalMasks() == -1) {
+            onError(errno, ERR_SIG_MASK)
+        }
+    }
+
+    init {
         val errno = memScoped {
             val argv = args.toArgv(command = command, scope = this)
             val envp = env.toEnvp(scope = this)
@@ -214,7 +220,8 @@ internal constructor(
         internal const val ERR_DUP2: Byte       = 1
         internal const val ERR_FD_CLOEXEC: Byte = 2
         internal const val ERR_CHDIR: Byte      = 3
-        internal const val ERR_EXEC: Byte       = 4
+        internal const val ERR_SIG_MASK: Byte   = 4
+        internal const val ERR_EXEC: Byte       = 5
 
         internal const val EXIT_CODE: Int       = 127
     }
@@ -229,3 +236,6 @@ internal expect inline val ChildProcess.FD_DIR: String
  * */
 @OptIn(ExperimentalForeignApi::class)
 internal expect inline fun ChildProcess.parseDir(fdDir: Int, action: (CPointer<dirent>) -> Unit?): Int?
+
+@OptIn(ExperimentalForeignApi::class)
+internal expect inline fun ChildProcess.resetSignalMasks(): Int
