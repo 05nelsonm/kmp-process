@@ -19,12 +19,17 @@ package io.matthewnelson.kmp.process.internal
 
 import kotlinx.cinterop.CPointer
 import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.cValue
 import platform.posix.EINTR
+import platform.posix.SIG_SETMASK
 import platform.posix.closedir
 import platform.posix.dirent
 import platform.posix.errno
 import platform.posix.fdopendir
 import platform.posix.readdir
+import platform.posix.sigemptyset
+import platform.posix.sigprocmask
+import platform.posix.sigset_tVar
 
 internal actual inline val ChildProcess.FD_DIR: String get() = "/dev/fd"
 
@@ -49,4 +54,12 @@ internal actual inline fun ChildProcess.parseDir(fdDir: Int, action: (CPointer<d
     }
 
     return null
+}
+
+@OptIn(ExperimentalForeignApi::class)
+internal actual inline fun ChildProcess.resetSignalMasks(): Int {
+    val sigset = cValue<sigset_tVar>()
+    if (sigemptyset(sigset) == -1) return -1
+    if (sigprocmask(SIG_SETMASK, sigset, null) == -1) return -1
+    return 0
 }

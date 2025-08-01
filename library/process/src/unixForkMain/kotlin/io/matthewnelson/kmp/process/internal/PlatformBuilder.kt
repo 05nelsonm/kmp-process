@@ -146,6 +146,7 @@ internal actual class PlatformBuilder private actual constructor() {
                     ChildProcess.ERR_DUP2 -> "dup2"
                     ChildProcess.ERR_FD_CLOEXEC -> "fd_cloexec"
                     ChildProcess.ERR_CHDIR -> "chdir"
+                    ChildProcess.ERR_SIG_MASK -> "sigmask"
                     ChildProcess.ERR_EXEC -> "exec"
                     else -> null
                 }

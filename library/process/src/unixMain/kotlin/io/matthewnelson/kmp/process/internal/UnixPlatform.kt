@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("KotlinRedundantDiagnosticSuppress", "UnnecessaryOptInAnnotation")
+@file:Suppress("NOTHING_TO_INLINE")
 
 package io.matthewnelson.kmp.process.internal
 
@@ -41,7 +41,6 @@ import kotlin.contracts.contract
 
 internal actual val STDIO_NULL: File = "/dev/null".toFile()
 
-@Suppress("NOTHING_TO_INLINE")
 internal expect inline fun PlatformBuilder.parentEnvironment(): MutableMap<String, String>
 
 /**

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("KotlinRedundantDiagnosticSuppress")
+@file:Suppress("NOTHING_TO_INLINE")
 
 package io.matthewnelson.kmp.process.internal
 
@@ -39,7 +39,6 @@ internal actual val IsDesktop: Boolean get() = try {
 
 /** @suppress */
 @InternalProcessApi
-@Suppress("NOTHING_TO_INLINE")
 public inline fun <T: events_EventEmitter> T.onError(
     noinline block: (err: dynamic) -> Unit,
 ): T {
@@ -49,7 +48,6 @@ public inline fun <T: events_EventEmitter> T.onError(
 
 /** @suppress */
 @InternalProcessApi
-@Suppress("NOTHING_TO_INLINE")
 public inline fun <T: events_EventEmitter> T.onceError(
     noinline block: (err: dynamic) -> Unit,
 ): T {
@@ -57,12 +55,10 @@ public inline fun <T: events_EventEmitter> T.onceError(
     return this
 }
 
-@Suppress("NOTHING_TO_INLINE")
 internal inline fun stream_Readable.onClose(
     noinline block: () -> Unit,
 ): stream_Readable = on("close", block)
 
-@Suppress("NOTHING_TO_INLINE")
 internal inline fun stream_Readable.onData(
     noinline block: (data: ReadBuffer) -> Unit,
 ): stream_Readable {

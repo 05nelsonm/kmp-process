@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("ClassName", "FunctionName")
+@file:Suppress("ClassName", "FunctionName", "UNUSED")
 @file:JsModule("child_process")
 @file:JsNonModule
 
