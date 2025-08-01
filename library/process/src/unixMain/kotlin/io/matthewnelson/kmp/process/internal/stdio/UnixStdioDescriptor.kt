@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("KotlinRedundantDiagnosticSuppress", "NOTHING_TO_INLINE")
+@file:Suppress("NOTHING_TO_INLINE")
 
 package io.matthewnelson.kmp.process.internal.stdio
 
@@ -75,7 +75,6 @@ internal actual fun ((isPipe1: Boolean, fd0: Int, fd1: Int) -> StdioDescriptor.P
 }
 
 // returns 0 for success, -1 for failure
-@Suppress("NOTHING_TO_INLINE")
 @OptIn(ExperimentalForeignApi::class)
 internal expect inline fun CPointer<IntVar>.pipe2(
     flags: Int,

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("KotlinRedundantDiagnosticSuppress", "VariableInitializerIsRedundant")
+@file:Suppress("NOTHING_TO_INLINE", "VariableInitializerIsRedundant")
 
 package io.matthewnelson.kmp.process.internal.stdio
 
@@ -163,7 +163,6 @@ internal class StdioDescriptor private constructor(
     }
 }
 
-@Suppress("NOTHING_TO_INLINE")
 internal expect inline fun Int.orOCloExec(): Int
 
 @Throws(IOException::class)

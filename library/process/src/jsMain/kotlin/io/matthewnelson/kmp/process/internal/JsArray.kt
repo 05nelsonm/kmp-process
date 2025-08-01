@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("KotlinRedundantDiagnosticSuppress")
+@file:Suppress("NOTHING_TO_INLINE", "UNUSED")
 
 package io.matthewnelson.kmp.process.internal
 
@@ -33,7 +33,6 @@ internal open external class Uint8Array(length: Int): ArrayBufferView {
     override val byteLength: Int
 }
 
-@Suppress("NOTHING_TO_INLINE")
 @OptIn(ExperimentalContracts::class)
 // @Throws(IllegalArgumentException::class, IndexOutOfBoundsException::class)
 internal inline fun <T: ArrayBufferView> ByteArray.toJsArray(
@@ -58,7 +57,6 @@ internal inline fun <T: ArrayBufferView> ByteArray.toJsArray(
     return array
 }
 
-@Suppress("NOTHING_TO_INLINE")
 internal inline fun ArrayBufferView.fill() {
     val len = byteLength
     if (len == 0) return

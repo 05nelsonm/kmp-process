@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
+@file:Suppress("NOTHING_TO_INLINE")
+
 package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.IOException
@@ -24,7 +26,6 @@ internal interface Closeable {
     fun close()
 }
 
-@Suppress("NOTHING_TO_INLINE", "KotlinRedundantDiagnosticSuppress")
 internal inline fun <T: Throwable> Closeable.tryCloseSuppressed(throwable: T): T {
     try {
         close()

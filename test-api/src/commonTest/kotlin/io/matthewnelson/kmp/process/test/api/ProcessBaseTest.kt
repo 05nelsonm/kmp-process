@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("PropertyName")
+@file:Suppress("DEPRECATION", "PropertyName", "UnusedReceiverParameter")
 
 package io.matthewnelson.kmp.process.test.api
 
@@ -33,7 +33,6 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.TimeSource
 
-@Suppress("DEPRECATION", "UnusedReceiverParameter")
 abstract class ProcessBaseTest {
 
     protected open val IsAndroidInstrumentTest: Boolean = false

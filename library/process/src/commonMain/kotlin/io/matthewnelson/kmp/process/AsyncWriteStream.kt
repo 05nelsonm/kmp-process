@@ -22,7 +22,7 @@ import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * A stream to write to. On Jvm & Native, blocking APIs are
- * available via [io.matthewnelson.kmp.process.BufferedWriteStream].
+ * available via `io.matthewnelson.kmp.process.BufferedWriteStream`.
  *
  * On Jvm & Native, all Async functions utilize Dispatchers.IO
  * under the hood when calling BufferedWriteStream functions.

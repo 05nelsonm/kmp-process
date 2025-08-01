@@ -15,6 +15,7 @@
  **/
 package io.matthewnelson.kmp.process.test.api
 
+import io.matthewnelson.kmp.file.exists2
 import io.matthewnelson.kmp.file.toFile
 import io.matthewnelson.kmp.tor.common.api.GeoipFiles
 import io.matthewnelson.kmp.tor.common.api.ResourceLoader
@@ -34,8 +35,8 @@ private class IosTestLoader private constructor(): ResourceLoader.Tor.Exec() {
                 check(IOS_TOR_GEOIP6.isNotBlank()) { "geoip6 file does not exist" }
 
                 val files = GeoipFiles(IOS_TOR_GEOIP.toFile(), IOS_TOR_GEOIP6.toFile())
-                check(files.geoip.exists()) { "geoip file does not exist" }
-                check(files.geoip6.exists()) { "geoip6 file does not exist" }
+                check(files.geoip.exists2()) { "geoip file does not exist" }
+                check(files.geoip6.exists2()) { "geoip6 file does not exist" }
 
                 files
             },
@@ -43,7 +44,7 @@ private class IosTestLoader private constructor(): ResourceLoader.Tor.Exec() {
                 check(IOS_TOR_EXECUTABLE.isNotBlank()) { "tor executable file does not exist" }
 
                 val file = IOS_TOR_EXECUTABLE.toFile()
-                check(file.exists()) { "tor executable file does not exist" }
+                check(file.exists2()) { "tor executable file does not exist" }
 
                 file
             },

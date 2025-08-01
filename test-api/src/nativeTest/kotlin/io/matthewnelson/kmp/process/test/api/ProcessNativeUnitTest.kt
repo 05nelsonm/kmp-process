@@ -17,6 +17,7 @@ package io.matthewnelson.kmp.process.test.api
 
 import kotlin.experimental.ExperimentalNativeApi
 
+@Suppress("UNUSED")
 class ProcessNativeUnitTest: ProcessBaseTest() {
 
     @OptIn(ExperimentalNativeApi::class)

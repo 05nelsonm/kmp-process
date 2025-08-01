@@ -15,4 +15,5 @@
  **/
 package io.matthewnelson.kmp.process.test.api
 
+@Suppress("UNUSED")
 class ProcessAndroidUnitTest: ProcessBaseTest()

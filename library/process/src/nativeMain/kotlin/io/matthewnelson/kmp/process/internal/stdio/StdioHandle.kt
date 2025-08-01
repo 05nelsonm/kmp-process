@@ -13,8 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-
-@file:Suppress("KotlinRedundantDiagnosticSuppress")
+@file:Suppress("NOTHING_TO_INLINE")
 
 package io.matthewnelson.kmp.process.internal.stdio
 
@@ -204,7 +203,6 @@ internal class StdioHandle private constructor(
         }
     }
 
-    @Suppress("NOTHING_TO_INLINE")
     @Throws(IOException::class)
     private inline fun Closeable.dup2FD(isStdin: Boolean): Int = when (this) {
         is StdioDescriptor -> withFd { it }

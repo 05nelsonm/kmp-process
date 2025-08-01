@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("KotlinRedundantDiagnosticSuppress", "RemoveRedundantQualifierName")
+@file:Suppress("NOTHING_TO_INLINE", "RemoveRedundantQualifierName")
 
 package io.matthewnelson.kmp.process
 
@@ -234,7 +234,6 @@ public fun interface OutputFeed {
         /** @suppress */
         protected abstract fun startStderr()
 
-        @Suppress("NOTHING_TO_INLINE")
         @OptIn(ExperimentalContracts::class)
         private inline fun SynchronizedSet<OutputFeed>.addFeeds(
             feeds: Array<out OutputFeed>,
@@ -267,10 +266,9 @@ public fun interface OutputFeed {
 
         private abstract inner class RealWaiter: OutputFeed.Waiter(This, isDestroyed)
 
-        @Suppress("NOTHING_TO_INLINE", "PrivatePropertyName")
+        @Suppress("PrivatePropertyName")
         private inline val This: Process get() = this as Process
 
-        @Suppress("NOTHING_TO_INLINE")
         @OptIn(ExperimentalContracts::class)
         private inline fun SynchronizedSet<OutputFeed>.dispatch(
             line: String?,
