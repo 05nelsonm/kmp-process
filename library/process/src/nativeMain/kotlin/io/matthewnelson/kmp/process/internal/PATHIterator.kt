@@ -17,6 +17,7 @@
 
 package io.matthewnelson.kmp.process.internal
 
+import io.matthewnelson.kmp.file.SysPathSep
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.toKString
 import platform.posix._PATH_DEFPATH
@@ -27,7 +28,7 @@ internal class PATHIterator(internal val PATH: String): Iterator<String> {
     internal constructor(): this(getenv("PATH")?.toKString()?.ifBlank { null } ?: _PATH_DEFPATH)
 
     private var i: Int = 0
-    private var iNext: Int = PATH.indexOf(SEP, startIndex = i)
+    private var iNext: Int = PATH.indexOf(SysPathSep, startIndex = i)
     init { if (iNext == -1) iNext = PATH.length }
 
     override fun hasNext(): Boolean = iNext != -1
@@ -39,15 +40,11 @@ internal class PATHIterator(internal val PATH: String): Iterator<String> {
         if (i > PATH.length) {
             iNext = -1
         } else {
-            iNext = PATH.indexOf(SEP, startIndex = i)
+            iNext = PATH.indexOf(SysPathSep, startIndex = i)
             if (iNext == -1) {
                 iNext = PATH.length
             }
         }
         return n
-    }
-
-    internal companion object {
-        internal val SEP: Char = if (IsWindows) ';' else ':'
     }
 }

@@ -13,14 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("KotlinRedundantDiagnosticSuppress", "NOTHING_TO_INLINE")
+@file:Suppress("NOTHING_TO_INLINE")
 
 package io.matthewnelson.kmp.process.internal
 
+import kotlinx.cinterop.CPointer
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.get
 import kotlinx.cinterop.toKString
+import platform.posix.EINTR
 import platform.posix.__environ
+import platform.posix.closedir
+import platform.posix.dirent
+import platform.posix.errno
+import platform.posix.fdopendir
+import platform.posix.readdir
 
 @OptIn(ExperimentalForeignApi::class)
 internal actual inline fun PlatformBuilder.parentEnvironment(): MutableMap<String, String> {
@@ -34,4 +41,29 @@ internal actual inline fun PlatformBuilder.parentEnvironment(): MutableMap<Strin
         map[key] = value
     }
     return map
+}
+
+internal actual inline val ChildProcess.FD_DIR: String get() = "/proc/self/fd"
+
+/**
+ * [action] return [Unit] to break from loop, or `null` to continue.
+ *
+ * @return [errno] if `fdopendir` fails, otherwise `null`.
+ * */
+@OptIn(ExperimentalForeignApi::class)
+internal actual inline fun ChildProcess.parseDir(fdDir: Int, action: (CPointer<dirent>) -> Unit?): Int? {
+    val dir = fdopendir(fdDir) ?: return errno
+
+    var entry: CPointer<dirent>? = readdir(dir)
+    while (entry != null) {
+        if (action(entry) != null) break
+        entry = readdir(dir)
+    }
+
+    while (true) {
+        if (closedir(dir) == -1 && errno == EINTR) continue
+        break
+    }
+
+    return null
 }

@@ -13,13 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("KotlinRedundantDiagnosticSuppress")
+@file:Suppress("NOTHING_TO_INLINE")
 
 package io.matthewnelson.kmp.process.internal
 
 import platform.Foundation.NSProcessInfo
 
-@Suppress("NOTHING_TO_INLINE")
 internal actual inline fun PlatformBuilder.parentEnvironment(): MutableMap<String, String> {
     // NSDictionary<NSString *, NSString *>
     val env = NSProcessInfo.processInfo.environment

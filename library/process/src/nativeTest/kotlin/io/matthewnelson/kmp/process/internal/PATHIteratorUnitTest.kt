@@ -15,7 +15,7 @@
  **/
 package io.matthewnelson.kmp.process.internal
 
-import io.matthewnelson.kmp.process.internal.PATHIterator.Companion.SEP
+import io.matthewnelson.kmp.file.SysPathSep
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -26,7 +26,7 @@ class PATHIteratorUnitTest {
 
     @Test
     fun givenPath_whenSeparatorBetween_thenIteratesFor2AsExpected() {
-        val i = PATHIterator(PATH = "/usr/bin${SEP}/something/else")
+        val i = PATHIterator(PATH = "/usr/bin${SysPathSep}/something/else")
         assertTrue(i.hasNext())
         assertEquals("/usr/bin", i.next())
         assertTrue(i.hasNext())
@@ -37,7 +37,7 @@ class PATHIteratorUnitTest {
 
     @Test
     fun givenPath_whenSeparatorStart_thenIteratesFor2AsExpected() {
-        val i = PATHIterator(PATH = "${SEP}/usr/bin")
+        val i = PATHIterator(PATH = "${SysPathSep}/usr/bin")
         assertTrue(i.hasNext())
         assertEquals("", i.next())
         assertTrue(i.hasNext())
@@ -47,7 +47,7 @@ class PATHIteratorUnitTest {
 
     @Test
     fun givenPath_whenSeparatorEnd_thenIteratesFor2AsExpected() {
-        val i = PATHIterator(PATH = "/usr/bin${SEP}")
+        val i = PATHIterator(PATH = "/usr/bin${SysPathSep}")
         assertTrue(i.hasNext())
         assertEquals("/usr/bin", i.next())
         assertTrue(i.hasNext())
@@ -65,7 +65,7 @@ class PATHIteratorUnitTest {
 
     @Test
     fun givenPath_whenSEP_thenHas2EmptyValues() {
-        val i = PATHIterator(PATH = "$SEP")
+        val i = PATHIterator(PATH = "$SysPathSep")
         assertTrue(i.hasNext())
         assertEquals("", i.next())
         assertTrue(i.hasNext())
