@@ -73,8 +73,11 @@ kmpConfiguration {
         js {
             sourceSetTest {
                 dependencies {
-                    // TODO: REMOVE kmp-tor-resource (SNAPSHOT)
-                    implementation(npm("kmp-tor.resource-exec-tor.all", libs.versions.kmp.tor.resource.get() + ".0"))
+                    var v = libs.versions.kmp.tor.resource.get()
+                    if (v.endsWith("-SNAPSHOT")) {
+                        v += libs.versions.kmp.tor.resourceNpmSNAPSHOT.get()
+                    }
+                    implementation(npm("kmp-tor.resource-exec-tor.all", v))
                 }
             }
         }
