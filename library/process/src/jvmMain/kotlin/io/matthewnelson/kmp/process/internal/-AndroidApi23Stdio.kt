@@ -20,9 +20,9 @@ package io.matthewnelson.kmp.process.internal
 import io.matthewnelson.kmp.file.ANDROID
 import io.matthewnelson.kmp.file.Closeable
 import io.matthewnelson.kmp.file.FileStream
+import io.matthewnelson.kmp.file.FileStream.Companion.asInputStream
+import io.matthewnelson.kmp.file.FileStream.Companion.asOutputStream
 import io.matthewnelson.kmp.file.IOException
-import io.matthewnelson.kmp.file.asInputStream
-import io.matthewnelson.kmp.file.asOutputStream
 import io.matthewnelson.kmp.file.openRead
 import io.matthewnelson.kmp.file.openWrite
 import io.matthewnelson.kmp.process.Stdio
