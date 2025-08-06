@@ -18,6 +18,7 @@
 package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.IOException
+import io.matthewnelson.kmp.file.errnoToIOException
 import io.matthewnelson.kmp.process.internal.stdio.StdioDescriptor
 import io.matthewnelson.kmp.process.internal.stdio.withFd
 import kotlinx.cinterop.ExperimentalForeignApi
@@ -25,31 +26,36 @@ import kotlinx.cinterop.UnsafeNumber
 import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.convert
 import kotlinx.cinterop.usePinned
+import platform.posix.errno
 
+@OptIn(ExperimentalForeignApi::class, UnsafeNumber::class)
 internal actual abstract class ReadStream private constructor(
     private val descriptor: StdioDescriptor,
-) {
+): Closeable by descriptor {
 
-    //@Throws(IllegalArgumentException::class, IndexOutOfBoundsException::class, IOException::class)
+    @Throws(IOException::class/*, IndexOutOfBoundsException::class, IllegalArgumentException::class*/)
     actual open fun read(buf: ByteArray, offset: Int, len: Int): Int {
+        if (isClosed) throw IOException("ReadStream is closed")
         buf.checkBounds(offset, len)
-        if (descriptor.isClosed) throw IOException("ReadStream is closed")
         if (len == 0) return 0
 
         @Suppress("RemoveRedundantCallsOfConversionMethods")
-        @OptIn(ExperimentalForeignApi::class, UnsafeNumber::class)
-        return buf.usePinned { pinned ->
+        val ret = buf.usePinned { pinned ->
             descriptor.withFd(retries = 10, action = { fd ->
                 platform.posix.read(
                     fd,
                     pinned.addressOf(offset),
                     len.convert(),
                 ).toInt()
-            }).check()
+            })
         }
+
+        if (ret < 0) throw errnoToIOException(errno)
+        if (ret == 0) return -1
+        return ret
     }
 
-    //@Throws(IOException::class)
+    @Throws(IOException::class)
     actual fun read(buf: ByteArray): Int = read(buf, 0, buf.size)
 
     internal companion object {

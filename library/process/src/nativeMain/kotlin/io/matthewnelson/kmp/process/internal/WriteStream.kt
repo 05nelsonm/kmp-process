@@ -26,46 +26,41 @@ import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.convert
 import kotlinx.cinterop.usePinned
 
+@OptIn(ExperimentalForeignApi::class, UnsafeNumber::class)
 internal actual abstract class WriteStream private constructor(
     private val descriptor: StdioDescriptor,
-) {
+): Closeable by descriptor {
 
-    internal val isClosed: Boolean get() = descriptor.isClosed
-
-    //@Throws(IllegalArgumentException::class, IndexOutOfBoundsException::class, IOException::class)
+    @Throws(IOException::class)
     actual open fun write(buf: ByteArray, offset: Int, len: Int) {
+        if (isClosed) throw IOException("WriteStream is closed")
         buf.checkBounds(offset, len)
-        if (descriptor.isClosed) throw IOException("WriteStream is closed")
         if (len == 0) return
 
         @Suppress("RemoveRedundantCallsOfConversionMethods")
-        @OptIn(ExperimentalForeignApi::class, UnsafeNumber::class)
         buf.usePinned { pinned ->
-            var written = 0
-            while (written < len) {
+            var total = 0
+            while (total < len) {
 
                 val write = descriptor.withFd(retries = 10, action = { fd ->
                     platform.posix.write(
                         fd,
-                        pinned.addressOf(offset + written),
-                        (len - written).convert(),
+                        pinned.addressOf(offset + total),
+                        (len - total).convert(),
                     ).toInt()
                 }).check()
 
                 if (write == 0) throw IOException("write == 0")
 
-                written += write
+                total += write
             }
         }
     }
 
-    //@Throws(IOException::class)
+    @Throws(IOException::class)
     actual fun write(buf: ByteArray) { write(buf, 0, buf.size) }
 
-    //@Throws(IOException::class)
-    actual open fun close() { descriptor.close() }
-
-    //@Throws(IOException::class)
+    @Throws(IOException::class)
     actual open fun flush() {}
 
     internal companion object {
