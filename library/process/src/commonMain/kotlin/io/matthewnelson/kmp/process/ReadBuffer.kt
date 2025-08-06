@@ -75,14 +75,19 @@ public expect value class ReadBuffer private constructor(private val _buf: Any) 
     public abstract class LineOutputFeed internal constructor() {
 
         /**
-         * TODO
+         * Consumes data from [buf] at index 0 until [len]. Data is parsed into
+         * individual lines, dispatching each line to provided [lineOutputFeed]
+         * dispatcher callback.
          *
-         * @throws [IllegalStateException] If closed
-         * @throws [IndexOutOfBoundsException]
+         * @throws [IllegalStateException] If closed.
+         * @throws [IndexOutOfBoundsException] If [len] is inappropriate.
          * */
         @Throws(IllegalStateException::class)
         public abstract fun onData(buf: ReadBuffer, len: Int)
 
+        /**
+         * Closes the [LineOutputFeed].
+         * */
         public abstract fun close()
     }
 
@@ -90,6 +95,8 @@ public expect value class ReadBuffer private constructor(private val _buf: Any) 
 
         /**
          * Allocates a new buffer with capacity of (8 * 1024) bytes
+         *
+         * @throws [UnsupportedOperationException] on Kotlin/JS-Browser
          * */
         @InternalProcessApi
         public fun allocate(): ReadBuffer

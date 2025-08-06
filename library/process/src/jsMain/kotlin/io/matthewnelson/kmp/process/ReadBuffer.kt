@@ -88,14 +88,19 @@ public actual value class ReadBuffer private actual constructor(private actual v
     public actual abstract class LineOutputFeed internal actual constructor() {
 
         /**
-         * TODO
+         * Consumes data from [buf] at index 0 until [len]. Data is parsed into
+         * individual lines, dispatching each line to provided [lineOutputFeed]
+         * dispatcher callback.
          *
-         * @throws [IllegalStateException] If closed
-         * @throws [IndexOutOfBoundsException]
+         * @throws [IllegalStateException] If closed.
+         * @throws [IndexOutOfBoundsException] If [len] is inappropriate.
          * */
         // @Throws(IllegalStateException::class)
         public actual abstract fun onData(buf: ReadBuffer, len: Int)
 
+        /**
+         * Closes the [LineOutputFeed].
+         * */
         public actual abstract fun close()
     }
 
@@ -103,6 +108,8 @@ public actual value class ReadBuffer private actual constructor(private actual v
 
         /**
          * Allocates a new buffer with capacity of (8 * 1024) bytes
+         *
+         * @throws [UnsupportedOperationException] on Kotlin/JS-Browser
          * */
         @InternalProcessApi
         public actual fun allocate(): ReadBuffer {
