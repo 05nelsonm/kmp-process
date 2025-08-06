@@ -13,39 +13,62 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
+@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING", "RedundantVisibilityModifier")
 
 package io.matthewnelson.kmp.process
 
+import io.matthewnelson.kmp.file.Closeable
 import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.process.internal.WriteStream
 import java.io.BufferedOutputStream
 
+/**
+ * TODO
+ * */
 public actual sealed class BufferedWriteStream actual constructor(
     stream: WriteStream,
-): BufferedOutputStream(stream, 1) {
+): BufferedOutputStream(stream), Closeable {
 
-    // java.lang.Process's stdin stream (when Stdio.Pipe) is a
-    // ProcessPipeOutputStream which extends BufferedOutputStream
-    // already.
-    //
-    // This is simply to provide blocking APIs to AsyncWriteStream
-    // and also be compatible with Java only consumers by extending
-    // and overriding BufferedOutputStream.
-    private val stream = stream.buffered()
-
-    @Throws(IllegalArgumentException::class, IndexOutOfBoundsException::class, IOException::class)
-    public actual final override fun write(buf: ByteArray, offset: Int, len: Int) { stream.write(buf, offset, len) }
-
+    /**
+     * TODO
+     *
+     * @throws [IOException]
+     * @throws [IndexOutOfBoundsException]
+     * */
     @Throws(IOException::class)
-    public actual final override fun write(buf: ByteArray) { stream.write(buf, 0, buf.size) }
+    public actual final override fun write(buf: ByteArray, offset: Int, len: Int) {
+        super.write(buf, offset, len)
+    }
 
+    /**
+     * TODO
+     * */
     @Throws(IOException::class)
-    public final override fun write(b: Int) { stream.write(b) }
+    public actual final override fun write(buf: ByteArray) {
+        super.write(buf)
+    }
 
+    /**
+     * TODO
+     * */
     @Throws(IOException::class)
-    public actual final override fun close() { stream.close() }
+    public final override fun write(b: Int) {
+        super.write(b)
+    }
 
+    /**
+     * TODO
+     * */
     @Throws(IOException::class)
-    public actual final override fun flush() { stream.flush() }
+    public actual override fun flush() {
+        super.flush()
+    }
+
+    /**
+     * TODO
+     * */
+    @Throws(IOException::class)
+    public actual override fun close() {
+        super.close()
+    }
 }

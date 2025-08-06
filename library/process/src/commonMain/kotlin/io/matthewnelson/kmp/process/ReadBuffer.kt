@@ -74,7 +74,13 @@ public expect value class ReadBuffer private constructor(private val _buf: Any) 
      * */
     public abstract class LineOutputFeed internal constructor() {
 
-        @Throws(IllegalArgumentException::class, IndexOutOfBoundsException::class, IllegalStateException::class)
+        /**
+         * TODO
+         *
+         * @throws [IllegalStateException] If closed
+         * @throws [IndexOutOfBoundsException]
+         * */
+        @Throws(IllegalStateException::class)
         public abstract fun onData(buf: ReadBuffer, len: Int)
 
         public abstract fun close()

@@ -64,7 +64,13 @@ public actual value class ReadBuffer private actual constructor(private actual v
      * */
     public actual abstract class LineOutputFeed internal actual constructor() {
 
-        @Throws(IllegalArgumentException::class, IndexOutOfBoundsException::class, IllegalStateException::class)
+        /**
+         * TODO
+         *
+         * @throws [IllegalStateException] If closed
+         * @throws [IndexOutOfBoundsException]
+         * */
+        @Throws(IllegalStateException::class)
         public actual abstract fun onData(buf: ReadBuffer, len: Int)
 
         public actual abstract fun close()

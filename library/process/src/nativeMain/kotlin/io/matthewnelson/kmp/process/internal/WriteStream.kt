@@ -31,7 +31,7 @@ internal actual abstract class WriteStream private constructor(
     private val descriptor: StdioDescriptor,
 ): Closeable by descriptor {
 
-    @Throws(IOException::class)
+    @Throws(IOException::class/*, IndexOutOfBoundsException::class*/)
     actual open fun write(buf: ByteArray, offset: Int, len: Int) {
         if (isClosed) throw IOException("WriteStream is closed")
         buf.checkBounds(offset, len)

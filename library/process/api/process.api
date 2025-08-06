@@ -1,6 +1,8 @@
-public final class io/matthewnelson/kmp/process/AsyncWriteStream : io/matthewnelson/kmp/process/BufferedWriteStream {
+public final class io/matthewnelson/kmp/process/AsyncWriteStream : io/matthewnelson/kmp/process/BufferedWriteStream, java/io/Closeable {
 	public synthetic fun <init> (Ljava/io/OutputStream;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun close ()V
 	public final fun closeAsync (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun flush ()V
 	public final fun flushAsync (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun writeAsync ([BIILkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun writeAsync ([BLkotlin/coroutines/Continuation;)Ljava/lang/Object;
@@ -25,10 +27,10 @@ public abstract class io/matthewnelson/kmp/process/Blocking$Waiter {
 	protected abstract fun isStopped ()Z
 }
 
-public abstract class io/matthewnelson/kmp/process/BufferedWriteStream : java/io/BufferedOutputStream {
+public abstract class io/matthewnelson/kmp/process/BufferedWriteStream : java/io/BufferedOutputStream, java/io/Closeable {
 	public synthetic fun <init> (Ljava/io/OutputStream;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun close ()V
-	public final fun flush ()V
+	public fun close ()V
+	public fun flush ()V
 	public final fun write (I)V
 	public final fun write ([B)V
 	public final fun write ([BII)V

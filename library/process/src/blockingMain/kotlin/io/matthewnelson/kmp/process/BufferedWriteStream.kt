@@ -17,20 +17,39 @@
 
 package io.matthewnelson.kmp.process
 
+import io.matthewnelson.kmp.file.Closeable
 import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.process.internal.WriteStream
 
-public expect sealed class BufferedWriteStream(stream: WriteStream) {
+/**
+ * TODO
+ * */
+public expect sealed class BufferedWriteStream(stream: WriteStream): Closeable {
 
-    @Throws(IllegalArgumentException::class, IndexOutOfBoundsException::class, IOException::class)
+    /**
+     * TODO
+     *
+     * @throws [IOException]
+     * @throws [IndexOutOfBoundsException]
+     * */
+    @Throws(IOException::class)
     public fun write(buf: ByteArray, offset: Int, len: Int)
 
+    /**
+     * TODO
+     * */
     @Throws(IOException::class)
     public fun write(buf: ByteArray)
 
+    /**
+     * TODO
+     * */
     @Throws(IOException::class)
-    public fun close()
+    public open fun flush()
 
+    /**
+     * TODO
+     * */
     @Throws(IOException::class)
-    public fun flush()
+    public override fun close()
 }

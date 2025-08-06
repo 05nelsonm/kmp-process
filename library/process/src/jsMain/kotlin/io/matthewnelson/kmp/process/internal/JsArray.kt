@@ -34,7 +34,7 @@ internal open external class Uint8Array(length: Int): ArrayBufferView {
 }
 
 @OptIn(ExperimentalContracts::class)
-// @Throws(IllegalArgumentException::class, IndexOutOfBoundsException::class)
+// @Throws(IndexOutOfBoundsException::class)
 internal inline fun <T: ArrayBufferView> ByteArray.toJsArray(
     offset: Int = 0,
     len: Int = size - offset,

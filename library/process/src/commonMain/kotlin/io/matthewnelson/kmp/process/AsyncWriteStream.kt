@@ -17,41 +17,51 @@
 
 package io.matthewnelson.kmp.process
 
+import io.matthewnelson.kmp.file.Closeable
 import io.matthewnelson.kmp.file.IOException
 import kotlin.coroutines.cancellation.CancellationException
 
 /**
- * A stream to write to. On Jvm & Native, blocking APIs are
- * available via `io.matthewnelson.kmp.process.BufferedWriteStream`.
- *
- * On Jvm & Native, all Async functions utilize Dispatchers.IO
- * under the hood when calling BufferedWriteStream functions.
- *
- * **NOTE:** For Jvm & Android the `kotlinx.coroutines.core`
- * dependency is needed when using Async functions.
+ * TODO
  * */
-public expect class AsyncWriteStream {
+public expect class AsyncWriteStream: Closeable {
 
-    @Throws(
-        CancellationException::class,
-        IllegalArgumentException::class,
-        IndexOutOfBoundsException::class,
-        IOException::class,
-    )
+    /**
+     * TODO
+     *
+     * @throws [IOException]
+     * @throws [IndexOutOfBoundsException]
+     * */
+    @Throws(CancellationException::class, IOException::class)
     public suspend fun writeAsync(buf: ByteArray, offset: Int, len: Int)
 
+    /**
+     * TODO
+     * */
     @Throws(CancellationException::class, IOException::class)
     public suspend fun writeAsync(buf: ByteArray)
 
+    /**
+     * TODO
+     * */
     @Throws(CancellationException::class, IOException::class)
     public suspend fun flushAsync()
 
+    /**
+     * TODO
+     * */
     @Throws(CancellationException::class, IOException::class)
     public suspend fun closeAsync()
 
+    /**
+     * TODO
+     * */
     @Throws(IOException::class)
     public fun flush()
 
+    /**
+     * TODO
+     * */
     @Throws(IOException::class)
-    public fun close()
+    public override fun close()
 }

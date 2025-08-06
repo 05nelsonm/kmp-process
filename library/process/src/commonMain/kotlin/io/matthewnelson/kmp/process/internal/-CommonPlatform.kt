@@ -88,14 +88,15 @@ internal fun StringBuilder.appendProcessInfo(
     append(']')
 }
 
-@Throws(IllegalArgumentException::class, IndexOutOfBoundsException::class)
+@Throws(IndexOutOfBoundsException::class)
 internal inline fun ByteArray.checkBounds(offset: Int, len: Int) {
     size.checkBounds(offset, len)
 }
 
-@Throws(IllegalArgumentException::class, IndexOutOfBoundsException::class)
+@Throws(IndexOutOfBoundsException::class)
 internal inline fun Int.checkBounds(offset: Int, len: Int) {
     val size = this
-    if (size - offset < len) throw IllegalArgumentException("Input too short")
-    if (offset < 0 || len < 0 || offset > size - len) throw IndexOutOfBoundsException()
+    if (offset < 0) throw IndexOutOfBoundsException("offset[$offset] < 0")
+    if (len < 0) throw IndexOutOfBoundsException("len[$len] < 0")
+    if (offset > size - len) throw IndexOutOfBoundsException("offset[$offset] > size[$size] - len[$len]")
 }

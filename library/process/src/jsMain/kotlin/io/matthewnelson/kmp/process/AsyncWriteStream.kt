@@ -17,6 +17,7 @@
 
 package io.matthewnelson.kmp.process
 
+import io.matthewnelson.kmp.file.Closeable
 import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.file.toIOException
 import io.matthewnelson.kmp.process.internal.*
@@ -25,23 +26,22 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.currentCoroutineContext
 
 /**
- * A stream to write to.
+ * TODO
  * */
-public actual class AsyncWriteStream internal constructor(
-    private val stream: stream_Writable,
-) {
+public actual class AsyncWriteStream internal constructor(private val stream: stream_Writable): Closeable {
 
     private val isClosed: Boolean get() = !stream.writable
 
-    // @Throws(
-    //     CancellationException::class,
-    //     IllegalArgumentException::class,
-    //     IndexOutOfBoundsException::class,
-    //     IOException::class,
-    // )
+    /**
+     * TODO
+     *
+     * @throws [IOException]
+     * @throws [IndexOutOfBoundsException]
+     * */
+    // @Throws(CancellationException::class, IOException::class)
     public actual suspend fun writeAsync(buf: ByteArray, offset: Int, len: Int) {
-        buf.checkBounds(offset, len)
         if (isClosed) throw IOException("WriteStream is closed")
+        buf.checkBounds(offset, len)
         if (len == 0) return
 
         val chunk = buf.toJsArray(offset, len) { size -> Uint8Array(size) }
@@ -63,18 +63,33 @@ public actual class AsyncWriteStream internal constructor(
         wLatch.join()
     }
 
+    /**
+     * TODO
+     * */
     // @Throws(CancellationException::class, IOException::class)
     public actual suspend fun writeAsync(buf: ByteArray) { writeAsync(buf, 0, buf.size) }
 
+    /**
+     * TODO
+     * */
     // @Throws(CancellationException::class, IOException::class)
     public actual suspend fun flushAsync() { flush() }
 
+    /**
+     * TODO
+     * */
     // @Throws(CancellationException::class, IOException::class)
     public actual suspend fun closeAsync() { close() }
 
+    /**
+     * TODO
+     * */
     // @Throws(IOException::class)
     public actual fun flush() {}
 
+    /**
+     * TODO
+     * */
     // @Throws(IOException::class)
-    public actual fun close() { stream.end() }
+    public actual override fun close() { stream.end() }
 }
