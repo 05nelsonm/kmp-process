@@ -37,16 +37,14 @@ internal class StdioHandle private constructor(
     private val lock = newLock()
     private var threw: IOException? = null
 
-    private val stdin: Instance<WriteStream?> = Instance(create = {
-        // TODO: Issue #6
-
+    private val stdin by lazy(LazyThreadSafetyMode.NONE) {
         // This is invoked once and only once upon NativeProcess
         // instantiation (after fork occurs). We can do some descriptor
         // clean up here and close unneeded descriptors which were duped
         // in the child process and remain open over there.
         try {
             if (stdinFD is StdioDescriptor.Pipe) {
-                // Leave write end open here in parent
+                // Leave write end open here in parent process
                 stdinFD.read
             } else {
                 stdinFD
@@ -58,7 +56,7 @@ internal class StdioHandle private constructor(
 
         try {
             if (stdoutFD is StdioDescriptor.Pipe) {
-                // Leave read end open here in parent
+                // Leave read end open here in parent process
                 stdoutFD.write
             } else {
                 stdoutFD
@@ -70,7 +68,7 @@ internal class StdioHandle private constructor(
 
         try {
             if (stderrFD is StdioDescriptor.Pipe) {
-                // Leave read end open here in parent
+                // Leave read end open here in parent process
                 stderrFD.write
             } else {
                 stdoutFD
@@ -80,22 +78,22 @@ internal class StdioHandle private constructor(
             threw = e
         }
 
-        if (stdinFD !is StdioDescriptor.Pipe) return@Instance null
-        if (stdinFD.isClosed) return@Instance null
+        if (stdinFD !is StdioDescriptor.Pipe) return@lazy null
+        if (stdinFD.write.isClosed) return@lazy null
         WriteStream.of(stdinFD)
-    })
+    }
 
-    private val stdout: Instance<ReadStream?> = Instance(create = {
-        if (stdoutFD.isClosed) return@Instance null
-        if (stdoutFD !is StdioDescriptor.Pipe) return@Instance null
+    private val stdout by lazy(LazyThreadSafetyMode.NONE) {
+        if (stdoutFD !is StdioDescriptor.Pipe) return@lazy null
+        if (stdoutFD.read.isClosed) return@lazy null
         ReadStream.of(stdoutFD)
-    })
+    }
 
-    private val stderr: Instance<ReadStream?> = Instance(create = {
-        if (stderrFD.isClosed) return@Instance null
-        if (stderrFD !is StdioDescriptor.Pipe) return@Instance null
+    private val stderr by lazy(LazyThreadSafetyMode.NONE) {
+        if (stderrFD !is StdioDescriptor.Pipe) return@lazy null
+        if (stderrFD.read.isClosed) return@lazy null
         ReadStream.of(stderrFD)
-    })
+    }
 
     @Throws(IOException::class)
     internal fun dup2(action: (fd: Int, newFd: Int) -> IOException?) {
@@ -123,9 +121,9 @@ internal class StdioHandle private constructor(
         }
     }
 
-    internal fun stdinStream(): WriteStream? = lock.withLock { stdin.getOrCreate() }
-    internal fun stdoutReader(): ReadStream? = lock.withLock { stdout.getOrCreate() }
-    internal fun stderrReader(): ReadStream? = lock.withLock { stderr.getOrCreate() }
+    internal fun stdinStream(): WriteStream? = lock.withLock { stdin }
+    internal fun stdoutStream(): ReadStream? = lock.withLock { stdout }
+    internal fun stderrStream(): ReadStream? = lock.withLock { stderr }
 
     @Throws(IOException::class)
     override fun close() {
@@ -159,8 +157,12 @@ internal class StdioHandle private constructor(
             threw = e
         }
 
-        if (threw == null) return
-        throw threw
+        // initialize them if they haven't been already.
+        stdin
+        stdout
+        stderr
+
+        if (threw != null) throw threw
     }
 
     internal companion object {
