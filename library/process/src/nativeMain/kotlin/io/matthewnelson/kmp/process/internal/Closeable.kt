@@ -17,16 +17,15 @@
 
 package io.matthewnelson.kmp.process.internal
 
+import io.matthewnelson.kmp.file.Closeable as KmpFileCloseable
 import io.matthewnelson.kmp.file.IOException
 
-internal interface Closeable {
+// TODO: Rename
+internal interface Closeable: KmpFileCloseable {
     val isClosed: Boolean
-
-    @Throws(IOException::class)
-    fun close()
 }
 
-internal inline fun <T: Throwable> Closeable.tryCloseSuppressed(throwable: T): T {
+internal inline fun <T: Throwable> KmpFileCloseable.tryCloseSuppressed(throwable: T): T {
     try {
         close()
     } catch (e: IOException) {
