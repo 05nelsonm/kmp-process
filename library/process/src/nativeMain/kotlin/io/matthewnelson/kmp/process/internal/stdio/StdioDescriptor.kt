@@ -31,43 +31,38 @@ import kotlinx.cinterop.alloc
 import kotlinx.cinterop.memScoped
 import kotlinx.cinterop.ptr
 import platform.posix.*
-import kotlin.concurrent.Volatile
+import kotlin.concurrent.AtomicReference
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
 
+@OptIn(ExperimentalForeignApi::class)
 internal class StdioDescriptor private constructor(
-    @property:DoNotReferenceDirectly(useInstead = "withFd")
-    internal val fd: Int,
+    fd: Int,
     internal val canRead: Boolean,
     internal val canWrite: Boolean,
 ): Closeable {
 
-    init {
-        @OptIn(DoNotReferenceDirectly::class)
-        if (fd < 0) throw AssertionError("fd[$fd] < 0")
-    }
+    init { if (fd < 0) throw AssertionError("fd[$fd] < 0") }
 
-    @Volatile
-    private var _isClosed: Boolean = false
-    override val isClosed: Boolean get() = _isClosed
+    private val _fd: AtomicReference<Int?> = AtomicReference(fd)
+    @property:DoNotReferenceDirectly(useInstead = "withFd")
+    internal val fd: Int get() = _fd.value ?: throw IOException("descriptor is closed")
+    override val isClosed: Boolean get() = _fd.value == null
 
     @Throws(IOException::class)
     override fun close() {
-        if (_isClosed) return
+        val fd = _fd.getAndSet(null) ?: return
 
-        @OptIn(DoNotReferenceDirectly::class)
-        val result = when (fd) {
+        when (fd) {
             STDIN_FILENO,
             STDOUT_FILENO,
-            STDERR_FILENO -> 0 // do not actually close
-            else -> withFd { fd -> close(fd) }
+            STDERR_FILENO -> return
         }
 
-        _isClosed = true
-
-        if (result != 0) {
-            @OptIn(ExperimentalForeignApi::class)
+        while (true) {
+            if (close(fd) == 0) break
+            if (errno == EINTR) continue
             throw errnoToIOException(errno)
         }
     }
@@ -150,8 +145,7 @@ internal class StdioDescriptor private constructor(
                 threw = e
             }
 
-            if (threw == null) return
-            throw threw
+            if (threw != null) throw threw
         }
 
         internal companion object {
@@ -183,18 +177,12 @@ internal inline fun StdioDescriptor.withFd(retries: Int = 3, action: (fd: Int) -
     }
 
     var limit = retries.coerceAtLeast(3)
-
+    var ret = -1
     while (limit-- > 0) {
-        if (isClosed) throw IOException("StdioDescriptor is closed")
-
         @OptIn(DoNotReferenceDirectly::class)
-        val ret = action(fd)
+        ret = action(fd)
         if (ret == -1 && errno == EINTR) continue
-
-        // non-EINTR result
-        return ret
+        break
     }
-
-    // retries ran out (errno will be EINTR)
-    return -1
+    return ret
 }
