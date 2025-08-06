@@ -21,7 +21,7 @@ import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.file.errnoToIOException
 import io.matthewnelson.kmp.file.path
 import io.matthewnelson.kmp.process.Stdio
-import io.matthewnelson.kmp.process.internal.Closeable
+import io.matthewnelson.kmp.process.internal.NativeCloseable
 import io.matthewnelson.kmp.process.internal.DoNotReferenceDirectly
 import io.matthewnelson.kmp.process.internal.STDIO_NULL
 import io.matthewnelson.kmp.process.internal.tryCloseSuppressed
@@ -41,7 +41,7 @@ internal class StdioDescriptor private constructor(
     fd: Int,
     internal val canRead: Boolean,
     internal val canWrite: Boolean,
-): Closeable {
+): NativeCloseable {
 
     init { if (fd < 0) throw AssertionError("fd[$fd] < 0") }
 
@@ -122,7 +122,7 @@ internal class StdioDescriptor private constructor(
         internal val isPipe1: Boolean,
         fd0: Int,
         fd1: Int,
-    ): Closeable {
+    ): NativeCloseable {
 
         internal val read = StdioDescriptor(fd0, canRead = true, canWrite = false)
         internal val write = StdioDescriptor(fd1, canRead = false, canWrite = true)

@@ -28,10 +28,10 @@ import platform.posix.STDOUT_FILENO
 
 internal class StdioHandle private constructor(
     internal val stdio: Stdio.Config,
-    private val stdinFD: Closeable,
-    private val stdoutFD: Closeable,
-    private val stderrFD: Closeable,
-): Closeable {
+    private val stdinFD: NativeCloseable,
+    private val stdoutFD: NativeCloseable,
+    private val stderrFD: NativeCloseable,
+): NativeCloseable {
 
     override val isClosed: Boolean get() = stdinFD.isClosed && stdoutFD.isClosed && stderrFD.isClosed
     private val lock = newLock()
@@ -206,7 +206,7 @@ internal class StdioHandle private constructor(
     }
 
     @Throws(IOException::class)
-    private inline fun Closeable.dup2FD(isStdin: Boolean): Int = when (this) {
+    private inline fun NativeCloseable.dup2FD(isStdin: Boolean): Int = when (this) {
         is StdioDescriptor -> withFd { it }
         is StdioDescriptor.Pipe -> (if (isStdin) read else write).withFd { it }
         // Will never occur

@@ -29,7 +29,7 @@ import kotlinx.cinterop.usePinned
 @OptIn(ExperimentalForeignApi::class, UnsafeNumber::class)
 internal actual abstract class WriteStream private constructor(
     private val descriptor: StdioDescriptor,
-): Closeable by descriptor {
+): NativeCloseable by descriptor {
 
     @Throws(IOException::class/*, IndexOutOfBoundsException::class*/)
     actual open fun write(buf: ByteArray, offset: Int, len: Int) {

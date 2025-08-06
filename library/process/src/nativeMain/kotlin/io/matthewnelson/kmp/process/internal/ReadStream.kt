@@ -31,7 +31,7 @@ import platform.posix.errno
 @OptIn(ExperimentalForeignApi::class, UnsafeNumber::class)
 internal actual abstract class ReadStream private constructor(
     private val descriptor: StdioDescriptor,
-): Closeable by descriptor {
+): NativeCloseable by descriptor {
 
     @Throws(IOException::class/*, IndexOutOfBoundsException::class*/)
     actual open fun read(buf: ByteArray, offset: Int, len: Int): Int {
