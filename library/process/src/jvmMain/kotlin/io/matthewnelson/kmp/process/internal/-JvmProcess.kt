@@ -19,9 +19,7 @@ package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.ANDROID
 import io.matthewnelson.kmp.file.File
-import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.process.*
-import java.io.PrintStream
 import kotlin.concurrent.Volatile
 
 internal class JvmProcess private constructor(
@@ -78,8 +76,6 @@ internal class JvmProcess private constructor(
 
     @Volatile
     private var _exitCode: Int? = null
-    @Volatile
-    private var _stdinThread: Thread? = null
 
     @Volatile
     @get:JvmName("wasStdoutThreadStarted")
@@ -107,12 +103,6 @@ internal class JvmProcess private constructor(
                 Signal.SIGTERM -> jProcess.destroy()
                 Signal.SIGKILL -> jProcess.destroyForcibly()
             }
-        }
-
-        _stdinThread?.let { thread ->
-            _stdinThread = null
-            if (thread.isInterrupted) return@let
-            thread.interrupt()
         }
     }
 
@@ -194,76 +184,64 @@ internal class JvmProcess private constructor(
 
         if (androidApi23Stdio != null) {
 
-            @Throws(IOException::class)
-            fun ReadStream.writeTo(oStream: WriteStream) {
+            fun ReadStream.redirect(stdio: String, oStream: WriteStream) {
                 val iStream = this
-                val buf = ByteArray(DEFAULT_BUFFER_SIZE)
-
-                while (true) {
-                    val read = iStream.read(buf)
-                    if (read == -1) break
-                    oStream.write(buf, 0, read)
-                }
-
-                buf.fill(0)
+                Runnable {
+                    try {
+                        iStream.use { i ->
+                            oStream.use { o ->
+                                val buf = ByteArray(DEFAULT_BUFFER_SIZE)
+                                while (!Thread.interrupted()) {
+                                    val read = i.read(buf)
+                                    if (read == -1) break
+                                    o.write(buf, 0, read)
+                                }
+                                buf.fill(0)
+                            }
+                        }
+                    } catch (_: Throwable) {}
+                }.execute(stdio)
             }
 
             when (stdio.stdin) {
-                is Stdio.File -> androidApi23Stdio.stdinFS?.let { stream ->
-                    _stdinThread = Runnable {
-                        try {
-                            stream.use { iStream ->
-                                jProcess.outputStream.use { oStream ->
-                                    iStream.writeTo(oStream)
-                                }
-                            }
-                        } catch (_: Throwable) {}
-                    }.execute(stdio = "stdin-redirect")
-                }
+                is Stdio.File -> androidApi23Stdio.stdinFS?.redirect("stdin-redirect", jProcess.outputStream)
                 is Stdio.Inherit -> {
-                    // TODO: Need to think about...
+                    // androidApi23Stdio changes Stdio.Inherit to
+                    // Stdio.Null (i.e. /dev/null), as /proc/self/fd/0
+                    // is symlinked to it.
+                    try {
+                        jProcess.outputStream.close()
+                    } catch (_: Throwable) {}
                 }
                 is Stdio.Pipe -> { /* no-op */ }
             }
 
-            fun ReadStream.redirectToFile(stdio: String, fileStream: WriteStream) {
-                Runnable {
-                    try {
-                        use { iStream ->
-                            fileStream.use { oStream ->
-                                iStream.writeTo(oStream)
-                            }
-                        }
-                    } catch (_: Throwable) {}
-                }.execute(stdio)
-            }
-
-            fun ReadStream.redirectToConsole(stdio: String, oStream: PrintStream) {
-                Runnable {
-                    try {
-                        use { iStream ->
-                            iStream.writeTo(oStream)
-                        }
-                    } catch (_: Throwable) {}
-                }.execute(stdio)
-            }
-
             when (stdio.stdout) {
-                is Stdio.File -> androidApi23Stdio.stdoutFS?.let { stream ->
-                    jProcess.inputStream.redirectToFile("stdout-redirect", stream)
+                is Stdio.File -> androidApi23Stdio.stdoutFS?.let { oStream ->
+                    jProcess.inputStream.redirect("stdout-redirect", oStream)
                 }
                 is Stdio.Inherit -> {
-                    jProcess.inputStream.redirectToConsole("stdout-redirect", System.out)
+                    // androidApi23Stdio changes Stdio.Inherit to
+                    // Stdio.Null (i.e. /dev/null), as /proc/self/fd/1
+                    // is symlinked to it.
+                    try {
+                        jProcess.inputStream.close()
+                    } catch (_: Throwable) {}
                 }
                 is Stdio.Pipe -> { /* no-op */ }
             }
 
             when (stdio.stderr) {
-                is Stdio.File -> androidApi23Stdio.stderrFS?.let { stream ->
-                    jProcess.errorStream.redirectToFile("stderr-redirect", stream)
+                is Stdio.File -> androidApi23Stdio.stderrFS?.let { oStream ->
+                    jProcess.errorStream.redirect("stderr-redirect", oStream)
                 }
                 is Stdio.Inherit -> {
-                    jProcess.errorStream.redirectToConsole("stderr-redirect", System.err)
+                    // androidApi23Stdio changes Stdio.Inherit to
+                    // Stdio.Null (i.e. /dev/null), as /proc/self/fd/2
+                    // is symlinked to it.
+                    try {
+                        jProcess.errorStream.close()
+                    } catch (_: Throwable) {}
                 }
                 is Stdio.Pipe -> { /* no-op */ }
             }
