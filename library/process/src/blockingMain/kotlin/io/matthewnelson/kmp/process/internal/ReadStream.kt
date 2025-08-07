@@ -17,11 +17,19 @@
 
 package io.matthewnelson.kmp.process.internal
 
-internal expect abstract class ReadStream {
+import io.matthewnelson.kmp.file.Closeable
+import io.matthewnelson.kmp.file.IOException
 
-    //@Throws(IllegalArgumentException::class, IndexOutOfBoundsException::class, IOException::class)
+internal expect abstract class ReadStream: Closeable {
+
+    // Returns -1 on EOF
+    @Throws(IOException::class/*, IndexOutOfBoundsException::class, IllegalArgumentException::class*/)
     open fun read(buf: ByteArray, offset: Int, len: Int): Int
 
-    //@Throws(IOException::class)
+    // Returns -1 on EOF
+    @Throws(IOException::class)
     fun read(buf: ByteArray): Int
+
+    @Throws(IOException::class)
+    override fun close()
 }

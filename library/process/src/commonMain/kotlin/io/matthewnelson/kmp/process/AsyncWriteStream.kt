@@ -17,41 +17,81 @@
 
 package io.matthewnelson.kmp.process
 
+import io.matthewnelson.kmp.file.Closeable
 import io.matthewnelson.kmp.file.IOException
+import io.matthewnelson.kmp.file.use
 import kotlin.coroutines.cancellation.CancellationException
 
 /**
- * A stream to write to. On Jvm & Native, blocking APIs are
- * available via `io.matthewnelson.kmp.process.BufferedWriteStream`.
- *
- * On Jvm & Native, all Async functions utilize Dispatchers.IO
- * under the hood when calling BufferedWriteStream functions.
+ * A stream for writing data asynchronously.
  *
  * **NOTE:** For Jvm & Android the `kotlinx.coroutines.core`
  * dependency is needed when using Async functions.
+ *
+ * @see [Process.input]
  * */
-public expect class AsyncWriteStream {
+public expect class AsyncWriteStream: Closeable {
 
-    @Throws(
-        CancellationException::class,
-        IllegalArgumentException::class,
-        IndexOutOfBoundsException::class,
-        IOException::class,
-    )
+    /**
+     * Writes [len] number of bytes from [buf], starting at index [offset].
+     *
+     * @param [buf] The array of data to write.
+     * @param [offset] The index in [buf] to start at when writing data.
+     * @param [len] The number of bytes from [buf], starting at index [offset], to write.
+     *
+     * @throws [IOException] If an I/O error occurs, or the stream is closed.
+     * @throws [IndexOutOfBoundsException] If [offset] or [len] are inappropriate.
+     * */
+    @Throws(CancellationException::class, IOException::class)
     public suspend fun writeAsync(buf: ByteArray, offset: Int, len: Int)
 
+    /**
+     * Writes the entire contents of [buf].
+     *
+     * @param [buf] the array of data to write.
+     *
+     * @throws [IOException] If an I/O error occurs, or the stream is closed.
+     * */
     @Throws(CancellationException::class, IOException::class)
     public suspend fun writeAsync(buf: ByteArray)
 
+    /**
+     * Flushes any buffered data.
+     *
+     * @throws [IOException] If an I/O error occurs, or the stream is closed.
+     * */
     @Throws(CancellationException::class, IOException::class)
     public suspend fun flushAsync()
 
+    /**
+     * Closes the resource releasing any system resources that may
+     * be allocated to this [AsyncWriteStream]. Subsequent invocations
+     * do nothing.
+     *
+     * @see [use]
+     *
+     * @throws [IOException] If an I/O error occurs.
+     * */
     @Throws(CancellationException::class, IOException::class)
     public suspend fun closeAsync()
 
+    /**
+     * Flushes any buffered data.
+     *
+     * @throws [IOException] If an I/O error occurs, or the stream is closed.
+     * */
     @Throws(IOException::class)
     public fun flush()
 
+    /**
+     * Closes the resource releasing any system resources that may
+     * be allocated to this [AsyncWriteStream]. Subsequent invocations
+     * do nothing.
+     *
+     * @see [use]
+     *
+     * @throws [IOException] If an I/O error occurs.
+     * */
     @Throws(IOException::class)
-    public fun close()
+    public override fun close()
 }

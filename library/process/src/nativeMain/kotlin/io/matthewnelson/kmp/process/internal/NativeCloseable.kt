@@ -17,13 +17,11 @@
 
 package io.matthewnelson.kmp.process.internal
 
+import io.matthewnelson.kmp.file.Closeable
 import io.matthewnelson.kmp.file.IOException
 
-internal interface Closeable {
+internal interface NativeCloseable: Closeable {
     val isClosed: Boolean
-
-    @Throws(IOException::class)
-    fun close()
 }
 
 internal inline fun <T: Throwable> Closeable.tryCloseSuppressed(throwable: T): T {

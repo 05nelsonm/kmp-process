@@ -17,30 +17,77 @@
 
 package io.matthewnelson.kmp.process
 
+import io.matthewnelson.kmp.file.Closeable
 import io.matthewnelson.kmp.file.IOException
+import io.matthewnelson.kmp.file.use
 import io.matthewnelson.kmp.process.internal.WriteStream
 import io.matthewnelson.kmp.process.internal.checkBounds
 import io.matthewnelson.kmp.process.internal.newLock
 import io.matthewnelson.kmp.process.internal.withLock
 import kotlin.concurrent.Volatile
 
-public actual sealed class BufferedWriteStream actual constructor(
-    private val stream: WriteStream
-) {
+/**
+ * A stream for writing data synchronously, buffering any writes until 8192 bytes
+ * are accumulated.
+ *
+ * @see [AsyncWriteStream]
+ * */
+public actual sealed class BufferedWriteStream actual constructor(private val stream: WriteStream): Closeable {
 
-    private val buf = ByteArray(1024 * 8)
     @Volatile
-    private var bufLen = 0
+    private var _bufLen = 0
+    private val buf = ByteArray(1024 * 8)
     private val lock = newLock()
 
-    @Throws(IllegalArgumentException::class, IndexOutOfBoundsException::class, IOException::class)
-    public actual fun write(buf: ByteArray, offset: Int, len: Int) { lock.withLock { writeNoLock(buf, offset, len) } }
+    /**
+     * Writes [len] number of bytes from [buf], starting at index [offset].
+     *
+     * @param [buf] The array of data to write.
+     * @param [offset] The index in [buf] to start at when writing data.
+     * @param [len] The number of bytes from [buf], starting at index [offset], to write.
+     *
+     * @throws [IOException] If an I/O error occurs, or the stream is closed.
+     * @throws [IndexOutOfBoundsException] If [offset] or [len] are inappropriate.
+     * */
+    @Throws(IOException::class)
+    public actual fun write(buf: ByteArray, offset: Int, len: Int) {
+        buf.checkBounds(offset, len)
+        if (len == 0) return
+        lock.withLock { writeNoLock(buf, offset, len) }
+    }
 
+    /**
+     * Writes the entire contents of [buf].
+     *
+     * @param [buf] the array of data to write.
+     *
+     * @throws [IOException] If an I/O error occurs, or the stream is closed.
+     * */
     @Throws(IOException::class)
     public actual fun write(buf: ByteArray) { write(buf, 0, buf.size) }
 
+    /**
+     * Flushes any buffered data.
+     *
+     * @throws [IOException] If an I/O error occurs, or the stream is closed.
+     * */
     @Throws(IOException::class)
-    public actual fun close() {
+    public actual open fun flush() { lock.withLock { flushNoLock() } }
+
+    /**
+     * Closes the resource releasing any system resources that may
+     * be allocated to this [BufferedWriteStream]. Subsequent invocations
+     * do nothing.
+     *
+     * Any buffered data is written to the underlying stream via [flush]
+     * prior to closing.
+     *
+     * @see [use]
+     *
+     * @throws [IOException] If an I/O error occurs.
+     * */
+    @Throws(IOException::class)
+    public actual override fun close() {
         if (stream.isClosed) return
 
         lock.withLock {
@@ -70,30 +117,25 @@ public actual sealed class BufferedWriteStream actual constructor(
     }
 
     @Throws(IOException::class)
-    public actual fun flush() { lock.withLock { flushNoLock() } }
-
-    @Throws(IOException::class)
     private fun writeNoLock(buf: ByteArray, offset: Int, len: Int) {
         if (len >= this.buf.size) {
             flushNoLock()
             stream.write(buf, offset, len)
         } else {
-            buf.checkBounds(offset, len)
-
-            if (len > (this.buf.size - bufLen)) {
+            if (len > (this.buf.size - _bufLen)) {
                 flushNoLock()
             }
 
-            buf.copyInto(this.buf, bufLen, offset, len + offset)
-            bufLen += len
+            buf.copyInto(this.buf, _bufLen, offset, len + offset)
+            _bufLen += len
         }
     }
 
     @Throws(IOException::class)
     private fun flushNoLock() {
-        if (bufLen > 0) {
-            stream.write(buf, 0, bufLen)
-            bufLen = 0
+        if (_bufLen > 0) {
+            stream.write(buf, 0, _bufLen)
+            _bufLen = 0
         }
     }
 }

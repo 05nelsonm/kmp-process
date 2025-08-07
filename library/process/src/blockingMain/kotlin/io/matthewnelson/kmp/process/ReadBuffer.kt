@@ -64,9 +64,20 @@ public actual value class ReadBuffer private actual constructor(private actual v
      * */
     public actual abstract class LineOutputFeed internal actual constructor() {
 
-        @Throws(IllegalArgumentException::class, IndexOutOfBoundsException::class, IllegalStateException::class)
+        /**
+         * Consumes data from [buf] at index 0 until [len]. Data is parsed into
+         * individual lines, dispatching each line to provided [lineOutputFeed]
+         * dispatcher callback.
+         *
+         * @throws [IllegalStateException] If closed.
+         * @throws [IndexOutOfBoundsException] If [len] is inappropriate.
+         * */
+        @Throws(IllegalStateException::class)
         public actual abstract fun onData(buf: ReadBuffer, len: Int)
 
+        /**
+         * Closes the [LineOutputFeed].
+         * */
         public actual abstract fun close()
     }
 

@@ -77,14 +77,14 @@ internal constructor(
 
     private val stdoutWorker = Instance(create = {
         if (isDestroyed) return@Instance null
-        val reader = handle.stdoutReader() ?: return@Instance null
+        val reader = handle.stdoutStream() ?: return@Instance null
 
         Worker.execute("stdout", ::wasStdoutThreadStarted, reader, ::dispatchStdout)
     })
 
     private val stderrWorker = Instance(create = {
         if (isDestroyed) return@Instance null
-        val reader = handle.stderrReader() ?: return@Instance null
+        val reader = handle.stderrStream() ?: return@Instance null
 
         Worker.execute("stderr", ::wasStderrThreadStarted, reader, ::dispatchStderr)
     })

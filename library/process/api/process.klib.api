@@ -292,7 +292,9 @@ sealed class io.matthewnelson.kmp.process/Stdio { // io.matthewnelson.kmp.proces
 }
 
 // Targets: [native]
-final class io.matthewnelson.kmp.process/AsyncWriteStream : io.matthewnelson.kmp.process/BufferedWriteStream { // io.matthewnelson.kmp.process/AsyncWriteStream|null[0]
+final class io.matthewnelson.kmp.process/AsyncWriteStream : io.matthewnelson.kmp.file/Closeable, io.matthewnelson.kmp.process/BufferedWriteStream { // io.matthewnelson.kmp.process/AsyncWriteStream|null[0]
+    final fun close() // io.matthewnelson.kmp.process/AsyncWriteStream.close|close(){}[0]
+    final fun flush() // io.matthewnelson.kmp.process/AsyncWriteStream.flush|flush(){}[0]
     final suspend fun closeAsync() // io.matthewnelson.kmp.process/AsyncWriteStream.closeAsync|closeAsync(){}[0]
     final suspend fun flushAsync() // io.matthewnelson.kmp.process/AsyncWriteStream.flushAsync|flushAsync(){}[0]
     final suspend fun writeAsync(kotlin/ByteArray) // io.matthewnelson.kmp.process/AsyncWriteStream.writeAsync|writeAsync(kotlin.ByteArray){}[0]
@@ -300,11 +302,11 @@ final class io.matthewnelson.kmp.process/AsyncWriteStream : io.matthewnelson.kmp
 }
 
 // Targets: [native]
-sealed class io.matthewnelson.kmp.process/BufferedWriteStream { // io.matthewnelson.kmp.process/BufferedWriteStream|null[0]
-    final fun close() // io.matthewnelson.kmp.process/BufferedWriteStream.close|close(){}[0]
-    final fun flush() // io.matthewnelson.kmp.process/BufferedWriteStream.flush|flush(){}[0]
+sealed class io.matthewnelson.kmp.process/BufferedWriteStream : io.matthewnelson.kmp.file/Closeable { // io.matthewnelson.kmp.process/BufferedWriteStream|null[0]
     final fun write(kotlin/ByteArray) // io.matthewnelson.kmp.process/BufferedWriteStream.write|write(kotlin.ByteArray){}[0]
     final fun write(kotlin/ByteArray, kotlin/Int, kotlin/Int) // io.matthewnelson.kmp.process/BufferedWriteStream.write|write(kotlin.ByteArray;kotlin.Int;kotlin.Int){}[0]
+    open fun close() // io.matthewnelson.kmp.process/BufferedWriteStream.close|close(){}[0]
+    open fun flush() // io.matthewnelson.kmp.process/BufferedWriteStream.flush|flush(){}[0]
 }
 
 // Targets: [androidNative, js, linux, macos]
@@ -314,7 +316,7 @@ final fun (io.matthewnelson.kmp.process/Process.Builder).io.matthewnelson.kmp.pr
 final fun (io.matthewnelson.kmp.process/Process.Builder).io.matthewnelson.kmp.process/usePosixSpawn(kotlin/Boolean): io.matthewnelson.kmp.process/Process.Builder // io.matthewnelson.kmp.process/usePosixSpawn|usePosixSpawn@io.matthewnelson.kmp.process.Process.Builder(kotlin.Boolean){}[0]
 
 // Targets: [js]
-final class io.matthewnelson.kmp.process/AsyncWriteStream { // io.matthewnelson.kmp.process/AsyncWriteStream|null[0]
+final class io.matthewnelson.kmp.process/AsyncWriteStream : io.matthewnelson.kmp.file/Closeable { // io.matthewnelson.kmp.process/AsyncWriteStream|null[0]
     final fun close() // io.matthewnelson.kmp.process/AsyncWriteStream.close|close(){}[0]
     final fun flush() // io.matthewnelson.kmp.process/AsyncWriteStream.flush|flush(){}[0]
     final suspend fun closeAsync() // io.matthewnelson.kmp.process/AsyncWriteStream.closeAsync|closeAsync(){}[0]

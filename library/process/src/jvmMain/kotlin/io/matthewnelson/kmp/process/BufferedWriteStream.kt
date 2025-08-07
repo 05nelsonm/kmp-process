@@ -13,39 +13,89 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
+@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING", "RedundantVisibilityModifier")
 
 package io.matthewnelson.kmp.process
 
+import io.matthewnelson.kmp.file.Closeable
 import io.matthewnelson.kmp.file.IOException
+import io.matthewnelson.kmp.file.use
 import io.matthewnelson.kmp.process.internal.WriteStream
 import java.io.BufferedOutputStream
 
+/**
+ * A stream for writing data synchronously, buffering any writes until 8192 bytes
+ * are accumulated.
+ *
+ * @see [AsyncWriteStream]
+ * */
 public actual sealed class BufferedWriteStream actual constructor(
     stream: WriteStream,
-): BufferedOutputStream(stream, 1) {
+): BufferedOutputStream(stream), Closeable {
 
-    // java.lang.Process's stdin stream (when Stdio.Pipe) is a
-    // ProcessPipeOutputStream which extends BufferedOutputStream
-    // already.
-    //
-    // This is simply to provide blocking APIs to AsyncWriteStream
-    // and also be compatible with Java only consumers by extending
-    // and overriding BufferedOutputStream.
-    private val stream = stream.buffered()
-
-    @Throws(IllegalArgumentException::class, IndexOutOfBoundsException::class, IOException::class)
-    public actual final override fun write(buf: ByteArray, offset: Int, len: Int) { stream.write(buf, offset, len) }
-
+    /**
+     * Writes [len] number of bytes from [buf], starting at index [offset].
+     *
+     * @param [buf] The array of data to write.
+     * @param [offset] The index in [buf] to start at when writing data.
+     * @param [len] The number of bytes from [buf], starting at index [offset], to write.
+     *
+     * @throws [IOException] If an I/O error occurs, or the stream is closed.
+     * @throws [IndexOutOfBoundsException] If [offset] or [len] are inappropriate.
+     * */
     @Throws(IOException::class)
-    public actual final override fun write(buf: ByteArray) { stream.write(buf, 0, buf.size) }
+    public actual final override fun write(buf: ByteArray, offset: Int, len: Int) {
+        super.write(buf, offset, len)
+    }
 
+    /**
+     * Writes the entire contents of [buf].
+     *
+     * @param [buf] the array of data to write.
+     *
+     * @throws [IOException] If an I/O error occurs, or the stream is closed.
+     * */
     @Throws(IOException::class)
-    public final override fun write(b: Int) { stream.write(b) }
+    public actual final override fun write(buf: ByteArray) {
+        super.write(buf)
+    }
 
+    /**
+     * Writes the specified byte to this stream.
+     *
+     * @param [b] the byte to write.
+     *
+     * @throws [IOException] If an I/O error occurs, or the stream is closed.
+     * */
     @Throws(IOException::class)
-    public actual final override fun close() { stream.close() }
+    public final override fun write(b: Int) {
+        super.write(b)
+    }
 
+    /**
+     * Flushes any buffered data.
+     *
+     * @throws [IOException] If an I/O error occurs, or the stream is closed.
+     * */
     @Throws(IOException::class)
-    public actual final override fun flush() { stream.flush() }
+    public actual override fun flush() {
+        super.flush()
+    }
+
+    /**
+     * Closes the resource releasing any system resources that may
+     * be allocated to this [BufferedWriteStream]. Subsequent invocations
+     * do nothing.
+     *
+     * Any buffered data is written to the underlying stream via [flush]
+     * prior to closing.
+     *
+     * @see [use]
+     *
+     * @throws [IOException] If an I/O error occurs.
+     * */
+    @Throws(IOException::class)
+    public actual override fun close() {
+        super.close()
+    }
 }

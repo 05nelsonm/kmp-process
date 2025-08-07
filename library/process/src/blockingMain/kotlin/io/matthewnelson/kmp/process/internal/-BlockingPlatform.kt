@@ -20,6 +20,7 @@ package io.matthewnelson.kmp.process.internal
 import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.file.InterruptedException
+import io.matthewnelson.kmp.file.use
 import io.matthewnelson.kmp.process.*
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
@@ -59,13 +60,13 @@ internal fun PlatformBuilder.blockingOutput(
 
         options.consumeInput()?.let { bytes ->
             try {
-                p.input?.write(bytes)
+                val stream = p.input
                     // Will never happen b/c Stdio.Config.Builder.build
                     // will always set stdin to Stdio.Pipe when Output.Options.input
                     // is not null, but must throw IOException instead of NPE using !!
                     ?: throw IOException("Misconfigured Stdio.Config. stdin should be Stdio.Pipe")
 
-                p.input.close()
+                stream.use { it.write(bytes) }
             } finally {
                 bytes.fill(0)
             }
@@ -173,33 +174,33 @@ internal fun ReadStream.scanLines(
     bufferSize: Int,
     dispatch: (line: String?) -> Unit,
 ) {
+    use { stream ->
+        val buf = ReadBuffer.of(ByteArray(bufferSize))
+        val feed = ReadBuffer.lineOutputFeed(dispatch)
 
-    val stream = this
-    val buf = ReadBuffer.of(ByteArray(bufferSize))
-    val feed = ReadBuffer.lineOutputFeed(dispatch)
+        var threw: Throwable? = null
+        while (true) {
+            val read = try {
+                stream.read(buf.buf)
+            } catch (_: IOException) {
+                break
+            }
 
-    var threw: Throwable? = null
-    while (true) {
-        val read = try {
-            stream.read(buf.buf)
-        } catch (_: IOException) {
-            break
+            // If a pipe has no write ends open (i.e. the
+            // child process exited), a zero read is returned,
+            // and we can end early (before process destruction).
+            if (read <= 0) break
+
+            try {
+                feed.onData(buf, read)
+            } catch (t: Throwable) {
+                threw = t
+                break
+            }
         }
 
-        // If a pipe has no write ends open (i.e. the
-        // child process exited), a zero read is returned,
-        // and we can end early (before process destruction).
-        if (read <= 0) break
-
-        try {
-            feed.onData(buf, read)
-        } catch (t: Throwable) {
-            threw = t
-            break
-        }
+        buf.buf.fill(0)
+        threw?.let { throw it }
+        feed.close()
     }
-
-    buf.buf.fill(0)
-    threw?.let { throw it }
-    feed.close()
 }

@@ -25,15 +25,13 @@ internal class RealLineOutputFeed internal constructor(
 ): ReadBuffer.LineOutputFeed() {
 
     @Volatile
-    private var isClosed: Boolean = false
+    private var _isClosed: Boolean = false
     private val overflow = ArrayDeque<ByteArray>(1)
     private var skipLF: Boolean = false
 
-    @Throws(IllegalArgumentException::class, IndexOutOfBoundsException::class, IllegalStateException::class)
+    @Throws(IllegalStateException::class)
     public override fun onData(buf: ReadBuffer, len: Int) {
-        if (isClosed) {
-            throw IllegalStateException("LineOutputFeed.isClosed[true]")
-        }
+        if (_isClosed) throw IllegalStateException("LineOutputFeed.isClosed[true]")
 
         if (buf.capacity() <= 0) return
         buf.capacity().checkBounds(0, len)
@@ -72,8 +70,8 @@ internal class RealLineOutputFeed internal constructor(
     }
 
     public override fun close() {
-        if (isClosed) return
-        isClosed = true
+        if (_isClosed) return
+        _isClosed = true
         skipLF = false
 
         try {

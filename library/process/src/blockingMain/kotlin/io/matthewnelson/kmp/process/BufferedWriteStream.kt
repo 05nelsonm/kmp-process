@@ -17,20 +17,62 @@
 
 package io.matthewnelson.kmp.process
 
+import io.matthewnelson.kmp.file.Closeable
 import io.matthewnelson.kmp.file.IOException
+import io.matthewnelson.kmp.file.use
 import io.matthewnelson.kmp.process.internal.WriteStream
 
-public expect sealed class BufferedWriteStream(stream: WriteStream) {
+/**
+ * A stream for writing data synchronously, buffering any writes until 8192 bytes
+ * are accumulated.
+ *
+ * @see [AsyncWriteStream]
+ * */
+public expect sealed class BufferedWriteStream(stream: WriteStream): Closeable {
 
-    @Throws(IllegalArgumentException::class, IndexOutOfBoundsException::class, IOException::class)
+    /**
+     * Writes [len] number of bytes from [buf], starting at index [offset].
+     *
+     * @param [buf] The array of data to write.
+     * @param [offset] The index in [buf] to start at when writing data.
+     * @param [len] The number of bytes from [buf], starting at index [offset], to write.
+     *
+     * @throws [IOException] If an I/O error occurs, or the stream is closed.
+     * @throws [IndexOutOfBoundsException] If [offset] or [len] are inappropriate.
+     * */
+    @Throws(IOException::class)
     public fun write(buf: ByteArray, offset: Int, len: Int)
 
+    /**
+     * Writes the entire contents of [buf].
+     *
+     * @param [buf] the array of data to write.
+     *
+     * @throws [IOException] If an I/O error occurs, or the stream is closed.
+     * */
     @Throws(IOException::class)
     public fun write(buf: ByteArray)
 
+    /**
+     * Flushes any buffered data.
+     *
+     * @throws [IOException] If an I/O error occurs, or the stream is closed.
+     * */
     @Throws(IOException::class)
-    public fun close()
+    public open fun flush()
 
+    /**
+     * Closes the resource releasing any system resources that may
+     * be allocated to this [BufferedWriteStream]. Subsequent invocations
+     * do nothing.
+     *
+     * Any buffered data is written to the underlying stream via [flush]
+     * prior to closing.
+     *
+     * @see [use]
+     *
+     * @throws [IOException] If an I/O error occurs.
+     * */
     @Throws(IOException::class)
-    public fun flush()
+    public override fun close()
 }

@@ -37,8 +37,8 @@ class StdioHandleUnitTest {
 
         try {
             assertNotNull(handle.stdinStream())
-            assertNotNull(handle.stdoutReader())
-            assertNotNull(handle.stderrReader())
+            assertNotNull(handle.stdoutStream())
+            assertNotNull(handle.stderrStream())
         } finally {
             handle.close()
         }
@@ -51,8 +51,8 @@ class StdioHandleUnitTest {
         handle.close()
 
         assertNull(handle.stdinStream())
-        assertNull(handle.stdoutReader())
-        assertNull(handle.stderrReader())
+        assertNull(handle.stdoutStream())
+        assertNull(handle.stderrStream())
     }
 
     @Test
