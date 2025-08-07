@@ -70,8 +70,8 @@ internal actual class PlatformBuilder private actual constructor() {
         handler: ProcessException.Handler,
     ): Process {
 
-        val isStderrSameFileAsStdout = stdio.isStderrSameFileAsStdout()
-        val android23Stdio = AndroidApi23Stdio.getOrNull(isStderrSameFileAsStdout, stdio)
+        val android23Stdio = AndroidApi23Stdio.getOrNull(stdio)
+        val isStderrSameFileAsStdout = android23Stdio?.isStderrSameFileAsStdout ?: stdio.isStderrSameFileAsStdout()
         jProcessBuilder.redirectErrorStream(/* redirectErrorStream = */ isStderrSameFileAsStdout)
 
         @Suppress("NewApi")
@@ -132,7 +132,7 @@ internal actual class PlatformBuilder private actual constructor() {
             args,
             chdir,
             env,
-            stdio,
+            android23Stdio?.stdio ?: stdio,
             destroySignal,
             handler,
         )

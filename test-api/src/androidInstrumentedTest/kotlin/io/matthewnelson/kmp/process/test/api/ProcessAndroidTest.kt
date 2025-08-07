@@ -114,26 +114,55 @@ class ProcessAndroidTest: ProcessBaseTest() {
 
     @Test
     override fun givenExecutable_whenRelativePathWithChDir_thenExecutes() {
-        if (sdkInt < 21) return
+        if (sdkInt < 21) {
+            println("Skipping...")
+            return
+        }
         super.givenExecutable_whenRelativePathWithChDir_thenExecutes()
     }
 
     @Test
     override fun givenExecutable_whenOutputToFile_thenIsAsExpected(): TestResult {
-        if (sdkInt < 21) return
+        if (sdkInt < 21) {
+            println("Skipping...")
+            return
+        }
         return super.givenExecutable_whenOutputToFile_thenIsAsExpected()
     }
 
     @Test
     override fun givenExecutable_whenOutput_thenIsAsExpected(): TestResult {
-        if (sdkInt < 21) return
+        if (sdkInt < 21) {
+            println("Skipping...")
+            return
+        }
         return super.givenExecutable_whenOutput_thenIsAsExpected()
     }
 
     @Test
     override fun givenExecutable_whenPipeOutputFeeds_thenIsAsExpected(): TestResult {
-        if (sdkInt < 21) return
+        if (sdkInt < 21) {
+            println("Skipping...")
+            return
+        }
         return super.givenExecutable_whenPipeOutputFeeds_thenIsAsExpected()
+    }
+
+    @Test
+    fun givenStdioConfig_whenInherit_thenIsModifiedToDevNullOnApi23OrBelow() {
+        val p = Process.Builder(command = "sh")
+            .args("-c", "echo \"abc\"; exit 42;")
+            .stdin(Stdio.Inherit)
+            .stdout(Stdio.Inherit)
+            .stderr(Stdio.Inherit)
+            .useSpawn { p -> p.waitFor(); p }
+
+        println(p.toString())
+
+        val expected = if (sdkInt >= 24) Stdio.Inherit else Stdio.Null
+        arrayOf(p.stdio.stdin, p.stdio.stdout, p.stdio.stderr).forEachIndexed { i, actual ->
+            assertEquals(expected, actual, "fileno: $i")
+        }
     }
 
     @Test

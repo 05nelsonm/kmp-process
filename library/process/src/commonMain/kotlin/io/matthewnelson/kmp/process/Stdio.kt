@@ -147,7 +147,7 @@ public sealed class Stdio private constructor() {
 
                 listOf(
                     "stdout" to stdout,
-                    "stderr" to stderr
+                    "stderr" to stderr,
                 ).forEach { (name, stdio) ->
                     if (stdio !is File) return@forEach
                     if (stdio.file == STDIO_NULL) return@forEach

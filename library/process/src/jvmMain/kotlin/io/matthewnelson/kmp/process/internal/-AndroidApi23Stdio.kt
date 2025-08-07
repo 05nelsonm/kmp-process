@@ -33,7 +33,11 @@ import kotlin.concurrent.Volatile
  * is a supplemental implementation for [PlatformBuilder.spawn] which will open all
  * [Stdio.File] needed prior to spawning the process.
  * */
-internal class AndroidApi23Stdio private constructor(): Closeable {
+internal class AndroidApi23Stdio private constructor(
+    internal val stdio: Stdio.Config,
+): Closeable {
+
+    internal val isStderrSameFileAsStdout = stdio.isStderrSameFileAsStdout()
 
     @Volatile
     private var _stdin: FileStream.Read? = null
@@ -73,21 +77,24 @@ internal class AndroidApi23Stdio private constructor(): Closeable {
 
         @JvmSynthetic
         @Throws(IOException::class)
-        internal fun getOrNull(
-            isStderrSameFileAsStdout: Boolean,
-            stdio: Stdio.Config,
-        ): AndroidApi23Stdio? {
+        internal fun getOrNull(stdio: Stdio.Config): AndroidApi23Stdio? {
             val sdkInt = ANDROID.SDK_INT ?: return null
             if (sdkInt >= 24) return null
 
+            // /proc/self/fd/{0, 1, 2} are all symlinked to /dev/null
+            val b = Stdio.Config.Builder.get()
+            b.stdin = if (stdio.stdin is Stdio.Inherit) Stdio.Null else stdio.stdin
+            b.stdout = if (stdio.stdout is Stdio.Inherit) Stdio.Null else stdio.stdout
+            b.stderr = if (stdio.stderr is Stdio.Inherit) Stdio.Null else stdio.stderr
+
             // Android 23-
-            val ret = AndroidApi23Stdio()
+            val ret = AndroidApi23Stdio(b.build(null))
 
             try {
-                ret._stdin = stdio.stdin.fileOrNull(isStdin = true)?.file?.openRead()
-                ret._stdout = stdio.stdout.fileOrNull(isStdin = false)?.openWrite()
-                if (!isStderrSameFileAsStdout) {
-                    ret._stderr = stdio.stderr.fileOrNull(isStdin = false)?.openWrite()
+                ret._stdin = ret.stdio.stdin.fileOrNull(isStdin = true)?.file?.openRead()
+                ret._stdout = ret.stdio.stdout.fileOrNull(isStdin = false)?.openWrite()
+                if (!ret.isStderrSameFileAsStdout) {
+                    ret._stderr = ret.stdio.stderr.fileOrNull(isStdin = false)?.openWrite()
                 }
 
                 // convert FileStreams to Input/Output streams
