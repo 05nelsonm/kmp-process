@@ -26,6 +26,7 @@ import io.matthewnelson.kmp.file.resolve
 import io.matthewnelson.kmp.file.toFile
 import io.matthewnelson.kmp.process.internal.stdio.StdioDescriptor
 import io.matthewnelson.kmp.process.internal.stdio.StdioHandle
+import kotlinx.cinterop.AutofreeScope
 import kotlinx.cinterop.CPointer
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.memScoped
@@ -164,7 +165,7 @@ internal constructor(
     }
 
     init {
-        if (resetSignalMasks() == -1) {
+        if (memScoped { resetSignalMasks(scope = this) } == -1) {
             onError(errno, ERR_SIG_MASK)
         }
     }
@@ -232,4 +233,4 @@ internal expect inline val ChildProcess.FD_DIR: String
 internal expect inline fun ChildProcess.parseDir(fdDir: Int, action: (CPointer<dirent>) -> Unit?): Int?
 
 @OptIn(ExperimentalForeignApi::class)
-internal expect inline fun ChildProcess.resetSignalMasks(): Int
+internal expect inline fun ChildProcess.resetSignalMasks(scope: AutofreeScope): Int

@@ -17,9 +17,11 @@
 
 package io.matthewnelson.kmp.process.internal
 
+import kotlinx.cinterop.AutofreeScope
 import kotlinx.cinterop.CPointer
 import kotlinx.cinterop.ExperimentalForeignApi
-import kotlinx.cinterop.cValue
+import kotlinx.cinterop.alloc
+import kotlinx.cinterop.ptr
 import platform.posix.SIG_SETMASK
 import platform.posix.closedir
 import platform.posix.dirent
@@ -55,9 +57,9 @@ internal actual inline fun ChildProcess.parseDir(fdDir: Int, action: (CPointer<d
 }
 
 @OptIn(ExperimentalForeignApi::class)
-internal actual inline fun ChildProcess.resetSignalMasks(): Int {
-    val sigset = cValue<sigset_tVar>()
-    if (sigemptyset(sigset) == -1) return -1
-    if (sigprocmask(SIG_SETMASK, sigset, null) == -1) return -1
+internal actual inline fun ChildProcess.resetSignalMasks(scope: AutofreeScope): Int {
+    val sigset = scope.alloc<sigset_tVar>()
+    if (sigemptyset(sigset.ptr) == -1) return -1
+    if (sigprocmask(SIG_SETMASK, sigset.ptr, null) == -1) return -1
     return 0
 }
