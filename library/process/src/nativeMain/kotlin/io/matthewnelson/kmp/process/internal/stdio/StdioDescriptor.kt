@@ -58,12 +58,9 @@ internal class StdioDescriptor private constructor(
             STDIN_FILENO,
             STDOUT_FILENO,
             STDERR_FILENO -> return
-        }
-
-        while (true) {
-            if (close(fd) == 0) break
-            if (errno == EINTR) continue
-            throw errnoToIOException(errno)
+            else -> if (close(fd) == -1) {
+                throw errnoToIOException(errno)
+            }
         }
     }
 
@@ -88,12 +85,10 @@ internal class StdioDescriptor private constructor(
             }
 
             var fd = -1
-            while (true) {
+            do {
                 fd = open(file.path, flags, mode)
-                if (fd != -1) break
-                if (errno == EINTR) continue
-                throw errnoToIOException(errno, file)
-            }
+            } while (fd == -1 && errno == EINTR)
+            if (fd == -1) throw errnoToIOException(errno, file)
 
             val descriptor = StdioDescriptor(fd, canRead = isStdin, canWrite = !isStdin)
 
