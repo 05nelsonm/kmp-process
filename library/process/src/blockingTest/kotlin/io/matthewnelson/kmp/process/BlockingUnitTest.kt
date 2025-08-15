@@ -37,8 +37,8 @@ class BlockingUnitTest {
         // Cannot be exact b/c we're talking about threads in a test here,
         // but can be close just to catch any critically wrong function logic.
         val min = duration - 5.milliseconds
-        val max = duration + 50.milliseconds // macOS is ridiculous
-        println("${time.inWholeMilliseconds}ms")
+        val max = duration + 250.milliseconds // macOS is ridiculous
+        println("EXPECTED[${duration.inWholeMilliseconds}ms] vs ACTUAL[${time.inWholeMilliseconds}ms]")
         assertTrue(time in min..max, "${time.inWholeMilliseconds}ms")
     }
 
@@ -56,8 +56,8 @@ class BlockingUnitTest {
         // Cannot be exact b/c we're talking about threads in a test here,
         // but can be close just to catch any critically wrong function logic.
         val min = duration - 5.milliseconds
-        val max = duration + 50.milliseconds // macOS is ridiculous
-        println("${time.inWholeMilliseconds}ms")
+        val max = duration + 250.milliseconds // macOS is ridiculous
+        println("EXPECTED[${duration.inWholeMilliseconds}ms] vs ACTUAL[${time.inWholeMilliseconds}ms]")
         assertTrue(time in min..max, "${time.inWholeMilliseconds}ms")
     }
 

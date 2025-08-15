@@ -70,12 +70,15 @@ internal actual inline fun Duration.threadSleep() {
         // durations greater than 1 second.
         val mark = TimeSource.Monotonic.markNow()
         while (remaining > 0L) {
-            val micros = remaining.coerceAtMost(999_999L)
-            if (usleep(micros.toUInt()) == -1) {
+            val requested = remaining.coerceAtMost(999_999L)
+            if (usleep(requested.toUInt()) == -1) {
                 // EINTR
                 throw InterruptedException()
             }
+            val before = remaining
             remaining = (this - mark.elapsedNow()).inWholeMicroseconds
+            val slippage = before - remaining - requested
+            if (slippage > 0) remaining -= slippage
         }
     }
 }

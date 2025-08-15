@@ -21,6 +21,7 @@ import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.file.InterruptedException
 import io.matthewnelson.kmp.file.use
+import io.matthewnelson.kmp.file.wrapIOException
 import io.matthewnelson.kmp.process.*
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
@@ -121,7 +122,7 @@ internal fun PlatformBuilder.blockingOutput(
     } catch (_: IllegalStateException) {
         // max buffer exceeded and it hopped out of waitFor
     } catch (e: InterruptedException) {
-        throw IOException("Underlying thread interrupted", e)
+        throw e.wrapIOException { "Underlying thread interrupted" }
     } finally {
         p.destroy()
     }
@@ -133,7 +134,7 @@ internal fun PlatformBuilder.blockingOutput(
             .awaitStop()
             .waitFor()
     } catch (e: InterruptedException) {
-        throw IOException("Underlying thread interrupted", e)
+        throw e.wrapIOException { "Underlying thread interrupted" }
     }
 
     val pErr = when {
