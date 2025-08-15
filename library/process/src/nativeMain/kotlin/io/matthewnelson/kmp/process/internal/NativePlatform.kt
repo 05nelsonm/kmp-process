@@ -26,6 +26,7 @@ import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
 import kotlin.experimental.ExperimentalNativeApi
 import kotlin.time.Duration
+import kotlin.time.TimeSource
 
 internal actual val IsDesktop: Boolean get() {
     @OptIn(ExperimentalNativeApi::class)
@@ -58,20 +59,26 @@ internal inline fun NativeProcess.destroySuppressed(other: Throwable): Throwable
 internal actual inline fun Duration.threadSleep() {
     if (isNegative()) throw IllegalArgumentException("duration cannot be negative")
 
-    // usleep does not like durations greater than 1s
-    // on some systems. Break it up over multiple calls.
-    var remainingMicros: Long = inWholeMicroseconds
-    while (remainingMicros > 1_000_000L) {
-        if (usleep(999_999u) == -1) {
+    var remaining: Long = this.inWholeMicroseconds
+    if (remaining < 999_999L) {
+        if (usleep(remaining.toUInt()) == -1) {
             // EINTR
             throw InterruptedException()
         }
-        remainingMicros -= 1_000_000L
-    }
-    if (remainingMicros > 0) {
-        if (usleep(remainingMicros.toUInt()) == -1) {
-            // EINTR
-            throw InterruptedException()
+    } else {
+        // Use TimeMark to mitigate slippage for
+        // durations greater than 1 second.
+        val mark = TimeSource.Monotonic.markNow()
+        while (remaining > 0L) {
+            val requested = remaining.coerceAtMost(999_999L)
+            if (usleep(requested.toUInt()) == -1) {
+                // EINTR
+                throw InterruptedException()
+            }
+            val before = remaining
+            remaining = (this - mark.elapsedNow()).inWholeMicroseconds
+            val slippage = before - remaining - requested
+            if (slippage > 0) remaining -= slippage
         }
     }
 }
