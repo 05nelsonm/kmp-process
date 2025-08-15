@@ -116,16 +116,13 @@ internal constructor(
     init {
         val flags = O_RDONLY or O_CLOEXEC or O_DIRECTORY
         var fdDir = -1
-        while (true) {
+        do {
             fdDir = open(FD_DIR, flags, 0)
-            if (fdDir != -1) break
-            val e = errno
-            if (e == EINTR) continue
-            onError(e, ERR_FD_CLOEXEC)
-        }
+        } while (fdDir == -1 && errno == EINTR)
+        if (fdDir == -1) onError(errno, ERR_FD_CLOEXEC)
 
         var _errno: Int? = null
-        val ret = parseDir(fdDir) { entry ->
+        val errnoOrNull = parseDir(fdDir) { entry ->
             val fd = entry.pointed.d_name.toKString().toIntOrNull()
 
             when (fd) {
@@ -151,13 +148,10 @@ internal constructor(
             }
         }
 
-        if (ret != null) {
+        if (errnoOrNull != null) {
             // fdopendir failed
-            while (true) {
-                if (close(fdDir) == -1 && errno == EINTR) continue
-                break
-            }
-            _errno = ret
+            close(fdDir)
+            _errno = errnoOrNull
         }
 
         if (_errno != null) onError(_errno, ERR_FD_CLOEXEC)

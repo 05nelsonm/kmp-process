@@ -22,7 +22,6 @@ import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.cValue
 import kotlinx.cinterop.get
 import kotlinx.cinterop.toKString
-import platform.posix.EINTR
 import platform.posix.SIG_SETMASK
 import platform.posix.__environ
 import platform.posix.closedir
@@ -59,15 +58,14 @@ internal actual inline val ChildProcess.FD_DIR: String get() = "/proc/self/fd"
 internal actual inline fun ChildProcess.parseDir(fdDir: Int, action: (CPointer<dirent>) -> Unit?): Int? {
     val dir = fdopendir(fdDir) ?: return errno
 
-    var entry: CPointer<dirent>? = readdir(dir)
-    while (entry != null) {
-        if (action(entry) != null) break
-        entry = readdir(dir)
-    }
-
-    while (true) {
-        if (closedir(dir) == -1 && errno == EINTR) continue
-        break
+    try {
+        var entry: CPointer<dirent>? = readdir(dir)
+        while (entry != null) {
+            if (action(entry) != null) break
+            entry = readdir(dir)
+        }
+    } finally {
+        closedir(dir)
     }
 
     return null
