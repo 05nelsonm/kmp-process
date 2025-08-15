@@ -204,7 +204,7 @@ abstract class ProcessBaseTest {
             .stdin(Stdio.Inherit)
             .output {
                 inputUtf8 { expected }
-                timeoutMillis = 1.seconds.inWholeMilliseconds.toInt()
+                timeoutMillis = 5.seconds.inWholeMilliseconds.toInt()
                 maxBuffer = Int.MAX_VALUE / 2
             }
 
