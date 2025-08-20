@@ -20,8 +20,6 @@ pluginManagement {
         mavenCentral()
         google()
         gradlePluginPortal()
-        // TODO: REMOVE kmp-tor-resource (SNAPSHOT)
-        maven("https://central.sonatype.com/repository/maven-snapshots/")
     }
 }
 

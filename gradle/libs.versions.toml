@@ -14,8 +14,8 @@ gradle-publish-maven        = "0.33.0"
 
 immutable                   = "0.2.0"
 
-kmp-file                    = "0.4.0-SNAPSHOT"
-kmp-tor-resource            = "408.17.0-SNAPSHOT" # TODO: REMOVE kmp-tor-resource (SNAPSHOT)
+kmp-file                    = "0.4.0"
+kmp-tor-resource            = "408.17.0"
 kmp-tor-resourceNpmSNAPSHOT = ".0"
 kotlincrypto-catalog        = "0.7.1" # Utilized from settings.gradle.kts
 kotlinx-coroutines          = "1.10.2"

@@ -1,5 +1,25 @@
 # CHANGELOG
 
+## Version 0.3.2 (2025-08-20)
+ - Updates `kmp-file` to `0.4.0` [[#170]][170]
+ - `AsyncWriteStream` and `BufferedWriteStream` now extend the new `Closeable` interface from `kmp-file` [[#182]][182]
+ - Android API 23 and below:
+     - Open all `Stdio.File` streams prior to spawning a process [[#172]][172]
+         - This is to ensure any potential errors occur prior to process execution, not after.
+     - Ensure all `Stdio.Inherit` defined in `Stdio.Config` are appropriately redirected to `/dev/null` [[#184]][184]
+         - Android's `/proc/self/fd/{0/1/2}` for standard input/output/error are actually symbolic links
+           to `/dev/null`. A child process inheriting them would normally redirect output there, but the
+           supplemental implementation for API 23 and below to backport missing Java8 APIs needs to fulfil
+           that functionality by reading what comes off the `Process.inputStream` and `Process.errorStream`
+           without closing them.
+ - Kotlin/Native:
+     - Add check for non-directory when opening `Stdio.File` descriptor for stdin [[#174]][174]
+     - Fixes file descriptor leaks when `fork/exec` is used [[#177]][177]
+     - Ensures parent process' signal mask is cleared for newly spawned processes [[#179]][179]
+     - Fixes potential descriptor double-closure [[#185]][185]
+     - Fixes `Blocking.threadSleep` implementation for durations greater than 1s by using a `TimeMark`
+       to reduce slippage between successive `usleep` calls [[#189]][189]
+
 ## Version 0.3.1 (2025-06-14)
  - Ensure `posix_spawn` function return values are checked for non-zero error value, 
    not greater than or equal to 0 [[#158]][158]
@@ -163,3 +183,12 @@
 [165]: https://github.com/05nelsonm/kmp-process/pull/165
 [166]: https://github.com/05nelsonm/kmp-process/pull/166
 [168]: https://github.com/05nelsonm/kmp-process/pull/168
+[170]: https://github.com/05nelsonm/kmp-process/pull/170
+[172]: https://github.com/05nelsonm/kmp-process/pull/172
+[174]: https://github.com/05nelsonm/kmp-process/pull/174
+[177]: https://github.com/05nelsonm/kmp-process/pull/177
+[179]: https://github.com/05nelsonm/kmp-process/pull/179
+[182]: https://github.com/05nelsonm/kmp-process/pull/182
+[184]: https://github.com/05nelsonm/kmp-process/pull/184
+[185]: https://github.com/05nelsonm/kmp-process/pull/185
+[189]: https://github.com/05nelsonm/kmp-process/pull/189
