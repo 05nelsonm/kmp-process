@@ -41,7 +41,7 @@
             </a>        <button class="navigation-controls--btn navigation-controls--btn_toc ui-kit_mobile-only" id="toc-toggle" type="button">Toggle table of contents
         </button>
         <div class="navigation-controls--break ui-kit_mobile-only"></div>
-        <div class="library-version" id="library-version">0.3.1
+        <div class="library-version" id="library-version">0.3.2
         </div>
         <div class="navigation-controls">
         <div class="filter-section filter-section_loading" id="filter-section">
@@ -118,7 +118,7 @@
   <div class="breadcrumbs"><a href="../../../index.html">process</a><span class="delimiter">/</span><a href="../../index.html">io.matthewnelson.kmp.process</a><span class="delimiter">/</span><a href="../index.html">Process</a><span class="delimiter">/</span><span class="current">Builder</span></div>
   <div class="cover ">
     <h1 class="cover"><span><span>Builder</span></span></h1>
-    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library:process/commonMain"><div class="symbol monospace"><span class="token keyword">class </span><a href="index.html">Builder</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span class="token keyword">val </span>command<span class="token operator">: </span><span data-unresolved-link="kotlin/String///PointingToDeclaration/">String</span></span></span><span class="token punctuation">)</span><span class="clearfix"><span class="floating-right">(<a href="https://github.com/05nelsonm/kmp-process/tree/master/library/process/src/commonMain/kotlin/io/matthewnelson/kmp/process/Process.kt#L276">source</a>)</span></span></div><p class="paragraph">Creates a new <a href="../index.html">Process</a>.</p><p class="paragraph">e.g. (Shell commands on a Unix system)</p><div class="sample-container"><pre><code class="block lang-kotlin" theme="idea">val out = Process.Builder("sh")
+    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library:process/commonMain"><div class="symbol monospace"><span class="token keyword">class </span><a href="index.html">Builder</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span class="token keyword">val </span>command<span class="token operator">: </span><span data-unresolved-link="kotlin/String///PointingToDeclaration/">String</span></span></span><span class="token punctuation">)</span><span class="clearfix"><span class="floating-right">(<a href="https://github.com/05nelsonm/kmp-process/tree/master/library/process/src/commonMain/kotlin/io/matthewnelson/kmp/process/Process.kt#L277">source</a>)</span></span></div><p class="paragraph">Creates a new <a href="../index.html">Process</a>.</p><p class="paragraph">e.g. (Shell commands on a Unix system)</p><div class="sample-container"><pre><code class="block lang-kotlin" theme="idea">val out = Process.Builder("sh")
     .args("-c")
     .args("sleep 1; exit 5")
     .destroySignal(Signal.SIGKILL)
