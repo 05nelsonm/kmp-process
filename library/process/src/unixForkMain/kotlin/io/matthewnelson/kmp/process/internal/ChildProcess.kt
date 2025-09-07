@@ -222,8 +222,6 @@ internal constructor(
     }
 }
 
-internal expect inline val ChildProcess.FD_DIR: String
-
 /**
  * [action] return [Unit] to break from loop, or `null` to continue.
  *
