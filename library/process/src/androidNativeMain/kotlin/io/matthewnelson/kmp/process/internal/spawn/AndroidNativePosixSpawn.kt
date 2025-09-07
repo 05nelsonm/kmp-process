@@ -32,6 +32,7 @@ import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.MemScope
 import kotlinx.cinterop.NativePointed
 import kotlinx.cinterop.alloc
+import kotlinx.cinterop.convert
 import kotlinx.cinterop.cstr
 import kotlinx.cinterop.invoke
 import kotlinx.cinterop.memScoped
@@ -130,6 +131,17 @@ internal actual class PosixSpawnScope internal constructor(
 
             ptr as CPointer<CFunction<(
                 __attr: CValuesRef<posix_spawnattr_tVar>?,
+            ) -> Int>>
+        }
+
+        @DoNotReferenceDirectly(useInstead = "posixSpawnScopeOrNull")
+        internal val SPAWNATTR_SETFLAGS by lazy {
+            val ptr = dlsym(RTLD_NEXT, "posix_spawnattr_setflags")
+                ?: return@lazy null
+
+            ptr as CPointer<CFunction<(
+                __attr: CValuesRef<posix_spawnattr_tVar>?,
+                __flags: Short,
             ) -> Int>>
         }
 
@@ -236,6 +248,7 @@ internal actual inline fun <T: Any> posixSpawnScopeOrNull(
     val _posix_spawn_p = PosixSpawnScope.POSIX_SPAWN_P ?: return null
     val _posix_spawnattr_init = PosixSpawnScope.SPAWNATTR_INIT ?: return null
     val _posix_spawnattr_destroy = PosixSpawnScope.SPAWNATTR_DESTROY ?: return null
+    val _posix_spawnattr_setflags = PosixSpawnScope.SPAWNATTR_SETFLAGS ?: return null
     val _posix_spawnattr_setsigmask = PosixSpawnScope.SPAWNATTR_SETSIGMASK ?: return null
     val _posix_spawn_file_actions_init = PosixSpawnScope.FILE_ACTIONS_INIT ?: return null
     val _posix_spawn_file_actions_destroy = PosixSpawnScope.FILE_ACTIONS_DESTROY ?: return null
@@ -252,6 +265,11 @@ internal actual inline fun <T: Any> posixSpawnScopeOrNull(
             if (_posix_spawnattr_setsigmask(attrs.ptr, sigset) != 0) -1 else 0
         }
         if (ret == -1) return@memScoped null
+
+        val flags = POSIX_SPAWN_SETSIGMASK
+        if (_posix_spawnattr_setflags(attrs.ptr, flags.convert()) != 0) {
+            return@memScoped null
+        }
 
         val fileActions = alloc<posix_spawn_file_actions_tVar>()
         if (_posix_spawn_file_actions_init.invoke(fileActions.ptr) != 0) {

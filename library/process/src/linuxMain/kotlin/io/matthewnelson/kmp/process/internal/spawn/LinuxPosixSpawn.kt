@@ -32,10 +32,12 @@ import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.MemScope
 import kotlinx.cinterop.NativePointed
 import kotlinx.cinterop.alloc
+import kotlinx.cinterop.convert
 import kotlinx.cinterop.cstr
 import kotlinx.cinterop.invoke
 import kotlinx.cinterop.memScoped
 import kotlinx.cinterop.ptr
+import platform.linux.POSIX_SPAWN_SETSIGMASK
 import platform.linux.posix_spawn
 import platform.linux.posix_spawn_file_actions_adddup2
 import platform.linux.posix_spawn_file_actions_destroy
@@ -43,6 +45,7 @@ import platform.linux.posix_spawn_file_actions_init
 import platform.linux.posix_spawn_file_actions_t
 import platform.linux.posix_spawnattr_destroy
 import platform.linux.posix_spawnattr_init
+import platform.linux.posix_spawnattr_setflags
 import platform.linux.posix_spawnattr_setsigmask
 import platform.linux.posix_spawnattr_t
 import platform.linux.posix_spawnp
@@ -133,6 +136,9 @@ internal actual inline fun <T: Any> posixSpawnScopeOrNull(
         val sigset = alloc<sigset_t>()
         if (sigemptyset(sigset.ptr) == -1) return null
         if (posix_spawnattr_setsigmask(attrs.ptr, sigset.ptr) != 0) return null
+
+        val flags = POSIX_SPAWN_SETSIGMASK
+        if (posix_spawnattr_setflags(attrs.ptr, flags.convert()) != 0) return@memScoped null
 
         val fileActions = alloc<posix_spawn_file_actions_t>()
         if (posix_spawn_file_actions_init(fileActions.ptr) != 0) {

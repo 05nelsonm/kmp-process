@@ -29,6 +29,7 @@ import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.MemScope
 import kotlinx.cinterop.NativePointed
 import kotlinx.cinterop.alloc
+import kotlinx.cinterop.convert
 import kotlinx.cinterop.memScoped
 import kotlinx.cinterop.ptr
 import platform.posix.pid_tVar
@@ -85,7 +86,10 @@ internal actual inline fun <T: Any> posixSpawnScopeOrNull(
 
     val sigset = alloc<sigset_tVar>()
     if (sigemptyset(sigset.ptr) == -1) return@memScoped null
-    if (posix_spawnattr_setsigmask(attrs, sigset.ptr)!= 0) return@memScoped null
+    if (posix_spawnattr_setsigmask(attrs, sigset.ptr) != 0) return@memScoped null
+
+    val flags = POSIX_SPAWN_SETSIGMASK or POSIX_SPAWN_CLOEXEC_DEFAULT
+    if (posix_spawnattr_setflags(attrs, flags.convert()) != 0) return@memScoped null
 
     val fileActions = posix_spawn_file_actions_init() ?: return@memScoped null
     val scope = PosixSpawnScope(attrs, fileActions, this)
