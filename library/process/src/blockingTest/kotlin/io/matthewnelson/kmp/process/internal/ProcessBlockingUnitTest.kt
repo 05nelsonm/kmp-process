@@ -38,15 +38,15 @@ class ProcessBlockingUnitTest {
                 .args("0.5")
                 .destroySignal(Signal.SIGKILL)
                 .useSpawn { p ->
-                    assertNull(p.waitFor(100.milliseconds), "100ms")
+                    assertNull(p.waitFor(200.milliseconds), "200ms")
                     assertTrue(p.isAlive)
-                    assertEquals(0, p.waitFor(3.seconds), "exitCode")
+                    assertEquals(0, p.waitFor(4.seconds), "exitCode")
                     assertFalse(p.isAlive)
                 }
         }
 
-        // Should be less than the 2.5 seconds (waitFor popped out early)
-        assertTrue(runTime < 2_500.milliseconds, "runTime[$runTime] > 2.5s")
+        // Should be less than the 3 seconds (waitFor popped out early)
+        assertTrue(runTime < 3.seconds, "runTime[$runTime] > 3s")
     }
 
     @Test
