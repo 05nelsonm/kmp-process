@@ -70,7 +70,7 @@ class PosixSpawnAndroidNativeUnitTest {
 
         val unit = try {
             posixSpawnScopeOrNull(requireChangeDir = false) {
-                file_actions_addchdir_np(d).check { it == 0 }
+                file_actions_addchdir(d).check { it == 0 }
                 Unit
             }
         } catch (e: UnsupportedOperationException) {

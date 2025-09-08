@@ -39,6 +39,7 @@ import kotlinx.cinterop.memScoped
 import kotlinx.cinterop.ptr
 import platform.linux.POSIX_SPAWN_SETSIGMASK
 import platform.linux.posix_spawn
+import platform.linux.posix_spawn_file_actions_addclose
 import platform.linux.posix_spawn_file_actions_adddup2
 import platform.linux.posix_spawn_file_actions_destroy
 import platform.linux.posix_spawn_file_actions_init
@@ -64,6 +65,7 @@ internal actual class PosixSpawnScope internal constructor(
     private val mem: MemScope,
 ): AutofreeScope() {
 
+    internal actual val hasCLOEXEC: Boolean = false
     actual override fun alloc(size: Long, align: Int): NativePointed = mem.alloc(size, align)
 
     // Normally one would not want to hold onto a function pointer reference
@@ -72,7 +74,7 @@ internal actual class PosixSpawnScope internal constructor(
     @Suppress("LocalVariableName", "UNCHECKED_CAST")
     internal companion object {
 
-        @DoNotReferenceDirectly(useInstead = "PosixSpawnScope.file_actions_addchdir_np")
+        @DoNotReferenceDirectly(useInstead = "PosixSpawnScope.file_actions_addchdir")
         internal val FILE_ACTIONS_ADDCHDIR_NP by lazy {
             val ptr = dlsym(null, "posix_spawn_file_actions_addchdir_np")
                 ?: return@lazy null
@@ -87,11 +89,16 @@ internal actual class PosixSpawnScope internal constructor(
 
 @OptIn(ExperimentalForeignApi::class)
 @Throws(UnsupportedOperationException::class)
-internal actual inline fun PosixSpawnScope.file_actions_addchdir_np(chdir: File): Int {
-    val addchdir_np = PosixSpawnScope.FILE_ACTIONS_ADDCHDIR_NP
+internal actual inline fun PosixSpawnScope.file_actions_addchdir(chdir: File): Int {
+    val addchdir = PosixSpawnScope.FILE_ACTIONS_ADDCHDIR_NP
         ?: throw UnsupportedOperationException("posix_spawn_file_actions_addchdir_np is not available")
 
-    return addchdir_np.invoke(fileActions, chdir.path.cstr.getPointer(scope = this))
+    return addchdir.invoke(fileActions, chdir.path.cstr.getPointer(scope = this))
+}
+
+@OptIn(ExperimentalForeignApi::class)
+internal actual inline fun PosixSpawnScope.file_actions_addclose(fd: Int): Int {
+    return posix_spawn_file_actions_addclose(fileActions, fd)
 }
 
 @OptIn(ExperimentalForeignApi::class)

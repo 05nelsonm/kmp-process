@@ -118,11 +118,6 @@ class PosixSpawnUnitTest {
             println("Skipping...")
             return
         }
-        if (fdDir != "/dev/fd") {
-            // TODO: Implement pre-exec executable for Linux/AndroidNative
-            println("Skipping...")
-            return
-        }
 
         val fdsBuffer = IntArray(10) { -1 }
         val fdsTest = fdsBuffer.copyOf()

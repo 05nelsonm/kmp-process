@@ -31,6 +31,9 @@ import kotlinx.cinterop.alloc
 import kotlinx.cinterop.convert
 import kotlinx.cinterop.memScoped
 import kotlinx.cinterop.ptr
+import platform.posix.STDERR_FILENO
+import platform.posix.STDIN_FILENO
+import platform.posix.STDOUT_FILENO
 import platform.posix.pid_tVar
 import platform.posix.sigemptyset
 import platform.posix.sigset_tVar
@@ -45,13 +48,20 @@ internal actual class PosixSpawnScope internal constructor(
     private val mem: MemScope,
 ): AutofreeScope() {
 
+    internal actual val hasCLOEXEC: Boolean = true
     actual override fun alloc(size: Long, align: Int): NativePointed = mem.alloc(size, align)
 }
 
 @OptIn(ExperimentalForeignApi::class)
 @Throws(UnsupportedOperationException::class)
-internal actual inline fun PosixSpawnScope.file_actions_addchdir_np(chdir: File): Int {
+internal actual inline fun PosixSpawnScope.file_actions_addchdir(chdir: File): Int {
+    // TODO: Investigate ability to use pthread_chdir_np(chdir.path) with deferred { pthread_fchdir_np(-1) }
     throw UnsupportedOperationException("posix_spawn_file_actions_addchdir_np is not supported on iOS")
+}
+
+@OptIn(ExperimentalForeignApi::class)
+internal actual inline fun PosixSpawnScope.file_actions_addclose(fd: Int): Int {
+    return posix_spawn_file_actions_addclose(fileActions, fd)
 }
 
 @OptIn(ExperimentalForeignApi::class)
@@ -96,6 +106,11 @@ internal actual inline fun <T: Any> posixSpawnScopeOrNull(
         if (posix_spawnattr_setflags(attrs, flags.convert()) != 0) return@memScoped null
 
         val fileActions = posix_spawn_file_actions_init() ?: return@memScoped null
+
+        arrayOf(STDIN_FILENO, STDOUT_FILENO, STDERR_FILENO).forEach { fd ->
+            if (posix_spawn_file_actions_addinherit_np(fileActions, fd) != 0) return@memScoped null
+        }
+
         val scope = PosixSpawnScope(attrs, fileActions, this)
         block(scope)
     }
