@@ -30,6 +30,7 @@ import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.Stdio
 import io.matthewnelson.kmp.process.internal.NativeProcess
 import io.matthewnelson.kmp.process.internal.awaitExecOrFailure
+import io.matthewnelson.kmp.process.internal.destroySuppressed
 import io.matthewnelson.kmp.process.internal.stdio.StdioDescriptor.Pipe.Companion.fdOpen
 import io.matthewnelson.kmp.process.internal.stdio.StdioHandle.Companion.openHandle
 import io.matthewnelson.kmp.process.internal.stdio.withFd
@@ -218,11 +219,17 @@ internal fun posixSpawn(
         val envp = env.toEnvp(scope = this)
 
         // posix_spawn & posix_spawnp return a non-zero value to indicate an error
-        // with its fork/vfork step.
+        // with its fork/vfork/clone step.
         //
         // Linux can actually return ENOENT here for glibc 2.24+ and won't even spawn
         // the child process, whereas Android/iOS/macOS will only return a failure if
-        // fork/vfork fail.
+        // fork/vfork/clone fail.
+        //
+        // Additionally, macOS 10.15+ there's a bug whereby using posix_spawnp in
+        // combination with file_actions_addchdir_np can result in a successful
+        // start, but a return of ENOENT. This is avoided by using posix_spawn over
+        // posix_spawnp whenever a '/' character is present, as posix_spawn is single
+        // shot and will not search PATH.
         var ret: Int
         do {
             ret = if (command.contains(SysDirSep)) {
@@ -235,7 +242,24 @@ internal fun posixSpawn(
 
         val pid = pidRef.value
         if (ret != 0 || pid <= 0) {
-            throw spawnFailureToIOException(command, chdir, spawnRet = ret)
+            val e = spawnFailureToIOException(command, chdir, spawnRet = ret)
+
+            // Always check for a PID b/c posix_spawn(p) could have a bug (like with
+            // macOS 10.15+) and return an error while still spawning the process. In
+            // either case, things are borked.
+            if (pid > 0) {
+                NativeProcess(
+                    pid,
+                    handle,
+                    command,
+                    args,
+                    chdir,
+                    env,
+                    destroy,
+                    handler,
+                ).destroySuppressed(e)
+            }
+            throw e
         }
 
         pid
