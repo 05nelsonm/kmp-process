@@ -47,6 +47,7 @@ import kotlinx.cinterop.alloc
 import kotlinx.cinterop.ptr
 import kotlinx.cinterop.toKString
 import kotlinx.cinterop.value
+import platform.posix.EINTR
 import platform.posix.ENOENT
 import platform.posix.STDERR_FILENO
 import platform.posix.STDIN_FILENO
@@ -222,13 +223,15 @@ internal fun posixSpawn(
         // Linux can actually return ENOENT here for glibc 2.24+ and won't even spawn
         // the child process, whereas Android/iOS/macOS will only return a failure if
         // fork/vfork fail.
-        val ret = if (command.contains(SysDirSep)) {
-            // Under the hood, implementations will use execve
-            spawn(command, pidRef.ptr, argv, envp)
-        } else {
-            // Under the hood, implementations will use execvpe
-            spawn_p(command, pidRef.ptr, argv, envp)
-        }
+        var ret: Int
+        do {
+            ret = if (command.contains(SysDirSep)) {
+                spawn(command, pidRef.ptr, argv, envp)
+            } else {
+                // Under the hood, implementations will use execvpe
+                spawn_p(command, pidRef.ptr, argv, envp)
+            }
+        } while (ret == EINTR)
 
         val pid = pidRef.value
         if (ret != 0 || pid <= 0) {
