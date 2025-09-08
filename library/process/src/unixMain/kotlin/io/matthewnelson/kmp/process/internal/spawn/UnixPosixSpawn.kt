@@ -125,6 +125,26 @@ internal fun posixSpawn(
     destroy: Signal,
     handler: ProcessException.Handler,
 ): NativeProcess? = posixSpawnScopeOrNull(requireChangeDir = chdir != null) {
+    val fdsLimit = if (!hasCLOEXEC) {
+        set_posix_errno(0)
+        @OptIn(UnsafeNumber::class)
+        @Suppress("RemoveRedundantCallsOfConversionMethods")
+        val openMax = sysconf(_SC_OPEN_MAX).toInt()
+        if (openMax == -1 && errno != 0) throw errnoToIOException(errno)
+        if (openMax < 20) {
+            // _SC_OPEN_MAX must not be less than _POSIX_OPEN_MAX (20)
+            // as per documentation. Something must be wrong...
+            //
+            // In practice only a small number of fds are open, but this
+            // will cover them all.
+            1_000_000
+        } else {
+            openMax
+        }
+    } else {
+        -1
+    }
+
     if (chdir != null) {
         // posix_spawn_file_actions_addchdir returns a non-zero value to indicate the error.
         val ret = file_actions_addchdir(chdir)
@@ -143,21 +163,8 @@ internal fun posixSpawn(
         throw handle.tryCloseSuppressed(e)
     }
 
-    if (!hasCLOEXEC) {
-        set_posix_errno(0)
-        @OptIn(UnsafeNumber::class)
-        @Suppress("RemoveRedundantCallsOfConversionMethods")
-        var fdsLimit = sysconf(_SC_OPEN_MAX).toInt()
-        if (fdsLimit < 20) {
-            if (errno != 0) {
-                val e = errnoToIOException(errno)
-                handle.tryCloseSuppressed(e)
-                pipe.tryCloseSuppressed(e)
-                throw e
-            }
-        }
-
-        val excludeFds = LinkedHashSet<Int>(3, 1.0f).apply {
+    if (fdsLimit > 0) {
+        val excludeFds = LinkedHashSet<Int>(9, 1.0f).apply {
             // Do not dup2/close {0/1/2}
             add(STDIN_FILENO); add(STDOUT_FILENO); add(STDERR_FILENO)
 
@@ -167,13 +174,6 @@ internal fun posixSpawn(
             // Do not dup2/close the pipes. They are already configured with CLOEXEC.
             add(pipe.read.withFd { it })
             add(pipe.write.withFd { it })
-        }
-
-
-        if (fdsLimit < 20) {
-            // _SC_OPEN_MAX must not be less than 20 as per
-            // documentation so something must be wrong...
-            fdsLimit = maxOf(20, excludeFds.max())
         }
 
         // Unfortunately there is no way to specify "close all descriptors from the parent
@@ -192,8 +192,7 @@ internal fun posixSpawn(
 
             val e = errnoToIOException(ret)
             handle.tryCloseSuppressed(e)
-            pipe.tryCloseSuppressed(e)
-            throw e
+            throw pipe.tryCloseSuppressed(e)
         }
     }
 
@@ -210,7 +209,6 @@ internal fun posixSpawn(
             }
         }
     })
-
 
     val pid = try {
         val pidRef = alloc<pid_tVar>().apply { value = -1 }
@@ -240,8 +238,7 @@ internal fun posixSpawn(
         pid
     } catch (e: IOException) {
         handle.tryCloseSuppressed(e)
-        pipe.tryCloseSuppressed(e)
-        throw e
+        throw pipe.tryCloseSuppressed(e)
     }
 
     val p = NativeProcess(
