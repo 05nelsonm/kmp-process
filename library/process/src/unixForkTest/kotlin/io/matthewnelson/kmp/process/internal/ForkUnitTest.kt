@@ -13,12 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("RemoveRedundantCallsOfConversionMethods")
-
 package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.FileNotFoundException
 import io.matthewnelson.kmp.file.IOException
+import io.matthewnelson.kmp.file.OpenExcl
 import io.matthewnelson.kmp.file.SysDirSep
 import io.matthewnelson.kmp.file.SysTempDir
 import io.matthewnelson.kmp.file.canonicalPath2
@@ -32,23 +31,17 @@ import io.matthewnelson.kmp.file.parentPath
 import io.matthewnelson.kmp.file.path
 import io.matthewnelson.kmp.file.resolve
 import io.matthewnelson.kmp.file.toFile
+import io.matthewnelson.kmp.file.writeUtf8
+import io.matthewnelson.kmp.process.Blocking
 import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.changeDir
 import io.matthewnelson.kmp.process.usePosixSpawn
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.UnsafeNumber
-import kotlinx.cinterop.addressOf
-import kotlinx.cinterop.convert
-import kotlinx.cinterop.usePinned
-import platform.posix.EAGAIN
-import platform.posix.EWOULDBLOCK
-import platform.posix.F_SETFL
-import platform.posix.O_NONBLOCK
+import platform.posix.O_RDONLY
 import platform.posix.close
 import platform.posix.errno
-import platform.posix.fcntl
-import platform.posix.pipe
-import platform.posix.read
+import platform.posix.open
 import kotlin.random.Random
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -59,6 +52,9 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlin.test.fail
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
 @OptIn(ExperimentalForeignApi::class, UnsafeNumber::class)
 class ForkUnitTest {
@@ -66,7 +62,7 @@ class ForkUnitTest {
     private companion object {
         val CHDIR = run {
             @OptIn(ExperimentalStdlibApi::class)
-            val rand = Random.Default.nextBytes(8).toHexString()
+            val rand = Random.nextBytes(8).toHexString()
             SysTempDir.resolve("fork_$rand")
         }
     }
@@ -102,55 +98,75 @@ class ForkUnitTest {
     }
 
     @Test
-    fun givenProcess_whenSpawned_thenClosesDescriptors() {
-        val fds = IntArray(2) { -1 }
-        fds.usePinned { pinned ->
-            pipe(pinned.addressOf(0)).check()
-        }
-
+    fun givenParentProcessDescriptorsWithoutCLOEXEC_whenSpawn_thenChildProcessClosesDescriptors() {
+        val fdsBuffer = IntArray(10) { -1 }
+        val fdsTest = fdsBuffer.copyOf()
+        @OptIn(ExperimentalUuidApi::class)
+        val file = SysTempDir.resolve(Uuid.random().toString())
         var p: Process? = null
-        try {
-            fcntl(fds[0], F_SETFL, O_NONBLOCK).check()
 
-            // Verify that it would block
-            val buf = ByteArray(1)
-            var ret = buf.usePinned { pinned ->
-                read(fds[0], pinned.addressOf(0), buf.size.convert()).toInt()
-            }
-            assertEquals(-1, ret)
-            when (errno) {
-                EWOULDBLOCK, EAGAIN -> {} // pass
-                else -> throw errnoToIOException(errno)
+        val fdsChild = try {
+            // Ensure file exists
+            file.writeUtf8(excl = OpenExcl.MustCreate.of("400"), "")
+
+            // fdsBuffer are purely for increasing the fdsTest descriptors to a higher
+            // number. Once fdsBuffer descriptors are all closed in this process, we
+            // should have some distance between any descriptors the Child Process would
+            // open, and ours in the parent.
+            arrayOf(fdsBuffer, fdsTest).forEach { array ->
+                for (i in array.indices) {
+                    // No O_CLOEXEC, so they will be leaked to child process (normally).
+                    array[i] = open(file.path, O_RDONLY, 0)
+                    if (array[i] == -1) throw errnoToIOException(errno, file)
+                }
             }
 
-            p = Process.Builder(command = "sh")
-                .usePosixSpawn(use = false)
-                .args("-c", "sleep 3; exit 42")
+            for (i in fdsBuffer.indices) {
+                close(fdsBuffer[i])
+                fdsBuffer[i] = -1
+            }
+
+            p = Process.Builder(command = "ls")
+                .usePosixSpawn(false)
+                .args(FD_DIR)
                 .spawn()
 
-            close(fds[1]).check()
-            fds[1] = -1
+            var eosStdout = false
+            var eosStderr = false
+            val fdsLS = mutableListOf<String>()
 
-            ret = buf.usePinned { pinned ->
-                read(fds[0], pinned.addressOf(0), buf.size.convert()).toInt()
+            p.stdoutFeed { line ->
+                if (line == null) {
+                    eosStdout = true
+                    return@stdoutFeed
+                }
+                fdsLS.add(line)
+            }.stderrFeed { line ->
+                if (line == null) {
+                    eosStderr = true
+                    return@stderrFeed
+                }
+                println(line)
+            }.waitFor()
+
+            while (true) {
+                if (eosStdout && eosStderr) break
+                Blocking.threadSleep(25.milliseconds)
             }
 
-            // If our test pipe's write end was leaked to the ChildProcess, read
-            // would return -1 and set errno to EAGAIN.
-            //
-            // This confirms that after the fork call, the ChildProcess looped through
-            // all descriptors and marked them with FD_CLOEXEC (if they weren't already).
-            if (ret != 0) throw errnoToIOException(errno)
-
-            // Verify that read was performed while the process is still alive. Otherwise,
-            // this test would succeed but be a false positive.
-            assertTrue(p.isAlive)
+            fdsLS.map { it.trim().toInt() }
         } finally {
-            fds.forEach { fd ->
+            (fdsBuffer + fdsTest).forEach { fd ->
                 if (fd == -1) return@forEach
                 close(fd)
             }
+            file.delete2()
             p?.destroy()
+        }
+
+        fdsTest.forEach { fd ->
+            if (!fdsChild.contains(fd)) return@forEach
+            fail("Parent Process fds${fdsTest.toList()} were leaked >> Child Process fds$fdsChild")
         }
     }
 

@@ -25,6 +25,7 @@ import io.matthewnelson.kmp.file.wrapIOException
 import io.matthewnelson.kmp.process.*
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.TimeSource
 
 @Throws(InterruptedException::class)
 internal expect inline fun Duration.threadSleep()
@@ -49,6 +50,11 @@ internal fun PlatformBuilder.blockingOutput(
         options.dropInput()
         throw e
     }
+
+    // Cannot use Process.startTime because implementation may block for a moment
+    // until indication that the child process has actually spawned. So, use the
+    // time at when things were returned to us.
+    val startTime = TimeSource.Monotonic.markNow()
 
     val stdoutBuffer = OutputFeedBuffer.of(options)
     val stderrBuffer = OutputFeedBuffer.of(options)
@@ -82,7 +88,7 @@ internal fun PlatformBuilder.blockingOutput(
                 null
             }
         }.commonWaitFor(
-            timeout = ((options.timeout - 25.milliseconds) - p.startTime.elapsedNow()).coerceAtLeast(1.milliseconds),
+            timeout = ((options.timeout - 25.milliseconds) - startTime.elapsedNow()).coerceAtLeast(1.milliseconds),
             sleep = { millis -> millis.threadSleep() },
         )
 
@@ -113,7 +119,7 @@ internal fun PlatformBuilder.blockingOutput(
 
             null
         }.commonWaitFor(
-            timeout = (options.timeout - p.startTime.elapsedNow()).coerceAtLeast(1.milliseconds),
+            timeout = (options.timeout - startTime.elapsedNow()).coerceAtLeast(1.milliseconds),
             sleep = { millis ->
                 if (stdoutBuffer.maxSizeExceeded || stderrBuffer.maxSizeExceeded) throw IllegalStateException()
                 millis.threadSleep()

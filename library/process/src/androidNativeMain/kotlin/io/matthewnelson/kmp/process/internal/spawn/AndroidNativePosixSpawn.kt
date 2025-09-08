@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING", "NOTHING_TO_INLINE", "FunctionName")
+@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING", "NOTHING_TO_INLINE", "FunctionName", "ObjectPropertyName")
 @file:OptIn(DoNotReferenceDirectly::class)
 
 package io.matthewnelson.kmp.process.internal.spawn
@@ -32,13 +32,22 @@ import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.MemScope
 import kotlinx.cinterop.NativePointed
 import kotlinx.cinterop.alloc
+import kotlinx.cinterop.convert
 import kotlinx.cinterop.cstr
 import kotlinx.cinterop.invoke
 import kotlinx.cinterop.memScoped
 import kotlinx.cinterop.ptr
 import platform.posix.RTLD_NEXT
+import platform.posix.android_get_device_api_level
 import platform.posix.dlsym
 import platform.posix.pid_tVar
+
+// Definition not available from Kotlin b/c very old revision of NDK
+// See: https://youtrack.jetbrains.com/issue/KT-77899
+//
+// Was added to the NDK and is available for API 33+
+// See: https://android.googlesource.com/platform/bionic/+/262b873dea75422c88739a5b1645edb1de638ddf%5E%21/#F1
+private val __POSIX_SPAWN_CLOEXEC_DEFAULT = if (android_get_device_api_level() >= 33) 256 else 0
 
 // androidNative
 @OptIn(ExperimentalForeignApi::class)
@@ -67,6 +76,11 @@ internal actual class PosixSpawnScope internal constructor(
         __argv: CValuesRef<CPointerVar<ByteVar>>?,
         __env: CValuesRef<CPointerVar<ByteVar>>?,
     ) -> Int>>,
+    @property:DoNotReferenceDirectly(useInstead = "PosixSpawnScope.file_actions_addclose")
+    internal val _file_actions_addclose: CPointer<CFunction<(
+        __actions: CValuesRef<posix_spawn_file_actions_tVar>?,
+        __fd: Int,
+    ) -> Int>>,
     @property:DoNotReferenceDirectly(useInstead = "PosixSpawnScope.file_actions_adddup2")
     internal val _file_actions_adddup2: CPointer<CFunction<(
         __actions: CValuesRef<posix_spawn_file_actions_tVar>?,
@@ -75,6 +89,7 @@ internal actual class PosixSpawnScope internal constructor(
     ) -> Int>>,
 ): AutofreeScope() {
 
+    internal actual val hasCLOEXEC: Boolean = __POSIX_SPAWN_CLOEXEC_DEFAULT != 0
     actual override fun alloc(size: Long, align: Int): NativePointed = mem.alloc(size, align)
 
     // Normally one would not want to hold onto a function pointer reference
@@ -134,6 +149,17 @@ internal actual class PosixSpawnScope internal constructor(
         }
 
         @DoNotReferenceDirectly(useInstead = "posixSpawnScopeOrNull")
+        internal val SPAWNATTR_SETFLAGS by lazy {
+            val ptr = dlsym(RTLD_NEXT, "posix_spawnattr_setflags")
+                ?: return@lazy null
+
+            ptr as CPointer<CFunction<(
+                __attr: CValuesRef<posix_spawnattr_tVar>?,
+                __flags: Short,
+            ) -> Int>>
+        }
+
+        @DoNotReferenceDirectly(useInstead = "posixSpawnScopeOrNull")
         internal val SPAWNATTR_SETSIGMASK by lazy {
             val ptr = dlsym(RTLD_NEXT, "posix_spawnattr_setsigmask")
                 ?: return@lazy null
@@ -164,7 +190,7 @@ internal actual class PosixSpawnScope internal constructor(
             ) -> Int>>
         }
 
-        @DoNotReferenceDirectly(useInstead = "PosixSpawnScope.file_actions_addchdir_np")
+        @DoNotReferenceDirectly(useInstead = "PosixSpawnScope.file_actions_addchdir")
         internal val FILE_ACTIONS_ADDCHDIR_NP by lazy {
             val ptr = dlsym(RTLD_NEXT, "posix_spawn_file_actions_addchdir_np")
                 ?: return@lazy null
@@ -172,6 +198,17 @@ internal actual class PosixSpawnScope internal constructor(
             ptr as CPointer<CFunction<(
                 __actions: CValuesRef<posix_spawn_file_actions_tVar>?,
                 __path: CPointer<ByteVarOf<Byte>>,
+            ) -> Int>>
+        }
+
+        @DoNotReferenceDirectly(useInstead = "PosixSpawnScope.file_actions_addclose")
+        internal val FILE_ACTIONS_ADDCLOSE by lazy {
+            val ptr = dlsym(RTLD_NEXT, "posix_spawn_file_actions_addclose")
+                ?: return@lazy null
+
+            ptr as CPointer<CFunction<(
+                __actions: CValuesRef<posix_spawn_file_actions_tVar>?,
+                __fd: Int,
             ) -> Int>>
         }
 
@@ -191,11 +228,16 @@ internal actual class PosixSpawnScope internal constructor(
 
 @OptIn(ExperimentalForeignApi::class)
 @Throws(UnsupportedOperationException::class)
-internal actual inline fun PosixSpawnScope.file_actions_addchdir_np(chdir: File): Int {
-    val addchdir_np = PosixSpawnScope.FILE_ACTIONS_ADDCHDIR_NP
+internal actual inline fun PosixSpawnScope.file_actions_addchdir(chdir: File): Int {
+    val addchdir = PosixSpawnScope.FILE_ACTIONS_ADDCHDIR_NP
         ?: throw UnsupportedOperationException("posix_spawn_file_actions_addchdir is not available")
 
-    return addchdir_np.invoke(fileActions, chdir.path.cstr.getPointer(scope = this))
+    return addchdir.invoke(fileActions, chdir.path.cstr.getPointer(scope = this))
+}
+
+@OptIn(ExperimentalForeignApi::class)
+internal actual inline fun PosixSpawnScope.file_actions_addclose(fd: Int): Int {
+    return _file_actions_addclose(fileActions, fd)
 }
 
 @OptIn(ExperimentalForeignApi::class)
@@ -236,9 +278,11 @@ internal actual inline fun <T: Any> posixSpawnScopeOrNull(
     val _posix_spawn_p = PosixSpawnScope.POSIX_SPAWN_P ?: return null
     val _posix_spawnattr_init = PosixSpawnScope.SPAWNATTR_INIT ?: return null
     val _posix_spawnattr_destroy = PosixSpawnScope.SPAWNATTR_DESTROY ?: return null
+    val _posix_spawnattr_setflags = PosixSpawnScope.SPAWNATTR_SETFLAGS ?: return null
     val _posix_spawnattr_setsigmask = PosixSpawnScope.SPAWNATTR_SETSIGMASK ?: return null
     val _posix_spawn_file_actions_init = PosixSpawnScope.FILE_ACTIONS_INIT ?: return null
     val _posix_spawn_file_actions_destroy = PosixSpawnScope.FILE_ACTIONS_DESTROY ?: return null
+    val _posix_spawn_file_actions_addclose = PosixSpawnScope.FILE_ACTIONS_ADDCLOSE ?: return null
     val _posix_spawn_file_actions_adddup2 = PosixSpawnScope.FILE_ACTIONS_ADDDUP2 ?: return null
 
     return memScoped {
@@ -253,6 +297,11 @@ internal actual inline fun <T: Any> posixSpawnScopeOrNull(
         }
         if (ret == -1) return@memScoped null
 
+        val flags = POSIX_SPAWN_SETSIGMASK or __POSIX_SPAWN_CLOEXEC_DEFAULT
+        if (_posix_spawnattr_setflags(attrs.ptr, flags.convert()) != 0) {
+            return@memScoped null
+        }
+
         val fileActions = alloc<posix_spawn_file_actions_tVar>()
         if (_posix_spawn_file_actions_init.invoke(fileActions.ptr) != 0) {
             return@memScoped null
@@ -265,6 +314,7 @@ internal actual inline fun <T: Any> posixSpawnScopeOrNull(
             this,
             _posix_spawn,
             _posix_spawn_p,
+            _posix_spawn_file_actions_addclose,
             _posix_spawn_file_actions_adddup2,
         )
         block(scope)

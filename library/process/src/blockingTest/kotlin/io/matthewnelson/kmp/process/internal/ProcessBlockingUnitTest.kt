@@ -35,18 +35,18 @@ class ProcessBlockingUnitTest {
 
         val runTime = measureTime {
             Process.Builder(command = if (IsAppleSimulator) "/bin/sleep" else "sleep")
-                .args("0.25")
+                .args("0.5")
                 .destroySignal(Signal.SIGKILL)
                 .useSpawn { p ->
-                    assertNull(p.waitFor(100.milliseconds))
+                    assertNull(p.waitFor(100.milliseconds), "100ms")
                     assertTrue(p.isAlive)
-                    assertEquals(0, p.waitFor(2.seconds))
+                    assertEquals(0, p.waitFor(3.seconds), "exitCode")
                     assertFalse(p.isAlive)
                 }
         }
 
-        // Should be less than the 2 seconds (waitFor popped out early)
-        assertTrue(runTime < 1.seconds)
+        // Should be less than the 2.5 seconds (waitFor popped out early)
+        assertTrue(runTime < 2_500.milliseconds, "runTime[$runTime] > 2.5s")
     }
 
     @Test

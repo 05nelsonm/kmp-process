@@ -32,6 +32,7 @@ import io.matthewnelson.kmp.process.internal.NativeProcess
 import io.matthewnelson.kmp.process.internal.awaitExecOrFailure
 import io.matthewnelson.kmp.process.internal.stdio.StdioDescriptor.Pipe.Companion.fdOpen
 import io.matthewnelson.kmp.process.internal.stdio.StdioHandle.Companion.openHandle
+import io.matthewnelson.kmp.process.internal.stdio.withFd
 import io.matthewnelson.kmp.process.internal.toArgv
 import io.matthewnelson.kmp.process.internal.toEnvp
 import io.matthewnelson.kmp.process.internal.tryCloseSuppressed
@@ -41,24 +42,36 @@ import kotlinx.cinterop.CPointerVar
 import kotlinx.cinterop.CValuesRef
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.NativePointed
+import kotlinx.cinterop.UnsafeNumber
 import kotlinx.cinterop.alloc
 import kotlinx.cinterop.ptr
 import kotlinx.cinterop.toKString
 import kotlinx.cinterop.value
 import platform.posix.ENOENT
+import platform.posix.STDERR_FILENO
+import platform.posix.STDIN_FILENO
+import platform.posix.STDOUT_FILENO
 import platform.posix.X_OK
+import platform.posix._SC_OPEN_MAX
 import platform.posix.access
+import platform.posix.errno
 import platform.posix.pid_tVar
+import platform.posix.set_posix_errno
 import platform.posix.strerror
+import platform.posix.sysconf
 
 @OptIn(ExperimentalForeignApi::class)
 internal expect class PosixSpawnScope: AutofreeScope {
+    internal val hasCLOEXEC: Boolean
     override fun alloc(size: Long, align: Int): NativePointed
 }
 
 @OptIn(ExperimentalForeignApi::class)
 @Throws(UnsupportedOperationException::class)
-internal expect inline fun PosixSpawnScope.file_actions_addchdir_np(chdir: File): Int
+internal expect inline fun PosixSpawnScope.file_actions_addchdir(chdir: File): Int
+
+@OptIn(ExperimentalForeignApi::class)
+internal expect inline fun PosixSpawnScope.file_actions_addclose(fd: Int): Int
 
 @OptIn(ExperimentalForeignApi::class)
 internal expect inline fun PosixSpawnScope.file_actions_adddup2(fd: Int, newFd: Int): Int
@@ -114,7 +127,7 @@ internal fun posixSpawn(
 ): NativeProcess? = posixSpawnScopeOrNull(requireChangeDir = chdir != null) {
     if (chdir != null) {
         // posix_spawn_file_actions_addchdir returns a non-zero value to indicate the error.
-        val ret = file_actions_addchdir_np(chdir)
+        val ret = file_actions_addchdir(chdir)
         if (ret != 0) {
             // strdup failed or something
             val msg = strerror(ret)?.toKString() ?: "errno: $ret"
@@ -124,21 +137,80 @@ internal fun posixSpawn(
 
     val handle = stdio.openHandle()
 
+    val pipe = try {
+        Stdio.Pipe.fdOpen(readEndNonBlock = true)
+    } catch (e: IOException) {
+        throw handle.tryCloseSuppressed(e)
+    }
+
+    if (!hasCLOEXEC) {
+        set_posix_errno(0)
+        @OptIn(UnsafeNumber::class)
+        @Suppress("RemoveRedundantCallsOfConversionMethods")
+        var fdsLimit = sysconf(_SC_OPEN_MAX).toInt()
+        if (fdsLimit < 20) {
+            if (errno != 0) {
+                val e = errnoToIOException(errno)
+                handle.tryCloseSuppressed(e)
+                pipe.tryCloseSuppressed(e)
+                throw e
+            }
+        }
+
+        val excludeFds = LinkedHashSet<Int>(3, 1.0f).apply {
+            // Do not dup2/close {0/1/2}
+            add(STDIN_FILENO); add(STDOUT_FILENO); add(STDERR_FILENO)
+
+            // Do not dup2/close any of the handle's descriptors that are to be dup'd
+            handle.dup2 { fd, _ -> add(fd); null }
+
+            // Do not dup2/close the pipes. They are already configured with CLOEXEC.
+            add(pipe.read.withFd { it })
+            add(pipe.write.withFd { it })
+        }
+
+
+        if (fdsLimit < 20) {
+            // _SC_OPEN_MAX must not be less than 20 as per
+            // documentation so something must be wrong...
+            fdsLimit = maxOf(20, excludeFds.max())
+        }
+
+        // Unfortunately there is no way to specify "close all descriptors from the parent
+        // process except these", so we are left with a hammer-ish technique to force close
+        // any descriptors between 3 - _SC_OPEN_MAX (excluding descriptors we know have O_CLOEXEC).
+        repeat(fdsLimit) { fd ->
+            if (excludeFds.contains(fd)) return@repeat
+
+            // dup2 will close the descriptor if one is open at fd
+            var ret = file_actions_adddup2(/* fakeFd = */ 0, fd)
+            if (ret == 0) {
+                // Then close the dup of 0
+                ret = file_actions_addclose(fd)
+            }
+            if (ret == 0) return@repeat
+
+            val e = errnoToIOException(ret)
+            handle.tryCloseSuppressed(e)
+            pipe.tryCloseSuppressed(e)
+            throw e
+        }
+    }
+
     // handle closes automatically on any failures
     handle.dup2(action = { fd, newFd ->
         // posix_spawn_file_actions_adddup2 returns a non-zero value to indicate the error.
         when (val ret = file_actions_adddup2(fd, newFd)) {
             0 -> null
             // EBADF
-            else -> errnoToIOException(ret)
+            else -> {
+                val e = errnoToIOException(ret)
+                pipe.tryCloseSuppressed(e)
+                e
+            }
         }
     })
 
-    val pipe = try {
-        Stdio.Pipe.fdOpen(readEndNonBlock = true)
-    } catch (e: IOException) {
-        throw handle.tryCloseSuppressed(e)
-    }
 
     val pid = try {
         val pidRef = alloc<pid_tVar>().apply { value = -1 }

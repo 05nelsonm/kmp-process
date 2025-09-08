@@ -32,7 +32,7 @@ import platform.posix.sigemptyset
 import platform.posix.sigprocmask
 import platform.posix.sigset_tVar
 
-internal actual inline val ChildProcess.FD_DIR: String get() = "/dev/fd"
+internal actual inline val FD_DIR: String get() = "/dev/fd"
 
 /**
  * [action] return [Unit] to break from loop, or `null` to continue.
