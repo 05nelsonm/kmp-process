@@ -28,7 +28,7 @@ import io.matthewnelson.kmp.process.internal.stdio.StdioHandle
 import kotlinx.cinterop.*
 import kotlinx.coroutines.*
 import platform.posix.*
-import kotlin.concurrent.AtomicReference
+import kotlin.concurrent.AtomicInt
 import kotlin.concurrent.Volatile
 import kotlin.native.concurrent.ObsoleteWorkersApi
 import kotlin.native.concurrent.TransferMode
@@ -73,7 +73,7 @@ internal constructor(
     internal var wasStderrThreadStarted: Boolean = false
         private set
     private val destroyLock = newLock()
-    private val _exitCode = AtomicReference<Int?>(null)
+    private val _exitCode = AtomicInt(NO_EXIT)
 
     private val stdoutWorker = Instance(create = {
         if (isDestroyed) return@Instance null
@@ -162,7 +162,7 @@ internal constructor(
     }
 
     public override fun exitCodeOrNull(): Int? {
-        _exitCode.value?.let { return it }
+        _exitCode.value.let { c -> if (c != NO_EXIT) return c }
 
         @OptIn(ExperimentalForeignApi::class)
         memScoped {
@@ -185,13 +185,13 @@ internal constructor(
                         }
                     }
 
-                    _exitCode.compareAndSet(null, code)
+                    _exitCode.compareAndSet(NO_EXIT, code)
                 }
                 else -> {}
             }
         }
 
-        return _exitCode.value
+        return _exitCode.value.let { c -> if (c != NO_EXIT) c else null }
     }
 
     public override fun pid(): Int = pid
@@ -212,5 +212,9 @@ internal constructor(
         }
 
         return w
+    }
+
+    private companion object {
+        private const val NO_EXIT: Int = Int.MIN_VALUE
     }
 }
