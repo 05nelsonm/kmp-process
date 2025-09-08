@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING", "NOTHING_TO_INLINE", "FunctionName")
+@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING", "NOTHING_TO_INLINE", "FunctionName", "ObjectPropertyName")
 @file:OptIn(DoNotReferenceDirectly::class)
 
 package io.matthewnelson.kmp.process.internal.spawn
@@ -38,8 +38,16 @@ import kotlinx.cinterop.invoke
 import kotlinx.cinterop.memScoped
 import kotlinx.cinterop.ptr
 import platform.posix.RTLD_NEXT
+import platform.posix.android_get_device_api_level
 import platform.posix.dlsym
 import platform.posix.pid_tVar
+
+// Definition not available from Kotlin b/c very old revision of NDK
+// See: https://youtrack.jetbrains.com/issue/KT-77899
+//
+// Was added to the NDK and is available for API 33+
+// See: https://android.googlesource.com/platform/bionic/+/262b873dea75422c88739a5b1645edb1de638ddf%5E%21/#F1
+private val __POSIX_SPAWN_CLOEXEC_DEFAULT = if (android_get_device_api_level() >= 33) 256 else 0
 
 // androidNative
 @OptIn(ExperimentalForeignApi::class)
@@ -81,7 +89,7 @@ internal actual class PosixSpawnScope internal constructor(
     ) -> Int>>,
 ): AutofreeScope() {
 
-    internal actual val hasCLOEXEC: Boolean = false
+    internal actual val hasCLOEXEC: Boolean = __POSIX_SPAWN_CLOEXEC_DEFAULT != 0
     actual override fun alloc(size: Long, align: Int): NativePointed = mem.alloc(size, align)
 
     // Normally one would not want to hold onto a function pointer reference
@@ -289,7 +297,7 @@ internal actual inline fun <T: Any> posixSpawnScopeOrNull(
         }
         if (ret == -1) return@memScoped null
 
-        val flags = POSIX_SPAWN_SETSIGMASK
+        val flags = POSIX_SPAWN_SETSIGMASK or __POSIX_SPAWN_CLOEXEC_DEFAULT
         if (_posix_spawnattr_setflags(attrs.ptr, flags.convert()) != 0) {
             return@memScoped null
         }
