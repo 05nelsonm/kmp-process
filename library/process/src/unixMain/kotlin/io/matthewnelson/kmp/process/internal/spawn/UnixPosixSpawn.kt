@@ -30,6 +30,7 @@ import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.Stdio
 import io.matthewnelson.kmp.process.internal.NativeProcess
 import io.matthewnelson.kmp.process.internal.awaitExecOrFailure
+import io.matthewnelson.kmp.process.internal.destroySuppressed
 import io.matthewnelson.kmp.process.internal.stdio.StdioDescriptor.Pipe.Companion.fdOpen
 import io.matthewnelson.kmp.process.internal.stdio.StdioHandle.Companion.openHandle
 import io.matthewnelson.kmp.process.internal.stdio.withFd
@@ -47,6 +48,7 @@ import kotlinx.cinterop.alloc
 import kotlinx.cinterop.ptr
 import kotlinx.cinterop.toKString
 import kotlinx.cinterop.value
+import platform.posix.EINTR
 import platform.posix.ENOENT
 import platform.posix.STDERR_FILENO
 import platform.posix.STDIN_FILENO
@@ -125,6 +127,26 @@ internal fun posixSpawn(
     destroy: Signal,
     handler: ProcessException.Handler,
 ): NativeProcess? = posixSpawnScopeOrNull(requireChangeDir = chdir != null) {
+    val fdsLimit = if (!hasCLOEXEC) {
+        set_posix_errno(0)
+        @OptIn(UnsafeNumber::class)
+        @Suppress("RemoveRedundantCallsOfConversionMethods")
+        val openMax = sysconf(_SC_OPEN_MAX).toInt()
+        if (openMax == -1 && errno != 0) throw errnoToIOException(errno)
+        if (openMax < 20) {
+            // _SC_OPEN_MAX must not be less than _POSIX_OPEN_MAX (20)
+            // as per documentation. Something must be wrong...
+            //
+            // In practice only a small number of fds are open, but this
+            // will cover them all.
+            1_000_000
+        } else {
+            openMax
+        }
+    } else {
+        -1
+    }
+
     if (chdir != null) {
         // posix_spawn_file_actions_addchdir returns a non-zero value to indicate the error.
         val ret = file_actions_addchdir(chdir)
@@ -143,21 +165,8 @@ internal fun posixSpawn(
         throw handle.tryCloseSuppressed(e)
     }
 
-    if (!hasCLOEXEC) {
-        set_posix_errno(0)
-        @OptIn(UnsafeNumber::class)
-        @Suppress("RemoveRedundantCallsOfConversionMethods")
-        var fdsLimit = sysconf(_SC_OPEN_MAX).toInt()
-        if (fdsLimit < 20) {
-            if (errno != 0) {
-                val e = errnoToIOException(errno)
-                handle.tryCloseSuppressed(e)
-                pipe.tryCloseSuppressed(e)
-                throw e
-            }
-        }
-
-        val excludeFds = LinkedHashSet<Int>(3, 1.0f).apply {
+    if (fdsLimit > 0) {
+        val excludeFds = LinkedHashSet<Int>(9, 1.0f).apply {
             // Do not dup2/close {0/1/2}
             add(STDIN_FILENO); add(STDOUT_FILENO); add(STDERR_FILENO)
 
@@ -167,13 +176,6 @@ internal fun posixSpawn(
             // Do not dup2/close the pipes. They are already configured with CLOEXEC.
             add(pipe.read.withFd { it })
             add(pipe.write.withFd { it })
-        }
-
-
-        if (fdsLimit < 20) {
-            // _SC_OPEN_MAX must not be less than 20 as per
-            // documentation so something must be wrong...
-            fdsLimit = maxOf(20, excludeFds.max())
         }
 
         // Unfortunately there is no way to specify "close all descriptors from the parent
@@ -192,8 +194,7 @@ internal fun posixSpawn(
 
             val e = errnoToIOException(ret)
             handle.tryCloseSuppressed(e)
-            pipe.tryCloseSuppressed(e)
-            throw e
+            throw pipe.tryCloseSuppressed(e)
         }
     }
 
@@ -211,7 +212,6 @@ internal fun posixSpawn(
         }
     })
 
-
     val pid = try {
         val pidRef = alloc<pid_tVar>().apply { value = -1 }
 
@@ -219,29 +219,53 @@ internal fun posixSpawn(
         val envp = env.toEnvp(scope = this)
 
         // posix_spawn & posix_spawnp return a non-zero value to indicate an error
-        // with its fork/vfork step.
+        // with its fork/vfork/clone step.
         //
         // Linux can actually return ENOENT here for glibc 2.24+ and won't even spawn
         // the child process, whereas Android/iOS/macOS will only return a failure if
-        // fork/vfork fail.
-        val ret = if (command.contains(SysDirSep)) {
-            // Under the hood, implementations will use execve
-            spawn(command, pidRef.ptr, argv, envp)
-        } else {
-            // Under the hood, implementations will use execvpe
-            spawn_p(command, pidRef.ptr, argv, envp)
-        }
+        // fork/vfork/clone fail.
+        //
+        // Additionally, macOS 10.15+ there's a bug whereby using posix_spawnp in
+        // combination with file_actions_addchdir_np can result in a successful
+        // start, but a return of ENOENT. This is avoided by using posix_spawn over
+        // posix_spawnp whenever a '/' character is present, as posix_spawn is single
+        // shot and will not search PATH.
+        var ret: Int
+        do {
+            ret = if (command.contains(SysDirSep)) {
+                spawn(command, pidRef.ptr, argv, envp)
+            } else {
+                // Under the hood, implementations will use execvpe
+                spawn_p(command, pidRef.ptr, argv, envp)
+            }
+        } while (ret == EINTR)
 
         val pid = pidRef.value
         if (ret != 0 || pid <= 0) {
-            throw spawnFailureToIOException(command, chdir, spawnRet = ret)
+            val e = spawnFailureToIOException(command, chdir, spawnRet = ret)
+
+            // Always check for a PID b/c posix_spawn(p) could have a bug (like with
+            // macOS 10.15+) and return an error while still spawning the process. In
+            // either case, things are borked.
+            if (pid > 0) {
+                NativeProcess(
+                    pid,
+                    handle,
+                    command,
+                    args,
+                    chdir,
+                    env,
+                    destroy,
+                    handler,
+                ).destroySuppressed(e)
+            }
+            throw e
         }
 
         pid
     } catch (e: IOException) {
         handle.tryCloseSuppressed(e)
-        pipe.tryCloseSuppressed(e)
-        throw e
+        throw pipe.tryCloseSuppressed(e)
     }
 
     val p = NativeProcess(
