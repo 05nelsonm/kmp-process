@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("NOTHING_TO_INLINE")
+@file:Suppress("NOTHING_TO_INLINE", "DEPRECATION_ERROR")
 
 package io.matthewnelson.kmp.process.internal
 
@@ -21,6 +21,7 @@ import io.matthewnelson.kmp.process.InternalProcessApi
 
 /** @suppress */
 @InternalProcessApi
+@Deprecated("Scheduled for removal. Do not use.", level = DeprecationLevel.ERROR) // ERROR OK, imo, b/c is InternalProcessApi
 public inline fun <T: events_EventEmitter> T.onError(
     noinline block: (err: dynamic) -> Unit,
 ): T {
@@ -30,6 +31,7 @@ public inline fun <T: events_EventEmitter> T.onError(
 
 /** @suppress */
 @InternalProcessApi
+@Deprecated("Scheduled for removal. Do not use.", level = DeprecationLevel.ERROR) // ERROR OK, imo, b/c is InternalProcessApi
 public inline fun <T: events_EventEmitter> T.onceError(
     noinline block: (err: dynamic) -> Unit,
 ): T {

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("ClassName", "UNUSED")
+@file:Suppress("ClassName", "UNUSED", "DEPRECATION_ERROR")
 @file:JsModule("events")
 @file:JsNonModule
 
@@ -27,6 +27,7 @@ import io.matthewnelson.kmp.process.InternalProcessApi
  * */
 @InternalProcessApi
 @JsName("EventEmitter")
+@Deprecated("Scheduled for removal. Do not use.", level = DeprecationLevel.ERROR) // ERROR OK, imo, b/c is InternalProcessApi
 public open external class events_EventEmitter {
 
     public fun getMaxListeners(): Number
