@@ -20,5 +20,3 @@ package io.matthewnelson.kmp.process.internal.node
 import io.matthewnelson.kmp.file.Buffer
 
 internal actual inline fun JsBuffer.asBuffer(): Buffer = Buffer.wrap(this)
-
-internal actual inline fun Buffer.asJsBuffer(): JsBuffer = unwrap()

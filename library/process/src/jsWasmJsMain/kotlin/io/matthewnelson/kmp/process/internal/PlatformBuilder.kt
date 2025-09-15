@@ -30,6 +30,7 @@ import io.matthewnelson.kmp.process.internal.js.getString
 import io.matthewnelson.kmp.process.internal.js.getJsAny
 import io.matthewnelson.kmp.process.internal.js.getInt
 import io.matthewnelson.kmp.process.internal.js.getIntOrNull
+import io.matthewnelson.kmp.process.internal.js.getJsAnyOrNull
 import io.matthewnelson.kmp.process.internal.js.getStringOrNull
 import io.matthewnelson.kmp.process.internal.js.new
 import io.matthewnelson.kmp.process.internal.js.set
@@ -43,7 +44,7 @@ import io.matthewnelson.kmp.process.internal.node.node_process
 import io.matthewnelson.kmp.process.internal.node.node_stream
 import kotlin.let
 
-// jsMain
+// jsWasmJsMain
 internal actual class PlatformBuilder private actual constructor() {
 
     internal var detached: Boolean = false
@@ -66,6 +67,7 @@ internal actual class PlatformBuilder private actual constructor() {
 
             map
         } catch (_: Throwable) {
+            // Js/WasmJs Browser
             LinkedHashMap(1, 1.0F)
         }
     }
@@ -146,7 +148,7 @@ internal actual class PlatformBuilder private actual constructor() {
         }
 
         val processError: String? = try {
-            output.getJsAny<JsError>("error").message
+            output.getJsAnyOrNull<JsError>("error")?.message
         } catch (_: Throwable) {
             null
         }
@@ -222,6 +224,8 @@ internal actual class PlatformBuilder private actual constructor() {
             return obj
         }
 
+        // Accepts only String and Double
+        @Throws(IllegalStateException::class)
         private fun List<Any>.toJsArray(): JsArray {
             val array = JsArray.of(size)
             for (i in indices) {
@@ -234,34 +238,25 @@ internal actual class PlatformBuilder private actual constructor() {
             return array
         }
 
-        // @Throws(IOException::class, UnsupportedOperationException::class)
+        @Throws(IOException::class, UnsupportedOperationException::class)
         private fun Stdio.Config.toJsStdio(): List<Any> {
             val fs = node_fs
-            val jsStdio = ArrayList<Any>(3).apply {
-                add("pipe")
-                add("pipe")
-                add("pipe")
-            }
-
+            val jsStdio = ArrayList<Any>(3)
             jsStdio.closeDescriptorsOnFailure {
-                jsStdio[0] = stdin.toJsStdio(fs, isStdin = true)
-                jsStdio[1] = stdout.toJsStdio(fs, isStdin = false)
-                jsStdio[2] = if (isStderrSameFileAsStdout()) {
-                    // use the same file descriptor
+                stdin.toJsStdio(fs, isStdin = true).let { jsStdio.add(it) }
+                stdout.toJsStdio(fs, isStdin = false).let { jsStdio.add(it) }
+                if (isStderrSameFileAsStdout()) {
+                    // use the same file descriptor as stdout
                     jsStdio[1]
                 } else {
                     stderr.toJsStdio(fs, isStdin = false)
-                }
+                }.let { jsStdio.add(it) }
             }
-
             return jsStdio
         }
 
-        // @Throw(Throwable::class)
-        private fun Stdio.toJsStdio(
-            fs: ModuleFs,
-            isStdin: Boolean,
-        ): Any = when (this) {
+        @Throws(Throwable::class)
+        private fun Stdio.toJsStdio(fs: ModuleFs, isStdin: Boolean): Any = when (this) {
             is Stdio.Inherit -> "inherit"
             is Stdio.Pipe -> "pipe"
             is Stdio.File -> when {
@@ -288,27 +283,21 @@ internal actual class PlatformBuilder private actual constructor() {
             }
         }
 
-        // @Throws(IOException::class)
-        private inline fun <T: Any?> List<Any>.closeDescriptorsOnFailure(
-            block: () -> T,
-        ): T {
-            val result = try {
-                block()
-            } catch (t: Throwable) {
-                forEach { stdio ->
-                    val fd = stdio as? Double ?: return@forEach
+        @Throws(IOException::class)
+        private inline fun <T: Any?> List<Any>.closeDescriptorsOnFailure(block: () -> T): T = try {
+            block()
+        } catch (t: Throwable) {
+            forEach { stdio ->
+                val fd = stdio as? Double ?: return@forEach
 
-                    try {
-                        node_fs.closeSync(fd)
-                    } catch (tt: Throwable) {
-                        t.addSuppressed(tt)
-                    }
+                try {
+                    node_fs.closeSync(fd)
+                } catch (tt: Throwable) {
+                    t.addSuppressed(tt)
                 }
-
-                throw t.toIOException()
             }
 
-            return result
+            throw t.toIOException()
         }
 
         @Suppress("NOTHING_TO_INLINE")

@@ -31,5 +31,3 @@ internal external interface ModuleBuffer {
 internal external interface JsBuffer: JsAny
 
 internal expect inline fun JsBuffer.asBuffer(): Buffer
-
-internal expect inline fun Buffer.asJsBuffer(): JsBuffer
