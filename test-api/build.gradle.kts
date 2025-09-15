@@ -17,6 +17,7 @@ import com.android.build.gradle.tasks.MergeSourceSetFolders
 import io.matthewnelson.kmp.tor.common.api.GeoipFiles
 import io.matthewnelson.kmp.tor.common.api.ResourceLoader
 import io.matthewnelson.kmp.tor.resource.exec.tor.ResourceLoaderTorExec
+import org.jetbrains.kotlin.gradle.plugin.extraProperties
 import org.jetbrains.kotlin.konan.target.HostManager
 
 plugins {
@@ -24,6 +25,10 @@ plugins {
 }
 
 repositories { google() }
+
+if (!HostManager.hostIsMac) {
+    extraProperties.set("kotlin.native.enableKlibsCrossCompilation", false.toString())
+}
 
 kmpConfiguration {
     configureShared {

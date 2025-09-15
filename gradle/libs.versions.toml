@@ -9,7 +9,7 @@ gradle-binary-compat        = "0.18.1"
 gradle-cklib                = "0.3.3"
 gradle-dokka                = "2.0.0"
 gradle-kmp-configuration    = "0.5.2"
-gradle-kotlin               = "2.1.21"
+gradle-kotlin               = "2.2.20"
 gradle-publish-maven        = "0.34.0"
 
 immutable                   = "0.2.0"
