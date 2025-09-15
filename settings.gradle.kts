@@ -20,6 +20,8 @@ pluginManagement {
         mavenCentral()
         google()
         gradlePluginPortal()
+        // TODO: REMOVE -SNAPSHOT
+        maven("https://central.sonatype.com/repository/maven-snapshots/")
     }
 }
 

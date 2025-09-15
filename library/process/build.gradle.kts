@@ -158,22 +158,32 @@ kmpConfiguration {
                     else -> {}
                 }
 
-                target.compilations["test"].cinterops.create("syscall").apply {
+                val syscall = target.compilations["test"].cinterops.create("syscall").apply {
                     definitionFile.set(cinteropDir.resolve("$name.def"))
-                }.interopProcessingTaskName to target.konanTarget
+                }
+
+                Triple(syscall.interopProcessingTaskName, target.konanTarget, target.targetName)
             }
 
             project.afterEvaluate {
-                val commonizeTask = project.tasks.findByName("commonizeCInterop") ?: return@afterEvaluate
+                val commonizeTask = project.tasks.findByName("commonizeCInterop")
 
                 project.tasks.all {
-                    if (!name.endsWith("MetadataElements")) return@all
-                    dependsOn(commonizeTask)
+                    when {
+                        name.endsWith("MetadataElements") -> if (commonizeTask != null) {
+                            dependsOn(commonizeTask)
+                        }
+                        name.endsWith("TestCinterop-syscallKlib") -> interopTaskInfo.forEach {
+                            val (taskName, _, targetName) = it
+                            if (!name.startsWith(targetName)) return@forEach
+                            dependsOn(taskName)
+                        }
+                    }
                 }
             }
 
             project.extensions.configure<CompileToBitcodeExtension>("cklib") {
-                config.configure(libs)
+                val downloadDevLLVMTask = config.configure(libs)
 
                 create("kmp_process_sys") {
                     language = CompileToBitcode.Language.C
@@ -188,10 +198,12 @@ kmpConfiguration {
 
                     // Must add dependency on the test cinterop task to ensure
                     // that Kotlin/Native dependencies get downloaded beforehand
-                    interopTaskInfo.forEach { (interopTaskName, konanTarget) ->
+                    interopTaskInfo.forEach { (interopTaskName, konanTarget, _) ->
                         if (kt != konanTarget) return@forEach
-                        this.dependsOn(interopTaskName)
+                        dependsOn(interopTaskName)
                     }
+
+                    dependsOn(downloadDevLLVMTask)
                 }
             }
         }
@@ -205,26 +217,26 @@ kmpConfiguration {
 // The following info can be found in ~/.konan/kotlin-native-prebuild-{os}-{arch}-{kotlin version}/konan/konan.properties
 private object LLVM {
     const val URL: String = "https://download.jetbrains.com/kotlin/native/resources/llvm"
-    const val VERSION: String = "16.0.0"
+    const val VERSION: String = "19"
 
     // llvm-{llvm version}-{arch}-{host}-dev-{id}
     object DevID {
         object Linux {
-            const val x86_64: Int = 80
+            const val x86_64: Int = 103
         }
         object MacOS {
-            const val aarch64: Int = 65
-            const val x86_64: Int = 56
+            const val aarch64: Int = 79
+            const val x86_64: Int = 75
         }
         object MinGW {
-            const val x86_64: Int = 56
+            const val x86_64: Int = 134
         }
     }
 }
 
-private fun CKlibGradleExtension.configure(libs: LibrariesForLibs) {
+private fun CKlibGradleExtension.configure(libs: LibrariesForLibs): Task {
     kotlinVersion = libs.versions.gradle.kotlin.get()
-    check(kotlinVersion == "2.1.21") {
+    check(kotlinVersion == "2.2.20") {
         "Kotlin version out of date! Download URLs for LLVM need to be updated for ${project.path}"
     }
 
@@ -253,7 +265,7 @@ private fun CKlibGradleExtension.configure(libs: LibrariesForLibs) {
 
     val source = DependencySource.Remote.Public(subDirectory = "${LLVM.VERSION}-${arch}-${host}")
 
-    DependencyProcessor(
+    val processor = DependencyProcessor(
         dependenciesRoot = cklibDir,
         dependenciesUrl = LLVM.URL,
         dependencyToCandidates = mapOf(llvmDev to listOf(source)),
@@ -268,5 +280,11 @@ private fun CKlibGradleExtension.configure(libs: LibrariesForLibs) {
             println("Downloading[$llvmDev] - $current / $total")
         },
         archiveType = archive,
-    ).run()
+    )
+
+    return project.tasks.register("downloadDevLLVM") {
+        actions = listOf(Action {
+            processor.run()
+        })
+    }.get()
 }
