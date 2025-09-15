@@ -23,6 +23,8 @@ import io.matthewnelson.kmp.process.internal.RealLineOutputFeed.Companion.LF
 import io.matthewnelson.kmp.process.internal.js.JsInt8Array
 import io.matthewnelson.kmp.process.internal.js.fill
 import io.matthewnelson.kmp.process.internal.js.toJsArray
+import io.matthewnelson.kmp.process.internal.node.ModuleFs
+import io.matthewnelson.kmp.process.internal.node.node_fs
 
 // jsMain
 internal actual class PlatformBuilder private actual constructor() {
@@ -194,18 +196,19 @@ internal actual class PlatformBuilder private actual constructor() {
             return jsEnv
         }
 
-        // @Throws(IOException::class)
+        // @Throws(IOException::class, UnsupportedOperationException::class)
         private fun Stdio.Config.toJsStdio(): Array<Any> {
+            val fs = node_fs
             val jsStdio = Array<Any>(3) { "pipe" }
 
             jsStdio.closeDescriptorsOnFailure {
-                jsStdio[0] = stdin.toJsStdio(isStdin = true)
-                jsStdio[1] = stdout.toJsStdio(isStdin = false)
+                jsStdio[0] = stdin.toJsStdio(fs, isStdin = true)
+                jsStdio[1] = stdout.toJsStdio(fs, isStdin = false)
                 jsStdio[2] = if (isStderrSameFileAsStdout()) {
                     // use the same file descriptor
                     jsStdio[1]
                 } else {
-                    stderr.toJsStdio(isStdin = false)
+                    stderr.toJsStdio(fs, isStdin = false)
                 }
             }
 
@@ -214,6 +217,7 @@ internal actual class PlatformBuilder private actual constructor() {
 
         // @Throw(Throwable::class)
         private fun Stdio.toJsStdio(
+            fs: ModuleFs,
             isStdin: Boolean,
         ): Any = when (this) {
             is Stdio.Inherit -> "inherit"
@@ -221,14 +225,14 @@ internal actual class PlatformBuilder private actual constructor() {
             is Stdio.File -> when {
                 file == STDIO_NULL -> "ignore"
                 isStdin -> {
-                    val fd = fs_openSync(file.path, "r")
+                    val fd = jsExternTryCatch { fs.openSync(file.path, "r") }
 
                     try {
-                        val isDirectory = fs_fstatSync(fd).isDirectory() as Boolean
+                        val isDirectory = jsExternTryCatch { fs.fstatSync(fd).isDirectory() }
                         if (isDirectory) throw FileSystemException(file, null, "EISDIR: Is a Directory")
                     } catch (t: Throwable) {
                         try {
-                            fs_closeSync(fd)
+                            jsExternTryCatch { fs.closeSync(fd) }
                         } catch (tt: Throwable) {
                             t.addSuppressed(tt)
                         }
@@ -237,8 +241,8 @@ internal actual class PlatformBuilder private actual constructor() {
 
                     fd
                 }
-                append -> fs_openSync(file.path, "a")
-                else -> fs_openSync(file.path, "w")
+                append -> jsExternTryCatch { fs.openSync(file.path, "a") }
+                else -> jsExternTryCatch { fs.openSync(file.path, "w") }
             }
         }
 
@@ -250,10 +254,10 @@ internal actual class PlatformBuilder private actual constructor() {
                 block()
             } catch (t: Throwable) {
                 forEach { stdio ->
-                    val fd = stdio as? Number ?: return@forEach
+                    val fd = stdio as? Double ?: return@forEach
 
                     try {
-                        fs_closeSync(fd)
+                        node_fs.closeSync(fd)
                     } catch (tt: Throwable) {
                         t.addSuppressed(tt)
                     }
