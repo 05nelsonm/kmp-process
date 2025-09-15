@@ -1,0 +1,45 @@
+/*
+ * Copyright (c) 2025 Matthew Nelson
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ **/
+@file:OptIn(DelicateFileApi::class)
+@file:Suppress("NOTHING_TO_INLINE")
+
+package io.matthewnelson.kmp.process.internal.node
+
+import io.matthewnelson.kmp.file.DelicateFileApi
+import io.matthewnelson.kmp.file.jsExternTryCatch
+import io.matthewnelson.kmp.process.internal.js.JsError
+import kotlin.js.JsName
+
+/** [docs](https://nodejs.org/api/events.html) */
+internal external interface ModuleEvents {
+    //
+}
+
+/** [docs](https://nodejs.org/api/events.html#class-eventemitter) */
+@JsName("EventEmitter")
+internal external interface JsEventEmitter {
+    fun on(
+        event: String,
+        listener: Function<Unit>,
+    ): JsEventEmitter
+}
+
+internal inline fun <T: JsEventEmitter> T.onError(
+    noinline block: (err: JsError) -> Unit,
+): T {
+    jsExternTryCatch { on("error", block) }
+    return this
+}

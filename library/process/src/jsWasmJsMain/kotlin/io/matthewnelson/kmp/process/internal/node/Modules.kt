@@ -28,6 +28,12 @@ internal val node_buffer: ModuleBuffer by lazy {
 }
 
 @get:Throws(UnsupportedOperationException::class)
+internal val node_events: ModuleEvents by lazy {
+    requireNodeJs { "events" }
+    nodeModuleEvents()
+}
+
+@get:Throws(UnsupportedOperationException::class)
 internal val node_fs: ModuleFs by lazy {
     requireNodeJs { "fs" }
     nodeModuleFs()
@@ -47,12 +53,13 @@ internal val node_process: ModuleProcess by lazy {
 
 @get:Throws(UnsupportedOperationException::class)
 internal val node_stream: ModuleStream by lazy {
-    node_buffer
     requireNodeJs { "stream" }
+    node_buffer
     nodeModuleStream()
 }
 
 private fun nodeModuleBuffer(): ModuleBuffer = js("eval('require')('buffer')")
+private fun nodeModuleEvents(): ModuleEvents = js("eval('require')('events')")
 private fun nodeModuleFs(): ModuleFs = js("eval('require')('fs')")
 private fun nodeModuleOs(): ModuleOs = js("eval('require')('os')")
 private fun nodeModuleProcess(): ModuleProcess = js("eval('require')('process')")
