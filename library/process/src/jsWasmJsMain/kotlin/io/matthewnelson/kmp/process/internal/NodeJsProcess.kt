@@ -13,10 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
+@file:OptIn(DelicateFileApi::class)
 @file:Suppress("RedundantVisibilityModifier")
 
 package io.matthewnelson.kmp.process.internal
 
+import io.matthewnelson.kmp.file.DelicateFileApi
 import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.file.errorCodeOrNull
