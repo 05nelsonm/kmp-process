@@ -33,7 +33,9 @@ import io.matthewnelson.kmp.process.internal.js.getStringOrNull
 import io.matthewnelson.kmp.process.internal.js.new
 import io.matthewnelson.kmp.process.internal.js.set
 import io.matthewnelson.kmp.process.internal.js.toJsArray
+import io.matthewnelson.kmp.process.internal.node.JsBuffer
 import io.matthewnelson.kmp.process.internal.node.ModuleFs
+import io.matthewnelson.kmp.process.internal.node.asBuffer
 import io.matthewnelson.kmp.process.internal.node.node_child_process
 import io.matthewnelson.kmp.process.internal.node.node_fs
 import io.matthewnelson.kmp.process.internal.node.node_process
@@ -119,13 +121,13 @@ internal actual class PlatformBuilder private actual constructor() {
 
         val pid = output.getInt("pid")
 
-        val stdout = Buffer.wrap(output.getJsAny("stdout")).let { buf ->
+        val stdout = output.getJsAny<JsBuffer>("stdout").asBuffer().let { buf ->
             val utf8 = buf.toUtf8Trimmed()
             buf.fill()
             utf8
         }
 
-        val stderr = Buffer.wrap(output.getJsAny("stderr")).let { buf ->
+        val stderr = output.getJsAny<JsBuffer>("stderr").asBuffer().let { buf ->
             val utf8 = buf.toUtf8Trimmed()
             buf.fill()
             utf8
