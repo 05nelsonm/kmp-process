@@ -20,6 +20,6 @@ package io.matthewnelson.kmp.process.internal
 import io.matthewnelson.kmp.process.internal.node.node_process
 
 internal actual object PID {
-//    @Throws(UnsupportedOperationException::class)
+    @Throws(UnsupportedOperationException::class)
     internal actual fun get(): Int = node_process.pid
 }
