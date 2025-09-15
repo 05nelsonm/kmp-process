@@ -24,11 +24,13 @@ import io.matthewnelson.kmp.file.jsExternTryCatch
 import io.matthewnelson.kmp.process.*
 import io.matthewnelson.kmp.process.internal.node.node_process
 import io.matthewnelson.kmp.process.internal.js.getString
+import io.matthewnelson.kmp.process.internal.node.JsChildProcess
 import io.matthewnelson.kmp.process.internal.node.onClose
 import io.matthewnelson.kmp.process.internal.node.onData
+import io.matthewnelson.kmp.process.internal.node.onError
 
 internal class NodeJsProcess internal constructor(
-    private val jsProcess: child_process_ChildProcess,
+    private val jsProcess: JsChildProcess,
     private val isDetached: Boolean,
     command: String,
     args: List<String>,
@@ -55,7 +57,7 @@ internal class NodeJsProcess internal constructor(
         @OptIn(InternalProcessApi::class)
         jsProcess.onError { err ->
             if (isDestroyed) return@onError
-            val t = (err as? Throwable) ?: IOException("$err")
+            val t = IOException("$err")
             onError(t, context = ERROR_CONTEXT)
         }
 
@@ -137,7 +139,7 @@ internal class NodeJsProcess internal constructor(
     public override fun exitCodeOrNull(): Int? {
         _exitCode?.let { return it }
 
-        jsProcess.exitCode?.toInt()?.let {
+        jsProcess.exitCode?.let {
             _exitCode = it
             return it
         }
@@ -160,7 +162,7 @@ internal class NodeJsProcess internal constructor(
         val result = try {
             // can be undefined if called before the
             // underlying process has not spawned yet.
-            jsProcess.pid?.toInt()
+            jsProcess.pid
         } catch (_: Throwable) {
             null
         }

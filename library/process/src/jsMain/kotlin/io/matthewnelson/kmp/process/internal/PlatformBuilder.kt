@@ -21,6 +21,7 @@ import io.matthewnelson.kmp.file.*
 import io.matthewnelson.kmp.process.*
 import io.matthewnelson.kmp.process.internal.RealLineOutputFeed.Companion.LF
 import io.matthewnelson.kmp.process.internal.js.JsArray
+import io.matthewnelson.kmp.process.internal.js.JsError
 import io.matthewnelson.kmp.process.internal.js.JsInt8Array
 import io.matthewnelson.kmp.process.internal.js.JsObject
 import io.matthewnelson.kmp.process.internal.js.fill
@@ -33,6 +34,7 @@ import io.matthewnelson.kmp.process.internal.js.new
 import io.matthewnelson.kmp.process.internal.js.set
 import io.matthewnelson.kmp.process.internal.js.toJsArray
 import io.matthewnelson.kmp.process.internal.node.ModuleFs
+import io.matthewnelson.kmp.process.internal.node.node_child_process
 import io.matthewnelson.kmp.process.internal.node.node_fs
 import io.matthewnelson.kmp.process.internal.node.node_process
 import io.matthewnelson.kmp.process.internal.node.node_stream
@@ -107,7 +109,9 @@ internal actual class PlatformBuilder private actual constructor() {
 
         val output = jsStdio.closeDescriptorsOnFailure {
             try {
-                child_process_spawnSync(command, args.toJsArray(), opts)
+                node_child_process.let { m ->
+                    jsExternTryCatch { m.spawnSync(command, args.toJsArray(), opts) }
+                }
             } finally {
                 input?.fill()
             }
@@ -139,8 +143,7 @@ internal actual class PlatformBuilder private actual constructor() {
         }
 
         val processError: String? = try {
-            // TODO
-            output.asDynamic().message as? String
+            output.getJsAny<JsError>("error").message
         } catch (_: Throwable) {
             null
         }
@@ -188,7 +191,9 @@ internal actual class PlatformBuilder private actual constructor() {
         opts["killSignal"] = destroy.name
 
         val jsProcess = jsStdio.closeDescriptorsOnFailure {
-            child_process_spawn(command, args.toJsArray(), opts)
+            node_child_process.let { m ->
+                jsExternTryCatch { m.spawn(command, args.toJsArray(), opts) }
+            }
         }
 
         return NodeJsProcess(
