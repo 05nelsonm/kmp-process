@@ -23,11 +23,29 @@ import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
 import kotlin.js.ExperimentalWasmJsInterop
+import kotlin.js.JsAny
 import kotlin.js.JsName
 import kotlin.js.js
 
+@JsName("Array")
+internal external class JsArray: JsAny {
+    internal val length: Int
+    internal companion object {
+        internal fun of(size: Int): JsArray
+    }
+}
+
+internal inline fun JsArray.getString(index: Int): String = jsArrayGetString(this, index)
+internal fun jsArrayGetString(array: JsArray, index: Int): String = js("array[index]")
+
+internal inline operator fun JsArray.set(index: Int, value: String) { jsArraySetString(this, index, value) }
+internal fun jsArraySetString(array: JsArray, index: Int, value: String) { js("array[index] = value") }
+
+internal inline operator fun JsArray.set(index: Int, value: Double) { jsArraySetDouble(this, index, value) }
+internal fun jsArraySetDouble(array: JsArray, index: Int, value: Double) { js("array[index] = value") }
+
 @JsName("ArrayBufferView")
-internal external interface JsArrayBufferView {
+internal external interface JsArrayBufferView: JsAny {
     val byteLength: Int
 }
 
@@ -41,13 +59,8 @@ internal open external class JsUint8Array(length: Int): JsArrayBufferView {
     override val byteLength: Int
 }
 
-internal inline operator fun <T: JsArrayBufferView> T.set(index: Int, value: Byte) {
-    jsArraySet(this, index, value)
-}
-
-internal fun <T: JsArrayBufferView> jsArraySet(array: T, index: Int, value: Byte) {
-    js("array[index] = value")
-}
+internal inline operator fun <T: JsArrayBufferView> T.set(index: Int, value: Byte) { jsArraySet(this, index, value) }
+internal fun <T: JsArrayBufferView> jsArraySet(array: T, index: Int, value: Byte) { js("array[index] = value") }
 
 @OptIn(ExperimentalContracts::class)
 // @Throws(IndexOutOfBoundsException::class)

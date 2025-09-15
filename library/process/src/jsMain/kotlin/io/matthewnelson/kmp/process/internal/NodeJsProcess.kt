@@ -23,7 +23,7 @@ import io.matthewnelson.kmp.file.errorCodeOrNull
 import io.matthewnelson.kmp.file.jsExternTryCatch
 import io.matthewnelson.kmp.process.*
 import io.matthewnelson.kmp.process.internal.node.node_process
-import io.matthewnelson.kmp.process.internal.js.get
+import io.matthewnelson.kmp.process.internal.js.getString
 import io.matthewnelson.kmp.process.internal.node.onClose
 import io.matthewnelson.kmp.process.internal.node.onData
 
@@ -82,7 +82,7 @@ internal class NodeJsProcess internal constructor(
                     if (code != "EPERM") return@run
 
                     val (major, minor, patch) = try {
-                        val split = node_process.versions["uv"]?.split('.') ?: return@run
+                        val split = node_process.versions.getString("uv").split('.')
                         Triple(split[0].toInt(), split[1].toInt(), split[2].toInt())
                     } catch (_: Throwable) {
                         return@run

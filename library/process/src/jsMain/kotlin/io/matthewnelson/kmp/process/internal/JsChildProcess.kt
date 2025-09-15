@@ -20,6 +20,8 @@
 package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.process.InternalProcessApi
+import io.matthewnelson.kmp.process.internal.js.JsArray
+import io.matthewnelson.kmp.process.internal.js.JsObject
 import io.matthewnelson.kmp.process.internal.node.JsReadable
 import io.matthewnelson.kmp.process.internal.node.JsWritable
 
@@ -27,17 +29,17 @@ import io.matthewnelson.kmp.process.internal.node.JsWritable
 @JsName("spawn")
 internal external fun child_process_spawn(
     command: String,
-    args: Array<String>,
-    options: dynamic,
+    args: JsArray,
+    options: JsObject,
 ): child_process_ChildProcess
 
 /** [docs](https://nodejs.org/api/child_process.html#child_processspawnsynccommand-args-options) */
 @JsName("spawnSync")
 internal external fun child_process_spawnSync(
     command: String,
-    args: Array<String>,
-    options: dynamic,
-): dynamic
+    args: JsArray,
+    options: JsObject,
+): JsObject
 
 /** [docs](https://nodejs.org/api/child_process.html#class-childprocess) */
 @JsName("ChildProcess")

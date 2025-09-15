@@ -20,12 +20,23 @@ package io.matthewnelson.kmp.process.internal
 import io.matthewnelson.kmp.file.*
 import io.matthewnelson.kmp.process.*
 import io.matthewnelson.kmp.process.internal.RealLineOutputFeed.Companion.LF
+import io.matthewnelson.kmp.process.internal.js.JsArray
 import io.matthewnelson.kmp.process.internal.js.JsInt8Array
+import io.matthewnelson.kmp.process.internal.js.JsObject
 import io.matthewnelson.kmp.process.internal.js.fill
+import io.matthewnelson.kmp.process.internal.js.getString
+import io.matthewnelson.kmp.process.internal.js.getJsAny
+import io.matthewnelson.kmp.process.internal.js.getInt
+import io.matthewnelson.kmp.process.internal.js.getIntOrNull
+import io.matthewnelson.kmp.process.internal.js.getStringOrNull
+import io.matthewnelson.kmp.process.internal.js.new
+import io.matthewnelson.kmp.process.internal.js.set
 import io.matthewnelson.kmp.process.internal.js.toJsArray
 import io.matthewnelson.kmp.process.internal.node.ModuleFs
 import io.matthewnelson.kmp.process.internal.node.node_fs
+import io.matthewnelson.kmp.process.internal.node.node_process
 import io.matthewnelson.kmp.process.internal.node.node_stream
+import kotlin.let
 
 // jsMain
 internal actual class PlatformBuilder private actual constructor() {
@@ -38,13 +49,14 @@ internal actual class PlatformBuilder private actual constructor() {
 
     internal actual val env: MutableMap<String, String> by lazy {
         try {
-            val env = js("require('process')").env
-            val keys = js("Object").keys(env).unsafeCast<Array<String>>()
+            val envParent = node_process.env
+            val keys = JsObject.keys(envParent)
 
-            val map = LinkedHashMap<String, String>(keys.size, 1.0F)
+            val map = LinkedHashMap<String, String>(keys.length, 1.0F)
 
-            keys.forEach { key ->
-                map[key] = env[key] as String
+            for (i in 0 until keys.length) {
+                val key = keys.getString(i)
+                map[key] = envParent.getString(key)
             }
 
             map
@@ -64,7 +76,6 @@ internal actual class PlatformBuilder private actual constructor() {
         destroy: Signal,
     ): Output {
         node_stream
-        val jsEnv = env.toJsEnv()
         val jsStdio = try {
             stdio.toJsStdio()
         } catch (e: IOException) {
@@ -79,44 +90,47 @@ internal actual class PlatformBuilder private actual constructor() {
             a
         }
 
-        val opts = js("{}")
+        val opts = JsObject.new()
         chdir?.let { opts["cwd"] = it.path }
         input?.let { opts["input"] = it }
-        opts["stdio"] = jsStdio
-        opts["env"] = jsEnv
+        opts["stdio"] = jsStdio.toJsArray()
+        opts["env"] = env.toJsObject()
         opts["timeout"] = options.timeout.inWholeMilliseconds.toInt()
         opts["killSignal"] = destroy.name
         opts["maxBuffer"] = options.maxBuffer
-        opts["shell"] = shell
+        when (val _shell = shell) {
+            is String -> opts["shell"] = _shell
+            is Boolean -> opts["shell"] = _shell
+        }
         opts["windowsVerbatimArguments"] = windowsVerbatimArguments
         opts["windowsHide"] = windowsHide
 
         val output = jsStdio.closeDescriptorsOnFailure {
             try {
-                child_process_spawnSync(command, args.toTypedArray(), opts)
+                child_process_spawnSync(command, args.toJsArray(), opts)
             } finally {
                 input?.fill()
             }
         }
 
-        val pid = output["pid"] as Int
+        val pid = output.getInt("pid")
 
-        val stdout = Buffer.wrap(output["stdout"]).let { buf ->
+        val stdout = Buffer.wrap(output.getJsAny("stdout")).let { buf ->
             val utf8 = buf.toUtf8Trimmed()
             buf.fill()
             utf8
         }
 
-        val stderr = Buffer.wrap(output["stderr"]).let { buf ->
+        val stderr = Buffer.wrap(output.getJsAny("stderr")).let { buf ->
             val utf8 = buf.toUtf8Trimmed()
             buf.fill()
             utf8
         }
 
-        val code: Int = (output["status"] as? Number)?.toInt().let { status ->
+        val code: Int = output.getIntOrNull("status").let { status ->
             if (status != null) return@let status
 
-            val signal = output["signal"] as? String
+            val signal = output.getStringOrNull("signal")
             try {
                 Signal.valueOf(signal!!)
             } catch (_: Throwable) {
@@ -125,7 +139,8 @@ internal actual class PlatformBuilder private actual constructor() {
         }
 
         val processError: String? = try {
-            output["error"].message as? String
+            // TODO
+            output.asDynamic().message as? String
         } catch (_: Throwable) {
             null
         }
@@ -156,22 +171,24 @@ internal actual class PlatformBuilder private actual constructor() {
         handler: ProcessException.Handler,
     ): Process {
         node_stream
-        val jsEnv = env.toJsEnv()
         val jsStdio = stdio.toJsStdio()
         val isDetached = detached
 
-        val opts = js("{}")
+        val opts = JsObject.new()
         chdir?.let { opts["cwd"] = it.path }
-        opts["env"] = jsEnv
-        opts["stdio"] = jsStdio
+        opts["env"] = env.toJsObject()
+        opts["stdio"] = jsStdio.toJsArray()
         opts["detached"] = isDetached
-        opts["shell"] = shell
+        when (val _shell = shell) {
+            is String -> opts["shell"] = _shell
+            is Boolean -> opts["shell"] = _shell
+        }
         opts["windowsVerbatimArguments"] = windowsVerbatimArguments
         opts["windowsHide"] = windowsHide
         opts["killSignal"] = destroy.name
 
         val jsProcess = jsStdio.closeDescriptorsOnFailure {
-            child_process_spawn(command, args.toTypedArray(), opts)
+            child_process_spawn(command, args.toJsArray(), opts)
         }
 
         return NodeJsProcess(
@@ -191,18 +208,32 @@ internal actual class PlatformBuilder private actual constructor() {
 
         internal actual fun get(): PlatformBuilder = PlatformBuilder()
 
-        private fun Map<String, String>.toJsEnv(): dynamic {
-            val jsEnv = js("{}")
-            entries.forEach { entry ->
-                jsEnv[entry.key] = entry.value
+        private fun Map<String, String>.toJsObject(): JsObject {
+            val obj = JsObject.new()
+            entries.forEach { (key, value) -> obj[key] = value }
+            return obj
+        }
+
+        private fun List<Any>.toJsArray(): JsArray {
+            val array = JsArray.of(size)
+            for (i in indices) {
+                when (val value = this[i]) {
+                    is String -> array[i] = value
+                    is Double -> array[i] = value
+                    else -> throw IllegalStateException("Unknown type[${value::class}]")
+                }
             }
-            return jsEnv
+            return array
         }
 
         // @Throws(IOException::class, UnsupportedOperationException::class)
-        private fun Stdio.Config.toJsStdio(): Array<Any> {
+        private fun Stdio.Config.toJsStdio(): List<Any> {
             val fs = node_fs
-            val jsStdio = Array<Any>(3) { "pipe" }
+            val jsStdio = ArrayList<Any>(3).apply {
+                add("pipe")
+                add("pipe")
+                add("pipe")
+            }
 
             jsStdio.closeDescriptorsOnFailure {
                 jsStdio[0] = stdin.toJsStdio(fs, isStdin = true)
@@ -250,7 +281,7 @@ internal actual class PlatformBuilder private actual constructor() {
         }
 
         // @Throws(IOException::class)
-        private inline fun <T: Any?> Array<Any>.closeDescriptorsOnFailure(
+        private inline fun <T: Any?> List<Any>.closeDescriptorsOnFailure(
             block: () -> T,
         ): T {
             val result = try {
