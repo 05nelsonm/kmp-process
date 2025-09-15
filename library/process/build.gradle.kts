@@ -16,7 +16,6 @@
 import co.touchlab.cklib.gradle.CKlibGradleExtension
 import co.touchlab.cklib.gradle.CompileToBitcode
 import co.touchlab.cklib.gradle.CompileToBitcodeExtension
-import com.android.utils.TraceUtils.simpleId
 import org.gradle.accessors.dm.LibrariesForLibs
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.konan.target.Family
