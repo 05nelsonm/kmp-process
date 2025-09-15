@@ -4,7 +4,7 @@ androidx-test-core          = "1.5.0" # Do not upgrade. Tests run for API 15+, w
 #noinspection GradleDependency
 androidx-test-runner        = "1.5.2" # Do not upgrade. Tests run for API 15+, where next version requires minSdk 19+
 
-gradle-android              = "8.9.3"
+gradle-android              = "8.11.2"
 gradle-binary-compat        = "0.18.1"
 gradle-cklib                = "0.3.4"
 gradle-dokka                = "2.0.0"
