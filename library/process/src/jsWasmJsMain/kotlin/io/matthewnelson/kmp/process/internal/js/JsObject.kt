@@ -30,7 +30,8 @@ internal external class JsObject: JsAny {
     }
 }
 
-internal fun JsObject.Companion.new(): JsObject = js("({})")
+internal inline fun JsObject.Companion.new(): JsObject = jsObjectNew()
+internal fun jsObjectNew(): JsObject = js("({})")
 
 internal inline fun <T: JsAny> JsObject.getJsAny(key: String): T = jsObjectGetJsAny(this, key)
 internal fun <T: JsAny> jsObjectGetJsAny(obj: JsObject, key: String): T = js("obj[key]")
