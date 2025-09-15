@@ -13,7 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING", "LocalVariableName", "ACTUAL_ANNOTATIONS_NOT_MATCH_EXPECT")
+@file:OptIn(DelicateFileApi::class)
+@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING", "LocalVariableName")
 
 package io.matthewnelson.kmp.process.internal
 
@@ -69,7 +70,7 @@ internal actual class PlatformBuilder private actual constructor() {
         }
     }
 
-    // @Throws(IOException::class)
+    @Throws(IOException::class)
     internal actual fun output(
         command: String,
         args: List<String>,
@@ -165,7 +166,7 @@ internal actual class PlatformBuilder private actual constructor() {
         )
     }
 
-    // @Throws(IOException::class)
+    @Throws(IOException::class)
     internal actual fun spawn(
         command: String,
         args: List<String>,

@@ -13,8 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
+@file:OptIn(DelicateFileApi::class, ExperimentalWasmJsInterop::class)
 @file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING", "NOTHING_TO_INLINE")
-@file:OptIn(DelicateFileApi::class)
 
 package io.matthewnelson.kmp.process.internal.node
 
@@ -23,6 +23,8 @@ import io.matthewnelson.kmp.file.jsExternTryCatch
 import io.matthewnelson.kmp.process.InternalProcessApi
 import io.matthewnelson.kmp.process.ReadBuffer
 import io.matthewnelson.kmp.process.internal.js.JsUint8Array
+import kotlin.js.ExperimentalWasmJsInterop
+import kotlin.js.JsAny
 import kotlin.js.JsName
 
 /** [docs](https://nodejs.org/api/stream.html) */
@@ -33,7 +35,10 @@ internal external interface ModuleStream {
 /** [docs](https://nodejs.org/api/stream.html#class-streamreadable) */
 @JsName("Readable")
 internal external interface JsReadable {
-    fun on(event: String, listener: Function<Unit>): JsReadable
+    fun <T: JsAny?> on(
+        event: String,
+        listener: (T) -> Unit,
+    ): JsReadable
     fun destroy()
 }
 
@@ -42,13 +47,19 @@ internal external interface JsReadable {
 internal external interface JsWritable {
     val writable: Boolean
     fun end()
-    fun once(event: String, listener: Function<Unit>): JsWritable
-    fun write(chunk: JsUint8Array, callback: Function<Unit>): Boolean
+    fun once(
+        event: String,
+        listener: () -> Unit,
+    ): JsWritable
+    fun write(
+        chunk: JsUint8Array,
+        callback: () -> Unit,
+    ): Boolean
 }
 
 internal inline fun JsReadable.onClose(
     noinline block: () -> Unit,
-): JsReadable = jsExternTryCatch { on("close", block) }
+): JsReadable = jsExternTryCatch { on<JsAny?>("close") { _ -> block() } }
 
 internal inline fun JsReadable.onData(
     noinline block: (data: ReadBuffer) -> Unit,

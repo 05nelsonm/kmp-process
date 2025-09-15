@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:OptIn(DelicateFileApi::class)
+@file:OptIn(DelicateFileApi::class, ExperimentalWasmJsInterop::class)
 @file:Suppress("NOTHING_TO_INLINE")
 
 package io.matthewnelson.kmp.process.internal.node
@@ -21,6 +21,8 @@ package io.matthewnelson.kmp.process.internal.node
 import io.matthewnelson.kmp.file.DelicateFileApi
 import io.matthewnelson.kmp.file.jsExternTryCatch
 import io.matthewnelson.kmp.process.internal.js.JsError
+import kotlin.js.ExperimentalWasmJsInterop
+import kotlin.js.JsAny
 import kotlin.js.JsName
 
 /** [docs](https://nodejs.org/api/events.html) */
@@ -31,9 +33,9 @@ internal external interface ModuleEvents {
 /** [docs](https://nodejs.org/api/events.html#class-eventemitter) */
 @JsName("EventEmitter")
 internal external interface JsEventEmitter {
-    fun on(
+    fun <T: JsAny?> on(
         event: String,
-        listener: Function<Unit>,
+        listener: (T) -> Unit,
     ): JsEventEmitter
 }
 
