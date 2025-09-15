@@ -21,22 +21,6 @@ import io.matthewnelson.kmp.file.*
 import io.matthewnelson.kmp.process.InternalProcessApi
 import io.matthewnelson.kmp.process.ReadBuffer
 
-internal actual val STDIO_NULL: File by lazy {
-    val isWindows = try {
-        os_platform() == "win32"
-    } catch (_: Throwable) {
-        SysDirSep == '\\'
-    }
-
-    (if (isWindows) "NUL" else "/dev/null").toFile()
-}
-
-internal actual val IsDesktop: Boolean get() = try {
-    os_platform() != "android"
-} catch (_: Throwable) {
-    false
-}
-
 /** @suppress */
 @InternalProcessApi
 public inline fun <T: events_EventEmitter> T.onError(

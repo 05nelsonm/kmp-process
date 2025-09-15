@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Matthew Nelson
+ * Copyright (c) 2025 Matthew Nelson
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,12 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:JsModule("os")
-@file:JsNonModule
-@file:Suppress("FunctionName")
+package io.matthewnelson.kmp.process.internal.node
 
-package io.matthewnelson.kmp.process.internal
-
-/** [docs](https://nodejs.org/api/os.html#osplatform) */
-@JsName("platform")
-internal external fun os_platform(): String
+/** [docs](https://nodejs.org/api/os.html) */
+internal external interface ModuleOs {
+    fun platform(): String?
+}
