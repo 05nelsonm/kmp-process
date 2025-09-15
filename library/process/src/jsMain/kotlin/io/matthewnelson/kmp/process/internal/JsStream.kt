@@ -19,6 +19,8 @@
 
 package io.matthewnelson.kmp.process.internal
 
+import io.matthewnelson.kmp.process.internal.js.JsUint8Array
+
 /** [docs](https://nodejs.org/api/stream.html#class-streamreadable) */
 @JsName("Readable")
 internal open external class stream_Readable {
@@ -42,7 +44,7 @@ internal open external class stream_Writable {
 
     // @Throws(Throwable::class)
     internal fun write(
-        chunk: Uint8Array,
+        chunk: JsUint8Array,
         callback: () -> Unit,
     ): Boolean
 

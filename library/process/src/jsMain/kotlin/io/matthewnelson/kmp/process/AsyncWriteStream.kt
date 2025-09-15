@@ -22,6 +22,9 @@ import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.file.toIOException
 import io.matthewnelson.kmp.file.use
 import io.matthewnelson.kmp.process.internal.*
+import io.matthewnelson.kmp.process.internal.js.JsUint8Array
+import io.matthewnelson.kmp.process.internal.js.fill
+import io.matthewnelson.kmp.process.internal.js.toJsArray
 import kotlinx.coroutines.CompletableJob
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.currentCoroutineContext
@@ -51,7 +54,7 @@ public actual class AsyncWriteStream internal constructor(private val stream: st
         buf.checkBounds(offset, len)
         if (len == 0) return
 
-        val chunk = buf.toJsArray(offset, len) { size -> Uint8Array(size) }
+        val chunk = buf.toJsArray(offset, len) { size -> JsUint8Array(size) }
         val wLatch: CompletableJob = Job(currentCoroutineContext()[Job])
         var dLatch: CompletableJob? = null
 

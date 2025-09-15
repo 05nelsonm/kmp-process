@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Matthew Nelson
+ * Copyright (c) 2025 Matthew Nelson
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,42 +13,47 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-package io.matthewnelson.kmp.process
+@file:OptIn(ExperimentalWasmJsInterop::class)
 
-import io.matthewnelson.kmp.process.internal.*
+package io.matthewnelson.kmp.process.internal.js
+
+import kotlin.js.ExperimentalWasmJsInterop
+import kotlin.js.js
 import kotlin.test.Test
 import kotlin.test.assertEquals
+
+private fun <T: JsArrayBufferView> jsArrayGet(a: T, index: Int): Byte = js("a[index]")
 
 class JsArrayUnitTest {
 
     @Test
     fun givenBytes_whenToJsArray_thenBytesAreCopied() {
-        val b = ByteArray(50) { it.toByte() }
-        val a = b.toJsArray { Int8Array(it) }
+        val b = ByteArray(50) { i -> i.toByte() }
+        val a = b.toJsArray { JsInt8Array(it) }
         for (i in b.indices) {
-            assertEquals(b[i], a.asDynamic()[i])
+            assertEquals(b[i], jsArrayGet(a, i))
         }
     }
 
     @Test
     fun givenBytes_whenToJsArrayWithOffset_thenBytesAreCopied() {
-        val b = ByteArray(250) { it.toByte() }
+        val b = ByteArray(250) { i -> i.toByte() }
         val offset = 50
-        val a = b.toJsArray(offset = offset) { Int8Array(it) }
+        val a = b.toJsArray(offset = offset) { JsInt8Array(it) }
 
         assertEquals(b.size - offset, a.byteLength)
 
         for (i in 0 until a.byteLength) {
-            assertEquals(b[i + offset], a.asDynamic()[i])
+            assertEquals(b[i + offset], jsArrayGet(a, i))
         }
     }
 
     @Test
     fun givenJsArray_whenFill_thenArrayIsZeroedOut() {
-        val a = ByteArray(250) { it.toByte() }.toJsArray { Uint8Array(it) }
+        val a = ByteArray(250) { i -> i.toByte() }.toJsArray { JsUint8Array(it) }
         a.fill()
         for (i in 0 until a.byteLength) {
-            assertEquals(0, a.asDynamic()[i])
+            assertEquals(0, jsArrayGet(a, i))
         }
     }
 }

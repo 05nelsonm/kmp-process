@@ -13,29 +13,45 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
+@file:OptIn(ExperimentalWasmJsInterop::class)
 @file:Suppress("NOTHING_TO_INLINE", "UNUSED")
 
-package io.matthewnelson.kmp.process.internal
+package io.matthewnelson.kmp.process.internal.js
 
+import io.matthewnelson.kmp.process.internal.checkBounds
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
+import kotlin.js.ExperimentalWasmJsInterop
+import kotlin.js.JsName
+import kotlin.js.js
 
-internal external interface ArrayBufferView {
+@JsName("ArrayBufferView")
+internal external interface JsArrayBufferView {
     val byteLength: Int
 }
 
-internal open external class Int8Array(length: Int): ArrayBufferView {
+@JsName("Int8Array")
+internal open external class JsInt8Array(length: Int): JsArrayBufferView {
     override val byteLength: Int
 }
 
-internal open external class Uint8Array(length: Int): ArrayBufferView {
+@JsName("Uint8Array")
+internal open external class JsUint8Array(length: Int): JsArrayBufferView {
     override val byteLength: Int
+}
+
+internal inline operator fun <T: JsArrayBufferView> T.set(index: Int, value: Byte) {
+    jsArraySet(this, index, value)
+}
+
+internal fun <T: JsArrayBufferView> jsArraySet(array: T, index: Int, value: Byte) {
+    js("array[index] = value")
 }
 
 @OptIn(ExperimentalContracts::class)
 // @Throws(IndexOutOfBoundsException::class)
-internal inline fun <T: ArrayBufferView> ByteArray.toJsArray(
+internal inline fun <T: JsArrayBufferView> ByteArray.toJsArray(
     offset: Int = 0,
     len: Int = size - offset,
     checkBounds: Boolean = false,
@@ -47,21 +63,19 @@ internal inline fun <T: ArrayBufferView> ByteArray.toJsArray(
 
     if (checkBounds) checkBounds(offset, len)
     val array = factory(len)
-    val dArray = array.asDynamic()
 
-    var aI = 0
-    for (i in offset until offset + len) {
-        dArray[aI++] = this[i]
+    var i = 0
+    for (j in offset until offset + len) {
+        array[i++] = this[j]
     }
 
     return array
 }
 
-internal inline fun ArrayBufferView.fill() {
+internal inline fun JsArrayBufferView.fill() {
     val len = byteLength
     if (len == 0) return
-    val a = asDynamic()
     for (i in 0 until len) {
-        a[i] = 0
+        this[i] = 0
     }
 }

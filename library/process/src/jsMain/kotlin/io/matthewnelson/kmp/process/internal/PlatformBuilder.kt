@@ -20,6 +20,9 @@ package io.matthewnelson.kmp.process.internal
 import io.matthewnelson.kmp.file.*
 import io.matthewnelson.kmp.process.*
 import io.matthewnelson.kmp.process.internal.RealLineOutputFeed.Companion.LF
+import io.matthewnelson.kmp.process.internal.js.JsInt8Array
+import io.matthewnelson.kmp.process.internal.js.fill
+import io.matthewnelson.kmp.process.internal.js.toJsArray
 
 // jsMain
 internal actual class PlatformBuilder private actual constructor() {
@@ -67,7 +70,7 @@ internal actual class PlatformBuilder private actual constructor() {
 
         val input = jsStdio.closeDescriptorsOnFailure {
             val b = options.consumeInput() ?: return@closeDescriptorsOnFailure null
-            val a = b.toJsArray { size -> Int8Array(size) }
+            val a = b.toJsArray { size -> JsInt8Array(size) }
             b.fill(0)
             a
         }
