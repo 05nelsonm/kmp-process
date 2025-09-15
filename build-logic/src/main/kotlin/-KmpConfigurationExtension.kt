@@ -16,14 +16,13 @@
 import io.matthewnelson.kmp.configuration.extension.KmpConfigurationExtension
 import io.matthewnelson.kmp.configuration.extension.container.target.KmpConfigurationContainerDsl
 import org.gradle.api.Action
-import org.gradle.api.JavaVersion
 import org.jetbrains.kotlin.konan.target.HostManager
 import java.io.File
 
 fun KmpConfigurationExtension.configureShared(
     java9ModuleName: String? = null,
     publish: Boolean = false,
-    action: Action<KmpConfigurationContainerDsl>
+    action: Action<KmpConfigurationContainerDsl>,
 ) {
     if (publish) {
         require(!java9ModuleName.isNullOrBlank()) { "publications must specify a module-info name" }
@@ -35,10 +34,6 @@ fun KmpConfigurationExtension.configureShared(
         }
 
         jvm {
-            kotlinJvmTarget = JavaVersion.VERSION_1_8
-            compileSourceCompatibility = JavaVersion.VERSION_1_8
-            compileTargetCompatibility = JavaVersion.VERSION_1_8
-
             // windows always throws a fit if not using Java 11. This disables
             // compilation of module-info.java. Nobody deploys from Windows
             // anyway...
@@ -61,6 +56,8 @@ fun KmpConfigurationExtension.configureShared(
         iosAll()
         linuxAll()
         macosAll()
+
+        // TODO: See Issue #6
 //        mingwAll()
 
         // posix_spawn is "supported" but APIs for posix_spawn_file_actions
@@ -78,11 +75,9 @@ fun KmpConfigurationExtension.configureShared(
             }
         }
 
+        kotlin { explicitApi() }
+
         kotlin {
-            explicitApi()
-
-            val project = targets.first().project
-
             val kotlinSrc = project
                 .layout
                 .buildDirectory
@@ -101,12 +96,14 @@ fun KmpConfigurationExtension.configureShared(
 
             pkgDir.mkdirs()
 
-            pkgDir.resolve("TestConfig.kt").writeText("""
-                package io.matthewnelson.kmp.${project.name.replace('-', '.')}
-                
-                internal const val PROJECT_DIR_PATH: String = "${project.projectDir.canonicalPath.replace("\\", "\\\\")}"
-
-            """.trimIndent())
+            project.afterEvaluate {
+                pkgDir.resolve("TestConfig.kt").writeText("""
+                    package io.matthewnelson.kmp.${project.name.replace('-', '.')}
+                    
+                    internal const val PROJECT_DIR_PATH: String = "${project.projectDir.canonicalPath.replace("\\", "\\\\")}"
+    
+                """.trimIndent())
+            }
 
             sourceSets.commonTest.get().kotlin.srcDir(kotlinSrc)
         }

@@ -8,7 +8,7 @@ gradle-android              = "8.9.3"
 gradle-binary-compat        = "0.18.1"
 gradle-cklib                = "0.3.3"
 gradle-dokka                = "2.0.0"
-gradle-kmp-configuration    = "0.4.1"
+gradle-kmp-configuration    = "0.5.2"
 gradle-kotlin               = "2.1.21"
 gradle-publish-maven        = "0.34.0"
 

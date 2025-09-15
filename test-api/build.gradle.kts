@@ -53,10 +53,6 @@ kmpConfiguration {
                 sourceSets["androidTest"].jniLibs.srcDir(jniLibsDir)
             }
 
-            kotlinJvmTarget = JavaVersion.VERSION_1_8
-            compileSourceCompatibility = JavaVersion.VERSION_1_8
-            compileTargetCompatibility = JavaVersion.VERSION_1_8
-
             sourceSetTestInstrumented {
                 dependencies {
                     implementation(libs.androidx.test.core)
