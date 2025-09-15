@@ -13,11 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING", "ACTUAL_ANNOTATIONS_NOT_MATCH_EXPECT")
+@file:OptIn(DelicateFileApi::class)
+@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
 
 package io.matthewnelson.kmp.process
 
 import io.matthewnelson.kmp.file.Closeable
+import io.matthewnelson.kmp.file.DelicateFileApi
 import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.file.jsExternTryCatch
 import io.matthewnelson.kmp.file.toIOException
@@ -30,6 +32,7 @@ import io.matthewnelson.kmp.process.internal.node.JsWritable
 import kotlinx.coroutines.CompletableJob
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.currentCoroutineContext
+import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * A stream for writing data asynchronously.
@@ -50,7 +53,7 @@ public actual class AsyncWriteStream internal constructor(private val stream: Js
      * @throws [IOException] If an I/O error occurs, or the stream is closed.
      * @throws [IndexOutOfBoundsException] If [offset] or [len] are inappropriate.
      * */
-    // @Throws(CancellationException::class, IOException::class)
+    @Throws(CancellationException::class, IOException::class)
     public actual suspend fun writeAsync(buf: ByteArray, offset: Int, len: Int) {
         if (isClosed) throw IOException("WriteStream is closed")
         buf.checkBounds(offset, len)
@@ -82,7 +85,7 @@ public actual class AsyncWriteStream internal constructor(private val stream: Js
      *
      * @throws [IOException] If an I/O error occurs, or the stream is closed.
      * */
-    // @Throws(CancellationException::class, IOException::class)
+    @Throws(CancellationException::class, IOException::class)
     public actual suspend fun writeAsync(buf: ByteArray) { writeAsync(buf, 0, buf.size) }
 
     /**
@@ -90,7 +93,7 @@ public actual class AsyncWriteStream internal constructor(private val stream: Js
      *
      * @throws [IOException] If an I/O error occurs, or the stream is closed.
      * */
-    // @Throws(CancellationException::class, IOException::class)
+    @Throws(CancellationException::class, IOException::class)
     public actual suspend fun flushAsync() { flush() }
 
     /**
@@ -102,7 +105,7 @@ public actual class AsyncWriteStream internal constructor(private val stream: Js
      *
      * @throws [IOException] If an I/O error occurs.
      * */
-    // @Throws(CancellationException::class, IOException::class)
+    @Throws(CancellationException::class, IOException::class)
     public actual suspend fun closeAsync() { close() }
 
     /**
@@ -110,7 +113,7 @@ public actual class AsyncWriteStream internal constructor(private val stream: Js
      *
      * @throws [IOException] If an I/O error occurs, or the stream is closed.
      * */
-    // @Throws(IOException::class)
+    @Throws(IOException::class)
     public actual fun flush() {}
 
     /**
@@ -122,7 +125,7 @@ public actual class AsyncWriteStream internal constructor(private val stream: Js
      *
      * @throws [IOException] If an I/O error occurs.
      * */
-    // @Throws(IOException::class)
+    @Throws(IOException::class)
     public actual override fun close() {
         try {
             jsExternTryCatch(stream::end)

@@ -63,7 +63,7 @@ internal inline operator fun <T: JsArrayBufferView> T.set(index: Int, value: Byt
 internal fun <T: JsArrayBufferView> jsArraySet(array: T, index: Int, value: Byte) { js("array[index] = value") }
 
 @OptIn(ExperimentalContracts::class)
-// @Throws(IndexOutOfBoundsException::class)
+@Throws(IndexOutOfBoundsException::class)
 internal inline fun <T: JsArrayBufferView> ByteArray.toJsArray(
     offset: Int = 0,
     len: Int = size - offset,
