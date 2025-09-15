@@ -13,13 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING", "ACTUAL_ANNOTATIONS_NOT_MATCH_EXPECT")
+package io.matthewnelson.kmp.process.internal.node
 
-package io.matthewnelson.kmp.process.internal
+import io.matthewnelson.kmp.process.internal.js.JsObject
 
-import io.matthewnelson.kmp.process.internal.node.node_process
-
-internal actual object PID {
-//    @Throws(UnsupportedOperationException::class)
-    internal actual fun get(): Int = node_process.pid
+/** [docs](https://nodejs.org/api/process.html) */
+internal external interface ModuleProcess {
+    val pid: Int
+    val versions: JsObject
 }

@@ -120,7 +120,9 @@ public abstract class Process internal constructor(
         /**
          * Retrieves the current process' ID
          *
-         * @throws [UnsupportedOperationException] if on Java9+ and module 'java.management' is not present.
+         * @throws [UnsupportedOperationException] when:
+         *   - Java9+ and module 'java.management' is not present
+         *   - Kotlin/Js or Kotlin/WasmJs Browser
          * */
         @JvmStatic
         public fun pid(): Int = PID.get()

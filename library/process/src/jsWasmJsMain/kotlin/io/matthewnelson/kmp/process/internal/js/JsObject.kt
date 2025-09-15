@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Matthew Nelson
+ * Copyright (c) 2025 Matthew Nelson
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,15 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:JsModule("process")
-@file:JsNonModule
+@file:OptIn(ExperimentalWasmJsInterop::class)
+@file:Suppress("NOTHING_TO_INLINE")
 
-package io.matthewnelson.kmp.process.internal
+package io.matthewnelson.kmp.process.internal.js
 
-/** [docs](https://nodejs.org/api/process.html#processpid) */
-@JsName("pid")
-internal external val process_pid: Int
+import kotlin.js.ExperimentalWasmJsInterop
+import kotlin.js.JsName
+import kotlin.js.js
 
-/** [docs](https://nodejs.org/api/process.html#processversions) */
-@JsName("versions")
-internal external val process_versions: dynamic
+@JsName("Object")
+internal external class JsObject
+
+internal inline operator fun JsObject.get(key: String): String? = jsObjectGet(this, key)
+
+@Suppress("RedundantNullableReturnType")
+internal fun jsObjectGet(obj: JsObject, key: String): String? = js("obj[key]")

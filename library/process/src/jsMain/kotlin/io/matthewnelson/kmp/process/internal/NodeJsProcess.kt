@@ -21,6 +21,8 @@ import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.file.errorCodeOrNull
 import io.matthewnelson.kmp.process.*
+import io.matthewnelson.kmp.process.internal.node.node_process
+import io.matthewnelson.kmp.process.internal.js.get
 
 internal class NodeJsProcess internal constructor(
     private val jsProcess: child_process_ChildProcess,
@@ -77,7 +79,7 @@ internal class NodeJsProcess internal constructor(
                     if (code != "EPERM") return@run
 
                     val (major, minor, patch) = try {
-                        val split = (process_versions["uv"] as String).split('.')
+                        val split = node_process.versions["uv"]?.split('.') ?: return@run
                         Triple(split[0].toInt(), split[1].toInt(), split[2].toInt())
                     } catch (_: Throwable) {
                         return@run

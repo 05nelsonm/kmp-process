@@ -22,12 +22,19 @@ import kotlin.js.ExperimentalWasmJsInterop
 import kotlin.js.js
 
 @get:Throws(UnsupportedOperationException::class)
+internal val node_process: ModuleProcess by lazy {
+    requireNodeJs { "process" }
+    nodeModuleProcess()
+}
+
+@get:Throws(UnsupportedOperationException::class)
 internal val node_os: ModuleOs by lazy {
     requireNodeJs { "os" }
     nodeModuleOs()
 }
 
 private fun nodeModuleOs(): ModuleOs = js("eval('require')('os')")
+private fun nodeModuleProcess(): ModuleProcess = js("eval('require')('process')")
 
 @Suppress("NOTHING_TO_INLINE")
 @Throws(UnsupportedOperationException::class)
