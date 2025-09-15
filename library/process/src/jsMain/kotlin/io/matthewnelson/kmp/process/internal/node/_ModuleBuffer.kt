@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Matthew Nelson
+ * Copyright (c) 2025 Matthew Nelson
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,24 +15,10 @@
  **/
 @file:Suppress("NOTHING_TO_INLINE")
 
-package io.matthewnelson.kmp.process.internal
+package io.matthewnelson.kmp.process.internal.node
 
-import io.matthewnelson.kmp.process.InternalProcessApi
+import io.matthewnelson.kmp.file.Buffer
 
-/** @suppress */
-@InternalProcessApi
-public inline fun <T: events_EventEmitter> T.onError(
-    noinline block: (err: dynamic) -> Unit,
-): T {
-    on("error", block)
-    return this
-}
+internal actual inline fun JsBuffer.asBuffer(): Buffer = Buffer.wrap(this)
 
-/** @suppress */
-@InternalProcessApi
-public inline fun <T: events_EventEmitter> T.onceError(
-    noinline block: (err: dynamic) -> Unit,
-): T {
-    once("error", block)
-    return this
-}
+internal actual inline fun Buffer.asJsBuffer(): JsBuffer = unwrap()

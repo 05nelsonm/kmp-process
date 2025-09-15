@@ -20,9 +20,12 @@ package io.matthewnelson.kmp.process.internal
 import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.file.errorCodeOrNull
+import io.matthewnelson.kmp.file.jsExternTryCatch
 import io.matthewnelson.kmp.process.*
 import io.matthewnelson.kmp.process.internal.node.node_process
 import io.matthewnelson.kmp.process.internal.js.get
+import io.matthewnelson.kmp.process.internal.node.onClose
+import io.matthewnelson.kmp.process.internal.node.onData
 
 internal class NodeJsProcess internal constructor(
     private val jsProcess: child_process_ChildProcess,
@@ -102,9 +105,21 @@ internal class NodeJsProcess internal constructor(
                     // found with our PID. Unable to kill b/c no process, it's just
                     // gone... Self-assign exit code and move on.
                     _exitCode = destroySignal.code
-                    jsProcess.stdin?.end()
-                    jsProcess.stdout?.destroy()
-                    jsProcess.stderr?.destroy()
+                    try {
+                        jsExternTryCatch { jsProcess.stdin?.end() }
+                    } catch (tt: Throwable) {
+                        t.addSuppressed(tt)
+                    }
+                    try {
+                        jsExternTryCatch { jsProcess.stdout?.destroy() }
+                    } catch (tt: Throwable) {
+                        t.addSuppressed(tt)
+                    }
+                    try {
+                        jsExternTryCatch { jsProcess.stderr?.destroy() }
+                    } catch (tt: Throwable) {
+                        t.addSuppressed(tt)
+                    }
                     error = null
                 }
 

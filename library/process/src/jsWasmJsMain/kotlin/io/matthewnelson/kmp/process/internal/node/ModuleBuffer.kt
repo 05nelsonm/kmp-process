@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Matthew Nelson
+ * Copyright (c) 2025 Matthew Nelson
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,26 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("NOTHING_TO_INLINE")
+@file:OptIn(ExperimentalWasmJsInterop::class)
+@file:Suppress("UNUSED", "NOTHING_TO_INLINE")
 
-package io.matthewnelson.kmp.process.internal
+package io.matthewnelson.kmp.process.internal.node
 
-import io.matthewnelson.kmp.process.InternalProcessApi
+import io.matthewnelson.kmp.file.Buffer
+import kotlin.js.ExperimentalWasmJsInterop
+import kotlin.js.JsAny
+import kotlin.js.JsName
 
-/** @suppress */
-@InternalProcessApi
-public inline fun <T: events_EventEmitter> T.onError(
-    noinline block: (err: dynamic) -> Unit,
-): T {
-    on("error", block)
-    return this
+internal external interface ModuleBuffer {
+    // ...
 }
 
-/** @suppress */
-@InternalProcessApi
-public inline fun <T: events_EventEmitter> T.onceError(
-    noinline block: (err: dynamic) -> Unit,
-): T {
-    once("error", block)
-    return this
-}
+@JsName("Buffer")
+internal external interface JsBuffer: JsAny
+
+internal expect inline fun JsBuffer.asBuffer(): Buffer
+
+internal expect inline fun Buffer.asJsBuffer(): JsBuffer

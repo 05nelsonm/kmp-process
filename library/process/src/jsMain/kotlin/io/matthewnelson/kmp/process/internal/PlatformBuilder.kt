@@ -25,6 +25,7 @@ import io.matthewnelson.kmp.process.internal.js.fill
 import io.matthewnelson.kmp.process.internal.js.toJsArray
 import io.matthewnelson.kmp.process.internal.node.ModuleFs
 import io.matthewnelson.kmp.process.internal.node.node_fs
+import io.matthewnelson.kmp.process.internal.node.node_stream
 
 // jsMain
 internal actual class PlatformBuilder private actual constructor() {
@@ -62,6 +63,7 @@ internal actual class PlatformBuilder private actual constructor() {
         options: Output.Options,
         destroy: Signal,
     ): Output {
+        node_stream
         val jsEnv = env.toJsEnv()
         val jsStdio = try {
             stdio.toJsStdio()
@@ -72,7 +74,7 @@ internal actual class PlatformBuilder private actual constructor() {
 
         val input = jsStdio.closeDescriptorsOnFailure {
             val b = options.consumeInput() ?: return@closeDescriptorsOnFailure null
-            val a = b.toJsArray { size -> JsInt8Array(size) }
+            val a = b.toJsArray(factory = ::JsInt8Array)
             b.fill(0)
             a
         }
@@ -153,6 +155,7 @@ internal actual class PlatformBuilder private actual constructor() {
         destroy: Signal,
         handler: ProcessException.Handler,
     ): Process {
+        node_stream
         val jsEnv = env.toJsEnv()
         val jsStdio = stdio.toJsStdio()
         val isDetached = detached

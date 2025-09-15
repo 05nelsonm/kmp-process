@@ -29,7 +29,7 @@ class JsArrayUnitTest {
     @Test
     fun givenBytes_whenToJsArray_thenBytesAreCopied() {
         val b = ByteArray(50) { i -> i.toByte() }
-        val a = b.toJsArray { JsInt8Array(it) }
+        val a = b.toJsArray(factory = ::JsInt8Array)
         for (i in b.indices) {
             assertEquals(b[i], jsArrayGet(a, i))
         }
@@ -39,7 +39,7 @@ class JsArrayUnitTest {
     fun givenBytes_whenToJsArrayWithOffset_thenBytesAreCopied() {
         val b = ByteArray(250) { i -> i.toByte() }
         val offset = 50
-        val a = b.toJsArray(offset = offset) { JsInt8Array(it) }
+        val a = b.toJsArray(offset = offset, factory = ::JsInt8Array)
 
         assertEquals(b.size - offset, a.byteLength)
 
@@ -50,7 +50,7 @@ class JsArrayUnitTest {
 
     @Test
     fun givenJsArray_whenFill_thenArrayIsZeroedOut() {
-        val a = ByteArray(250) { i -> i.toByte() }.toJsArray { JsUint8Array(it) }
+        val a = ByteArray(250) { i -> i.toByte() }.toJsArray(factory = ::JsUint8Array)
         a.fill()
         for (i in 0 until a.byteLength) {
             assertEquals(0, jsArrayGet(a, i))

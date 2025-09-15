@@ -20,6 +20,8 @@
 package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.process.InternalProcessApi
+import io.matthewnelson.kmp.process.internal.node.JsReadable
+import io.matthewnelson.kmp.process.internal.node.JsWritable
 
 /** [docs](https://nodejs.org/api/child_process.html#child_processspawncommand-args-options) */
 @JsName("spawn")
@@ -52,9 +54,9 @@ internal external class child_process_ChildProcess: events_EventEmitter {
 
     internal val signalCode: String?
 
-    internal val stdin: stream_Writable?
-    internal val stdout: stream_Readable?
-    internal val stderr: stream_Readable?
+    internal val stdin: JsWritable?
+    internal val stdout: JsReadable?
+    internal val stderr: JsReadable?
 
     internal fun unref()
 }

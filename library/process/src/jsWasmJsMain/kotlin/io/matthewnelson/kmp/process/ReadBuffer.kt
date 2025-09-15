@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING", "ACTUAL_ANNOTATIONS_NOT_MATCH_EXPECT")
+@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
 
 package io.matthewnelson.kmp.process
 
@@ -38,12 +38,12 @@ public actual value class ReadBuffer private actual constructor(private actual v
 
     internal actual fun capacity(): Int = buf.length.toInt()
 
-    // @Throws(IndexOutOfBoundsException::class)
+    @Throws(IndexOutOfBoundsException::class)
     internal actual operator fun get(
         index: Int,
     ): Byte = buf.readInt8(index)
 
-    // @Throws(IllegalArgumentException::class, IndexOutOfBoundsException::class)
+    @Throws(IllegalArgumentException::class, IndexOutOfBoundsException::class)
     internal actual fun decodeToUtf8(
         startIndex: Int,
         endIndex: Int,
@@ -95,7 +95,7 @@ public actual value class ReadBuffer private actual constructor(private actual v
          * @throws [IllegalStateException] If closed.
          * @throws [IndexOutOfBoundsException] If [len] is inappropriate.
          * */
-        // @Throws(IllegalStateException::class)
+        @Throws(IllegalStateException::class)
         public actual abstract fun onData(buf: ReadBuffer, len: Int)
 
         /**

@@ -19,12 +19,14 @@ package io.matthewnelson.kmp.process
 
 import io.matthewnelson.kmp.file.Closeable
 import io.matthewnelson.kmp.file.IOException
+import io.matthewnelson.kmp.file.jsExternTryCatch
 import io.matthewnelson.kmp.file.toIOException
 import io.matthewnelson.kmp.file.use
 import io.matthewnelson.kmp.process.internal.*
 import io.matthewnelson.kmp.process.internal.js.JsUint8Array
 import io.matthewnelson.kmp.process.internal.js.fill
 import io.matthewnelson.kmp.process.internal.js.toJsArray
+import io.matthewnelson.kmp.process.internal.node.JsWritable
 import kotlinx.coroutines.CompletableJob
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.currentCoroutineContext
@@ -34,9 +36,9 @@ import kotlinx.coroutines.currentCoroutineContext
  *
  * @see [Process.input]
  * */
-public actual class AsyncWriteStream internal constructor(private val stream: stream_Writable): Closeable {
+public actual class AsyncWriteStream internal constructor(private val stream: JsWritable): Closeable {
 
-    private val isClosed: Boolean get() = !stream.writable
+    private val isClosed: Boolean get() = !jsExternTryCatch { stream.writable }
 
     /**
      * Writes [len] number of bytes from [buf], starting at index [offset].
@@ -54,14 +56,14 @@ public actual class AsyncWriteStream internal constructor(private val stream: st
         buf.checkBounds(offset, len)
         if (len == 0) return
 
-        val chunk = buf.toJsArray(offset, len) { size -> JsUint8Array(size) }
+        val chunk = buf.toJsArray(offset, len, factory = ::JsUint8Array)
         val wLatch: CompletableJob = Job(currentCoroutineContext()[Job])
         var dLatch: CompletableJob? = null
 
         try {
-            if (!stream.write(chunk) { wLatch.complete(); chunk.fill() }) {
+            if (!jsExternTryCatch { stream.write(chunk) { wLatch.complete(); chunk.fill() } }) {
                 dLatch = Job(wLatch)
-                stream.once("drain") { dLatch.complete() }
+                jsExternTryCatch { stream.once("drain") { dLatch.complete() } }
             }
         } catch (t: Throwable) {
             wLatch.cancel()
@@ -121,5 +123,11 @@ public actual class AsyncWriteStream internal constructor(private val stream: st
      * @throws [IOException] If an I/O error occurs.
      * */
     // @Throws(IOException::class)
-    public actual override fun close() { stream.end() }
+    public actual override fun close() {
+        try {
+            jsExternTryCatch(stream::end)
+        } catch (t: Throwable) {
+            throw t.toIOException()
+        }
+    }
 }

@@ -22,6 +22,12 @@ import kotlin.js.ExperimentalWasmJsInterop
 import kotlin.js.js
 
 @get:Throws(UnsupportedOperationException::class)
+internal val node_buffer: ModuleBuffer by lazy {
+    requireNodeJs { "buffer" }
+    nodeModuleBuffer()
+}
+
+@get:Throws(UnsupportedOperationException::class)
 internal val node_fs: ModuleFs by lazy {
     requireNodeJs { "fs" }
     nodeModuleFs()
@@ -39,9 +45,18 @@ internal val node_process: ModuleProcess by lazy {
     nodeModuleProcess()
 }
 
+@get:Throws(UnsupportedOperationException::class)
+internal val node_stream: ModuleStream by lazy {
+    node_buffer
+    requireNodeJs { "stream" }
+    nodeModuleStream()
+}
+
+private fun nodeModuleBuffer(): ModuleBuffer = js("eval('require')('buffer')")
 private fun nodeModuleFs(): ModuleFs = js("eval('require')('fs')")
 private fun nodeModuleOs(): ModuleOs = js("eval('require')('os')")
 private fun nodeModuleProcess(): ModuleProcess = js("eval('require')('process')")
+private fun nodeModuleStream(): ModuleStream = js("eval('require')('stream')")
 
 @Suppress("NOTHING_TO_INLINE")
 @Throws(UnsupportedOperationException::class)
