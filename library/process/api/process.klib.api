@@ -1,5 +1,5 @@
 // Klib ABI Dump
-// Targets: [androidNativeArm32, androidNativeArm64, androidNativeX64, androidNativeX86, iosArm64, iosSimulatorArm64, iosX64, js, linuxArm64, linuxX64, macosArm64, macosX64]
+// Targets: [androidNativeArm32, androidNativeArm64, androidNativeX64, androidNativeX86, iosArm64, iosSimulatorArm64, iosX64, js, linuxArm64, linuxX64, macosArm64, macosX64, wasmJs]
 // Alias: native => [androidNativeArm32, androidNativeArm64, androidNativeX64, androidNativeX86, iosArm64, iosSimulatorArm64, iosX64, linuxArm64, linuxX64, macosArm64, macosX64]
 // Alias: androidNative => [androidNativeArm32, androidNativeArm64, androidNativeX64, androidNativeX86]
 // Alias: linux => [linuxArm64, linuxX64]
@@ -196,7 +196,7 @@ final value class io.matthewnelson.kmp.process/ReadBuffer { // io.matthewnelson.
         // Targets: [native]
         final fun <get-buf>(): kotlin/ByteArray // io.matthewnelson.kmp.process/ReadBuffer.buf.<get-buf>|<get-buf>(){}[0]
 
-        // Targets: [js]
+        // Targets: [js, wasmJs]
         final fun <get-buf>(): io.matthewnelson.kmp.file/Buffer // io.matthewnelson.kmp.process/ReadBuffer.buf.<get-buf>|<get-buf>(){}[0]
 
     final fun equals(kotlin/Any?): kotlin/Boolean // io.matthewnelson.kmp.process/ReadBuffer.equals|equals(kotlin.Any?){}[0]
@@ -215,7 +215,7 @@ final value class io.matthewnelson.kmp.process/ReadBuffer { // io.matthewnelson.
         // Targets: [native]
         final fun of(kotlin/ByteArray): io.matthewnelson.kmp.process/ReadBuffer // io.matthewnelson.kmp.process/ReadBuffer.Companion.of|of(kotlin.ByteArray){}[0]
 
-        // Targets: [js]
+        // Targets: [js, wasmJs]
         final fun of(io.matthewnelson.kmp.file/Buffer): io.matthewnelson.kmp.process/ReadBuffer // io.matthewnelson.kmp.process/ReadBuffer.Companion.of|of(io.matthewnelson.kmp.file.Buffer){}[0]
     }
 }
@@ -309,13 +309,13 @@ sealed class io.matthewnelson.kmp.process/BufferedWriteStream : io.matthewnelson
     open fun flush() // io.matthewnelson.kmp.process/BufferedWriteStream.flush|flush(){}[0]
 }
 
-// Targets: [androidNative, js, linux, macos]
+// Targets: [androidNative, js, linux, macos, wasmJs]
 final fun (io.matthewnelson.kmp.process/Process.Builder).io.matthewnelson.kmp.process/changeDir(io.matthewnelson.kmp.file/File?): io.matthewnelson.kmp.process/Process.Builder // io.matthewnelson.kmp.process/changeDir|changeDir@io.matthewnelson.kmp.process.Process.Builder(io.matthewnelson.kmp.file.File?){}[0]
 
 // Targets: [androidNative, linux, macos]
 final fun (io.matthewnelson.kmp.process/Process.Builder).io.matthewnelson.kmp.process/usePosixSpawn(kotlin/Boolean): io.matthewnelson.kmp.process/Process.Builder // io.matthewnelson.kmp.process/usePosixSpawn|usePosixSpawn@io.matthewnelson.kmp.process.Process.Builder(kotlin.Boolean){}[0]
 
-// Targets: [js]
+// Targets: [js, wasmJs]
 final class io.matthewnelson.kmp.process/AsyncWriteStream : io.matthewnelson.kmp.file/Closeable { // io.matthewnelson.kmp.process/AsyncWriteStream|null[0]
     final fun close() // io.matthewnelson.kmp.process/AsyncWriteStream.close|close(){}[0]
     final fun flush() // io.matthewnelson.kmp.process/AsyncWriteStream.flush|flush(){}[0]
@@ -324,6 +324,21 @@ final class io.matthewnelson.kmp.process/AsyncWriteStream : io.matthewnelson.kmp
     final suspend fun writeAsync(kotlin/ByteArray) // io.matthewnelson.kmp.process/AsyncWriteStream.writeAsync|writeAsync(kotlin.ByteArray){}[0]
     final suspend fun writeAsync(kotlin/ByteArray, kotlin/Int, kotlin/Int) // io.matthewnelson.kmp.process/AsyncWriteStream.writeAsync|writeAsync(kotlin.ByteArray;kotlin.Int;kotlin.Int){}[0]
 }
+
+// Targets: [js, wasmJs]
+final fun (io.matthewnelson.kmp.process/Process.Builder).io.matthewnelson.kmp.process/detached(kotlin/Boolean): io.matthewnelson.kmp.process/Process.Builder // io.matthewnelson.kmp.process/detached|detached@io.matthewnelson.kmp.process.Process.Builder(kotlin.Boolean){}[0]
+
+// Targets: [js, wasmJs]
+final fun (io.matthewnelson.kmp.process/Process.Builder).io.matthewnelson.kmp.process/shell(kotlin/Boolean): io.matthewnelson.kmp.process/Process.Builder // io.matthewnelson.kmp.process/shell|shell@io.matthewnelson.kmp.process.Process.Builder(kotlin.Boolean){}[0]
+
+// Targets: [js, wasmJs]
+final fun (io.matthewnelson.kmp.process/Process.Builder).io.matthewnelson.kmp.process/shell(kotlin/String): io.matthewnelson.kmp.process/Process.Builder // io.matthewnelson.kmp.process/shell|shell@io.matthewnelson.kmp.process.Process.Builder(kotlin.String){}[0]
+
+// Targets: [js, wasmJs]
+final fun (io.matthewnelson.kmp.process/Process.Builder).io.matthewnelson.kmp.process/windowsHide(kotlin/Boolean): io.matthewnelson.kmp.process/Process.Builder // io.matthewnelson.kmp.process/windowsHide|windowsHide@io.matthewnelson.kmp.process.Process.Builder(kotlin.Boolean){}[0]
+
+// Targets: [js, wasmJs]
+final fun (io.matthewnelson.kmp.process/Process.Builder).io.matthewnelson.kmp.process/windowsVerbatimArguments(kotlin/Boolean): io.matthewnelson.kmp.process/Process.Builder // io.matthewnelson.kmp.process/windowsVerbatimArguments|windowsVerbatimArguments@io.matthewnelson.kmp.process.Process.Builder(kotlin.Boolean){}[0]
 
 // Targets: [js]
 open class io.matthewnelson.kmp.process.internal/events_EventEmitter { // io.matthewnelson.kmp.process.internal/events_EventEmitter|null[0]
@@ -337,21 +352,6 @@ open class io.matthewnelson.kmp.process.internal/events_EventEmitter { // io.mat
     final fun removeAllListeners(): io.matthewnelson.kmp.process.internal/events_EventEmitter // io.matthewnelson.kmp.process.internal/events_EventEmitter.removeAllListeners|removeAllListeners(){}[0]
     final fun removeAllListeners(kotlin/String): io.matthewnelson.kmp.process.internal/events_EventEmitter // io.matthewnelson.kmp.process.internal/events_EventEmitter.removeAllListeners|removeAllListeners(kotlin.String){}[0]
 }
-
-// Targets: [js]
-final fun (io.matthewnelson.kmp.process/Process.Builder).io.matthewnelson.kmp.process/detached(kotlin/Boolean): io.matthewnelson.kmp.process/Process.Builder // io.matthewnelson.kmp.process/detached|detached@io.matthewnelson.kmp.process.Process.Builder(kotlin.Boolean){}[0]
-
-// Targets: [js]
-final fun (io.matthewnelson.kmp.process/Process.Builder).io.matthewnelson.kmp.process/shell(kotlin/Boolean): io.matthewnelson.kmp.process/Process.Builder // io.matthewnelson.kmp.process/shell|shell@io.matthewnelson.kmp.process.Process.Builder(kotlin.Boolean){}[0]
-
-// Targets: [js]
-final fun (io.matthewnelson.kmp.process/Process.Builder).io.matthewnelson.kmp.process/shell(kotlin/String): io.matthewnelson.kmp.process/Process.Builder // io.matthewnelson.kmp.process/shell|shell@io.matthewnelson.kmp.process.Process.Builder(kotlin.String){}[0]
-
-// Targets: [js]
-final fun (io.matthewnelson.kmp.process/Process.Builder).io.matthewnelson.kmp.process/windowsHide(kotlin/Boolean): io.matthewnelson.kmp.process/Process.Builder // io.matthewnelson.kmp.process/windowsHide|windowsHide@io.matthewnelson.kmp.process.Process.Builder(kotlin.Boolean){}[0]
-
-// Targets: [js]
-final fun (io.matthewnelson.kmp.process/Process.Builder).io.matthewnelson.kmp.process/windowsVerbatimArguments(kotlin/Boolean): io.matthewnelson.kmp.process/Process.Builder // io.matthewnelson.kmp.process/windowsVerbatimArguments|windowsVerbatimArguments@io.matthewnelson.kmp.process.Process.Builder(kotlin.Boolean){}[0]
 
 // Targets: [js]
 final inline fun <#A: io.matthewnelson.kmp.process.internal/events_EventEmitter> (#A).io.matthewnelson.kmp.process.internal/onError(noinline kotlin/Function1<dynamic, kotlin/Unit>): #A // io.matthewnelson.kmp.process.internal/onError|onError@0:0(kotlin.Function1<<dynamic>,kotlin.Unit>){0§<io.matthewnelson.kmp.process.internal.events_EventEmitter>}[0]

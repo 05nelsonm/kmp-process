@@ -13,32 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("NOTHING_TO_INLINE")
+@file:Suppress("NOTHING_TO_INLINE", "DEPRECATION_ERROR")
 
 package io.matthewnelson.kmp.process.internal
 
-import io.matthewnelson.kmp.file.*
 import io.matthewnelson.kmp.process.InternalProcessApi
-import io.matthewnelson.kmp.process.ReadBuffer
-
-internal actual val STDIO_NULL: File by lazy {
-    val isWindows = try {
-        os_platform() == "win32"
-    } catch (_: Throwable) {
-        SysDirSep == '\\'
-    }
-
-    (if (isWindows) "NUL" else "/dev/null").toFile()
-}
-
-internal actual val IsDesktop: Boolean get() = try {
-    os_platform() != "android"
-} catch (_: Throwable) {
-    false
-}
 
 /** @suppress */
 @InternalProcessApi
+@Deprecated("Scheduled for removal. Do not use.", level = DeprecationLevel.ERROR) // ERROR OK, imo, b/c is InternalProcessApi
 public inline fun <T: events_EventEmitter> T.onError(
     noinline block: (err: dynamic) -> Unit,
 ): T {
@@ -48,26 +31,10 @@ public inline fun <T: events_EventEmitter> T.onError(
 
 /** @suppress */
 @InternalProcessApi
+@Deprecated("Scheduled for removal. Do not use.", level = DeprecationLevel.ERROR) // ERROR OK, imo, b/c is InternalProcessApi
 public inline fun <T: events_EventEmitter> T.onceError(
     noinline block: (err: dynamic) -> Unit,
 ): T {
     once("error", block)
     return this
-}
-
-internal inline fun stream_Readable.onClose(
-    noinline block: () -> Unit,
-): stream_Readable = on("close", block)
-
-internal inline fun stream_Readable.onData(
-    noinline block: (data: ReadBuffer) -> Unit,
-): stream_Readable {
-    val cb: (chunk: dynamic) -> Unit = { chunk ->
-        @OptIn(InternalProcessApi::class)
-        val buf = ReadBuffer.of(Buffer.wrap(chunk))
-        block(buf)
-        buf.buf.fill()
-    }
-
-    return on("data", cb)
 }

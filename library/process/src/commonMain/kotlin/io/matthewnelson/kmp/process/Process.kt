@@ -120,7 +120,9 @@ public abstract class Process internal constructor(
         /**
          * Retrieves the current process' ID
          *
-         * @throws [UnsupportedOperationException] if on Java9+ and module 'java.management' is not present.
+         * @throws [UnsupportedOperationException] when:
+         *   - Java9+ and module 'java.management' is not present
+         *   - Kotlin/Js or Kotlin/WasmJs Browser
          * */
         @JvmStatic
         public fun pid(): Int = PID.get()
@@ -285,6 +287,7 @@ public abstract class Process internal constructor(
          *
          * @throws [IOException] If [absoluteFile2] has to reference the filesystem to construct
          *   an absolute path and fails due to a filesystem security exception.
+         * @throws [UnsupportedOperationException] on Kotlin/Js or Kotlin/WasmJs Browser
          * */
         public constructor(executable: File): this(executable.absoluteFile2().normalize().path)
 
@@ -398,6 +401,7 @@ public abstract class Process internal constructor(
          *
          * @return [Output]
          * @throws [IOException] if [Process] creation failed
+         * @throws [UnsupportedOperationException] on Kotlin/Js or Kotlin/WasmJs Browser
          * */
         @Throws(IOException::class)
         public fun output(): Output = output { /* defaults */ }
@@ -413,6 +417,7 @@ public abstract class Process internal constructor(
          * @return [Output]
          * @see [Output.Options.Builder]
          * @throws [IOException] if [Process] creation failed
+         * @throws [UnsupportedOperationException] on Kotlin/Js or Kotlin/WasmJs Browser
          * */
         @Throws(IOException::class)
         public fun output(
@@ -437,6 +442,7 @@ public abstract class Process internal constructor(
          * via try/finally, or the [useSpawn] function which handles it for you.
          *
          * @throws [IOException] if [Process] creation failed
+         * @throws [UnsupportedOperationException] on Kotlin/Js or Kotlin/WasmJs Browser
          * */
         @Throws(IOException::class)
         public fun spawn(): Process {
@@ -455,6 +461,7 @@ public abstract class Process internal constructor(
          * Spawns the [Process] and calls [Process.destroy] upon [block] closure.
          *
          * @throws [IOException] if [Process] creation failed
+         * @throws [UnsupportedOperationException] on Kotlin/Js or Kotlin/WasmJs Browser
          * */
         @Throws(IOException::class)
         @OptIn(ExperimentalContracts::class)
@@ -480,6 +487,7 @@ public abstract class Process internal constructor(
          * Spawns the [Process] and calls [Process.destroy] upon [block] closure.
          *
          * @throws [IOException] if [Process] creation failed
+         * @throws [UnsupportedOperationException] on Kotlin/Js or Kotlin/WasmJs Browser
          * @suppress
          * */
         @Throws(IOException::class)

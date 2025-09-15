@@ -78,8 +78,33 @@ kmpConfiguration {
         kotlin {
             with(sourceSets) {
                 val sources = listOf(
-                    "jvm",
                     "js",
+                    "wasmJs",
+                ).mapNotNull { name ->
+                    val main = findByName(name + "Main") ?: return@mapNotNull null
+                    main to getByName(name + "Test")
+                }
+
+                if (sources.isEmpty()) return@kotlin
+
+                val main = maybeCreate("jsWasmJsMain").apply {
+                    dependsOn(getByName("nonJvmMain"))
+                }
+                val test = maybeCreate("jsWasmJsTest").apply {
+                    dependsOn(getByName("nonJvmTest"))
+                }
+                sources.forEach { (sourceMain, sourceTest) ->
+                    sourceMain.dependsOn(main)
+                    sourceTest.dependsOn(test)
+                }
+            }
+        }
+
+        kotlin {
+            with(sourceSets) {
+                val sources = listOf(
+                    "jvm",
+                    "jsWasmJs",
                     "mingw",
                     "unixFork",
                 ).mapNotNull { name ->

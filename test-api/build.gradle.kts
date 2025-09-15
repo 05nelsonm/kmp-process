@@ -71,18 +71,6 @@ kmpConfiguration {
             }
         }
 
-        js {
-            sourceSetTest {
-                dependencies {
-                    var v = libs.versions.kmp.tor.resource.get()
-                    if (v.endsWith("-SNAPSHOT")) {
-                        v += libs.versions.kmp.tor.resourceNpmSNAPSHOT.get()
-                    }
-                    implementation(npm("kmp-tor.resource-exec-tor.all", v))
-                }
-            }
-        }
-
         common {
             sourceSetMain {
                 dependencies {
@@ -94,6 +82,20 @@ kmpConfiguration {
                 dependencies {
                     implementation(libs.kmp.tor.resource.exec.tor)
                     implementation(libs.kotlinx.coroutines.test)
+                }
+            }
+        }
+
+        kotlin {
+            with(sourceSets) {
+                arrayOf("js", "wasmJs").forEach { name ->
+                    findByName("${name}Test")?.dependencies {
+                        var v = libs.versions.kmp.tor.resource.get()
+                        if (v.endsWith("-SNAPSHOT")) {
+                            v += libs.versions.kmp.tor.resourceNpmSNAPSHOT.get()
+                        }
+                        implementation(npm("kmp-tor.resource-exec-tor.all", v))
+                    }
                 }
             }
         }
