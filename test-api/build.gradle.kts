@@ -89,7 +89,7 @@ kmpConfiguration {
         kotlin {
             with(sourceSets) {
                 arrayOf("js", "wasmJs").forEach { name ->
-                    findByName("${name}Test")?.dependencies {
+                    findByName(name + "Test")?.dependencies {
                         var v = libs.versions.kmp.tor.resource.get()
                         if (v.endsWith("-SNAPSHOT")) {
                             v += libs.versions.kmp.tor.resourceNpmSNAPSHOT.get()
@@ -108,18 +108,6 @@ kmpConfiguration {
                 .buildDirectory
                 .asFile.get()
 
-            var files: Pair<GeoipFiles, File>? = null
-
-            // Only extract resources when on macOS machine (ios simulator targets are enabled)
-            if (HostManager.hostIsMac) {
-                val resourceDir = buildDir
-                    .resolve("kmp-tor-resource")
-                    .resolve("macos")
-
-                val loader = ResourceLoaderTorExec.getOrCreate(resourceDir) as ResourceLoader.Tor.Exec
-                files = loader.extract() to loader.process(BINDER) { tor, _ -> tor }
-            }
-
             val kotlinSrc = buildDir
                 .resolve("generated")
                 .resolve("sources")
@@ -135,14 +123,28 @@ kmpConfiguration {
 
             pkgDir.mkdirs()
 
-            pkgDir.resolve("TestIosConfig.kt").writeText("""
-                package io.matthewnelson.kmp.process.${project.name.replace('-', '.')}
+            project.afterEvaluate {
+                var files: Pair<GeoipFiles, File>? = null
 
-                internal const val IOS_TOR_EXECUTABLE: String = "${files?.second?.path ?: ""}"
-                internal const val IOS_TOR_GEOIP: String = "${files?.first?.geoip?.path ?: ""}"
-                internal const val IOS_TOR_GEOIP6: String = "${files?.first?.geoip6?.path ?: ""}"
+                // Only extract resources when on macOS machine (ios simulator targets are enabled)
+                if (HostManager.hostIsMac) {
+                    val resourceDir = buildDir
+                        .resolve("kmp-tor-resource")
+                        .resolve("macos")
 
-            """.trimIndent())
+                    val loader = ResourceLoaderTorExec.getOrCreate(resourceDir) as ResourceLoader.Tor.Exec
+                    files = loader.extract() to loader.process(BINDER) { tor, _ -> tor }
+                }
+
+                pkgDir.resolve("TestIosConfig.kt").writeText("""
+                    package io.matthewnelson.kmp.process.${project.name.replace('-', '.')}
+    
+                    internal const val IOS_TOR_EXECUTABLE: String = "${files?.second?.path ?: ""}"
+                    internal const val IOS_TOR_GEOIP: String = "${files?.first?.geoip?.path ?: ""}"
+                    internal const val IOS_TOR_GEOIP6: String = "${files?.first?.geoip6?.path ?: ""}"
+    
+                """.trimIndent())
+            }
 
             iosTest.kotlin.srcDir(kotlinSrc)
         }
@@ -155,7 +157,7 @@ kmpConfiguration {
             } catch (_: Throwable) {}
 
             project.afterEvaluate {
-                val nativeTestBinaryTasks = listOf(
+                val nativeTestBinaryTasks = arrayOf(
                     project to "libTestApiExec.so",
                     project(":library:process") to "libTestProcessExec.so"
                 ).flatMap { (project, libName) ->
@@ -165,7 +167,7 @@ kmpConfiguration {
                         .buildDirectory
                         .asFile.get()
 
-                    listOf(
+                    arrayOf(
                         "Arm32" to "armeabi-v7a",
                         "Arm64" to "arm64-v8a",
                         "X64" to "x86_64",
