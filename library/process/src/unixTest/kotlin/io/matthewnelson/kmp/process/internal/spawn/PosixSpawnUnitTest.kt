@@ -15,6 +15,8 @@
  **/
 package io.matthewnelson.kmp.process.internal.spawn
 
+import io.matthewnelson.encoding.base16.Base16
+import io.matthewnelson.encoding.core.Encoder.Companion.encodeToString
 import io.matthewnelson.kmp.file.FileNotFoundException
 import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.file.OpenExcl
@@ -49,8 +51,6 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 import kotlin.test.fail
 import kotlin.time.Duration.Companion.milliseconds
-import kotlin.uuid.ExperimentalUuidApi
-import kotlin.uuid.Uuid
 
 class PosixSpawnUnitTest {
 
@@ -121,8 +121,7 @@ class PosixSpawnUnitTest {
 
         val fdsBuffer = IntArray(10) { -1 }
         val fdsTest = fdsBuffer.copyOf()
-        @OptIn(ExperimentalUuidApi::class)
-        val file = SysTempDir.resolve(Uuid.random().toString())
+        val file = SysTempDir.resolve(Random.nextBytes(12).encodeToString(Base16))
         var p: Process? = null
 
         val fdsChild = try {

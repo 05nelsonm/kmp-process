@@ -24,8 +24,10 @@ dependencies {
     implementation(libs.gradle.kotlin)
     implementation(libs.gradle.publish.maven)
 
-    // iOS simulator targets need to utilize the macOS executables, so...
-    implementation(libs.kmp.tor.resource.exec.tor)
+    // iOS simulator targets need to utilize the macOS executables
+    implementation(libs.kmp.tor.resource.exec.tor) {
+        exclude("org.jetbrains.kotlin")
+    }
 
     // https://github.com/gradle/gradle/issues/15383#issuecomment-779893192
     implementation(files(libs.javaClass.superclass.protectionDomain.codeSource.location))

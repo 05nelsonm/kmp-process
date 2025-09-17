@@ -17,9 +17,21 @@
 
 package io.matthewnelson.kmp.process.internal.node
 
-import io.matthewnelson.kmp.file.Buffer
+import io.matthewnelson.kmp.process.internal.js.JsError
+import kotlin.js.JsName
 
-@JsName("Buffer")
-internal actual external interface JsBuffer
+/** [docs](https://nodejs.org/api/events.html#class-eventemitter) */
+@JsName("EventEmitter")
+internal actual external interface JsEventEmitter {
+    fun on(
+        event: String,
+        listener: (dynamic) -> Unit,
+    ): JsEventEmitter
+}
 
-internal actual inline fun JsBuffer.asBuffer(): Buffer = Buffer.wrap(this)
+internal actual inline fun <T: JsEventEmitter> T.onError(
+    noinline block: (err: JsError) -> Unit,
+): T {
+    on("error", block)
+    return this
+}

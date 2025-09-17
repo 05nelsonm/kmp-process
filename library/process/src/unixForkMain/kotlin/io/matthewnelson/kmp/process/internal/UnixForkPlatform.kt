@@ -15,4 +15,4 @@
  **/
 package io.matthewnelson.kmp.process.internal
 
-internal expect inline val FD_DIR: String
+internal expect val FD_DIR: String

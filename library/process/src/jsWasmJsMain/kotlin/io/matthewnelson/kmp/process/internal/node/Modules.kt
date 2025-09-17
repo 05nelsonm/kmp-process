@@ -13,13 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:OptIn(ExperimentalWasmJsInterop::class)
-
 package io.matthewnelson.kmp.process.internal.node
 
 import io.matthewnelson.kmp.file.SysFsInfo
-import kotlin.js.ExperimentalWasmJsInterop
-import kotlin.js.js
 
 @get:Throws(UnsupportedOperationException::class)
 internal val node_buffer: ModuleBuffer by lazy {
@@ -66,13 +62,21 @@ internal val node_stream: ModuleStream by lazy {
     nodeModuleStream()
 }
 
-private fun nodeModuleBuffer(): ModuleBuffer = js("eval('require')('buffer')")
-private fun nodeModuleChildProcess(): ModuleChildProcess = js("eval('require')('child_process')")
-private fun nodeModuleEvents(): ModuleEvents = js("eval('require')('events')")
-private fun nodeModuleFs(): ModuleFs = js("eval('require')('fs')")
-private fun nodeModuleOs(): ModuleOs = js("eval('require')('os')")
-private fun nodeModuleProcess(): ModuleProcess = js("eval('require')('process')")
-private fun nodeModuleStream(): ModuleStream = js("eval('require')('stream')")
+internal const val CODE_MODULE_BUFFER: String = "eval('require')('buffer')"
+internal const val CODE_MODULE_CHILD_PROCESS: String = "eval('require')('child_process')"
+internal const val CODE_MODULE_EVENTS: String = "eval('require')('events')"
+internal const val CODE_MODULE_FS: String = "eval('require')('fs')"
+internal const val CODE_MODULE_OS: String = "eval('require')('os')"
+internal const val CODE_MODULE_PROCESS: String = "eval('require')('process')"
+internal const val CODE_MODULE_STREAM: String = "eval('require')('stream')"
+
+internal expect fun nodeModuleBuffer(): ModuleBuffer
+internal expect fun nodeModuleChildProcess(): ModuleChildProcess
+internal expect fun nodeModuleEvents(): ModuleEvents
+internal expect fun nodeModuleFs(): ModuleFs
+internal expect fun nodeModuleOs(): ModuleOs
+internal expect fun nodeModuleProcess(): ModuleProcess
+internal expect fun nodeModuleStream(): ModuleStream
 
 @Suppress("NOTHING_TO_INLINE")
 @Throws(UnsupportedOperationException::class)

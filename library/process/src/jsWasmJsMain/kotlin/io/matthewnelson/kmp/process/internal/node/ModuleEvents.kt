@@ -13,16 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:OptIn(DelicateFileApi::class, ExperimentalWasmJsInterop::class)
-@file:Suppress("NOTHING_TO_INLINE")
+@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING", "NOTHING_TO_INLINE")
 
 package io.matthewnelson.kmp.process.internal.node
 
-import io.matthewnelson.kmp.file.DelicateFileApi
-import io.matthewnelson.kmp.file.jsExternTryCatch
 import io.matthewnelson.kmp.process.internal.js.JsError
-import kotlin.js.ExperimentalWasmJsInterop
-import kotlin.js.JsAny
 import kotlin.js.JsName
 
 /** [docs](https://nodejs.org/api/events.html) */
@@ -32,16 +27,13 @@ internal external interface ModuleEvents {
 
 /** [docs](https://nodejs.org/api/events.html#class-eventemitter) */
 @JsName("EventEmitter")
-internal external interface JsEventEmitter {
-    fun <T: JsAny?> on(
-        event: String,
-        listener: (T) -> Unit,
-    ): JsEventEmitter
+internal expect interface JsEventEmitter {
+//    fun on(
+//        event: String,
+//        listener: (JsAny?/dynamic?) -> Unit,
+//    ): JsEventEmitter
 }
 
-internal inline fun <T: JsEventEmitter> T.onError(
+internal expect inline fun <T: JsEventEmitter> T.onError(
     noinline block: (err: JsError) -> Unit,
-): T {
-    jsExternTryCatch { on("error", block) }
-    return this
-}
+): T

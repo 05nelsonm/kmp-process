@@ -11,7 +11,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ macos-latest, ubuntu-latest, windows-latest ]
-        java-version: [ 17, 19 ]
+        java-version: [ 11, 19 ]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout Repo
@@ -31,8 +31,8 @@ jobs:
         run: >
           ./gradlew apiCheck --stacktrace
 
-      - name: Run macOS Tests [ Java 17 ]
-        if: matrix.os == 'macos-latest' && matrix.java-version == 17
+      - name: Run macOS Tests [ Java 11 ]
+        if: matrix.os == 'macos-latest' && matrix.java-version == 11
         run: >
           ./gradlew check --stacktrace
           -PKMP_TARGETS="IOS_ARM64,IOS_X64,IOS_SIMULATOR_ARM64,JS,JVM,WASM_JS,WASM_WASI"
@@ -43,8 +43,8 @@ jobs:
           ./gradlew check --stacktrace
           -PKMP_TARGETS="JVM,MACOS_ARM64,MACOS_X64,TVOS_ARM64,TVOS_X64,TVOS_SIMULATOR_ARM64,WATCHOS_ARM32,WATCHOS_ARM64,WATCHOS_DEVICE_ARM64,WATCHOS_X64,WATCHOS_SIMULATOR_ARM64"
 
-      - name: Run Linux Tests [ Java 17 ]
-        if: matrix.os == 'ubuntu-latest' && matrix.java-version == 17
+      - name: Run Linux Tests [ Java 11 ]
+        if: matrix.os == 'ubuntu-latest' && matrix.java-version == 11
         run: >
           ./gradlew check --stacktrace
           -PKMP_TARGETS="JS,JVM,WASM_JS,WASM_WASI"
@@ -55,8 +55,8 @@ jobs:
           ./gradlew check --stacktrace
           -PKMP_TARGETS="ANDROID,ANDROID_ARM32,ANDROID_ARM64,ANDROID_X64,ANDROID_X86,JVM,LINUX_ARM64,LINUX_X64"
 
-      - name: Run Windows Tests [ Java 17 ]
-        if: matrix.os == 'windows-latest' && matrix.java-version == 17
+      - name: Run Windows Tests [ Java 11 ]
+        if: matrix.os == 'windows-latest' && matrix.java-version == 11
         run: >
           ./gradlew check --stacktrace
           -PKMP_TARGETS="JS,JVM,WASM_JS,WASM_WASI"

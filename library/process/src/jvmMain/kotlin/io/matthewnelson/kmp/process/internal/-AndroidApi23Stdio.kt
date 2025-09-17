@@ -66,11 +66,12 @@ internal class AndroidApi23Stdio private constructor(
                 if (threw == null) {
                     threw = e
                 } else {
-                    threw.addSuppressed(e)
+                    @Suppress("UNNECESSARY_NOT_NULL_ASSERTION")
+                    threw!!.addSuppressed(e)
                 }
             }
         }
-        if (threw != null) throw threw
+        threw?.let { throw it }
     }
 
     internal companion object {

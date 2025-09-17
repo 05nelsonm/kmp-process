@@ -13,11 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("NOTHING_TO_INLINE")
-@file:OptIn(ExperimentalWasmJsInterop::class)
+@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING", "NOTHING_TO_INLINE")
 
 package io.matthewnelson.kmp.process.internal.node
 
 import io.matthewnelson.kmp.file.Buffer
+
+@JsName("Buffer")
+internal actual external interface JsBuffer: JsAny
 
 internal actual inline fun JsBuffer.asBuffer(): Buffer = Buffer.wrap(this)

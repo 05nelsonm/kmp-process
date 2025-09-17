@@ -13,13 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING", "NOTHING_TO_INLINE")
-
 package io.matthewnelson.kmp.process.internal.node
 
-import io.matthewnelson.kmp.file.Buffer
-
-@JsName("Buffer")
-internal actual external interface JsBuffer
-
-internal actual inline fun JsBuffer.asBuffer(): Buffer = Buffer.wrap(this)
+internal actual fun nodeModuleBuffer(): ModuleBuffer = js(CODE_MODULE_BUFFER)
+internal actual fun nodeModuleChildProcess(): ModuleChildProcess = js(CODE_MODULE_CHILD_PROCESS)
+internal actual fun nodeModuleEvents(): ModuleEvents = js(CODE_MODULE_EVENTS)
+internal actual fun nodeModuleFs(): ModuleFs = js(CODE_MODULE_FS)
+internal actual fun nodeModuleOs(): ModuleOs = js(CODE_MODULE_OS)
+internal actual fun nodeModuleProcess(): ModuleProcess = js(CODE_MODULE_PROCESS)
+internal actual fun nodeModuleStream(): ModuleStream = js(CODE_MODULE_STREAM)

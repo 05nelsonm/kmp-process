@@ -13,13 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
+@file:OptIn(DelicateFileApi::class)
 @file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING", "NOTHING_TO_INLINE")
 
 package io.matthewnelson.kmp.process.internal.node
 
-import io.matthewnelson.kmp.file.Buffer
+import io.matthewnelson.kmp.file.DelicateFileApi
+import io.matthewnelson.kmp.file.jsExternTryCatch
+import io.matthewnelson.kmp.process.internal.js.JsError
+import kotlin.js.JsName
 
-@JsName("Buffer")
-internal actual external interface JsBuffer
+/** [docs](https://nodejs.org/api/events.html#class-eventemitter) */
+@JsName("EventEmitter")
+internal actual external interface JsEventEmitter {
+    fun <T: JsAny?> on(
+        event: String,
+        listener: (T) -> Unit,
+    ): JsEventEmitter
+}
 
-internal actual inline fun JsBuffer.asBuffer(): Buffer = Buffer.wrap(this)
+internal actual inline fun <T: JsEventEmitter> T.onError(
+    noinline block: (err: JsError) -> Unit,
+): T {
+    jsExternTryCatch { on("error", block) }
+    return this
+}

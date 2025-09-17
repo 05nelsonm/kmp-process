@@ -17,9 +17,27 @@
 
 package io.matthewnelson.kmp.process.internal.node
 
-import io.matthewnelson.kmp.file.Buffer
+import io.matthewnelson.kmp.process.ReadBuffer
+import io.matthewnelson.kmp.process.internal.DoNotReferenceDirectly
+import kotlin.js.JsName
 
-@JsName("Buffer")
-internal actual external interface JsBuffer
+/** [docs](https://nodejs.org/api/stream.html#class-streamreadable) */
+@JsName("Readable")
+internal actual external interface JsReadable {
+    fun on(
+        event: String,
+        listener: (dynamic) -> Unit,
+    ): JsReadable
+    actual fun destroy()
+}
 
-internal actual inline fun JsBuffer.asBuffer(): Buffer = Buffer.wrap(this)
+internal actual inline fun JsReadable.onClose(
+    noinline block: () -> Unit,
+): JsReadable = on("close") { block() }
+
+internal actual inline fun JsReadable.onData(
+    noinline block: (data: ReadBuffer) -> Unit,
+): JsReadable {
+    @OptIn(DoNotReferenceDirectly::class)
+    return on("data", onDataListener(block))
+}

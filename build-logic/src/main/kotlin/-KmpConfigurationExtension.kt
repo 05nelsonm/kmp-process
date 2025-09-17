@@ -17,6 +17,7 @@ import io.matthewnelson.kmp.configuration.extension.KmpConfigurationExtension
 import io.matthewnelson.kmp.configuration.extension.container.target.KmpConfigurationContainerDsl
 import org.gradle.api.Action
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
+import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 import org.jetbrains.kotlin.konan.target.HostManager
 import java.io.File
 
@@ -122,5 +123,24 @@ fun KmpConfigurationExtension.configureShared(
         }
 
         action.execute(this)
+
+        if (publish) kotlin {
+            @Suppress("DEPRECATION")
+            compilerOptions {
+                freeCompilerArgs.add("-Xsuppress-version-warnings")
+                // kmp-file uses 1.9
+                apiVersion.set(KotlinVersion.KOTLIN_1_9)
+                languageVersion.set(KotlinVersion.KOTLIN_1_9)
+            }
+            sourceSets.configureEach {
+                if (name.startsWith("js") || name.startsWith("wasm")) {
+                    languageSettings {
+                        // kmp-file uses 2.0 for js/wasmJs/jsWasmJs source sets
+                        apiVersion = KotlinVersion.KOTLIN_2_0.version
+                        languageVersion = KotlinVersion.KOTLIN_2_0.version
+                    }
+                }
+            }
+        }
     }
 }

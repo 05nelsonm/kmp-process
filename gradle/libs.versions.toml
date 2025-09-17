@@ -4,6 +4,8 @@ androidx-test-core          = "1.5.0" # Do not upgrade. Tests run for API 15+, w
 #noinspection GradleDependency
 androidx-test-runner        = "1.5.2" # Do not upgrade. Tests run for API 15+, where next version requires minSdk 19+
 
+encoding                    = "2.5.0-SNAPSHOT"
+
 gradle-android              = "8.11.2"
 gradle-binary-compat        = "0.18.1"
 gradle-cklib                = "0.3.4"
@@ -12,12 +14,12 @@ gradle-kmp-configuration    = "0.5.2"
 gradle-kotlin               = "2.2.20"
 gradle-publish-maven        = "0.34.0"
 
-immutable                   = "0.2.1-SNAPSHOT"
+immutable                   = "0.3.0-SNAPSHOT"
 
-kmp-file                    = "0.4.1-SNAPSHOT"
-kmp-tor-resource            = "408.17.1-SNAPSHOT" # TODO: REMOVE -SNAPSHOT
+kmp-file                    = "0.5.0-SNAPSHOT"
+kmp-tor-resource            = "408.17.1-SNAPSHOT"
 kmp-tor-resourceNpmSNAPSHOT = ".1"
-kotlincrypto-catalog        = "0.7.2" # Utilized from settings.gradle.kts
+kotlincrypto-catalog        = "0.8.0-SNAPSHOT" # Utilized from settings.gradle.kts
 kotlinx-coroutines          = "1.10.2"
 
 [libraries]
@@ -35,6 +37,7 @@ kotlinx-coroutines-core     = { module = "org.jetbrains.kotlinx:kotlinx-coroutin
 # tests
 androidx-test-core          = { module = "androidx.test:core", version.ref = "androidx-test-core" }
 androidx-test-runner        = { module = "androidx.test:runner", version.ref = "androidx-test-runner" }
+encoding-base16             = { module = "io.matthewnelson.encoding:base16", version.ref = "encoding" }
 kmp-tor-resource-android-unit-test-tor = { module = "io.matthewnelson.kmp-tor:resource-android-unit-test-tor", version.ref = "kmp-tor-resource" }
 kmp-tor-resource-exec-tor   = { module = "io.matthewnelson.kmp-tor:resource-exec-tor", version.ref = "kmp-tor-resource" }
 kotlinx-coroutines-test     = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }

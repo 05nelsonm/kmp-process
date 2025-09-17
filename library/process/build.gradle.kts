@@ -44,6 +44,7 @@ kmpConfiguration {
             }
             sourceSetTest {
                 dependencies {
+                    implementation(libs.encoding.base16)
                     implementation(libs.kotlinx.coroutines.test)
                 }
             }
@@ -51,7 +52,7 @@ kmpConfiguration {
 
         kotlin {
             with(sourceSets) {
-                val sources = listOf(
+                val sets = arrayOf(
                     "androidNative",
                     "linux",
                     "macos",
@@ -59,50 +60,34 @@ kmpConfiguration {
                     val main = findByName(name + "Main") ?: return@mapNotNull null
                     main to getByName(name + "Test")
                 }
+                if (sets.isEmpty()) return@kotlin
 
-                if (sources.isEmpty()) return@kotlin
-
-                val main = maybeCreate("unixForkMain").apply {
-                    dependsOn(getByName("unixMain"))
-                }
-                val test = maybeCreate("unixForkTest").apply {
-                    dependsOn(getByName("unixTest"))
-                }
-                sources.forEach { (sourceMain, sourceTest) ->
-                    sourceMain.dependsOn(main)
-                    sourceTest.dependsOn(test)
-                }
+                val main = maybeCreate("unixForkMain").apply { dependsOn(getByName("unixMain")) }
+                val test = maybeCreate("unixForkTest").apply { dependsOn(getByName("unixTest")) }
+                sets.forEach { (m, t) -> m.dependsOn(main); t.dependsOn(test) }
             }
         }
 
         kotlin {
             with(sourceSets) {
-                val sources = listOf(
+                val sets = arrayOf(
                     "js",
                     "wasmJs",
                 ).mapNotNull { name ->
                     val main = findByName(name + "Main") ?: return@mapNotNull null
                     main to getByName(name + "Test")
                 }
+                if (sets.isEmpty()) return@kotlin
 
-                if (sources.isEmpty()) return@kotlin
-
-                val main = maybeCreate("jsWasmJsMain").apply {
-                    dependsOn(getByName("nonJvmMain"))
-                }
-                val test = maybeCreate("jsWasmJsTest").apply {
-                    dependsOn(getByName("nonJvmTest"))
-                }
-                sources.forEach { (sourceMain, sourceTest) ->
-                    sourceMain.dependsOn(main)
-                    sourceTest.dependsOn(test)
-                }
+                val main = maybeCreate("jsWasmJsMain").apply { dependsOn(getByName("nonJvmMain")) }
+                val test = maybeCreate("jsWasmJsTest").apply { dependsOn(getByName("nonJvmTest")) }
+                sets.forEach { (m, t) -> m.dependsOn(main); t.dependsOn(test) }
             }
         }
 
         kotlin {
             with(sourceSets) {
-                val sources = listOf(
+                val sets = arrayOf(
                     "jvm",
                     "jsWasmJs",
                     "mingw",
@@ -111,38 +96,28 @@ kmpConfiguration {
                     val main = findByName(name + "Main") ?: return@mapNotNull null
                     main to getByName(name + "Test")
                 }
+                if (sets.isEmpty()) return@kotlin
 
-                if (sources.isEmpty()) return@kotlin
-
-                val main = maybeCreate("nonAppleMobileMain").apply {
-                    dependsOn(getByName("commonMain"))
-                }
-                val test = maybeCreate("nonAppleMobileTest").apply {
-                    dependsOn(getByName("commonTest"))
-                }
-                sources.forEach { (sourceMain, sourceTest) ->
-                    sourceMain.dependsOn(main)
-                    sourceTest.dependsOn(test)
-                }
+                val main = maybeCreate("nonAppleMobileMain").apply { dependsOn(getByName("commonMain")) }
+                val test = maybeCreate("nonAppleMobileTest").apply { dependsOn(getByName("commonTest")) }
+                sets.forEach { (m, t) -> m.dependsOn(main); t.dependsOn(test) }
             }
         }
 
         kotlin {
             with(sourceSets) {
-                val jvmMain = findByName("jvmMain")
-                val nativeMain = findByName("nativeMain")
-
-                if (nativeMain != null || jvmMain != null) {
-                    val blockingMain = maybeCreate("blockingMain")
-                    blockingMain.dependsOn(getByName("commonMain"))
-                    jvmMain?.apply { dependsOn(blockingMain) }
-                    nativeMain?.apply { dependsOn(blockingMain) }
-
-                    val blockingTest = maybeCreate("blockingTest")
-                    blockingTest.dependsOn(getByName("commonTest"))
-                    findByName("jvmTest")?.apply { dependsOn(blockingTest) }
-                    findByName("nativeTest")?.apply { dependsOn(blockingTest) }
+                val sets = arrayOf(
+                    "jvm",
+                    "native",
+                ).mapNotNull { name ->
+                    val main = findByName(name + "Main") ?: return@mapNotNull null
+                    main to getByName(name + "Test")
                 }
+                if (sets.isEmpty()) return@kotlin
+
+                val main = maybeCreate("blockingMain").apply { dependsOn(getByName("commonMain")) }
+                val test = maybeCreate("blockingTest").apply { dependsOn(getByName("commonTest")) }
+                sets.forEach { (m, t) -> m.dependsOn(main); t.dependsOn(test) }
             }
         }
 
@@ -240,6 +215,7 @@ kmpConfiguration {
 // the -dev llvm compiler for the current kotlin version.
 //
 // The following info can be found in ~/.konan/kotlin-native-prebuild-{os}-{arch}-{kotlin version}/konan/konan.properties
+@Suppress("ConstPropertyName")
 private object LLVM {
     const val URL: String = "https://download.jetbrains.com/kotlin/native/resources/llvm"
     const val VERSION: String = "19"
@@ -308,8 +284,6 @@ private fun CKlibGradleExtension.configure(libs: LibrariesForLibs): Task {
     )
 
     return project.tasks.register("downloadDevLLVM") {
-        actions = listOf(Action {
-            processor.run()
-        })
+        actions = listOf(Action { processor.run() })
     }.get()
 }

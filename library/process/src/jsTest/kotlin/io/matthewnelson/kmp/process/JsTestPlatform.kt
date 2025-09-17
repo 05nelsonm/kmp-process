@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Matthew Nelson
+ * Copyright (c) 2025 Matthew Nelson
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,21 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("UnstableApiUsage")
+package io.matthewnelson.kmp.process
 
-rootProject.name = "build-logic"
+import io.matthewnelson.kmp.process.internal.js.JsArrayBufferView
 
-dependencyResolutionManagement {
-    repositories {
-        mavenCentral()
-        google()
-        gradlePluginPortal()
-        maven("https://central.sonatype.com/repository/maven-snapshots/")
-    }
-
-    versionCatalogs {
-        create("libs") {
-            from(files("../gradle/libs.versions.toml"))
-        }
-    }
-}
+internal actual fun <T: JsArrayBufferView> jsArrayGet(a: T, index: Int): Byte = js("a[index]")

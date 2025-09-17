@@ -84,7 +84,7 @@ internal class StdioDescriptor private constructor(
                 flags = flags or O_CREAT or (if (append) O_APPEND else O_TRUNC)
             }
 
-            var fd = -1
+            var fd: Int
             do {
                 fd = open(file.path, flags, mode)
             } while (fd == -1 && errno == EINTR)

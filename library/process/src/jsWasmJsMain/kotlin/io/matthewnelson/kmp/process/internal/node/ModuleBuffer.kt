@@ -13,14 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:OptIn(ExperimentalWasmJsInterop::class)
-@file:Suppress("UNUSED", "NOTHING_TO_INLINE")
+@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING", "NOTHING_TO_INLINE")
 
 package io.matthewnelson.kmp.process.internal.node
 
 import io.matthewnelson.kmp.file.Buffer
-import kotlin.js.ExperimentalWasmJsInterop
-import kotlin.js.JsAny
 import kotlin.js.JsName
 
 internal external interface ModuleBuffer {
@@ -28,6 +25,6 @@ internal external interface ModuleBuffer {
 }
 
 @JsName("Buffer")
-internal external interface JsBuffer: JsAny
+internal expect interface JsBuffer
 
 internal expect inline fun JsBuffer.asBuffer(): Buffer

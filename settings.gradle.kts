@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
+@file:Suppress("UnstableApiUsage")
+
 rootProject.name = "kmp-process"
 
 pluginManagement {
@@ -20,7 +22,6 @@ pluginManagement {
         mavenCentral()
         google()
         gradlePluginPortal()
-        // TODO: REMOVE -SNAPSHOT
         maven("https://central.sonatype.com/repository/maven-snapshots/")
     }
 }
@@ -29,7 +30,6 @@ pluginManagement {
 private val VERSION_NAME: String? by settings
 
 dependencyResolutionManagement {
-    @Suppress("UnstableApiUsage")
     repositories {
         mavenCentral()
 
