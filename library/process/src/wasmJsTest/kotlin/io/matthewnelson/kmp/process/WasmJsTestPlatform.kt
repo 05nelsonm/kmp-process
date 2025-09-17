@@ -13,13 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING", "NOTHING_TO_INLINE")
+package io.matthewnelson.kmp.process
 
-package io.matthewnelson.kmp.process.internal.node
+import io.matthewnelson.kmp.process.internal.js.JsArrayBufferView
 
-import io.matthewnelson.kmp.file.Buffer
-
-@JsName("Buffer")
-internal actual external interface JsBuffer
-
-internal actual inline fun JsBuffer.asBuffer(): Buffer = Buffer.wrap(this)
+internal actual fun <T: JsArrayBufferView> jsArrayGet(a: T, index: Int): Byte = js("a[index]")

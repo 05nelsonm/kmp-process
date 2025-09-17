@@ -42,7 +42,7 @@ internal actual inline fun PlatformBuilder.parentEnvironment(): MutableMap<Strin
     return map
 }
 
-internal actual inline val FD_DIR: String get() = "/proc/self/fd"
+internal actual val FD_DIR: String get() = "/proc/self/fd"
 
 /**
  * [action] return [Unit] to break from loop, or `null` to continue.

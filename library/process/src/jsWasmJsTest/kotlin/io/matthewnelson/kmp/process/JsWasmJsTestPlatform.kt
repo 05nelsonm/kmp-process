@@ -15,4 +15,8 @@
  **/
 package io.matthewnelson.kmp.process
 
+import io.matthewnelson.kmp.process.internal.js.JsArrayBufferView
+
 internal actual val IsAppleSimulator: Boolean = false
+
+internal expect fun <T: JsArrayBufferView> jsArrayGet(a: T, index: Int): Byte

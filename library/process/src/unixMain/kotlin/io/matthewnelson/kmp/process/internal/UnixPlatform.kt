@@ -118,11 +118,12 @@ internal inline fun NativeProcess.awaitExecOrFailure(
         ret = read(fdRead, pinned.addressOf(0), buf.size.convert()).toInt()
         if (ret >= 0) break
 
+        @Suppress("DUPLICATE_LABEL_IN_WHEN")
         when (val e = errno) {
             EINTR, EAGAIN, EWOULDBLOCK -> {
                 usleep(micros)
-                code = exitCodeOrNull() ?: continue
-                if (code != 0) threw = onNonZeroExitCode(code)
+                code = exitCodeOrNull()
+                code?.let { if (it != 0) threw = onNonZeroExitCode(it) } ?: continue
                 break
             }
             else -> {
@@ -148,7 +149,7 @@ internal inline fun NativeProcess.awaitExecOrFailure(
     // error or code yet. Need to check 1 final time before returning.
     if (code == null && threw == null) {
         code = exitCodeOrNull()
-        if (code != null && code != 0) threw = onNonZeroExitCode(code)
+        code?.let { if (it != 0) threw = onNonZeroExitCode(it) }
     }
 
     try {

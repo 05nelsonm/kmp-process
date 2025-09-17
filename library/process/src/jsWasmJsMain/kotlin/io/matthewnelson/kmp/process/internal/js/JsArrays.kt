@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:OptIn(DoNotReferenceDirectly::class, ExperimentalWasmJsInterop::class)
+@file:OptIn(DoNotReferenceDirectly::class)
 @file:Suppress("NOTHING_TO_INLINE", "UNUSED")
 
 package io.matthewnelson.kmp.process.internal.js
@@ -23,13 +23,10 @@ import io.matthewnelson.kmp.process.internal.checkBounds
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
-import kotlin.js.ExperimentalWasmJsInterop
-import kotlin.js.JsAny
 import kotlin.js.JsName
-import kotlin.js.js
 
 @JsName("Array")
-internal external class JsArray: JsAny {
+internal external class JsArray {
     internal val length: Int
     internal companion object {
         internal fun of(size: Int): JsArray
@@ -38,18 +35,18 @@ internal external class JsArray: JsAny {
 
 internal inline fun JsArray.getString(index: Int): String = jsArrayGetString(this, index)
 @DoNotReferenceDirectly("JsArray.getString(index)")
-internal fun jsArrayGetString(array: JsArray, index: Int): String = js("array[index]")
+internal expect fun jsArrayGetString(array: JsArray, index: Int): String
 
 internal inline operator fun JsArray.set(index: Int, value: String) { jsArraySetString(this, index, value) }
 @DoNotReferenceDirectly("JsArray.set[index] = value")
-internal fun jsArraySetString(array: JsArray, index: Int, value: String) { js("array[index] = value") }
+internal expect fun jsArraySetString(array: JsArray, index: Int, value: String)
 
 internal inline operator fun JsArray.set(index: Int, value: Double) { jsArraySetDouble(this, index, value) }
 @DoNotReferenceDirectly("JsArray.set[index] = value")
-internal fun jsArraySetDouble(array: JsArray, index: Int, value: Double) { js("array[index] = value") }
+internal expect fun jsArraySetDouble(array: JsArray, index: Int, value: Double)
 
 @JsName("ArrayBufferView")
-internal external interface JsArrayBufferView: JsAny {
+internal external interface JsArrayBufferView {
     val byteLength: Int
 }
 
@@ -65,7 +62,7 @@ internal open external class JsUint8Array(length: Int): JsArrayBufferView {
 
 internal inline operator fun <T: JsArrayBufferView> T.set(index: Int, value: Byte) { jsArraySet(this, index, value) }
 @DoNotReferenceDirectly("JsArrayBufferView.set[index] = value")
-internal fun <T: JsArrayBufferView> jsArraySet(array: T, index: Int, value: Byte) { js("array[index] = value") }
+internal expect fun <T: JsArrayBufferView> jsArraySet(array: T, index: Int, value: Byte)
 
 @OptIn(ExperimentalContracts::class)
 @Throws(IndexOutOfBoundsException::class)

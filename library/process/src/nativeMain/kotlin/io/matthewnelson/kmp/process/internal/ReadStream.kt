@@ -17,6 +17,7 @@
 
 package io.matthewnelson.kmp.process.internal
 
+import io.matthewnelson.kmp.file.Closeable
 import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.file.errnoToIOException
 import io.matthewnelson.kmp.process.internal.stdio.StdioDescriptor
@@ -31,7 +32,7 @@ import platform.posix.errno
 @OptIn(ExperimentalForeignApi::class, UnsafeNumber::class)
 internal actual abstract class ReadStream private constructor(
     private val descriptor: StdioDescriptor,
-): NativeCloseable by descriptor {
+): Closeable, NativeCloseable by descriptor {
 
     @Throws(IOException::class/*, IndexOutOfBoundsException::class*/)
     actual open fun read(buf: ByteArray, offset: Int, len: Int): Int {

@@ -13,13 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING", "NOTHING_TO_INLINE")
+@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
 
-package io.matthewnelson.kmp.process.internal.node
+package io.matthewnelson.kmp.process.internal.js
 
-import io.matthewnelson.kmp.file.Buffer
+import kotlin.js.JsName
 
-@JsName("Buffer")
-internal actual external interface JsBuffer
-
-internal actual inline fun JsBuffer.asBuffer(): Buffer = Buffer.wrap(this)
+@JsName("Error")
+internal actual external class JsError {
+    actual val message: String?
+    actual val code: String?
+}

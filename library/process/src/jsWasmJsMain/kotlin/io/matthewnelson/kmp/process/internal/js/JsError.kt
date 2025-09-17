@@ -13,16 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:OptIn(ExperimentalWasmJsInterop::class)
+@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
 
 package io.matthewnelson.kmp.process.internal.js
 
-import kotlin.js.ExperimentalWasmJsInterop
-import kotlin.js.JsAny
 import kotlin.js.JsName
 
 @JsName("Error")
-internal external class JsError: JsAny {
+internal expect class JsError {
     val message: String?
     val code: String?
 }
