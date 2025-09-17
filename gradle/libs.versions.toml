@@ -14,7 +14,7 @@ gradle-publish-maven        = "0.34.0"
 
 immutable                   = "0.3.0-SNAPSHOT"
 
-kmp-file                    = "0.4.1-SNAPSHOT"
+kmp-file                    = "0.5.0-SNAPSHOT"
 kmp-tor-resource            = "408.17.1-SNAPSHOT" # TODO: REMOVE -SNAPSHOT
 kmp-tor-resourceNpmSNAPSHOT = ".1"
 kotlincrypto-catalog        = "0.7.2" # Utilized from settings.gradle.kts
