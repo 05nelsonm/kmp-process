@@ -44,6 +44,7 @@ kmpConfiguration {
             }
             sourceSetTest {
                 dependencies {
+                    implementation(libs.encoding.base16)
                     implementation(libs.kotlinx.coroutines.test)
                 }
             }
