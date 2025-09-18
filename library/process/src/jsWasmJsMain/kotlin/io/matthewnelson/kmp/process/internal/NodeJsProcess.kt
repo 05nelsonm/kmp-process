@@ -20,9 +20,9 @@ package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.DelicateFileApi
 import io.matthewnelson.kmp.file.File
-import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.file.errorCodeOrNull
 import io.matthewnelson.kmp.file.jsExternTryCatch
+import io.matthewnelson.kmp.file.toIOException
 import io.matthewnelson.kmp.process.*
 import io.matthewnelson.kmp.process.internal.node.node_process
 import io.matthewnelson.kmp.process.internal.js.getString
@@ -57,10 +57,10 @@ internal class NodeJsProcess internal constructor(
 
     init {
         @OptIn(InternalProcessApi::class)
-        jsProcess.onError { err ->
+        jsProcess.onError { t ->
             if (isDestroyed) return@onError
-            val t = IOException("$err")
-            onError(t, context = ERROR_CONTEXT)
+            val e = t.toIOException()
+            onError(e, context = ERROR_CONTEXT)
         }
 
         if (isDetached) jsProcess.unref()

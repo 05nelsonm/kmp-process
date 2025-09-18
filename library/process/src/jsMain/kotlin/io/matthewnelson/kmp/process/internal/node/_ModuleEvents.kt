@@ -17,21 +17,24 @@
 
 package io.matthewnelson.kmp.process.internal.node
 
+import io.matthewnelson.kmp.process.internal.DoNotReferenceDirectly
 import io.matthewnelson.kmp.process.internal.js.JsError
 import kotlin.js.JsName
 
 /** [docs](https://nodejs.org/api/events.html#class-eventemitter) */
 @JsName("EventEmitter")
 internal actual external interface JsEventEmitter {
+    @DoNotReferenceDirectly("JsEventEmitter.onError")
     fun on(
         event: String,
-        listener: (dynamic) -> Unit,
+        listener: Function<Unit>,
     ): JsEventEmitter
 }
 
 internal actual inline fun <T: JsEventEmitter> T.onError(
-    noinline block: (err: JsError) -> Unit,
+    noinline block: (Throwable) -> Unit,
 ): T {
+    @OptIn(DoNotReferenceDirectly::class)
     on("error", block)
     return this
 }

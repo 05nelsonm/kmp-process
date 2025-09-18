@@ -20,12 +20,14 @@ package io.matthewnelson.kmp.process.internal.node
 
 import io.matthewnelson.kmp.file.DelicateFileApi
 import io.matthewnelson.kmp.file.jsExternTryCatch
+import io.matthewnelson.kmp.process.internal.DoNotReferenceDirectly
 import io.matthewnelson.kmp.process.internal.js.JsError
 import kotlin.js.JsName
 
 /** [docs](https://nodejs.org/api/events.html#class-eventemitter) */
 @JsName("EventEmitter")
 internal actual external interface JsEventEmitter {
+    @DoNotReferenceDirectly("JsEventEmitter.onError")
     fun <T: JsAny?> on(
         event: String,
         listener: (T) -> Unit,
@@ -33,8 +35,13 @@ internal actual external interface JsEventEmitter {
 }
 
 internal actual inline fun <T: JsEventEmitter> T.onError(
-    noinline block: (err: JsError) -> Unit,
+    noinline block: (Throwable) -> Unit,
 ): T {
-    jsExternTryCatch { on("error", block) }
+    val listener: (JsError) -> Unit = { jsError ->
+        val t = jsError.toThrowableOrNull()
+        if (t != null) block(t)
+    }
+    @OptIn(DoNotReferenceDirectly::class)
+    jsExternTryCatch { on("error", listener) }
     return this
 }

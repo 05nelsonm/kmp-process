@@ -26,14 +26,14 @@ import kotlin.js.JsName
 internal actual external interface JsReadable {
     fun on(
         event: String,
-        listener: (dynamic) -> Unit,
+        listener: Function<Unit>,
     ): JsReadable
     actual fun destroy()
 }
 
 internal actual inline fun JsReadable.onClose(
     noinline block: () -> Unit,
-): JsReadable = on("close") { block() }
+): JsReadable = on("close", block)
 
 internal actual inline fun JsReadable.onData(
     noinline block: (data: ReadBuffer) -> Unit,

@@ -17,7 +17,6 @@
 
 package io.matthewnelson.kmp.process.internal.node
 
-import io.matthewnelson.kmp.process.internal.js.JsError
 import kotlin.js.JsName
 
 /** [docs](https://nodejs.org/api/events.html) */
@@ -35,5 +34,5 @@ internal expect interface JsEventEmitter {
 }
 
 internal expect inline fun <T: JsEventEmitter> T.onError(
-    noinline block: (err: JsError) -> Unit,
+    noinline block: (Throwable) -> Unit,
 ): T

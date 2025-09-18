@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING", "NOTHING_TO_INLINE")
+@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING", "NOTHING_TO_INLINE", "UNUSED")
 @file:OptIn(DelicateFileApi::class)
 
 package io.matthewnelson.kmp.process.internal.node
@@ -27,21 +27,35 @@ import kotlin.js.JsName
 /** [docs](https://nodejs.org/api/stream.html#class-streamreadable) */
 @JsName("Readable")
 internal actual external interface JsReadable {
-    fun <T: JsAny?> on(
-        event: String,
-        listener: (T) -> Unit,
-    ): JsReadable
     actual fun destroy()
 }
 
 internal actual inline fun JsReadable.onClose(
     noinline block: () -> Unit,
-): JsReadable = jsExternTryCatch { on<JsAny?>("close") { _ -> block() } }
+): JsReadable {
+    @OptIn(DoNotReferenceDirectly::class)
+    return jsExternTryCatch { jsReadableOn(this, "close", block) }
+}
 
 internal actual inline fun JsReadable.onData(
     noinline block: (data: ReadBuffer) -> Unit,
 ): JsReadable {
     @OptIn(DoNotReferenceDirectly::class)
     val listener = onDataListener(block)
-    return jsExternTryCatch { on("data", listener) }
+    @OptIn(DoNotReferenceDirectly::class)
+    return jsExternTryCatch { jsReadableOn(this, "data", listener) }
 }
+
+@DoNotReferenceDirectly("JsReadable.onClose")
+internal fun jsReadableOn(
+    readable: JsReadable,
+    event: String,
+    listener: () -> Unit,
+): JsReadable = js("readable.on(event, listener)")
+
+@DoNotReferenceDirectly("JsReadable.onData")
+internal fun <T: JsAny> jsReadableOn(
+    readable: JsReadable,
+    event: String,
+    listener: (T) -> Unit,
+): JsReadable = js("readable.on(event, listener)")
