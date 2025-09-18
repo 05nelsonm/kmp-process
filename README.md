@@ -11,11 +11,11 @@
 ![badge-platform-android]
 ![badge-platform-jvm]
 ![badge-platform-js-node]
+![badge-platform-wasm]
 ![badge-platform-linux]
 ![badge-platform-ios]
 ![badge-platform-macos]
 ![badge-support-android-native]
-![badge-support-apple-silicon]
 ![badge-support-linux-arm]
 
 `Process` implementation for Kotlin Multiplatform.
@@ -27,24 +27,25 @@ and `Rust` [Command][url-rust-command]
 
 ## Info
 
-|                  | Process Creation Method Used                                                        |
+| Platform         | Process Creation Method Used                                                        |
 |------------------|-------------------------------------------------------------------------------------|
 | `Android`        | `java.lang.ProcessBuilder`                                                          |
 | `Jvm`            | `java.lang.ProcessBuilder`                                                          |
-| `Node.js`        | [spawn][url-node-spawn] and [spawnSync][url-node-spawn-sync]                        |
-| `Android Native` | [posix_spawn][url-posix-spawn] or [fork][url-posix-fork]/[execve][url-posix-execve] |
-| `Linux`          | [posix_spawn][url-posix-spawn] or [fork][url-posix-fork]/[execve][url-posix-execve] |
-| `macOS`          | [posix_spawn][url-posix-spawn] or [fork][url-posix-fork]/[execve][url-posix-execve] |
-| `iOS`            | [posix_spawn][url-posix-spawn]                                                      |
+| `Js/Node`        | [spawn][url-node-spawn] and [spawnSync][url-node-spawn-sync]                        |
+| `WasmJs/Node`    | [spawn][url-node-spawn] and [spawnSync][url-node-spawn-sync]                        |
+| `Native/Android` | [posix_spawn][url-posix-spawn] or [fork][url-posix-fork]/[execve][url-posix-execve] |
+| `Native/Linux`   | [posix_spawn][url-posix-spawn] or [fork][url-posix-fork]/[execve][url-posix-execve] |
+| `Native/macOS`   | [posix_spawn][url-posix-spawn] or [fork][url-posix-fork]/[execve][url-posix-execve] |
+| `Native/iOS`     | [posix_spawn][url-posix-spawn]                                                      |
 
-**NOTE:** `java.lang.ProcessBuilder` and `java.lang.Process` Java 8 functionality is backported 
-for Android and tested against API 15+.
+**NOTE:** `java.lang.ProcessBuilder` and `java.lang.Process` Java 8 functionality is backported for 
+Android API 23 and below. Testing covers API 15+.
 
-**NOTE:** Spawning of processes for Apple mobile targets will work on simulators when utilizing 
-executables compiled for `macOS`. Unfortunately due to the `com.apple.security.app-sandbox`
-entitlement inhibiting modification of a file's permissions to set as executable, `posix_spawn` 
-will likely fail on the device (unless executing a file already accessible on the OS that **is** 
-executable).  
+**NOTE:** Spawning of processes for non-`macOS` Apple targets (i.e. `iOS`, etc.) will work on 
+simulators when utilizing executables compiled for `macOS` (and codesigned). Unfortunately, due 
+to the `com.apple.security.app-sandbox` entitlement inhibiting modification of a file's permissions 
+to set as executable, `posix_spawn` will likely fail unless you have access an executable already on 
+the device.  
 
 ## Example
 
@@ -250,8 +251,6 @@ dependencies {
 [badge-platform-wasm]: https://img.shields.io/badge/-wasm-624FE8.svg?style=flat
 [badge-platform-windows]: http://img.shields.io/badge/-windows-4D76CD.svg?style=flat
 [badge-support-android-native]: http://img.shields.io/badge/support-[AndroidNative]-6EDB8D.svg?style=flat
-[badge-support-apple-silicon]: http://img.shields.io/badge/support-[AppleSilicon]-43BBFF.svg?style=flat
-[badge-support-js-ir]: https://img.shields.io/badge/support-[js--IR]-AAC4E0.svg?style=flat
 [badge-support-linux-arm]: http://img.shields.io/badge/support-[LinuxArm]-2D3F6C.svg?style=flat
 
 [url-docs]: https://kmp-process.matthewnelson.io
