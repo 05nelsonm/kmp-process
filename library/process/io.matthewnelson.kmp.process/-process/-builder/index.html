@@ -41,12 +41,12 @@
             </a>        <button class="navigation-controls--btn navigation-controls--btn_toc ui-kit_mobile-only" id="toc-toggle" type="button">Toggle table of contents
         </button>
         <div class="navigation-controls--break ui-kit_mobile-only"></div>
-        <div class="library-version" id="library-version">0.3.2
+        <div class="library-version" id="library-version">0.4.0
         </div>
         <div class="navigation-controls">
         <div class="filter-section filter-section_loading" id="filter-section">
                 <button class="platform-tag platform-selector common-like" data-active="" data-filter=":library:process/commonMain">common</button>
-                <button class="platform-tag platform-selector js-like" data-active="" data-filter=":library:process/jsMain">js</button>
+                <button class="platform-tag platform-selector common-like" data-active="" data-filter=":library:process/jsWasmJsMain">jsWasmJs</button>
                 <button class="platform-tag platform-selector common-like" data-active="" data-filter=":library:process/nonAppleMobileMain">nonAppleMobile</button>
                 <button class="platform-tag platform-selector common-like" data-active="" data-filter=":library:process/unixForkMain">unixFork</button>
             <div class="dropdown filter-section--dropdown" data-role="dropdown" id="filter-section-dropdown">
@@ -64,11 +64,11 @@
                                 common
                             </label>
                         </li>
-                        <li role="option" class="dropdown--option platform-selector-option js-like" tabindex="0">
+                        <li role="option" class="dropdown--option platform-selector-option common-like" tabindex="0">
                             <label class="checkbox">
-                                <input type="checkbox" class="checkbox--input" id=":library:process/jsMain" data-filter=":library:process/jsMain">
+                                <input type="checkbox" class="checkbox--input" id=":library:process/jsWasmJsMain" data-filter=":library:process/jsWasmJsMain">
                                 <span class="checkbox--icon"></span>
-                                js
+                                jsWasmJs
                             </label>
                         </li>
                         <li role="option" class="dropdown--option platform-selector-option common-like" tabindex="0">
@@ -118,7 +118,7 @@
   <div class="breadcrumbs"><a href="../../../index.html">process</a><span class="delimiter">/</span><a href="../../index.html">io.matthewnelson.kmp.process</a><span class="delimiter">/</span><a href="../index.html">Process</a><span class="delimiter">/</span><span class="current">Builder</span></div>
   <div class="cover ">
     <h1 class="cover"><span><span>Builder</span></span></h1>
-    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library:process/commonMain"><div class="symbol monospace"><span class="token keyword">class </span><a href="index.html">Builder</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span class="token keyword">val </span>command<span class="token operator">: </span><span data-unresolved-link="kotlin/String///PointingToDeclaration/">String</span></span></span><span class="token punctuation">)</span><span class="clearfix"><span class="floating-right">(<a href="https://github.com/05nelsonm/kmp-process/tree/master/library/process/src/commonMain/kotlin/io/matthewnelson/kmp/process/Process.kt#L277">source</a>)</span></span></div><p class="paragraph">Creates a new <a href="../index.html">Process</a>.</p><p class="paragraph">e.g. (Shell commands on a Unix system)</p><div class="sample-container"><pre><code class="block lang-kotlin" theme="idea">val out = Process.Builder("sh")
+    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library:process/commonMain"><div class="symbol monospace"><span class="token keyword">class </span><a href="index.html">Builder</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span class="token keyword">val </span>command<span class="token operator">: </span><span data-unresolved-link="kotlin/String///PointingToDeclaration/">String</span></span></span><span class="token punctuation">)</span><span class="clearfix"><span class="floating-right">(<a href="https://github.com/05nelsonm/kmp-process/tree/master/library/process/src/commonMain/kotlin/io/matthewnelson/kmp/process/Process.kt#L279">source</a>)</span></span></div><p class="paragraph">Creates a new <a href="../index.html">Process</a>.</p><p class="paragraph">e.g. (Shell commands on a Unix system)</p><div class="sample-container"><pre><code class="block lang-kotlin" theme="idea">val out = Process.Builder("sh")
     .args("-c")
     .args("sleep 1; exit 5")
     .destroySignal(Signal.SIGKILL)
@@ -228,19 +228,19 @@ assertEquals(5, out.processInfo.exitCode)</code></pre><span class="top-right-pos
               </div>
             </div>
           </div>
-<a data-name="-1285844450%2FFunctions%2F-1549332789" anchor-label="detached" id="-1285844450%2FFunctions%2F-1549332789" data-filterable-set=":library:process/jsMain"></a>
-          <div class="table-row" data-togglable="EXTENSION_FUNCTION" data-filterable-current=":library:process/jsMain" data-filterable-set=":library:process/jsMain">
+<a data-name="-1285844450%2FFunctions%2F128524041" anchor-label="detached" id="-1285844450%2FFunctions%2F128524041" data-filterable-set=":library:process/jsWasmJsMain"></a>
+          <div class="table-row" data-togglable="EXTENSION_FUNCTION" data-filterable-current=":library:process/jsWasmJsMain" data-filterable-set=":library:process/jsWasmJsMain">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="../../detached.html"><span><span>detached</span></span></a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1285844450%2FFunctions%2F-1549332789"></span>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1285844450%2FFunctions%2F128524041"></span>
                     <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
                   </span></span></div>
               <div>
                 <div class="title">
                   <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
-                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":library:process/jsMain" data-filterable-set=":library:process/jsMain" data-active="" data-toggle=":library:process/jsMain">js</button></div>
-<div class="content sourceset-dependent-content" data-active="" data-togglable=":library:process/jsMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="index.html">Process.Builder</a><span class="token punctuation">.</span><a href="../../detached.html"><span class="token function">detached</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">enable<span class="token operator">: </span><span data-unresolved-link="kotlin/Boolean///PointingToDeclaration/">Boolean</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">Process.Builder</a></div><div class="brief "><p class="paragraph">Configures the <code class="lang-kotlin">detached</code> option for <code class="lang-kotlin">spawn</code>.</p></div></div>                  </div>
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":library:process/jsWasmJsMain" data-filterable-set=":library:process/jsWasmJsMain" data-active="" data-toggle=":library:process/jsWasmJsMain">jsWasmJs</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":library:process/jsWasmJsMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="index.html#75451656%2FMain%2F128524041">Process.Builder</a><span class="token punctuation">.</span><a href="../../detached.html"><span class="token function">detached</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">enable<span class="token operator">: </span><span data-unresolved-link="kotlin/Boolean///PointingToDeclaration/">Boolean</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html#75451656%2FMain%2F128524041">Process.Builder</a></div><div class="brief "><p class="paragraph">Configures the <code class="lang-kotlin">detached</code> option for <code class="lang-kotlin">spawn</code>.</p></div></div>                  </div>
                 </div>
               </div>
             </div>
@@ -290,19 +290,19 @@ assertEquals(5, out.processInfo.exitCode)</code></pre><span class="top-right-pos
               </div>
             </div>
           </div>
-<a data-name="881253445%2FFunctions%2F-1549332789" anchor-label="shell" id="881253445%2FFunctions%2F-1549332789" data-filterable-set=":library:process/jsMain"></a>
-          <div class="table-row" data-togglable="EXTENSION_FUNCTION" data-filterable-current=":library:process/jsMain" data-filterable-set=":library:process/jsMain">
+<a data-name="881253445%2FFunctions%2F128524041" anchor-label="shell" id="881253445%2FFunctions%2F128524041" data-filterable-set=":library:process/jsWasmJsMain"></a>
+          <div class="table-row" data-togglable="EXTENSION_FUNCTION" data-filterable-current=":library:process/jsWasmJsMain" data-filterable-set=":library:process/jsWasmJsMain">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="../../shell.html"><span><span>shell</span></span></a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="881253445%2FFunctions%2F-1549332789"></span>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="881253445%2FFunctions%2F128524041"></span>
                     <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
                   </span></span></div>
               <div>
                 <div class="title">
                   <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
-                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":library:process/jsMain" data-filterable-set=":library:process/jsMain" data-active="" data-toggle=":library:process/jsMain">js</button></div>
-<div class="content sourceset-dependent-content" data-active="" data-togglable=":library:process/jsMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="index.html">Process.Builder</a><span class="token punctuation">.</span><a href="../../shell.html"><span class="token function">shell</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">enable<span class="token operator">: </span><span data-unresolved-link="kotlin/Boolean///PointingToDeclaration/">Boolean</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">Process.Builder</a></div><div class="brief "><p class="paragraph">Configures the <code class="lang-kotlin">shell</code> option for <code class="lang-kotlin">spawn</code> and <code class="lang-kotlin">spawnSync</code></p></div><div class="symbol monospace"><span class="token keyword">fun </span><a href="index.html">Process.Builder</a><span class="token punctuation">.</span><a href="../../shell.html"><span class="token function">shell</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">shell<span class="token operator">: </span><span data-unresolved-link="kotlin/String///PointingToDeclaration/">String</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">Process.Builder</a></div><div class="brief "><p class="paragraph">Configures the <code class="lang-kotlin">shell</code> option for <code class="lang-kotlin">spawn</code> and <code class="lang-kotlin">spawnSync</code>.</p></div></div>                  </div>
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":library:process/jsWasmJsMain" data-filterable-set=":library:process/jsWasmJsMain" data-active="" data-toggle=":library:process/jsWasmJsMain">jsWasmJs</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":library:process/jsWasmJsMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="index.html#75451656%2FMain%2F128524041">Process.Builder</a><span class="token punctuation">.</span><a href="../../shell.html"><span class="token function">shell</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">enable<span class="token operator">: </span><span data-unresolved-link="kotlin/Boolean///PointingToDeclaration/">Boolean</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html#75451656%2FMain%2F128524041">Process.Builder</a></div><div class="brief "><p class="paragraph">Configures the <code class="lang-kotlin">shell</code> option for <code class="lang-kotlin">spawn</code> and <code class="lang-kotlin">spawnSync</code></p></div><div class="symbol monospace"><span class="token keyword">fun </span><a href="index.html#75451656%2FMain%2F128524041">Process.Builder</a><span class="token punctuation">.</span><a href="../../shell.html"><span class="token function">shell</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">shell<span class="token operator">: </span><span data-unresolved-link="kotlin/String///PointingToDeclaration/">String</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html#75451656%2FMain%2F128524041">Process.Builder</a></div><div class="brief "><p class="paragraph">Configures the <code class="lang-kotlin">shell</code> option for <code class="lang-kotlin">spawn</code> and <code class="lang-kotlin">spawnSync</code>.</p></div></div>                  </div>
                 </div>
               </div>
             </div>
@@ -399,36 +399,36 @@ assertEquals(5, out.processInfo.exitCode)</code></pre><span class="top-right-pos
               </div>
             </div>
           </div>
-<a data-name="308751235%2FFunctions%2F-1549332789" anchor-label="windowsHide" id="308751235%2FFunctions%2F-1549332789" data-filterable-set=":library:process/jsMain"></a>
-          <div class="table-row" data-togglable="EXTENSION_FUNCTION" data-filterable-current=":library:process/jsMain" data-filterable-set=":library:process/jsMain">
+<a data-name="308751235%2FFunctions%2F128524041" anchor-label="windowsHide" id="308751235%2FFunctions%2F128524041" data-filterable-set=":library:process/jsWasmJsMain"></a>
+          <div class="table-row" data-togglable="EXTENSION_FUNCTION" data-filterable-current=":library:process/jsWasmJsMain" data-filterable-set=":library:process/jsWasmJsMain">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="../../windows-hide.html"><span>windows</span><wbr><span><span>Hide</span></span></a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="308751235%2FFunctions%2F-1549332789"></span>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="308751235%2FFunctions%2F128524041"></span>
                     <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
                   </span></span></div>
               <div>
                 <div class="title">
                   <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
-                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":library:process/jsMain" data-filterable-set=":library:process/jsMain" data-active="" data-toggle=":library:process/jsMain">js</button></div>
-<div class="content sourceset-dependent-content" data-active="" data-togglable=":library:process/jsMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="index.html">Process.Builder</a><span class="token punctuation">.</span><a href="../../windows-hide.html"><span class="token function">windowsHide</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">enable<span class="token operator">: </span><span data-unresolved-link="kotlin/Boolean///PointingToDeclaration/">Boolean</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">Process.Builder</a></div><div class="brief "><p class="paragraph">Configures the <code class="lang-kotlin">windowsHide</code> option for <code class="lang-kotlin">spawn</code> and <code class="lang-kotlin">spawnSync</code></p></div></div>                  </div>
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":library:process/jsWasmJsMain" data-filterable-set=":library:process/jsWasmJsMain" data-active="" data-toggle=":library:process/jsWasmJsMain">jsWasmJs</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":library:process/jsWasmJsMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="index.html#75451656%2FMain%2F128524041">Process.Builder</a><span class="token punctuation">.</span><a href="../../windows-hide.html"><span class="token function">windowsHide</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">enable<span class="token operator">: </span><span data-unresolved-link="kotlin/Boolean///PointingToDeclaration/">Boolean</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html#75451656%2FMain%2F128524041">Process.Builder</a></div><div class="brief "><p class="paragraph">Configures the <code class="lang-kotlin">windowsHide</code> option for <code class="lang-kotlin">spawn</code> and <code class="lang-kotlin">spawnSync</code></p></div></div>                  </div>
                 </div>
               </div>
             </div>
           </div>
-<a data-name="1053161523%2FFunctions%2F-1549332789" anchor-label="windowsVerbatimArguments" id="1053161523%2FFunctions%2F-1549332789" data-filterable-set=":library:process/jsMain"></a>
-          <div class="table-row" data-togglable="EXTENSION_FUNCTION" data-filterable-current=":library:process/jsMain" data-filterable-set=":library:process/jsMain">
+<a data-name="1053161523%2FFunctions%2F128524041" anchor-label="windowsVerbatimArguments" id="1053161523%2FFunctions%2F128524041" data-filterable-set=":library:process/jsWasmJsMain"></a>
+          <div class="table-row" data-togglable="EXTENSION_FUNCTION" data-filterable-current=":library:process/jsWasmJsMain" data-filterable-set=":library:process/jsWasmJsMain">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="../../windows-verbatim-arguments.html"><span>windows</span><wbr><span>Verbatim</span><wbr><span><span>Arguments</span></span></a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1053161523%2FFunctions%2F-1549332789"></span>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1053161523%2FFunctions%2F128524041"></span>
                     <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
                   </span></span></div>
               <div>
                 <div class="title">
                   <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
-                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":library:process/jsMain" data-filterable-set=":library:process/jsMain" data-active="" data-toggle=":library:process/jsMain">js</button></div>
-<div class="content sourceset-dependent-content" data-active="" data-togglable=":library:process/jsMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="index.html">Process.Builder</a><span class="token punctuation">.</span><a href="../../windows-verbatim-arguments.html"><span class="token function">windowsVerbatimArguments</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">enable<span class="token operator">: </span><span data-unresolved-link="kotlin/Boolean///PointingToDeclaration/">Boolean</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">Process.Builder</a></div><div class="brief "><p class="paragraph">Configures the <code class="lang-kotlin">windowsVerbatimArguments</code> option for <code class="lang-kotlin">spawn</code> and <code class="lang-kotlin">spawnSync</code></p></div></div>                  </div>
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":library:process/jsWasmJsMain" data-filterable-set=":library:process/jsWasmJsMain" data-active="" data-toggle=":library:process/jsWasmJsMain">jsWasmJs</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":library:process/jsWasmJsMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="index.html#75451656%2FMain%2F128524041">Process.Builder</a><span class="token punctuation">.</span><a href="../../windows-verbatim-arguments.html"><span class="token function">windowsVerbatimArguments</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">enable<span class="token operator">: </span><span data-unresolved-link="kotlin/Boolean///PointingToDeclaration/">Boolean</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html#75451656%2FMain%2F128524041">Process.Builder</a></div><div class="brief "><p class="paragraph">Configures the <code class="lang-kotlin">windowsVerbatimArguments</code> option for <code class="lang-kotlin">spawn</code> and <code class="lang-kotlin">spawnSync</code></p></div></div>                  </div>
                 </div>
               </div>
             </div>
