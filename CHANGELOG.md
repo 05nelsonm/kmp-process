@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## Version 0.4.0 (2025-09-19)
+ - Updates `kotlin` to `2.2.20` [[#194]][194]
+ - Updates `immutable` to `0.3.0` [[#196]][196]
+ - Updates `kmp-file` to `0.5.0` [[#196]][196]
+ - Updates `kotlincrypto.bitops` to `0.3.0` [[#196]][196]
+ - Adds support for `wasmJs` [[#195]][195] [[#197]][197]
+ - Fixes Kotlin/Native parent process descriptor leaks when using `posix_spawn` [[#191]][191]
+ - Adds Kotlin/Native check for valid child process `pid` when `posix_spawn` returns an error result, mitigating 
+   zombie processes in the event of a bug with the `posix_spawn` system implementation [[#193]][193]
+ - Lower supported `KotlinVersion` to `1.9` [[#196]][196]
+     - Source sets `js`, `wasmJs`, & `jsWasmJs` require a minimum `KotlinVersion` of `2.0`
+
 ## Version 0.3.2 (2025-08-20)
  - Updates `kmp-file` to `0.4.0` [[#170]][170]
  - `AsyncWriteStream` and `BufferedWriteStream` now extend the new `Closeable` interface from `kmp-file` [[#182]][182]
@@ -192,3 +204,10 @@
 [184]: https://github.com/05nelsonm/kmp-process/pull/184
 [185]: https://github.com/05nelsonm/kmp-process/pull/185
 [189]: https://github.com/05nelsonm/kmp-process/pull/189
+[191]: https://github.com/05nelsonm/kmp-process/pull/191
+[193]: https://github.com/05nelsonm/kmp-process/pull/193
+[194]: https://github.com/05nelsonm/kmp-process/pull/194
+[195]: https://github.com/05nelsonm/kmp-process/pull/195
+[196]: https://github.com/05nelsonm/kmp-process/pull/196
+[197]: https://github.com/05nelsonm/kmp-process/pull/197
+

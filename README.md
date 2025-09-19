@@ -221,21 +221,21 @@ builder.onError { e ->
 
 ```kotlin
 dependencies {
-    implementation("io.matthewnelson.kmp-process:process:0.3.2")
+    implementation("io.matthewnelson.kmp-process:process:0.4.0")
 }
 ```
 
 **NOTE:** For Java9+ consumers, module `java.management` is required. See [issue-139][url-issue-139]
 
 <!-- TAG_VERSION -->
-[badge-latest-release]: https://img.shields.io/badge/latest--release-0.3.2-blue.svg?style=flat
+[badge-latest-release]: https://img.shields.io/badge/latest--release-0.4.0-blue.svg?style=flat
 [badge-license]: https://img.shields.io/badge/license-Apache%20License%202.0-blue.svg?style=flat
 
 <!-- TAG_DEPENDENCIES -->
 [badge-coroutines]: https://img.shields.io/badge/kotlinx.coroutines-1.10.2-blue.svg?logo=kotlin
-[badge-bitops]: https://img.shields.io/badge/kotlincrypto.bitops-0.3.0--SNAPSHOT-blue.svg?style=flat
-[badge-immutable]: https://img.shields.io/badge/immutable-0.3.0--SNAPSHOT-blue.svg?style=flat
-[badge-kmp-file]: https://img.shields.io/badge/kmp--file-0.5.0--SNAPSHOT-blue.svg?style=flat
+[badge-bitops]: https://img.shields.io/badge/kotlincrypto.bitops-0.3.0-blue.svg?style=flat
+[badge-immutable]: https://img.shields.io/badge/immutable-0.3.0-blue.svg?style=flat
+[badge-kmp-file]: https://img.shields.io/badge/kmp--file-0.5.0-blue.svg?style=flat
 [badge-kotlin]: https://img.shields.io/badge/kotlin-2.2.20-blue.svg?logo=kotlin
 
 <!-- TAG_PLATFORMS -->
