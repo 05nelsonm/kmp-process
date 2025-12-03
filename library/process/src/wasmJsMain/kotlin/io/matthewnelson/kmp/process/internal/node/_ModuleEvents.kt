@@ -14,7 +14,7 @@
  * limitations under the License.
  **/
 @file:OptIn(DelicateFileApi::class)
-@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING", "NOTHING_TO_INLINE")
+@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING", "NOTHING_TO_INLINE", "OPT_IN_USAGE")
 
 package io.matthewnelson.kmp.process.internal.node
 
