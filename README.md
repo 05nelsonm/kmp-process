@@ -12,11 +12,10 @@
 ![badge-platform-jvm]
 ![badge-platform-js-node]
 ![badge-platform-wasm]
+![badge-platform-android-native]
 ![badge-platform-linux]
 ![badge-platform-ios]
 ![badge-platform-macos]
-![badge-support-android-native]
-![badge-support-linux-arm]
 
 `Process` implementation for Kotlin Multiplatform.
 
@@ -236,7 +235,7 @@ dependencies {
 [badge-bitops]: https://img.shields.io/badge/kotlincrypto.bitops-0.3.0-blue.svg?style=flat
 [badge-immutable]: https://img.shields.io/badge/immutable-0.3.0-blue.svg?style=flat
 [badge-kmp-file]: https://img.shields.io/badge/kmp--file-0.5.0-blue.svg?style=flat
-[badge-kotlin]: https://img.shields.io/badge/kotlin-2.2.20-blue.svg?logo=kotlin
+[badge-kotlin]: https://img.shields.io/badge/kotlin-2.2.21-blue.svg?logo=kotlin
 
 <!-- TAG_PLATFORMS -->
 [badge-platform-android]: http://img.shields.io/badge/-android-6EDB8D.svg?style=flat
@@ -249,9 +248,9 @@ dependencies {
 [badge-platform-tvos]: http://img.shields.io/badge/-tvos-808080.svg?style=flat
 [badge-platform-watchos]: http://img.shields.io/badge/-watchos-C0C0C0.svg?style=flat
 [badge-platform-wasm]: https://img.shields.io/badge/-wasm-624FE8.svg?style=flat
+[badge-platform-wasi]: https://img.shields.io/badge/-wasi-18a033.svg?style=flat
 [badge-platform-windows]: http://img.shields.io/badge/-windows-4D76CD.svg?style=flat
-[badge-support-android-native]: http://img.shields.io/badge/support-[AndroidNative]-6EDB8D.svg?style=flat
-[badge-support-linux-arm]: http://img.shields.io/badge/support-[LinuxArm]-2D3F6C.svg?style=flat
+[badge-platform-android-native]: http://img.shields.io/badge/-android--native-6EDB8D.svg?style=flat
 
 [url-docs]: https://kmp-process.matthewnelson.io
 [url-latest-release]: https://github.com/05nelsonm/kmp-process/releases/latest

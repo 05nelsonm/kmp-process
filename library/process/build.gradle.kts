@@ -215,6 +215,8 @@ kmpConfiguration {
 // the -dev llvm compiler for the current kotlin version.
 //
 // The following info can be found in ~/.konan/kotlin-native-prebuild-{os}-{arch}-{kotlin version}/konan/konan.properties
+//
+//   e.g. cat ~/.konan/kotlin-native-prebuilt-linux-x86_64-2.2.21/konan/konan.properties | grep ".dev="
 @Suppress("ConstPropertyName")
 private object LLVM {
     const val URL: String = "https://download.jetbrains.com/kotlin/native/resources/llvm"
@@ -237,7 +239,7 @@ private object LLVM {
 
 private fun CKlibGradleExtension.configure(libs: LibrariesForLibs): Task {
     kotlinVersion = libs.versions.gradle.kotlin.get()
-    check(kotlinVersion == "2.2.20") {
+    check(kotlinVersion == "2.2.21") {
         "Kotlin version out of date! Download URLs for LLVM need to be updated for ${project.path}"
     }
 
