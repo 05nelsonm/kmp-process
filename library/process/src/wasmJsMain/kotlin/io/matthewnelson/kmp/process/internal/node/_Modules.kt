@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
+@file:Suppress("OPT_IN_USAGE")
+
 package io.matthewnelson.kmp.process.internal.node
 
 internal actual fun nodeModuleBuffer(): ModuleBuffer = js(CODE_MODULE_BUFFER)

@@ -4,20 +4,20 @@ androidx-test-core          = "1.5.0" # Do not upgrade. Tests run for API 15+, w
 #noinspection GradleDependency
 androidx-test-runner        = "1.5.2" # Do not upgrade. Tests run for API 15+, where next version requires minSdk 19+
 
-encoding                    = "2.5.0"
+encoding                    = "2.6.0-SNAPSHOT"
 
-gradle-android              = "8.11.2"
+gradle-android              = "8.12.3"
 gradle-binary-compat        = "0.18.1"
 gradle-cklib                = "0.3.4"
-gradle-dokka                = "2.0.0"
+gradle-dokka                = "2.1.0"
 gradle-kmp-configuration    = "0.5.2"
-gradle-kotlin               = "2.2.20"
-gradle-publish-maven        = "0.34.0"
+gradle-kotlin               = "2.2.21"
+gradle-publish-maven        = "0.35.0"
 
 immutable                   = "0.3.0"
 
-kmp-file                    = "0.5.0"
-kmp-tor-resource            = "408.17.1"
+kmp-file                    = "0.6.0-SNAPSHOT"
+kmp-tor-resource            = "408.21.0-SNAPSHOT"
 kmp-tor-resourceNpmSNAPSHOT = ".0"
 kotlincrypto-catalog        = "0.8.0" # Utilized from settings.gradle.kts
 kotlinx-coroutines          = "1.10.2"
