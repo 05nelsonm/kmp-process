@@ -34,6 +34,7 @@ import io.matthewnelson.kmp.process.internal.js.getStringOrNull
 import io.matthewnelson.kmp.process.internal.js.new
 import io.matthewnelson.kmp.process.internal.js.set
 import io.matthewnelson.kmp.process.internal.js.toJsArray
+import io.matthewnelson.kmp.process.internal.js.toThrowable
 import io.matthewnelson.kmp.process.internal.node.ModuleFs
 import io.matthewnelson.kmp.process.internal.node.asBuffer
 import io.matthewnelson.kmp.process.internal.node.node_child_process
@@ -122,6 +123,13 @@ internal actual class PlatformBuilder private actual constructor() {
 
         val pid = output.getInt("pid")
 
+        val processError: String? = output.getJsErrorOrNull("error").let { e ->
+            if (e == null) return@let null
+            // Spawn failure.
+            if (pid <= 0) throw e.toThrowable().toIOException(command.toFile(), other = null)
+            e.message
+        }
+
         val stdout = output.getJsBufferOrNull("stdout")?.asBuffer().let { buf ->
             if (buf == null) return@let ""
             val utf8 = buf.toUtf8Trimmed()
@@ -145,12 +153,6 @@ internal actual class PlatformBuilder private actual constructor() {
             } catch (_: Throwable) {
                 destroy
             }.code
-        }
-
-        val processError: String? = try {
-            output.getJsErrorOrNull("error")?.message
-        } catch (_: Throwable) {
-            null
         }
 
         return Output.ProcessInfo.createOutput(

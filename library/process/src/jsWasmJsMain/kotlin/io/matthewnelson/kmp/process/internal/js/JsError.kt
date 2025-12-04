@@ -21,6 +21,7 @@ import kotlin.js.JsName
 
 @JsName("Error")
 internal expect class JsError {
-    val message: String?
-    val code: String?
+    internal val message: String?
 }
+
+internal expect fun JsError.toThrowable(): Throwable

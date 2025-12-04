@@ -17,10 +17,6 @@
 
 package io.matthewnelson.kmp.process.internal.js
 
-import kotlin.js.JsName
+internal actual typealias JsError = Throwable
 
-@JsName("Error")
-internal actual external class JsError {
-    actual val message: String?
-    actual val code: String?
-}
+internal actual fun JsError.toThrowable(): Throwable = this

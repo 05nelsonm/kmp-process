@@ -17,10 +17,27 @@
 
 package io.matthewnelson.kmp.process.internal.js
 
+import io.matthewnelson.kmp.file.jsExternTryCatch
 import kotlin.js.JsName
 
 @JsName("Error")
 internal actual external class JsError: JsAny {
-    actual val message: String?
-    actual val code: String?
+    internal actual val message: String?
 }
+
+internal actual fun JsError.toThrowable(): Throwable {
+    try {
+        jsExternTryCatch { jsThrow(this) }
+    } catch (t: Throwable) {
+        return t
+    }
+
+    // Try Kotlin's implementation for WasmJs
+    toThrowableOrNull()?.let { return it }
+
+    // Total failure...
+    return Throwable(message)
+}
+
+@Suppress("UNUSED")
+private fun jsThrow(e: JsError) { js("throw e;") }
