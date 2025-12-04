@@ -127,7 +127,11 @@ internal actual class PlatformBuilder private actual constructor() {
             }
             (t.cause as? IOException)?.let { c ->
                 val m = c.message ?: return@let
-                if (m.contains("no such file or directory", ignoreCase = true)) {
+                if (
+                    m.contains("no such file or directory", ignoreCase = true)
+                    // Windows
+                    || m.contains("cannot find the file", ignoreCase = true)
+                ) {
                     if (t is FileNotFoundException) throw t
                     val e = FileNotFoundException(t.message)
                     e.addSuppressed(t)

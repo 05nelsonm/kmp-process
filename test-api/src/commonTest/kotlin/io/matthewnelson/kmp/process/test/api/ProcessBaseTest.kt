@@ -199,8 +199,30 @@ abstract class ProcessBaseTest {
             invalid.writeUtf8(excl = OpenExcl.MustCreate.of("666"), "Non-executable")
             assertTrue(invalid.exists2())
 
-            assertFailsWith<AccessDeniedException> {
+            try {
                 Process.Builder(command = invalid.path).output().let { println(it) }
+                fail("Process.Builder.output should have thrown an IOException")
+            } catch (t: Throwable) {
+                when (t) {
+                    is FileNotFoundException -> if (IsWindows) {
+                        // Windows has no concept of file permissions, so will instead
+                        // fail with ENOENT b/c the file is not an executable with a
+                        // main function.
+                        //
+                        // pass
+                    } else {
+                        fail("!IsWindows && is FileNotFoundException", t)
+                    }
+                    is AccessDeniedException -> {} // pass
+                    is IOException -> if (IsWindows) {
+                        // Windows may fail due to it being an invalid program
+                        //
+                        // pass
+                    } else {
+                        fail("!IsWindows && is IOException", t)
+                    }
+                    else -> throw t
+                }
             }
         } finally {
             invalid.delete2()
