@@ -27,6 +27,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import kotlin.math.min
+import kotlin.random.Random
 import kotlin.test.*
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
@@ -167,6 +168,45 @@ abstract class ProcessBaseTest {
         println(output.stderr)
         println(output)
         assertEquals(d.canonicalPath(), output.stdout)
+    }
+
+    @Test
+    fun givenOutput_whenInvalidCommand_thenThrowsException() {
+        val dir1 = SysTempDir.resolve(Random.nextBytes(8).toHexString())
+        val dir2 = dir1.resolve("path")
+        val invalid = dir2.resolve("not_a_program").delete2(ignoreReadOnly = true)
+
+        // Absolute path
+        assertFailsWith<FileNotFoundException> {
+            Process.Builder(command = invalid.path).output()
+        }
+
+        // Relative path
+        try {
+            Process.Builder(command = invalid.name).output()
+            fail("Process.Builder.output should have thrown an IOException")
+        } catch (t: Throwable) {
+            when (t) {
+                is FileNotFoundException -> {} // pass
+                // Android may error out with EPERM/EACCES b/c cwd is /
+                is AccessDeniedException -> {} // pass
+                else -> throw t
+            }
+        }
+
+        try {
+            dir2.mkdirs2(mode = null, mustCreate = true)
+            invalid.writeUtf8(excl = OpenExcl.MustCreate.of("666"), "Non-executable")
+            assertTrue(invalid.exists2())
+
+            assertFailsWith<AccessDeniedException> {
+                Process.Builder(command = invalid.path).output()
+            }
+        } finally {
+            invalid.delete2()
+            dir2.delete2()
+            dir1.delete2()
+        }
     }
 
     @Test
