@@ -17,6 +17,7 @@
 
 package io.matthewnelson.kmp.process.internal.spawn
 
+import io.matthewnelson.kmp.file.AccessDeniedException
 import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.file.FileNotFoundException
 import io.matthewnelson.kmp.file.IOException
@@ -48,8 +49,10 @@ import kotlinx.cinterop.alloc
 import kotlinx.cinterop.ptr
 import kotlinx.cinterop.toKString
 import kotlinx.cinterop.value
+import platform.posix.EACCES
 import platform.posix.EINTR
 import platform.posix.ENOENT
+import platform.posix.EPERM
 import platform.posix.STDERR_FILENO
 import platform.posix.STDIN_FILENO
 import platform.posix.STDOUT_FILENO
@@ -313,12 +316,17 @@ private fun spawnFailureToIOException(command: String, chdir: File?, spawnRet: I
         msg += " failed in its pre-exec/exec steps and exited the child process with code[127]."
     }
 
-    var ioException: (String) -> IOException = if (spawnRet == ENOENT) ::FileNotFoundException else ::IOException
+    val accessException: (String) -> IOException = { AccessDeniedException(commandFile, null, it) }
+    var ioException: (String) -> IOException = when (spawnRet) {
+        ENOENT -> ::FileNotFoundException
+        EACCES, EPERM -> accessException
+        else -> ::IOException
+    }
 
     if (chdir != null && chdir.isAbsolute()) {
         try {
             if (!chdir.exists2()) {
-                msg += " Directory specified for changeDir does not seem to exist."
+                msg += " Directory specified for changeDir does not exist."
                 ioException = ::FileNotFoundException
             }
         } catch (_: IOException) {}
@@ -340,11 +348,12 @@ private fun spawnFailureToIOException(command: String, chdir: File?, spawnRet: I
 
         when {
             !commandFileExists -> {
-                msg += "Command[$command] does not seem to exist."
+                msg += " Command[$command] does not exist."
                 ioException = ::FileNotFoundException
             }
             access(commandFile.path, X_OK) != 0 -> {
-                msg += "Command[$command] does not seem to have executable permissions."
+                msg += " Command[$command] does not have executable permissions."
+                ioException = accessException
             }
         }
     } else {
