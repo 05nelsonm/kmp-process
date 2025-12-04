@@ -18,8 +18,11 @@
 package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.ANDROID
+import io.matthewnelson.kmp.file.AccessDeniedException
 import io.matthewnelson.kmp.file.File
+import io.matthewnelson.kmp.file.FileNotFoundException
 import io.matthewnelson.kmp.file.IOException
+import io.matthewnelson.kmp.file.toFile
 import io.matthewnelson.kmp.file.wrapIOException
 import io.matthewnelson.kmp.process.*
 import java.lang.reflect.Method
@@ -121,6 +124,21 @@ internal actual class PlatformBuilder private actual constructor() {
                 android23Stdio?.close()
             } catch (tt: Throwable) {
                 t.addSuppressed(tt)
+            }
+            (t.cause as? IOException)?.let { c ->
+                val m = c.message ?: return@let
+                if (m.contains("no such file or directory", ignoreCase = true)) {
+                    if (t is FileNotFoundException) throw t
+                    val e = FileNotFoundException(t.message)
+                    e.addSuppressed(t)
+                    throw e
+                }
+                if (m.contains("permission denied", ignoreCase = true)) {
+                    if (t is AccessDeniedException) throw t
+                    val e = AccessDeniedException(command.toFile(), null, t.message)
+                    e.addSuppressed(t)
+                    throw e
+                }
             }
             throw t.wrapIOException()
         }
