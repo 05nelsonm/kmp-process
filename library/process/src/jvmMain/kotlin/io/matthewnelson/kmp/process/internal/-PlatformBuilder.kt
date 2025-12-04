@@ -125,6 +125,13 @@ internal actual class PlatformBuilder private actual constructor() {
             } catch (tt: Throwable) {
                 t.addSuppressed(tt)
             }
+
+            if (t is SecurityException || t.cause is SecurityException) {
+                val e = AccessDeniedException(command.toFile(), reason = "SecurityException")
+                e.addSuppressed(t)
+                throw e
+            }
+
             (t.cause as? IOException)?.let { c ->
                 val m = c.message ?: return@let
                 if (
@@ -144,6 +151,7 @@ internal actual class PlatformBuilder private actual constructor() {
                     throw e
                 }
             }
+
             throw t.wrapIOException()
         }
 
