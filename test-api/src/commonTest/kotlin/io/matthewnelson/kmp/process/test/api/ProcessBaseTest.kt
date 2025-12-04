@@ -178,12 +178,12 @@ abstract class ProcessBaseTest {
 
         // Absolute path
         assertFailsWith<FileNotFoundException> {
-            Process.Builder(command = invalid.path).output()
+            Process.Builder(command = invalid.path).output().let { println(it) }
         }
 
         // Relative path
         try {
-            Process.Builder(command = invalid.name).output()
+            Process.Builder(command = invalid.name).output().let { println(it) }
             fail("Process.Builder.output should have thrown an IOException")
         } catch (t: Throwable) {
             when (t) {
@@ -200,7 +200,7 @@ abstract class ProcessBaseTest {
             assertTrue(invalid.exists2())
 
             assertFailsWith<AccessDeniedException> {
-                Process.Builder(command = invalid.path).output()
+                Process.Builder(command = invalid.path).output().let { println(it) }
             }
         } finally {
             invalid.delete2()

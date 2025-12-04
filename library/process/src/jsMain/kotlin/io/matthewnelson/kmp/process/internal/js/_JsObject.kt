@@ -21,8 +21,8 @@ import io.matthewnelson.kmp.process.internal.node.JsBuffer
 @DoNotReferenceDirectly("JsObject.Companion.new()")
 internal actual fun jsObjectNew(): JsObject = js("({})")
 
-@DoNotReferenceDirectly("JsObject.getJsBuffer(key)")
-internal actual fun jsObjectGetJsBuffer(obj: JsObject, key: String): JsBuffer = js("obj[key]")
+@DoNotReferenceDirectly("JsObject.getJsBufferOrNull(key)")
+internal actual fun jsObjectGetJsBufferOrNull(obj: JsObject, key: String): JsBuffer? = js("obj[key]")
 @DoNotReferenceDirectly("JsObject.getJsErrorOrNull(key)")
 internal actual fun jsObjectGetJsErrorOrNull(obj: JsObject, key: String): JsError? = js("obj[key]")
 @DoNotReferenceDirectly("JsObject.getInt(key)")
