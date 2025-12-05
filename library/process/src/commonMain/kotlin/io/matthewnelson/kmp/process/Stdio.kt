@@ -18,6 +18,7 @@
 package io.matthewnelson.kmp.process
 
 import io.matthewnelson.kmp.file.IOException
+import io.matthewnelson.kmp.file.async.AsyncFs
 import io.matthewnelson.kmp.file.mkdirs2
 import io.matthewnelson.kmp.file.normalize
 import io.matthewnelson.kmp.file.parentFile
@@ -99,14 +100,14 @@ public sealed class Stdio private constructor() {
         }
 
         /** @suppress */
-        override fun equals(other: Any?): Boolean {
+        public override fun equals(other: Any?): Boolean {
             return  other is File
                     && other.file == file
                     && other.append == append
         }
 
         /** @suppress */
-        override fun hashCode(): Int {
+        public override fun hashCode(): Int {
             var result = 42
             result = result * 31 + file.hashCode()
             result = result * 31 + append.hashCode()
@@ -166,6 +167,11 @@ public sealed class Stdio private constructor() {
                 return Config(stdin, stdout, stderr)
             }
 
+            internal suspend fun buildAsync(fs: AsyncFs, outputOptions: Output.Options?): Config {
+                // TODO
+                return build(outputOptions)
+            }
+
             internal companion object {
 
                 @JvmSynthetic
@@ -173,6 +179,7 @@ public sealed class Stdio private constructor() {
             }
         }
 
+        // TODO: Move to extension function file for Stdio.Config
         @JvmSynthetic
         @Throws(IOException::class)
         internal fun isStderrSameFileAsStdout(): Boolean {
@@ -183,7 +190,7 @@ public sealed class Stdio private constructor() {
         }
 
         /** @suppress */
-        override fun equals(other: Any?): Boolean {
+        public override fun equals(other: Any?): Boolean {
             return  other is Config
                     && other.stdin == stdin
                     && other.stdout == stdout
@@ -191,7 +198,7 @@ public sealed class Stdio private constructor() {
         }
 
         /** @suppress */
-        override fun hashCode(): Int {
+        public override fun hashCode(): Int {
             var result = 17
             result = result * 31 + stdin.hashCode()
             result = result * 31 + stdout.hashCode()
@@ -200,7 +207,7 @@ public sealed class Stdio private constructor() {
         }
 
         /** @suppress */
-        override fun toString(): String = buildString {
+        public override fun toString(): String = buildString {
             appendLine("Stdio.Config: [")
             append("    stdin: ")
             appendLine(stdin)
@@ -213,7 +220,7 @@ public sealed class Stdio private constructor() {
     }
 
     /** @suppress */
-    final override fun toString(): String = buildString {
+    public final override fun toString(): String = buildString {
         append("Stdio.")
         when (this@Stdio) {
             is File -> {

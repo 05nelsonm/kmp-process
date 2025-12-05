@@ -79,7 +79,7 @@ class ForkUnitTest {
         val p = Process.Builder(command = "sh")
             .usePosixSpawn(use = false)
             .args("-c", "echo \"$expected\"; sleep 1; exit 42")
-            .spawn()
+            .createProcess()
 
         val output = mutableListOf<String>()
         val exitCode = try {
@@ -128,7 +128,7 @@ class ForkUnitTest {
             p = Process.Builder(command = "ls")
                 .usePosixSpawn(false)
                 .args(FD_DIR)
-                .spawn()
+                .createProcess()
 
             var eosStdout = false
             var eosStderr = false
@@ -191,7 +191,7 @@ class ForkUnitTest {
             .usePosixSpawn(use = false)
             .args("-c", "echo \"$expected\"; sleep 1; exit 42")
             .changeDir(sh.parentFile)
-            .spawn()
+            .createProcess()
 
         val output = mutableListOf<String>()
         val exitCode = try {
@@ -215,7 +215,7 @@ class ForkUnitTest {
             .usePosixSpawn(use = false)
             .args("-c", "echo \"$(pwd)\"; sleep 1; exit 42")
             .changeDir(CHDIR)
-            .spawn()
+            .createProcess()
 
         val output = mutableListOf<String>()
         val exitCode = try {
@@ -240,7 +240,7 @@ class ForkUnitTest {
                 .usePosixSpawn(use = false)
                 .args("-c", "echo \"$(pwd)\"; sleep 1; exit 42")
                 .changeDir(CHDIR.resolve("does_not_exist"))
-                .spawn()
+                .createProcess()
                 .destroy() // for posterity
         }
     }
@@ -258,21 +258,21 @@ class ForkUnitTest {
         val b = Process.Builder(command = "does_not_exist_123")
 
         try {
-            b.spawn().destroy()
+            b.createProcess().destroy()
             fail("spawn should have failed due to program not existing...")
         } catch (e: IOException) {
             // Check that the error message format is that of the posixSpawn implementation's.
             assertEquals(true, e.message?.startsWith("posix_spawnp failed"))
-            assertTrue(b.platform().usePosixSpawn)
+            assertTrue(b._platform.usePosixSpawn)
         }
 
         try {
-            b.usePosixSpawn(use = false).spawn().destroy()
+            b.usePosixSpawn(use = false).createProcess().destroy()
             fail("spawn should have failed due to program not existing...")
         } catch (e: FileNotFoundException) {
             // Check that the error message format is that of the forkExec implementation's.
             assertEquals(true, e.message?.startsWith("Child process exec failure."))
-            assertFalse(b.platform().usePosixSpawn)
+            assertFalse(b._platform.usePosixSpawn)
         }
     }
 }

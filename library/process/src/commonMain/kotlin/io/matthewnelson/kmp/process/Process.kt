@@ -13,22 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("RedundantVisibilityModifier")
+@file:Suppress("LocalVariableName", "PropertyName", "RedundantCompanionReference", "RedundantVisibilityModifier")
 
 package io.matthewnelson.kmp.process
 
 import io.matthewnelson.immutable.collections.toImmutableList
 import io.matthewnelson.immutable.collections.toImmutableMap
 import io.matthewnelson.kmp.file.*
+import io.matthewnelson.kmp.file.async.AsyncFs
 import io.matthewnelson.kmp.process.ProcessException.Companion.CTX_DESTROY
 import io.matthewnelson.kmp.process.internal.PID
 import io.matthewnelson.kmp.process.internal.PlatformBuilder
 import io.matthewnelson.kmp.process.internal.appendProcessInfo
 import io.matthewnelson.kmp.process.internal.commonWaitFor
 import kotlinx.coroutines.delay
+import kotlin.DeprecationLevel
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
+import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.jvm.JvmField
 import kotlin.jvm.JvmName
 import kotlin.jvm.JvmStatic
@@ -122,7 +126,7 @@ public abstract class Process internal constructor(
          *
          * @throws [UnsupportedOperationException] when:
          *   - Java9+ and module 'java.management' is not present
-         *   - Kotlin/Js or Kotlin/WasmJs Browser
+         *   - Js/WasmJs Browser
          * */
         @JvmStatic
         public fun pid(): Int = PID.get()
@@ -148,10 +152,10 @@ public abstract class Process internal constructor(
      * choose to ignore it (e.g. log only) by not throwing when the
      * [ProcessException.context] is equal to [CTX_DESTROY].
      *
-     * @see [Signal]
-     * @see [Builder.useSpawn]
-     * @see [OutputFeed.Waiter]
      * @return this [Process] instance
+     *
+     * @see [Signal]
+     * @see [OutputFeed.Waiter]
      * */
     public fun destroy(): Process {
         try {
@@ -208,9 +212,6 @@ public abstract class Process internal constructor(
     /**
      * Delays the current coroutine until [Process] completion.
      *
-     * **NOTE:** For Jvm & Android the `kotlinx.coroutines.core`
-     * dependency is needed.
-     *
      * **NOTE:** Care must be had when using Async APIs such that,
      * upon cancellation, [Process.destroy] is still called.
      *
@@ -230,9 +231,6 @@ public abstract class Process internal constructor(
      * Delays the current coroutine for the specified [duration],
      * or until [Process.exitCode] is available (i.e. the
      * [Process] completed).
-     *
-     * **NOTE:** For Jvm & Android the `kotlinx.coroutines.core`
-     * dependency is needed.
      *
      * **NOTE:** Care must be had when using Async APIs such that,
      * upon cancellation, [Process.destroy] is still called.
@@ -263,7 +261,7 @@ public abstract class Process internal constructor(
      *
      * e.g. (Executable file)
      *
-     *     val p = Process.Builder(myExecutableFile)
+     *     val b = Process.Builder(myExecutableFile)
      *         .args("--some-flag")
      *         .args("someValue")
      *         .args("--another-flag", "anotherValue")
@@ -274,17 +272,27 @@ public abstract class Process internal constructor(
      *         .stdin(Stdio.Null)
      *         .stdout(Stdio.File.of("logs/myExecutable.log", append = true))
      *         .stderr(Stdio.File.of("logs/myExecutable.err"))
-     *         .spawn()
      *
-     * @param [command] The command to run. On Native `Linux`, `macOS` and
-     *   `iOS`, if [command] is a relative file path or program name (e.g.
-     *   `ping`) then `posix_spawnp` is utilized. If it is an absolute file
-     *   path (e.g. `/usr/bin/ping`), then `posix_spawn` is utilized.
+     *     // Asynchronous API (All platforms)
+     *     myScope.launch {
+     *         b.createProcessAsync().use { p ->
+     *             // ...
+     *         }
+     *     }
+     *
+     *     // Synchronous API (Jvm/Native)
+     *     b.createProcess().use { p ->
+     *         // ...
+     *     }
      * */
     public class Builder(
+
+        /**
+         * TODO
+         * */
         @JvmField
         public val command: String
-    ) {
+    ): Blocking.Builder() {
 
         /**
          * Alternate constructor for an executable [File]. Will take the
@@ -292,44 +300,37 @@ public abstract class Process internal constructor(
          *
          * @throws [IOException] If [absoluteFile2] has to reference the filesystem to construct
          *   an absolute path and fails due to a filesystem security exception.
-         * @throws [UnsupportedOperationException] on Kotlin/Js or Kotlin/WasmJs Browser
+         * @throws [UnsupportedOperationException] on Js/WasmJs Browser
          * */
         public constructor(executable: File): this(executable.absoluteFile2().normalize().path)
 
         private val _args = mutableListOf<String>()
         private var _chdir: File? = null
         private var _signal: Signal = Signal.SIGTERM
-        private val _platform = PlatformBuilder.get()
+        @get:JvmSynthetic
+        internal val _platform = PlatformBuilder.get()
         private var _handler: ProcessException.Handler? = null
         private val _stdio = Stdio.Config.Builder.get()
 
         /**
          * Add a single argument
          * */
-        public fun args(
-            arg: String,
-        ): Builder = apply { _args.add(arg) }
+        public fun args(arg: String): Builder = apply { _args.add(arg) }
 
         /**
          * Add multiple arguments
          * */
-        public fun args(
-            vararg args: String,
-        ): Builder = apply { args.forEach { this._args.add(it) } }
+        public fun args(vararg args: String): Builder = apply { args.forEach { this._args.add(it) } }
 
         /**
          * Add multiple arguments
          * */
-        public fun args(
-            args: List<String>,
-        ): Builder = apply { args.forEach { this._args.add(it) } }
+        public fun args(args: List<String>): Builder = apply { args.forEach { this._args.add(it) } }
 
         /**
          * Set the [Signal] to use when [Process.destroy] is called.
          * */
-        public fun destroySignal(
-            signal: Signal,
-        ): Builder = apply { _signal = signal }
+        public fun destroySignal(signal: Signal): Builder = apply { _signal = signal }
 
         /**
          * Set/overwrite an environment variable
@@ -337,10 +338,7 @@ public abstract class Process internal constructor(
          * By default, the new [Process] will inherit all environment
          * variables from the current one.
          * */
-        public fun environment(
-            key: String,
-            value: String,
-        ): Builder = apply { _platform.env[key] = value }
+        public fun environment(key: String, value: String): Builder = apply { _platform.env[key] = value }
 
         /**
          * Modify the environment via lambda
@@ -348,9 +346,7 @@ public abstract class Process internal constructor(
          * By default, the new [Process] will inherit all environment
          * variables from the current one.
          * */
-        public fun environment(
-            block: MutableMap<String, String>.() -> Unit,
-        ): Builder = apply { block(_platform.env) }
+        public fun environment(block: MutableMap<String, String>.() -> Unit): Builder = apply { block(_platform.env) }
 
         /**
          * Set a [ProcessException.Handler] to manage internal
@@ -364,36 +360,82 @@ public abstract class Process internal constructor(
          *
          * @see [ProcessException]
          * */
-        public fun onError(
-            handler: ProcessException.Handler?,
-        ): Builder = apply { this._handler = handler }
+        public fun onError(handler: ProcessException.Handler?): Builder = apply { _handler = handler }
 
         /**
          * Modify the standard input source
          *
          * @see [Stdio]
          * */
-        public fun stdin(
-            source: Stdio,
-        ): Builder = apply { _stdio.stdin = source }
+        public fun stdin(source: Stdio): Builder = apply { _stdio.stdin = source }
 
         /**
          * Modify the standard output destination
          *
          * @see [Stdio]
          * */
-        public fun stdout(
-            destination: Stdio,
-        ): Builder = apply { _stdio.stdout = destination }
+        public fun stdout(destination: Stdio): Builder = apply { _stdio.stdout = destination }
 
         /**
          * Modify the standard error output destination
          *
          * @see [Stdio]
          * */
-        public fun stderr(
-            destination: Stdio,
-        ): Builder = apply { _stdio.stderr = destination }
+        public fun stderr(destination: Stdio): Builder = apply { _stdio.stderr = destination }
+
+        /**
+         * TODO
+         * */
+        @Throws(CancellationException::class, IOException::class)
+        public suspend fun createProcessAsync(): Process = createProcessAsync(ctx = AsyncFs.Default.ctx)
+
+        /**
+         * TODO
+         * */
+        @Throws(CancellationException::class, IOException::class)
+        public suspend fun createProcessAsync(ctx: CoroutineContext): Process {
+            val fs = AsyncFs.of(ctx)
+
+            return platformSpawn(
+                _build = { options ->
+                    buildAsync(fs, options)
+                },
+                _spawn = { command, args, chdir, env, stdio, signal, handler ->
+                    spawnAsync(fs, command, args, chdir, env, stdio, signal, handler)
+                },
+            )
+        }
+
+        /** @suppress */
+        @Throws(IOException::class)
+        protected override fun createProcessProtected(): Process {
+            // For Blocking.Builder
+            return platformSpawn(
+                _build = Stdio.Config.Builder::build,
+                _spawn = PlatformBuilder::spawn,
+            )
+        }
+
+        @Throws(IOException::class)
+        @OptIn(ExperimentalContracts::class)
+        private inline fun platformSpawn(
+            _build: Stdio.Config.Builder.(Output.Options?) -> Stdio.Config,
+            _spawn: PlatformBuilder.(String, List<String>, File?, Map<String, String>, Stdio.Config, Signal, ProcessException.Handler) -> Process,
+        ): Process {
+            contract {
+                callsInPlace(_build, InvocationKind.AT_MOST_ONCE)
+                callsInPlace(_spawn, InvocationKind.AT_MOST_ONCE)
+            }
+            if (command.isBlank()) throw IOException("command cannot be blank")
+
+            val stdio = _stdio._build(/* outputOptions = */ null)
+
+            val args = _args.toImmutableList()
+            val env = _platform.env.toImmutableMap()
+            val handler = _handler ?: ProcessException.Handler.IGNORE
+
+            return _platform._spawn(command, args, _chdir, env, stdio, _signal, handler)
+        }
 
         /**
          * Blocks the current thread until [Process] completion,
@@ -402,12 +444,14 @@ public abstract class Process internal constructor(
          *
          * Utilizes the default [Output.Options]
          *
-         * For a long-running [Process], [useSpawn] should be utilized.
+         * For a long-running [Process], [createProcessAsync] and
+         * [use] should be utilized.
          *
          * @return [Output]
          * @throws [IOException] if [Process] creation failed
-         * @throws [UnsupportedOperationException] on Kotlin/Js or Kotlin/WasmJs Browser
+         * @throws [UnsupportedOperationException] on Js/WasmJs Browser
          * */
+        // TODO: Deprecate & replace with createOutput/createOutputAsync
         @Throws(IOException::class)
         public fun output(): Output = output { /* defaults */ }
 
@@ -416,14 +460,16 @@ public abstract class Process internal constructor(
          * [Output.Options.Builder.timeoutMillis] is exceeded,
          * or [Output.Options.Builder.maxBuffer] is exceeded.
          *
-         * For a long-running [Process], [useSpawn] should be utilized.
+         * For a long-running [Process], [createProcessAsync] and
+         * [use] should be utilized.
          *
          * @param [block] lambda to configure [Output.Options]
          * @return [Output]
          * @see [Output.Options.Builder]
          * @throws [IOException] if [Process] creation failed
-         * @throws [UnsupportedOperationException] on Kotlin/Js or Kotlin/WasmJs Browser
+         * @throws [UnsupportedOperationException] on Js/WasmJs Browser
          * */
+        // TODO: Deprecate & replace with createOutput/createOutputAsync
         @Throws(IOException::class)
         public fun output(
             block: Output.Options.Builder.() -> Unit,
@@ -440,96 +486,64 @@ public abstract class Process internal constructor(
         }
 
         /**
-         * Spawns the [Process]
-         *
-         * **NOTE:** [Process.destroy] **MUST** be called before de-referencing
-         * the [Process] instance in order to close resources. This is best done
-         * via try/finally, or the [useSpawn] function which handles it for you.
-         *
-         * @throws [IOException] if [Process] creation failed
-         * @throws [UnsupportedOperationException] on Kotlin/Js or Kotlin/WasmJs Browser
+         * DEPRECATED
+         * See: https://github.com/05nelsonm/kmp-process/issues/198
+         * @suppress
          * */
         @Throws(IOException::class)
-        public fun spawn(): Process {
-            if (command.isBlank()) throw IOException("command cannot be blank")
-
-            val stdio = _stdio.build(outputOptions = null)
-
-            val args = _args.toImmutableList()
-            val env = _platform.env.toImmutableMap()
-            val handler = _handler ?: ProcessException.Handler.IGNORE
-
-            return _platform.spawn(command, args, _chdir, env, stdio, _signal, handler)
-        }
+        @Deprecated(
+            message = "Replaced with .createProcess() (Jvm/Native) and .createProcessAsync() (All platforms)",
+            level = DeprecationLevel.WARNING,
+        )
+        public fun spawn(): Process = createProcessProtected()
 
         /**
-         * Spawns the [Process] and calls [Process.destroy] upon [block] closure.
-         *
-         * @throws [IOException] if [Process] creation failed
-         * @throws [UnsupportedOperationException] on Kotlin/Js or Kotlin/WasmJs Browser
-         * */
-        @Throws(IOException::class)
-        @OptIn(ExperimentalContracts::class)
-        public inline fun <T: Any?> useSpawn(block: (process: Process) -> T): T {
-            contract {
-                callsInPlace(block, InvocationKind.AT_MOST_ONCE)
-            }
-
-            val p = spawn()
-
-            val result = try {
-                block(p)
-            } catch (t: Throwable) {
-                p.destroy()
-                throw t
-            }
-
-            p.destroy()
-            return result
-        }
-
-        /**
-         * Spawns the [Process] and calls [Process.destroy] upon [block] closure.
-         *
-         * @throws [IOException] if [Process] creation failed
-         * @throws [UnsupportedOperationException] on Kotlin/Js or Kotlin/WasmJs Browser
+         * DEPRECATED
+         * See: https://github.com/05nelsonm/kmp-process/issues/198
          * @suppress
          * */
         @Throws(IOException::class)
         @OptIn(ExperimentalContracts::class)
         @Deprecated(
-            message = "Replaced with better nomenclature.",
+            message = "Replaced with Closeable.use. Use Builder.{createProcess/createProcessAsync}.use { } instead.",
+            level = DeprecationLevel.WARNING,
+        )
+        public inline fun <T: Any?> useSpawn(block: (process: Process) -> T): T {
+            contract { callsInPlace(block, InvocationKind.AT_MOST_ONCE) }
+            @Suppress("DEPRECATION")
+            return spawn().use(block)
+        }
+
+        /**
+         * DEPRECATED
+         * See: https://github.com/05nelsonm/kmp-process/issues/198
+         * @suppress
+         * */
+        @Throws(IOException::class)
+        @OptIn(ExperimentalContracts::class)
+        @Deprecated(
+            message = "Replaced with Closeable.use",
             replaceWith = ReplaceWith("useSpawn(block)"),
+            level = DeprecationLevel.WARNING,
         )
         public inline fun <T: Any?> spawn(block: (process: Process) -> T): T {
-            contract {
-                callsInPlace(block, InvocationKind.AT_MOST_ONCE)
-            }
-
+            contract { callsInPlace(block, InvocationKind.AT_MOST_ONCE) }
+            @Suppress("DEPRECATION")
             return useSpawn(block)
         }
 
         /**
-         * Changes the working directory of the spawned process.
-         *
-         * [directory] must exist, otherwise the process will fail
-         * to be spawned.
-         *
-         * **WARNING:** `iOS` does not support changing directories!
-         *   Specifying this option will result in a failure to
-         *   spawn a process.
+         * DEPRECATED
          * @suppress
          * */
         @Deprecated(
-            message = "Not available for apple mobile targets resulting in spawn failure. Use changeDir.",
-            replaceWith = ReplaceWith("this.changeDir(directory)", "io.matthewnelson.kmp.process.changeDir")
+            message = "Not available for iOS/tvOS/watchOS targets. Use Builder.changeDir",
+            replaceWith = ReplaceWith("this.changeDir(directory)", "io.matthewnelson.kmp.process.changeDir"),
+            level = DeprecationLevel.WARNING, // TODO: Update to ERROR
         )
         public fun chdir(
             directory: File?,
         ): Builder = apply { _chdir = directory }
-
-        @JvmSynthetic
-        internal fun platform(): PlatformBuilder = _platform
     }
 
     /** @suppress */

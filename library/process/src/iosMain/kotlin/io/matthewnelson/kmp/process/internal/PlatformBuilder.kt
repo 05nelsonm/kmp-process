@@ -19,6 +19,7 @@ package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.file.IOException
+import io.matthewnelson.kmp.file.async.AsyncFs
 import io.matthewnelson.kmp.file.wrapIOException
 import io.matthewnelson.kmp.process.Output
 import io.matthewnelson.kmp.process.Process
@@ -26,6 +27,8 @@ import io.matthewnelson.kmp.process.ProcessException
 import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.Stdio
 import io.matthewnelson.kmp.process.internal.spawn.posixSpawn
+import kotlinx.coroutines.withContext
+import kotlin.coroutines.cancellation.CancellationException
 
 internal actual class PlatformBuilder private actual constructor() {
 
@@ -41,6 +44,28 @@ internal actual class PlatformBuilder private actual constructor() {
         options: Output.Options,
         destroy: Signal,
     ): Output = blockingOutput(command, args, chdir, env, stdio, options, destroy)
+
+    @Throws(CancellationException::class, IOException::class)
+    internal actual suspend fun spawnAsync(
+        fs: AsyncFs,
+        command: String,
+        args: List<String>,
+        chdir: File?,
+        env: Map<String, String>,
+        stdio: Stdio.Config,
+        destroy: Signal,
+        handler: ProcessException.Handler,
+    ): Process = withContext(fs.ctx) {
+        spawn(
+            command,
+            args,
+            chdir,
+            env,
+            stdio,
+            destroy,
+            handler,
+        )
+    }
 
     @Throws(IOException::class)
     internal actual fun spawn(

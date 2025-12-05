@@ -16,6 +16,7 @@
 package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.IOException
+import io.matthewnelson.kmp.file.use
 import io.matthewnelson.kmp.process.IsAppleSimulator
 import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.Signal
@@ -37,7 +38,7 @@ class ProcessBlockingUnitTest {
             Process.Builder(command = if (IsAppleSimulator) "/bin/sleep" else "sleep")
                 .args("0.5")
                 .destroySignal(Signal.SIGKILL)
-                .useSpawn { p ->
+                .createProcess().use { p ->
                     assertNull(p.waitFor(200.milliseconds), "200ms")
                     assertTrue(p.isAlive)
                     assertEquals(0, p.waitFor(4.seconds), "exitCode")
@@ -55,7 +56,7 @@ class ProcessBlockingUnitTest {
             Process.Builder(command = if (IsAppleSimulator) "/bin/sleep" else "sleep")
                 .args("0.25")
                 .destroySignal(Signal.SIGKILL)
-                .useSpawn { p -> p.waitFor() }
+                .createProcess().use { p -> p.waitFor() }
         } catch (e: IOException) {
             // Host (Window) did not have sleep available
             if (IsWindows) {

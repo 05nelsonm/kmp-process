@@ -22,10 +22,13 @@ import io.matthewnelson.kmp.file.AccessDeniedException
 import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.file.FileNotFoundException
 import io.matthewnelson.kmp.file.IOException
+import io.matthewnelson.kmp.file.async.AsyncFs
 import io.matthewnelson.kmp.file.toFile
 import io.matthewnelson.kmp.file.wrapIOException
 import io.matthewnelson.kmp.process.*
+import kotlinx.coroutines.withContext
 import java.lang.reflect.Method
+import kotlin.coroutines.cancellation.CancellationException
 
 // jvmMain
 internal actual class PlatformBuilder private actual constructor() {
@@ -61,6 +64,28 @@ internal actual class PlatformBuilder private actual constructor() {
         options: Output.Options,
         destroy: Signal,
     ): Output = blockingOutput(command, args, chdir, env, stdio, options, destroy)
+
+    @Throws(CancellationException::class, IOException::class)
+    internal actual suspend fun spawnAsync(
+        fs: AsyncFs,
+        command: String,
+        args: List<String>,
+        chdir: File?,
+        env: Map<String, String>,
+        stdio: Stdio.Config,
+        destroy: Signal,
+        handler: ProcessException.Handler,
+    ): Process = withContext(fs.ctx) {
+        spawn(
+            command,
+            args,
+            chdir,
+            env,
+            stdio,
+            destroy,
+            handler,
+        )
+    }
 
     @Throws(IOException::class)
     internal actual fun spawn(

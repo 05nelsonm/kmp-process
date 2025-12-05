@@ -27,6 +27,7 @@ internal expect val IsDesktop: Boolean
 
 internal inline val IsWindows: Boolean get() = STDIO_NULL.path == "NUL"
 
+// TODO: Move to extension function file for Stdio.Config
 @Throws(IOException::class)
 internal inline fun File.isCanonicallyEqualTo(other: File): Boolean {
     if (this == other) return true

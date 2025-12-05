@@ -53,7 +53,7 @@ abstract fun interface io.matthewnelson.kmp.process/OutputFeed { // io.matthewne
     }
 }
 
-abstract class io.matthewnelson.kmp.process/Process : io.matthewnelson.kmp.process/OutputFeed.Handler { // io.matthewnelson.kmp.process/Process|null[0]
+abstract class io.matthewnelson.kmp.process/Process : io.matthewnelson.kmp.file/Closeable, io.matthewnelson.kmp.process/OutputFeed.Handler { // io.matthewnelson.kmp.process/Process|null[0]
     final val args // io.matthewnelson.kmp.process/Process.args|{}args[0]
         final fun <get-args>(): kotlin.collections/List<kotlin/String> // io.matthewnelson.kmp.process/Process.args.<get-args>|<get-args>(){}[0]
     final val command // io.matthewnelson.kmp.process/Process.command|{}command[0]
@@ -76,6 +76,7 @@ abstract class io.matthewnelson.kmp.process/Process : io.matthewnelson.kmp.proce
     abstract fun destroyProtected(kotlin/Boolean) // io.matthewnelson.kmp.process/Process.destroyProtected|destroyProtected(kotlin.Boolean){}[0]
     abstract fun exitCodeOrNull(): kotlin/Int? // io.matthewnelson.kmp.process/Process.exitCodeOrNull|exitCodeOrNull(){}[0]
     abstract fun pid(): kotlin/Int // io.matthewnelson.kmp.process/Process.pid|pid(){}[0]
+    final fun close() // io.matthewnelson.kmp.process/Process.close|close(){}[0]
     final fun destroy(): io.matthewnelson.kmp.process/Process // io.matthewnelson.kmp.process/Process.destroy|destroy(){}[0]
     final fun exitCode(): kotlin/Int // io.matthewnelson.kmp.process/Process.exitCode|exitCode(){}[0]
     final fun onError(kotlin/Throwable, kotlin/String) // io.matthewnelson.kmp.process/Process.onError|onError(kotlin.Throwable;kotlin.String){}[0]
@@ -83,7 +84,7 @@ abstract class io.matthewnelson.kmp.process/Process : io.matthewnelson.kmp.proce
     final suspend fun waitForAsync(): kotlin/Int // io.matthewnelson.kmp.process/Process.waitForAsync|waitForAsync(){}[0]
     final suspend fun waitForAsync(kotlin.time/Duration): kotlin/Int? // io.matthewnelson.kmp.process/Process.waitForAsync|waitForAsync(kotlin.time.Duration){}[0]
 
-    final class Builder { // io.matthewnelson.kmp.process/Process.Builder|null[0]
+    final class Builder : io.matthewnelson.kmp.process/Blocking.Builder { // io.matthewnelson.kmp.process/Process.Builder|null[0]
         constructor <init>(io.matthewnelson.kmp.file/File) // io.matthewnelson.kmp.process/Process.Builder.<init>|<init>(io.matthewnelson.kmp.file.File){}[0]
         constructor <init>(kotlin/String) // io.matthewnelson.kmp.process/Process.Builder.<init>|<init>(kotlin.String){}[0]
 
@@ -106,6 +107,8 @@ abstract class io.matthewnelson.kmp.process/Process : io.matthewnelson.kmp.proce
         final fun stdout(io.matthewnelson.kmp.process/Stdio): io.matthewnelson.kmp.process/Process.Builder // io.matthewnelson.kmp.process/Process.Builder.stdout|stdout(io.matthewnelson.kmp.process.Stdio){}[0]
         final inline fun <#A2: kotlin/Any?> spawn(kotlin/Function1<io.matthewnelson.kmp.process/Process, #A2>): #A2 // io.matthewnelson.kmp.process/Process.Builder.spawn|spawn(kotlin.Function1<io.matthewnelson.kmp.process.Process,0:0>){0§<kotlin.Any?>}[0]
         final inline fun <#A2: kotlin/Any?> useSpawn(kotlin/Function1<io.matthewnelson.kmp.process/Process, #A2>): #A2 // io.matthewnelson.kmp.process/Process.Builder.useSpawn|useSpawn(kotlin.Function1<io.matthewnelson.kmp.process.Process,0:0>){0§<kotlin.Any?>}[0]
+        final suspend fun createProcessAsync(): io.matthewnelson.kmp.process/Process // io.matthewnelson.kmp.process/Process.Builder.createProcessAsync|createProcessAsync(){}[0]
+        final suspend fun createProcessAsync(kotlin.coroutines/CoroutineContext): io.matthewnelson.kmp.process/Process // io.matthewnelson.kmp.process/Process.Builder.createProcessAsync|createProcessAsync(kotlin.coroutines.CoroutineContext){}[0]
     }
 
     final object Companion // io.matthewnelson.kmp.process/Process.Companion|null[0]
@@ -221,6 +224,13 @@ final value class io.matthewnelson.kmp.process/ReadBuffer { // io.matthewnelson.
 }
 
 sealed class io.matthewnelson.kmp.process/Blocking { // io.matthewnelson.kmp.process/Blocking|null[0]
+    sealed class Builder { // io.matthewnelson.kmp.process/Blocking.Builder|null[0]
+        abstract fun createProcessProtected(): io.matthewnelson.kmp.process/Process // io.matthewnelson.kmp.process/Blocking.Builder.createProcessProtected|createProcessProtected(){}[0]
+
+        // Targets: [native]
+        final fun createProcess(): io.matthewnelson.kmp.process/Process // io.matthewnelson.kmp.process/Blocking.Builder.createProcess|createProcess(){}[0]
+    }
+
     sealed class Waiter { // io.matthewnelson.kmp.process/Blocking.Waiter|null[0]
         final val process // io.matthewnelson.kmp.process/Blocking.Waiter.process|{}process[0]
             final fun <get-process>(): io.matthewnelson.kmp.process/Process // io.matthewnelson.kmp.process/Blocking.Waiter.process.<get-process>|<get-process>(){}[0]

@@ -19,6 +19,7 @@
 package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.*
+import io.matthewnelson.kmp.file.async.AsyncFs
 import io.matthewnelson.kmp.process.*
 import io.matthewnelson.kmp.process.internal.RealLineOutputFeed.Companion.LF
 import io.matthewnelson.kmp.process.internal.js.JsArray
@@ -41,6 +42,7 @@ import io.matthewnelson.kmp.process.internal.node.node_child_process
 import io.matthewnelson.kmp.process.internal.node.node_fs
 import io.matthewnelson.kmp.process.internal.node.node_process
 import io.matthewnelson.kmp.process.internal.node.node_stream
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.let
 
 // jsWasmJsMain
@@ -167,6 +169,29 @@ internal actual class PlatformBuilder private actual constructor() {
             env,
             stdio,
             destroy,
+        )
+    }
+
+    @Throws(CancellationException::class, IOException::class)
+    internal actual suspend fun spawnAsync(
+        fs: AsyncFs,
+        command: String,
+        args: List<String>,
+        chdir: File?,
+        env: Map<String, String>,
+        stdio: Stdio.Config,
+        destroy: Signal,
+        handler: ProcessException.Handler,
+    ): Process {
+        // TODO
+        return spawn(
+            command,
+            args,
+            chdir,
+            env,
+            stdio,
+            destroy,
+            handler,
         )
     }
 

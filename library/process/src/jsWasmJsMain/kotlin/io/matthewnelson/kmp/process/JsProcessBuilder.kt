@@ -31,7 +31,7 @@ package io.matthewnelson.kmp.process
 public fun Process.Builder.detached(
     enable: Boolean,
 ): Process.Builder = apply {
-    platform().detached = enable
+    _platform.detached = enable
 }
 
 /**
@@ -45,7 +45,7 @@ public fun Process.Builder.detached(
 public fun Process.Builder.shell(
     enable: Boolean,
 ): Process.Builder = apply {
-    platform().shell = enable
+    _platform.shell = enable
 }
 
 /**
@@ -59,7 +59,7 @@ public fun Process.Builder.shell(
 public fun Process.Builder.shell(
     shell: String,
 ): Process.Builder = apply {
-    platform().shell = shell
+    _platform.shell = shell
 }
 
 /**
@@ -73,7 +73,7 @@ public fun Process.Builder.shell(
 public fun Process.Builder.windowsVerbatimArguments(
     enable: Boolean,
 ): Process.Builder = apply {
-    platform().windowsVerbatimArguments = enable
+    _platform.windowsVerbatimArguments = enable
 }
 
 /**
@@ -87,5 +87,5 @@ public fun Process.Builder.windowsVerbatimArguments(
 public fun Process.Builder.windowsHide(
     enable: Boolean,
 ): Process.Builder = apply {
-    platform().windowsHide = enable
+    _platform.windowsHide = enable
 }

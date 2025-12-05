@@ -17,6 +17,8 @@
 
 package io.matthewnelson.kmp.process
 
+import io.matthewnelson.kmp.file.IOException
+
 /**
  * Extended by [OutputFeed.Handler] (which is extended
  * by [Process]) in order to provide blocking APIs for
@@ -29,10 +31,23 @@ public actual sealed class Blocking protected actual constructor() {
      * provide blocking APIs for Jvm & Native.
      * */
     public actual sealed class Waiter actual constructor(
+        /** @suppress */
         protected actual val process: Process,
     ) {
 
+        /** @suppress */
         protected actual abstract fun isStarted(): Boolean
+        /** @suppress */
         protected actual abstract fun isStopped(): Boolean
+    }
+
+    /**
+     * TODO
+     * */
+    public actual sealed class Builder protected actual constructor() {
+
+        /** @suppress */
+        @Throws(IOException::class)
+        protected actual abstract fun createProcessProtected(): Process
     }
 }

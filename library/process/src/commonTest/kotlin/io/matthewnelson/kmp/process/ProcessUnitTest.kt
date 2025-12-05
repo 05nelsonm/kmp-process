@@ -32,7 +32,7 @@ class ProcessUnitTest {
             Process.Builder(command = if (IsAppleSimulator) "/bin/sleep" else "sleep")
                 .args("3")
                 .destroySignal(Signal.SIGTERM)
-                .useSpawn { process ->
+                .createProcessAsync().use { process ->
                     process.waitForAsync(250.milliseconds)
                     process
                     // destroy called on lambda closure
@@ -55,7 +55,7 @@ class ProcessUnitTest {
             Process.Builder(command = if (IsAppleSimulator) "/bin/sleep" else "sleep")
                 .args("3")
                 .destroySignal(Signal.SIGKILL)
-                .useSpawn { process ->
+                .createProcessAsync().use { process ->
                     process.waitForAsync(250.milliseconds)
                     process
                     // destroy called on lambda closure
@@ -73,9 +73,9 @@ class ProcessUnitTest {
     }
 
     @Test
-    fun givenStdinFile_whenIsDirectory_thenSpawnThrowsIOException() {
+    fun givenStdinFile_whenIsDirectory_thenSpawnThrowsIOException() = runTest {
         @OptIn(ExperimentalStdlibApi::class)
-        val d = Random.Default.nextBytes(8).toHexString().let { name ->
+        val d = Random.nextBytes(8).toHexString().let { name ->
             SysTempDir.resolve(name)
         }.mkdirs2(mode = null, mustCreate = true)
 
@@ -83,7 +83,7 @@ class ProcessUnitTest {
             Process.Builder(command = if (IsAppleSimulator) "/bin/sleep" else "sleep")
                 .args("3")
                 .stdin(Stdio.File.of(d))
-                .useSpawn { fail("spawn should have failed...") }
+                .createProcessAsync().use { fail("spawn should have failed...") }
         } catch (_: IOException) {
             // pass
         } finally {
@@ -97,7 +97,7 @@ class ProcessUnitTest {
             Process.Builder(command = if (IsAppleSimulator) "/bin/sleep" else "sleep")
                 .args("3")
                 .destroySignal(Signal.SIGKILL)
-                .useSpawn { process ->
+                .createProcessAsync().use { process ->
 
                     process.stdoutFeed {}
                     process.stderrFeed {}
@@ -156,7 +156,7 @@ class ProcessUnitTest {
                 .destroySignal(Signal.SIGKILL)
                 .stdout(Stdio.Inherit)
                 .stderr(Stdio.Inherit)
-                .useSpawn { p ->
+                .createProcessAsync().use { p ->
 
                     p.stdoutFeed(
                         OutputFeed { },

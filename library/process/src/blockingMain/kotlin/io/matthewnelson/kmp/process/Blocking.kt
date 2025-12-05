@@ -17,6 +17,7 @@
 
 package io.matthewnelson.kmp.process
 
+import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.file.InterruptedException
 import io.matthewnelson.kmp.process.internal.commonWaitFor
 import io.matthewnelson.kmp.process.internal.threadSleep
@@ -87,6 +88,7 @@ public actual sealed class Blocking protected actual constructor() {
      * provide blocking APIs for Jvm & Native.
      * */
     public actual sealed class Waiter actual constructor(
+        /** @suppress */
         @JvmField
         protected actual val process: Process,
     ) {
@@ -113,7 +115,25 @@ public actual sealed class Blocking protected actual constructor() {
             return process
         }
 
+        /** @suppress */
         protected actual abstract fun isStarted(): Boolean
+        /** @suppress */
         protected actual abstract fun isStopped(): Boolean
+    }
+
+    /**
+     * TODO
+     * */
+    public actual sealed class Builder protected actual constructor() {
+
+        /**
+         * TODO
+         * */
+        @Throws(IOException::class)
+        public fun createProcess(): Process = createProcessProtected()
+
+        /** @suppress */
+        @Throws(IOException::class)
+        protected actual abstract fun createProcessProtected(): Process
     }
 }

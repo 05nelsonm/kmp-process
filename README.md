@@ -48,8 +48,6 @@ the device.
 
 ## Example
 
-**NOTE:** Async API usage on `Jvm` & `Android` requires the `kotlinx.coroutines.core` dependency.
-
 ```kotlin
 val builder = Process.Builder(command = "cat")
     // Optional arguments
@@ -83,8 +81,8 @@ val builder = Process.Builder(command = "cat")
     // variable
     .environment("HOME", myApplicationDir.path)
 
-// Spawned process (Blocking APIs for Jvm/Native)
-builder.spawn().let { p ->
+// Spawn the process (Blocking APIs for Jvm/Native)
+builder.createProcess().let { p ->
 
     try {
         val exitCode: Int? = p.waitFor(250.milliseconds)
@@ -98,13 +96,9 @@ builder.spawn().let { p ->
     }
 }
 
-// Spawned process (Async APIs for all platforms)
+// Spawn the process (Async APIs for all platforms)
 myScope.launch {
-
-    // Use the useSpawn {} (with lambda) which will
-    // automatically call destroy upon lambda closure,
-    // instead of needing the try/finally block.
-    builder.useSpawn { p ->
+    builder.createProcessAsync().use { p ->
 
         val exitCode: Int? = p.waitForAsync(500.milliseconds)
 
@@ -116,7 +110,7 @@ myScope.launch {
         // wait until process completes. If myScope
         // is cancelled, will automatically pop out.
         p.waitForAsync()
-    } // << Process.destroy automatically called on closure
+    } // << Process.destroy automatically called on Closeable.use lambda closure
 }
 
 // Direct output (Blocking API for all platforms)
@@ -131,7 +125,7 @@ builder.output {
 }
 
 // Piping output (feeds are only functional with Stdio.Pipe)
-builder.stdout(Stdio.Pipe).stderr(Stdio.Pipe).useSpawn { p ->
+builder.stdout(Stdio.Pipe).stderr(Stdio.Pipe).createProcess().use { p ->
 
     val exitCode = p.stdoutFeed { line ->
         // single feed lambda
@@ -152,12 +146,12 @@ builder.stdout(Stdio.Pipe).stderr(Stdio.Pipe).useSpawn { p ->
     ).waitFor(5.seconds)
 
     println("EXIT_CODE[$exitCode]")
-} // << Process.destroy automatically called on closure
+} // << Process.destroy automatically called on Closeable.use lambda closure
 
 // Wait for asynchronous stdout/stderr output to stop
 // after Process.destroy is called
 myScope.launch {
-    val exitCode = builder.useSpawn { p ->
+    val exitCode = builder.createProcessAsync().use { p ->
         p.stdoutFeed { line ->
             // do something
         }.stderrFeed { line ->
@@ -165,7 +159,7 @@ myScope.launch {
         }.waitForAsync(50.milliseconds)
 
         p // return Process to spawn lambda
-    } // << Process.destroy automatically called on closure
+    } // << Process.destroy automatically called on Closeable.use lambda closure
 
         // blocking APIs also available for Jvm/Native
         .stdoutWaiter()
@@ -207,7 +201,7 @@ builder.onError { e ->
         // ChildProcess error listener.
         else -> e.printStackTrace()
     }
-}.useSpawn { p ->
+}.createProcess().use { p ->
     p.stdoutFeed { line ->
         myOtherClassThatHasABugAndWillThrowException.parse(line)
     }.waitFor()
