@@ -17,10 +17,12 @@
 
 package io.matthewnelson.kmp.process.internal
 
+import io.matthewnelson.kmp.file.AccessDeniedException
 import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.file.FileNotFoundException
 import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.file.errnoToIOException
+import io.matthewnelson.kmp.file.toFile
 import io.matthewnelson.kmp.process.Output
 import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.ProcessException
@@ -32,7 +34,9 @@ import io.matthewnelson.kmp.process.internal.stdio.StdioHandle.Companion.openHan
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.UnsafeNumber
 import org.kotlincrypto.bitops.endian.Endian.Big.beIntAt
+import platform.posix.EACCES
 import platform.posix.ENOENT
+import platform.posix.EPERM
 import platform.posix.fork
 
 // unixForkMain
@@ -157,10 +161,10 @@ internal actual class PlatformBuilder private actual constructor() {
                     val errno = buf.beIntAt(0)
                     var msg = "Child process $type failure."
                     errnoToIOException(errno).message?.let { msg += " $it" }
-                    if (errno == ENOENT) {
-                        FileNotFoundException(msg)
-                    } else {
-                        IOException(msg)
+                    when (errno) {
+                        ENOENT -> FileNotFoundException(msg)
+                        EACCES, EPERM -> AccessDeniedException(command.toFile(), null, msg)
+                        else -> IOException(msg)
                     }
                 }
             }

@@ -18,6 +18,8 @@ package io.matthewnelson.kmp.process.test.api
 import io.matthewnelson.kmp.tor.common.api.ResourceLoader
 import io.matthewnelson.kmp.tor.resource.exec.tor.ResourceLoaderTorExec
 
+internal actual val AndroidNativeDeviceAPILevel: Int? = null
+
 internal actual val LOADER: ResourceLoader.Tor.Exec by lazy {
     ResourceLoaderTorExec.getOrCreate(TorResourceBinder.RESOURCE_DIR) as ResourceLoader.Tor.Exec
 }

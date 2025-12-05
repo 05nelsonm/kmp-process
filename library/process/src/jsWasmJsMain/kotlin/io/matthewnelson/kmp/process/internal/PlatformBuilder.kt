@@ -26,7 +26,7 @@ import io.matthewnelson.kmp.process.internal.js.JsInt8Array
 import io.matthewnelson.kmp.process.internal.js.JsObject
 import io.matthewnelson.kmp.process.internal.js.fill
 import io.matthewnelson.kmp.process.internal.js.getString
-import io.matthewnelson.kmp.process.internal.js.getJsBuffer
+import io.matthewnelson.kmp.process.internal.js.getJsBufferOrNull
 import io.matthewnelson.kmp.process.internal.js.getInt
 import io.matthewnelson.kmp.process.internal.js.getIntOrNull
 import io.matthewnelson.kmp.process.internal.js.getJsErrorOrNull
@@ -34,6 +34,7 @@ import io.matthewnelson.kmp.process.internal.js.getStringOrNull
 import io.matthewnelson.kmp.process.internal.js.new
 import io.matthewnelson.kmp.process.internal.js.set
 import io.matthewnelson.kmp.process.internal.js.toJsArray
+import io.matthewnelson.kmp.process.internal.js.toThrowable
 import io.matthewnelson.kmp.process.internal.node.ModuleFs
 import io.matthewnelson.kmp.process.internal.node.asBuffer
 import io.matthewnelson.kmp.process.internal.node.node_child_process
@@ -122,13 +123,22 @@ internal actual class PlatformBuilder private actual constructor() {
 
         val pid = output.getInt("pid")
 
-        val stdout = output.getJsBuffer("stdout").asBuffer().let { buf ->
+        val processError: String? = output.getJsErrorOrNull("error").let { e ->
+            if (e == null) return@let null
+            // Spawn failure.
+            if (pid <= 0) throw e.toThrowable().toIOException(command.toFile(), other = null)
+            e.message
+        }
+
+        val stdout = output.getJsBufferOrNull("stdout")?.asBuffer().let { buf ->
+            if (buf == null) return@let ""
             val utf8 = buf.toUtf8Trimmed()
             buf.fill()
             utf8
         }
 
-        val stderr = output.getJsBuffer("stderr").asBuffer().let { buf ->
+        val stderr = output.getJsBufferOrNull("stderr")?.asBuffer().let { buf ->
+            if (buf == null) return@let ""
             val utf8 = buf.toUtf8Trimmed()
             buf.fill()
             utf8
@@ -143,12 +153,6 @@ internal actual class PlatformBuilder private actual constructor() {
             } catch (_: Throwable) {
                 destroy
             }.code
-        }
-
-        val processError: String? = try {
-            output.getJsErrorOrNull("error")?.message
-        } catch (_: Throwable) {
-            null
         }
 
         return Output.ProcessInfo.createOutput(

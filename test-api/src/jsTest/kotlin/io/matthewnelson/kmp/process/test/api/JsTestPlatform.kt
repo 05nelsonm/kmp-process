@@ -22,6 +22,8 @@ internal actual val IsAppleSimulator: Boolean = false
 
 internal actual val IsNodeJs: Boolean = true
 
+internal actual val AndroidNativeDeviceAPILevel: Int? = null
+
 internal actual val LOADER: ResourceLoader.Tor.Exec by lazy {
     ResourceLoaderTorExec.getOrCreate(TorResourceBinder.RESOURCE_DIR) as ResourceLoader.Tor.Exec
 }

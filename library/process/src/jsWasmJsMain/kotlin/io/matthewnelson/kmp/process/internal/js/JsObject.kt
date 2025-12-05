@@ -33,9 +33,9 @@ internal inline fun JsObject.Companion.new(): JsObject = jsObjectNew()
 @DoNotReferenceDirectly("JsObject.Companion.new()")
 internal expect fun jsObjectNew(): JsObject
 
-internal inline fun JsObject.getJsBuffer(key: String): JsBuffer = jsObjectGetJsBuffer(this, key)
-@DoNotReferenceDirectly("JsObject.getJsBuffer(key)")
-internal expect fun jsObjectGetJsBuffer(obj: JsObject, key: String): JsBuffer
+internal inline fun JsObject.getJsBufferOrNull(key: String): JsBuffer? = jsObjectGetJsBufferOrNull(this, key)
+@DoNotReferenceDirectly("JsObject.getJsBufferOrNull(key)")
+internal expect fun jsObjectGetJsBufferOrNull(obj: JsObject, key: String): JsBuffer?
 
 internal inline fun JsObject.getJsErrorOrNull(key: String): JsError? = jsObjectGetJsErrorOrNull(this, key)
 @DoNotReferenceDirectly("JsObject.getJsErrorOrNull(key)")

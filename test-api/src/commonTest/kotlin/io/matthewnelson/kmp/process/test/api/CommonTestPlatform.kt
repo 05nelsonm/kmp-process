@@ -28,6 +28,8 @@ internal expect val IsAppleSimulator: Boolean
 
 internal expect val IsNodeJs: Boolean
 
+internal expect val AndroidNativeDeviceAPILevel: Int?
+
 internal expect val LOADER: ResourceLoader.Tor.Exec
 
 internal object TorResourceBinder: ResourceLoader.RuntimeBinder {

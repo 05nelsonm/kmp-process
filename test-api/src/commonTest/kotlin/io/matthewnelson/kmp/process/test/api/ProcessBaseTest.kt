@@ -27,6 +27,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import kotlin.math.min
+import kotlin.random.Random
 import kotlin.test.*
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
@@ -167,6 +168,77 @@ abstract class ProcessBaseTest {
         println(output.stderr)
         println(output)
         assertEquals(d.canonicalPath(), output.stdout)
+    }
+
+    @Test
+    fun givenOutput_whenInvalidCommand_thenThrowsException() {
+        val dir1 = SysTempDir.resolve(Random.nextBytes(8).toHexString())
+        val dir2 = dir1.resolve("path")
+        val invalid = dir2.resolve("not_a_program").delete2(ignoreReadOnly = true)
+
+        // Absolute path
+        assertFailsWith<FileNotFoundException> {
+            Process.Builder(command = invalid.path).output().let { println(it) }
+        }
+
+        // Relative path
+        try {
+            Process.Builder(command = invalid.name).output().let { println(it) }
+            fail("Process.Builder.output should have thrown an IOException")
+        } catch (t: Throwable) {
+            when (t) {
+                is FileNotFoundException -> {} // pass
+                // Android may error out with EPERM/EACCES b/c cwd is /
+                is AccessDeniedException -> {} // pass
+                is IOException -> if (AndroidNativeDeviceAPILevel?.let { it >= 28 } == true) {
+                    // AndroidNative posix_spawnp may not fail with ENOENT, but fail
+                    // on its exec step. As a result, the spawnFailureToIOException
+                    // will not be able to deduce the proper exception type because
+                    // of the command is not an absolute path.
+                    //
+                    // pass
+                } else {
+                    fail("!(AndroidNativeDeviceAPILevel >= 28) && is IOException", t)
+                }
+                else -> throw t
+            }
+        }
+
+        try {
+            dir2.mkdirs2(mode = null, mustCreate = true)
+            invalid.writeUtf8(excl = OpenExcl.MustCreate.of("666"), "Non-Executable")
+            assertTrue(invalid.exists2())
+
+            try {
+                Process.Builder(command = invalid.path).output().let { println(it) }
+                fail("Process.Builder.output should have thrown an IOException")
+            } catch (t: Throwable) {
+                when (t) {
+                    is FileNotFoundException -> if (IsWindows) {
+                        // Windows has no concept of file permissions, so may instead
+                        // fail with ENOENT b/c the file is not an executable with a
+                        // main function.
+                        //
+                        // pass
+                    } else {
+                        fail("!IsWindows && is FileNotFoundException", t)
+                    }
+                    is AccessDeniedException -> {} // pass
+                    is IOException -> if (IsWindows) {
+                        // Windows may also fail due to it being an invalid program on Jvm (error 193)
+                        //
+                        // pass
+                    } else {
+                        fail("!IsWindows && is IOException", t)
+                    }
+                    else -> throw t
+                }
+            }
+        } finally {
+            invalid.delete2()
+            dir2.delete2()
+            dir1.delete2()
+        }
     }
 
     @Test
