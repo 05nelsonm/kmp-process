@@ -190,13 +190,23 @@ abstract class ProcessBaseTest {
                 is FileNotFoundException -> {} // pass
                 // Android may error out with EPERM/EACCES b/c cwd is /
                 is AccessDeniedException -> {} // pass
+                is IOException -> if (AndroidNativeDeviceAPILevel?.let { it >= 28 } == true) {
+                    // AndroidNative posix_spawnp may not fail with ENOENT, but fail
+                    // on its exec step. As a result, the spawnFailureToIOException
+                    // will not be able to deduce the proper exception type because
+                    // of the command is not an absolute path.
+                    //
+                    // pass
+                } else {
+                    fail("!(AndroidNativeDeviceAPILevel >= 28) && is IOException", t)
+                }
                 else -> throw t
             }
         }
 
         try {
             dir2.mkdirs2(mode = null, mustCreate = true)
-            invalid.writeUtf8(excl = OpenExcl.MustCreate.of("666"), "Non-executable")
+            invalid.writeUtf8(excl = OpenExcl.MustCreate.of("666"), "Non-Executable")
             assertTrue(invalid.exists2())
 
             try {
@@ -205,7 +215,7 @@ abstract class ProcessBaseTest {
             } catch (t: Throwable) {
                 when (t) {
                     is FileNotFoundException -> if (IsWindows) {
-                        // Windows has no concept of file permissions, so will instead
+                        // Windows has no concept of file permissions, so may instead
                         // fail with ENOENT b/c the file is not an executable with a
                         // main function.
                         //
@@ -215,7 +225,7 @@ abstract class ProcessBaseTest {
                     }
                     is AccessDeniedException -> {} // pass
                     is IOException -> if (IsWindows) {
-                        // Windows may fail due to it being an invalid program
+                        // Windows may also fail due to it being an invalid program on Jvm (error 193)
                         //
                         // pass
                     } else {

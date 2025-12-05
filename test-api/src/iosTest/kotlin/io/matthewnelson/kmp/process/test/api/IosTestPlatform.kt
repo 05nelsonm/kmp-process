@@ -20,6 +20,8 @@ import io.matthewnelson.kmp.file.toFile
 import io.matthewnelson.kmp.tor.common.api.GeoipFiles
 import io.matthewnelson.kmp.tor.common.api.ResourceLoader
 
+internal actual val AndroidNativeDeviceAPILevel: Int? = null
+
 internal actual val LOADER: ResourceLoader.Tor.Exec by lazy {
     IosTestLoader.getOrCreate() as ResourceLoader.Tor.Exec
 }
