@@ -95,7 +95,7 @@ public abstract class Process internal constructor(
 
     private val handler: ProcessException.Handler,
     init: Any,
-): OutputFeed.Handler(stdio) {
+): OutputFeed.Handler(stdio), Closeable {
 
     /**
      * The "rough" start time mark of the [Process]. This is **actually**
@@ -162,6 +162,11 @@ public abstract class Process internal constructor(
 
         return this
     }
+
+    /**
+     * TODO
+     * */
+    public final override fun close() { destroy() }
 
     /**
      * Returns the exit code for which the process
