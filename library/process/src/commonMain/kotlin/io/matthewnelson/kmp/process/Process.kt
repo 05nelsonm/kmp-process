@@ -568,7 +568,7 @@ public abstract class Process internal constructor(
         @Deprecated(
             message = "Not available for iOS/tvOS/watchOS targets. Use Builder.changeDir",
             replaceWith = ReplaceWith("this.changeDir(directory)", "io.matthewnelson.kmp.process.changeDir"),
-            level = DeprecationLevel.WARNING, // TODO: Update to ERROR
+            level = DeprecationLevel.ERROR,
         )
         public fun chdir(
             directory: File?,

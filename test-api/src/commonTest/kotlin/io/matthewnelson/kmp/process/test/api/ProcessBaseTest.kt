@@ -650,7 +650,7 @@ abstract class ProcessBaseTest {
         return b
     }
 
-    @Suppress("NOTHING_TO_INLINE", "DEPRECATION")
+    @Suppress("NOTHING_TO_INLINE", "DEPRECATION_ERROR")
     private inline fun Process.Builder.changeDirectory(dir: File?): Process.Builder {
         // TODO: Move to expect/actual and use changeDir extension
         return chdir(dir)
