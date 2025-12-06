@@ -33,6 +33,7 @@ import io.matthewnelson.kmp.process.internal.node.onError
 
 internal class NodeJsProcess internal constructor(
     private val jsProcess: JsChildProcess,
+    isAsync: Boolean,
     private val isDetached: Boolean,
     command: String,
     args: List<String>,
