@@ -305,6 +305,7 @@ public abstract class Process internal constructor(
         public constructor(executable: File): this(executable.absoluteFile2().normalize().path)
 
         private val _args = mutableListOf<String>()
+        private var _async: AsyncFs = AsyncFs.Default
         private var _chdir: File? = null
         private var _signal: Signal = Signal.SIGTERM
         @get:JvmSynthetic
@@ -320,12 +321,17 @@ public abstract class Process internal constructor(
         /**
          * Add multiple arguments
          * */
-        public fun args(vararg args: String): Builder = apply { args.forEach { this._args.add(it) } }
+        public fun args(vararg args: String): Builder = apply { args.forEach { _args.add(it) } }
 
         /**
          * Add multiple arguments
          * */
-        public fun args(args: List<String>): Builder = apply { args.forEach { this._args.add(it) } }
+        public fun args(args: List<String>): Builder = apply { args.forEach { _args.add(it) } }
+
+        /**
+         * TODO
+         * */
+        public fun async(context: CoroutineContext?): Builder = apply { _async = AsyncFs.of(context) }
 
         /**
          * Set the [Signal] to use when [Process.destroy] is called.
@@ -387,14 +393,8 @@ public abstract class Process internal constructor(
          * TODO
          * */
         @Throws(CancellationException::class, IOException::class)
-        public suspend fun createProcessAsync(): Process = createProcessAsync(ctx = AsyncFs.Default.ctx)
-
-        /**
-         * TODO
-         * */
-        @Throws(CancellationException::class, IOException::class)
-        public suspend fun createProcessAsync(ctx: CoroutineContext): Process {
-            val fs = AsyncFs.of(ctx)
+        public suspend fun createProcessAsync(): Process {
+            val fs = _async
 
             return platformSpawn(
                 _build = { options ->
@@ -602,7 +602,7 @@ public abstract class Process internal constructor(
     /** @suppress */
     protected companion object {
 
-        @JvmSynthetic
+        @get:JvmSynthetic
         internal val INIT = Any()
     }
 

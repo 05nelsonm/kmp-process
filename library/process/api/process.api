@@ -136,9 +136,9 @@ public final class io/matthewnelson/kmp/process/Process$Builder : io/matthewnels
 	public final fun args (Ljava/lang/String;)Lio/matthewnelson/kmp/process/Process$Builder;
 	public final fun args (Ljava/util/List;)Lio/matthewnelson/kmp/process/Process$Builder;
 	public final fun args ([Ljava/lang/String;)Lio/matthewnelson/kmp/process/Process$Builder;
+	public final fun async (Lkotlin/coroutines/CoroutineContext;)Lio/matthewnelson/kmp/process/Process$Builder;
 	public final fun chdir (Ljava/io/File;)Lio/matthewnelson/kmp/process/Process$Builder;
 	public final fun createProcessAsync (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public final fun createProcessAsync (Lkotlin/coroutines/CoroutineContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun destroySignal (Lio/matthewnelson/kmp/process/Signal;)Lio/matthewnelson/kmp/process/Process$Builder;
 	public final fun environment (Ljava/lang/String;Ljava/lang/String;)Lio/matthewnelson/kmp/process/Process$Builder;
 	public final fun environment (Lkotlin/jvm/functions/Function1;)Lio/matthewnelson/kmp/process/Process$Builder;

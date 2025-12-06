@@ -94,6 +94,7 @@ abstract class io.matthewnelson.kmp.process/Process : io.matthewnelson.kmp.file/
         final fun args(kotlin.collections/List<kotlin/String>): io.matthewnelson.kmp.process/Process.Builder // io.matthewnelson.kmp.process/Process.Builder.args|args(kotlin.collections.List<kotlin.String>){}[0]
         final fun args(kotlin/Array<out kotlin/String>...): io.matthewnelson.kmp.process/Process.Builder // io.matthewnelson.kmp.process/Process.Builder.args|args(kotlin.Array<out|kotlin.String>...){}[0]
         final fun args(kotlin/String): io.matthewnelson.kmp.process/Process.Builder // io.matthewnelson.kmp.process/Process.Builder.args|args(kotlin.String){}[0]
+        final fun async(kotlin.coroutines/CoroutineContext?): io.matthewnelson.kmp.process/Process.Builder // io.matthewnelson.kmp.process/Process.Builder.async|async(kotlin.coroutines.CoroutineContext?){}[0]
         final fun chdir(io.matthewnelson.kmp.file/File?): io.matthewnelson.kmp.process/Process.Builder // io.matthewnelson.kmp.process/Process.Builder.chdir|chdir(io.matthewnelson.kmp.file.File?){}[0]
         final fun destroySignal(io.matthewnelson.kmp.process/Signal): io.matthewnelson.kmp.process/Process.Builder // io.matthewnelson.kmp.process/Process.Builder.destroySignal|destroySignal(io.matthewnelson.kmp.process.Signal){}[0]
         final fun environment(kotlin/Function1<kotlin.collections/MutableMap<kotlin/String, kotlin/String>, kotlin/Unit>): io.matthewnelson.kmp.process/Process.Builder // io.matthewnelson.kmp.process/Process.Builder.environment|environment(kotlin.Function1<kotlin.collections.MutableMap<kotlin.String,kotlin.String>,kotlin.Unit>){}[0]
@@ -108,7 +109,6 @@ abstract class io.matthewnelson.kmp.process/Process : io.matthewnelson.kmp.file/
         final inline fun <#A2: kotlin/Any?> spawn(kotlin/Function1<io.matthewnelson.kmp.process/Process, #A2>): #A2 // io.matthewnelson.kmp.process/Process.Builder.spawn|spawn(kotlin.Function1<io.matthewnelson.kmp.process.Process,0:0>){0§<kotlin.Any?>}[0]
         final inline fun <#A2: kotlin/Any?> useSpawn(kotlin/Function1<io.matthewnelson.kmp.process/Process, #A2>): #A2 // io.matthewnelson.kmp.process/Process.Builder.useSpawn|useSpawn(kotlin.Function1<io.matthewnelson.kmp.process.Process,0:0>){0§<kotlin.Any?>}[0]
         final suspend fun createProcessAsync(): io.matthewnelson.kmp.process/Process // io.matthewnelson.kmp.process/Process.Builder.createProcessAsync|createProcessAsync(){}[0]
-        final suspend fun createProcessAsync(kotlin.coroutines/CoroutineContext): io.matthewnelson.kmp.process/Process // io.matthewnelson.kmp.process/Process.Builder.createProcessAsync|createProcessAsync(kotlin.coroutines.CoroutineContext){}[0]
     }
 
     final object Companion // io.matthewnelson.kmp.process/Process.Companion|null[0]
