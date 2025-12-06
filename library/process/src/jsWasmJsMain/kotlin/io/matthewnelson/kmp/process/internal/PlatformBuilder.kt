@@ -250,9 +250,13 @@ internal actual class PlatformBuilder private actual constructor() {
 
         withContext(NonCancellable) {
             while (p.pid() <= 0) {
-                p.spawnError?.let { t ->
-                    p.destroy()
-                    throw t.toIOException(command.toFile())
+                p.spawnError?.let { e ->
+                    try {
+                        p.destroy()
+                    } catch (t: Throwable) {
+                        e.addSuppressed(t)
+                    }
+                    throw e
                 }
                 yield()
             }
