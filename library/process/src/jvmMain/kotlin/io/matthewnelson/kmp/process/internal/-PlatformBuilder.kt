@@ -48,7 +48,7 @@ internal actual class PlatformBuilder private actual constructor() {
         (eOS as Array<out String>).forEach { line ->
             val i = line.indexOf('=')
             if (i == -1) return@forEach
-            e[line.substring(0, i)] = line.substring(i + 1, line.length)
+            e[line.take(i)] = line.substring(i + 1, line.length)
         }
 
         e

@@ -37,10 +37,7 @@ internal inline fun Process.commonWaitFor(
     timeout: Duration,
     sleep: (millis: Duration) -> Unit,
 ): Int? {
-    contract {
-        callsInPlace(sleep, InvocationKind.UNKNOWN)
-    }
-
+    contract { callsInPlace(sleep, InvocationKind.UNKNOWN) }
     return ::exitCodeOrNull.commonWaitFor(timeout, sleep)
 }
 
@@ -50,9 +47,7 @@ internal inline fun <T: Any> Condition<T>.commonWaitFor(
     timeout: Duration,
     sleep: (millis: Duration) -> Unit,
 ): T? {
-    contract {
-        callsInPlace(sleep, InvocationKind.UNKNOWN)
-    }
+    contract { callsInPlace(sleep, InvocationKind.UNKNOWN) }
 
     val startMark = TimeSource.Monotonic.markNow()
     var remainingNanos = timeout.inWholeNanoseconds

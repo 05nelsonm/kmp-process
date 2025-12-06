@@ -17,27 +17,14 @@
 
 package io.matthewnelson.kmp.process.internal
 
-import io.matthewnelson.kmp.file.*
+import io.matthewnelson.kmp.file.File
+import io.matthewnelson.kmp.file.path
 import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.Stdio
-
-internal expect val STDIO_NULL: File
 
 internal expect val IsDesktop: Boolean
 
 internal inline val IsWindows: Boolean get() = STDIO_NULL.path == "NUL"
-
-// TODO: Move to extension function file for Stdio.Config
-@Throws(IOException::class)
-internal inline fun File.isCanonicallyEqualTo(other: File): Boolean {
-    if (this == other) return true
-
-    return try {
-        canonicalFile2() == other.canonicalFile2()
-    } catch (_: IOException) {
-        absoluteFile2().normalize() == other.absoluteFile2().normalize()
-    }
-}
 
 internal fun StringBuilder.appendProcessInfo(
     className: String,

@@ -19,13 +19,18 @@ package io.matthewnelson.kmp.process
 
 import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.file.async.AsyncFs
-import io.matthewnelson.kmp.file.mkdirs2
+import io.matthewnelson.kmp.file.async.with
 import io.matthewnelson.kmp.file.normalize
-import io.matthewnelson.kmp.file.parentFile
 import io.matthewnelson.kmp.file.toFile
 import io.matthewnelson.kmp.process.internal.STDIO_NULL
+import io.matthewnelson.kmp.process.internal.build
 import io.matthewnelson.kmp.process.internal.isCanonicallyEqualTo
-import kotlin.jvm.*
+import kotlin.coroutines.cancellation.CancellationException
+import kotlin.jvm.JvmField
+import kotlin.jvm.JvmName
+import kotlin.jvm.JvmOverloads
+import kotlin.jvm.JvmStatic
+import kotlin.jvm.JvmSynthetic
 
 /**
  * Standard input/output stream types for [Process]
@@ -132,44 +137,19 @@ public sealed class Stdio private constructor() {
 
             @Throws(IOException::class)
             internal fun build(outputOptions: Output.Options?): Config {
-                val isOutput = outputOptions != null
-
-                val stdin = stdin.let { stdio ->
-                    if (outputOptions?.hasInput == true) return@let Pipe
-                    if (isOutput && stdio is Pipe) return@let Null
-
-                    if (stdio !is File) return@let stdio
-                    if (!stdio.append) return@let stdio
-                    File.of(stdio.file, append = false)
-                }
-
-                val stdout = if (isOutput) Pipe else stdout
-                val stderr = if (isOutput) Pipe else stderr
-
-                listOf(
-                    "stdout" to stdout,
-                    "stderr" to stderr,
-                ).forEach { (name, stdio) ->
-                    if (stdio !is File) return@forEach
-                    if (stdio.file == STDIO_NULL) return@forEach
-
-                    if (stdin is File && stdin.file.isCanonicallyEqualTo(stdio.file)) {
-                        throw IOException("$name cannot be the same file as stdin")
-                    }
-
-                    val parent = stdio.file
-                        .parentFile
-                        ?: return@forEach
-
-                    parent.mkdirs2(mode = null, mustCreate = false)
-                }
-
-                return Config(stdin, stdout, stderr)
+                return ::Config.build(this, outputOptions)
             }
 
+            @Throws(CancellationException::class, IOException::class)
             internal suspend fun buildAsync(fs: AsyncFs, outputOptions: Output.Options?): Config {
-                // TODO
-                return build(outputOptions)
+                return fs.with {
+                    ::Config.build(
+                        b = this@Builder,
+                        outputOptions = outputOptions,
+                        _isCanonicallyEqualTo = { other -> isCanonicallyEqualTo(other, fs) },
+                        _mkdirs2 = { mode, mustCreate -> mkdirs2Async(mode, mustCreate) },
+                    )
+                }
             }
 
             internal companion object {
@@ -177,16 +157,6 @@ public sealed class Stdio private constructor() {
                 @JvmSynthetic
                 internal fun get() = Builder()
             }
-        }
-
-        // TODO: Move to extension function file for Stdio.Config
-        @JvmSynthetic
-        @Throws(IOException::class)
-        internal fun isStderrSameFileAsStdout(): Boolean {
-            if (stdout !is File) return false
-            if (stderr !is File) return false
-
-            return stdout.file.isCanonicallyEqualTo(stderr.file)
         }
 
         /** @suppress */

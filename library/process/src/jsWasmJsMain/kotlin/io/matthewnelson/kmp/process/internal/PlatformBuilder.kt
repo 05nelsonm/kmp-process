@@ -223,8 +223,9 @@ internal actual class PlatformBuilder private actual constructor() {
         opts["killSignal"] = destroy.name
 
         val jsProcess = jsStdio.closeDescriptorsOnFailure {
+            val argsArray = args.toJsArray()
             node_child_process.let { m ->
-                jsExternTryCatch { m.spawn(command, args.toJsArray(), opts) }
+                jsExternTryCatch { m.spawn(command, argsArray, opts) }
             }
         }
 
@@ -314,17 +315,16 @@ internal actual class PlatformBuilder private actual constructor() {
         private inline fun <T: Any?> List<Any>.closeDescriptorsOnFailure(block: () -> T): T = try {
             block()
         } catch (t: Throwable) {
+            val e = t.toIOException()
             forEach { stdio ->
                 val fd = stdio as? Double ?: return@forEach
-
                 try {
                     node_fs.closeSync(fd)
                 } catch (tt: Throwable) {
-                    t.addSuppressed(tt)
+                    e.addSuppressed(tt)
                 }
             }
-
-            throw t.toIOException()
+            throw e
         }
 
         @Suppress("NOTHING_TO_INLINE")
