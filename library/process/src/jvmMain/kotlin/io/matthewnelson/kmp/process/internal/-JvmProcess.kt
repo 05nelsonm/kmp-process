@@ -86,7 +86,7 @@ internal class JvmProcess private constructor(
     internal var wasStderrThreadStarted: Boolean = false
         private set
 
-    // @Throws(Throwable::class)
+    @Throws(Throwable::class)
     protected override fun destroyProtected(immediate: Boolean) {
         isDestroyed = true
 

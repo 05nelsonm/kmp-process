@@ -72,7 +72,7 @@ internal class NodeJsProcess internal constructor(
         if (isDetached) jsProcess.unref()
     }
 
-    // @Throws(Throwable::class)
+    @Throws(Throwable::class)
     protected override fun destroyProtected(immediate: Boolean) {
         val wasDestroyed = !isDestroyed
         isDestroyed = true

@@ -27,9 +27,8 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 
 /**
- * Extended by [OutputFeed.Handler] (which is extended
- * by [Process]) in order to provide blocking APIs for
- * Jvm & Native.
+ * Extended by [OutputFeed.Handler] (which is extended by [Process]) in order to provide
+ * blocking APIs for Jvm & Native.
  *
  * @see [threadSleep]
  * */
@@ -84,8 +83,7 @@ public actual sealed class Blocking protected actual constructor() {
     }
 
     /**
-     * Extended by [OutputFeed.Waiter] in order to
-     * provide blocking APIs for Jvm & Native.
+     * Extended by [OutputFeed.Waiter] in order to provide blocking APIs for Jvm & Native.
      * */
     public actual sealed class Waiter actual constructor(
         /** @suppress */
@@ -122,12 +120,14 @@ public actual sealed class Blocking protected actual constructor() {
     }
 
     /**
-     * TODO
+     * Extended by [Process.Builder] in order to provide blocking APIs for Jvm/Native
      * */
     public actual sealed class Builder protected actual constructor() {
 
         /**
-         * TODO
+         * Create the [Process] synchronously.
+         *
+         * @see [Process.Builder.createProcessAsync]
          * */
         @Throws(IOException::class)
         public fun createProcess(): Process = createProcessProtected()

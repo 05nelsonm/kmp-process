@@ -20,15 +20,13 @@ package io.matthewnelson.kmp.process
 import io.matthewnelson.kmp.file.IOException
 
 /**
- * Extended by [OutputFeed.Handler] (which is extended
- * by [Process]) in order to provide blocking APIs for
- * Jvm & Native.
+ * Extended by [OutputFeed.Handler] (which is extended by [Process]) in order to provide
+ * blocking APIs for Jvm & Native.
  * */
 public actual sealed class Blocking protected actual constructor() {
 
     /**
-     * Extended by [OutputFeed.Waiter] in order to
-     * provide blocking APIs for Jvm & Native.
+     * Extended by [OutputFeed.Waiter] in order to provide blocking APIs for Jvm & Native.
      * */
     public actual sealed class Waiter actual constructor(
         /** @suppress */
@@ -42,7 +40,7 @@ public actual sealed class Blocking protected actual constructor() {
     }
 
     /**
-     * TODO
+     * Extended by [Process.Builder] in order to provide blocking APIs for Jvm/Native
      * */
     public actual sealed class Builder protected actual constructor() {
 

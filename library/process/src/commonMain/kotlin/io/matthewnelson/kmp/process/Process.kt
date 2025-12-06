@@ -168,7 +168,10 @@ public abstract class Process internal constructor(
     }
 
     /**
-     * TODO
+     * Destroys the [Process].
+     *
+     * @see [use]
+     * @see [destroy]
      * */
     public final override fun close() { destroy() }
 
@@ -288,15 +291,16 @@ public abstract class Process internal constructor(
     public class Builder(
 
         /**
-         * TODO
+         * The command to run, such as a program name on `PATH`, or a file path (relative or
+         * absolute) to a program.
          * */
         @JvmField
         public val command: String
     ): Blocking.Builder() {
 
         /**
-         * Alternate constructor for an executable [File]. Will take the
-         * absolute + normalized path to use for [command].
+         * An alternate constructor for an executable [File]. Will take the absolute & normalized
+         * path to use for [command].
          *
          * @throws [IOException] If [absoluteFile2] has to reference the filesystem to construct
          *   an absolute path and fails due to a filesystem security exception.
@@ -314,26 +318,31 @@ public abstract class Process internal constructor(
         private val _stdio = Stdio.Config.Builder.get()
 
         /**
-         * Add a single argument
+         * Add a single argument.
          * */
         public fun args(arg: String): Builder = apply { _args.add(arg) }
 
         /**
-         * Add multiple arguments
+         * Add multiple arguments.
          * */
         public fun args(vararg args: String): Builder = apply { args.forEach { _args.add(it) } }
 
         /**
-         * Add multiple arguments
+         * Add multiple arguments.
          * */
         public fun args(args: List<String>): Builder = apply { args.forEach { _args.add(it) } }
 
         /**
-         * TODO
+         * DEFAULT: `Dispatchers.IO` (Jvm/Native), `Dispatchers.Default` (Js/WasmJs)
+         *
+         * Set the [CoroutineContext] to utilize for [createProcessAsync]. If `null`,
+         * the `DEFAULT` will be used.
          * */
         public fun async(context: CoroutineContext?): Builder = apply { _async = AsyncFs.of(context) }
 
         /**
+         * DEFAULT: [Signal.SIGTERM]
+         *
          * Set the [Signal] to use when [Process.destroy] is called.
          * */
         public fun destroySignal(signal: Signal): Builder = apply { _signal = signal }
@@ -369,6 +378,8 @@ public abstract class Process internal constructor(
         public fun onError(handler: ProcessException.Handler?): Builder = apply { _handler = handler }
 
         /**
+         * DEFAULT: [Stdio.Pipe]
+         *
          * Modify the standard input source
          *
          * @see [Stdio]
@@ -376,6 +387,8 @@ public abstract class Process internal constructor(
         public fun stdin(source: Stdio): Builder = apply { _stdio.stdin = source }
 
         /**
+         * DEFAULT: [Stdio.Pipe]
+         *
          * Modify the standard output destination
          *
          * @see [Stdio]
@@ -383,6 +396,8 @@ public abstract class Process internal constructor(
         public fun stdout(destination: Stdio): Builder = apply { _stdio.stdout = destination }
 
         /**
+         * DEFAULT: [Stdio.Pipe]
+         *
          * Modify the standard error output destination
          *
          * @see [Stdio]
@@ -390,7 +405,9 @@ public abstract class Process internal constructor(
         public fun stderr(destination: Stdio): Builder = apply { _stdio.stderr = destination }
 
         /**
-         * TODO
+         * Create the [Process] asynchronously using the configured [async] context.
+         *
+         * See: [Blocking.Builder.createProcess](https://kmp-process.matthewnelson.io/library/process/io.matthewnelson.kmp.process/-blocking/-builder/create-process.html)
          * */
         @Throws(CancellationException::class, IOException::class)
         public suspend fun createProcessAsync(): Process {
