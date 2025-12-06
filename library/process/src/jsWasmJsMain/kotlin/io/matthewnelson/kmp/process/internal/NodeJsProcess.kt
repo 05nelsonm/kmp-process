@@ -55,11 +55,16 @@ internal class NodeJsProcess internal constructor(
 ) {
 
     private var _exitCode: Int? = null
+    internal var spawnError: Throwable? = null
+        private set
 
     init {
-        @OptIn(InternalProcessApi::class)
         jsProcess.onError { t ->
             if (isDestroyed) return@onError
+            if (isAsync && pid() <= 0) {
+                spawnError = t
+                return@onError
+            }
             val e = t.toIOException()
             onError(e, context = ERROR_CONTEXT)
         }

@@ -43,8 +43,11 @@ import io.matthewnelson.kmp.process.internal.node.node_child_process
 import io.matthewnelson.kmp.process.internal.node.node_fs
 import io.matthewnelson.kmp.process.internal.node.node_process
 import io.matthewnelson.kmp.process.internal.node.node_stream
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.yield
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
@@ -53,6 +56,7 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
 import kotlin.let
+import kotlin.time.Duration.Companion.milliseconds
 
 // jsWasmJsMain
 internal actual class PlatformBuilder private actual constructor() {
@@ -246,7 +250,15 @@ internal actual class PlatformBuilder private actual constructor() {
             _isCanonicallyEqualTo = { other -> isCanonicallyEqualTo(other, fs) },
         )
 
-        // TODO: Poll NodeJsProcess for spawn error
+        withContext(NonCancellable) {
+            while (p.pid() <= 0) {
+                p.spawnError?.let { t ->
+                    p.destroy()
+                    throw t.toIOException(command.toFile())
+                }
+                yield()
+            }
+        }
 
         p
     }
@@ -330,7 +342,7 @@ private inline fun spawn(
     _fstat: ModuleFs.(Double) -> JsStats = { fd -> jsExternTryCatch { fstatSync(fd) } },
     _open: ModuleFs.(String, String) -> Double = { path, flags -> jsExternTryCatch { openSync(path, flags) } },
     _isCanonicallyEqualTo: File.(File) -> Boolean = File::isCanonicallyEqualTo,
-): Process {
+): NodeJsProcess {
     contract {
         callsInPlace(_close, InvocationKind.UNKNOWN)
         callsInPlace(_fstat, InvocationKind.UNKNOWN)
