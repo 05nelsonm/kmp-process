@@ -25,9 +25,6 @@ import kotlin.coroutines.cancellation.CancellationException
 /**
  * A stream for writing data asynchronously.
  *
- * **NOTE:** For Jvm & Android the `kotlinx.coroutines.core`
- * dependency is needed when using Async functions.
- *
  * @see [Process.input]
  * */
 public expect class AsyncWriteStream: Closeable {

@@ -21,6 +21,7 @@ import io.matthewnelson.kmp.file.AccessDeniedException
 import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.file.FileNotFoundException
 import io.matthewnelson.kmp.file.IOException
+import io.matthewnelson.kmp.file.async.AsyncFs
 import io.matthewnelson.kmp.file.errnoToIOException
 import io.matthewnelson.kmp.file.toFile
 import io.matthewnelson.kmp.process.Output
@@ -33,11 +34,13 @@ import io.matthewnelson.kmp.process.internal.stdio.StdioDescriptor.Pipe.Companio
 import io.matthewnelson.kmp.process.internal.stdio.StdioHandle.Companion.openHandle
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.UnsafeNumber
+import kotlinx.coroutines.withContext
 import org.kotlincrypto.bitops.endian.Endian.Big.beIntAt
 import platform.posix.EACCES
 import platform.posix.ENOENT
 import platform.posix.EPERM
 import platform.posix.fork
+import kotlin.coroutines.cancellation.CancellationException
 
 // unixForkMain
 internal actual class PlatformBuilder private actual constructor() {
@@ -56,6 +59,28 @@ internal actual class PlatformBuilder private actual constructor() {
         options: Output.Options,
         destroy: Signal,
     ): Output = blockingOutput(command, args, chdir, env, stdio, options, destroy)
+
+    @Throws(CancellationException::class, IOException::class)
+    internal actual suspend fun spawnAsync(
+        fs: AsyncFs,
+        command: String,
+        args: List<String>,
+        chdir: File?,
+        env: Map<String, String>,
+        stdio: Stdio.Config,
+        destroy: Signal,
+        handler: ProcessException.Handler,
+    ): Process = withContext(fs.ctx) {
+        spawn(
+            command,
+            args,
+            chdir,
+            env,
+            stdio,
+            destroy,
+            handler,
+        )
+    }
 
     @Throws(IOException::class)
     internal actual fun spawn(

@@ -38,5 +38,5 @@ package io.matthewnelson.kmp.process
 public fun Process.Builder.usePosixSpawn(
     use: Boolean,
 ): Process.Builder = apply {
-    platform().usePosixSpawn = use
+    _platform.usePosixSpawn = use
 }

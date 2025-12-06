@@ -15,6 +15,11 @@ public abstract class io/matthewnelson/kmp/process/Blocking {
 	public final fun waitFor-LRDsOJo (J)Ljava/lang/Integer;
 }
 
+public abstract class io/matthewnelson/kmp/process/Blocking$Builder {
+	public final fun createProcess ()Lio/matthewnelson/kmp/process/Process;
+	protected abstract fun createProcessProtected ()Lio/matthewnelson/kmp/process/Process;
+}
+
 public final class io/matthewnelson/kmp/process/Blocking$Companion {
 	public final fun threadSleep-LRDsOJo (J)V
 }
@@ -101,7 +106,7 @@ public abstract class io/matthewnelson/kmp/process/OutputFeed$Waiter : io/matthe
 	public final fun awaitStopAsync (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
-public abstract class io/matthewnelson/kmp/process/Process : io/matthewnelson/kmp/process/OutputFeed$Handler {
+public abstract class io/matthewnelson/kmp/process/Process : io/matthewnelson/kmp/process/OutputFeed$Handler, java/io/Closeable {
 	protected static final field Companion Lio/matthewnelson/kmp/process/Process$Companion;
 	public final field args Ljava/util/List;
 	public final field command Ljava/lang/String;
@@ -111,6 +116,7 @@ public abstract class io/matthewnelson/kmp/process/Process : io/matthewnelson/km
 	public final field input Lio/matthewnelson/kmp/process/AsyncWriteStream;
 	public final field startTime Lkotlin/time/ComparableTimeMark;
 	public final field stdio Lio/matthewnelson/kmp/process/Stdio$Config;
+	public final fun close ()V
 	public final fun destroy ()Lio/matthewnelson/kmp/process/Process;
 	protected abstract fun destroyProtected (Z)V
 	public final fun exitCode ()I
@@ -123,14 +129,16 @@ public abstract class io/matthewnelson/kmp/process/Process : io/matthewnelson/km
 	public final fun waitForAsync-VtjQ1oo (JLkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
-public final class io/matthewnelson/kmp/process/Process$Builder {
+public final class io/matthewnelson/kmp/process/Process$Builder : io/matthewnelson/kmp/process/Blocking$Builder {
 	public final field command Ljava/lang/String;
 	public fun <init> (Ljava/io/File;)V
 	public fun <init> (Ljava/lang/String;)V
 	public final fun args (Ljava/lang/String;)Lio/matthewnelson/kmp/process/Process$Builder;
 	public final fun args (Ljava/util/List;)Lio/matthewnelson/kmp/process/Process$Builder;
 	public final fun args ([Ljava/lang/String;)Lio/matthewnelson/kmp/process/Process$Builder;
+	public final fun async (Lkotlin/coroutines/CoroutineContext;)Lio/matthewnelson/kmp/process/Process$Builder;
 	public final fun chdir (Ljava/io/File;)Lio/matthewnelson/kmp/process/Process$Builder;
+	public final fun createProcessAsync (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun destroySignal (Lio/matthewnelson/kmp/process/Signal;)Lio/matthewnelson/kmp/process/Process$Builder;
 	public final fun environment (Ljava/lang/String;Ljava/lang/String;)Lio/matthewnelson/kmp/process/Process$Builder;
 	public final fun environment (Lkotlin/jvm/functions/Function1;)Lio/matthewnelson/kmp/process/Process$Builder;

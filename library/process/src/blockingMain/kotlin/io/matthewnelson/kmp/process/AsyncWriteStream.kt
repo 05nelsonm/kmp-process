@@ -33,9 +33,6 @@ import kotlin.jvm.JvmSynthetic
  * utilize [Dispatchers.IO] + [NonCancellable] context and simply call
  * [BufferedWriteStream] blocking APIs.
  *
- * **NOTE:** For Jvm & Android the `kotlinx.coroutines.core`
- * dependency is needed when using Async functions.
- *
  * @see [Process.input]
  * @see [BufferedWriteStream]
  * */

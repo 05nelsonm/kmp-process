@@ -19,7 +19,9 @@ package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.file.IOException
+import io.matthewnelson.kmp.file.async.AsyncFs
 import io.matthewnelson.kmp.process.*
+import kotlin.coroutines.cancellation.CancellationException
 
 internal expect class PlatformBuilder private constructor() {
 
@@ -35,6 +37,18 @@ internal expect class PlatformBuilder private constructor() {
         options: Output.Options,
         destroy: Signal,
     ): Output
+
+    @Throws(CancellationException::class, IOException::class)
+    internal suspend fun spawnAsync(
+        fs: AsyncFs,
+        command: String,
+        args: List<String>,
+        chdir: File?,
+        env: Map<String, String>,
+        stdio: Stdio.Config,
+        destroy: Signal,
+        handler: ProcessException.Handler,
+    ): Process
 
     @Throws(IOException::class)
     internal fun spawn(

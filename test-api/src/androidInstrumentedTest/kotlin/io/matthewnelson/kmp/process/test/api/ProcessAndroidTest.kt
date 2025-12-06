@@ -155,7 +155,7 @@ class ProcessAndroidTest: ProcessBaseTest() {
             .stdin(Stdio.Inherit)
             .stdout(Stdio.Inherit)
             .stderr(Stdio.Inherit)
-            .useSpawn { p -> p.waitFor(); p }
+            .createProcess().use { p -> p.waitFor(); p }
 
         println(p.toString())
 
@@ -187,37 +187,37 @@ class ProcessAndroidTest: ProcessBaseTest() {
 
         // Should fail for not existing
         b.stdin(stdioFile)
-        assertFailsWith<IOException> { b.useSpawn {} }
+        assertFailsWith<IOException> { b.createProcess().destroy() }
 
         assertTrue(f.createNewFile())
         assertTrue(f.setReadable(false))
         assertTrue(f.setWritable(false))
 
         // Should fail for not being able to read
-        assertFailsWith<IOException> { b.useSpawn {} }
+        assertFailsWith<IOException> { b.createProcess().destroy() }
 
         assertTrue(d.mkdirs())
 
         // Should fail for not being a file
         b.stdin(stdioDir)
-        assertFailsWith<IOException> { b.useSpawn {} }
+        assertFailsWith<IOException> { b.createProcess().destroy() }
         b.stdin(Stdio.Pipe)
 
         // Should fail for not being a file
         b.stdout(stdioDir)
-        assertFailsWith<IOException> { b.useSpawn {} }
+        assertFailsWith<IOException> { b.createProcess().destroy() }
 
         // Should fail for not being able to write
         b.stdout(stdioFile)
-        assertFailsWith<IOException> { b.useSpawn {} }
+        assertFailsWith<IOException> { b.createProcess().destroy() }
         b.stdout(Stdio.Pipe)
 
         // Should fail for not being a file
         b.stderr(stdioDir)
-        assertFailsWith<IOException> { b.useSpawn {} }
+        assertFailsWith<IOException> { b.createProcess().destroy() }
 
         // Should fail for not being able to write
         b.stderr(stdioFile)
-        assertFailsWith<IOException> { b.useSpawn {} }
+        assertFailsWith<IOException> { b.createProcess().destroy() }
     }
 }

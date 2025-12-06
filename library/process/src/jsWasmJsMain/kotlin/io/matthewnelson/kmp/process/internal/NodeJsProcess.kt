@@ -33,6 +33,7 @@ import io.matthewnelson.kmp.process.internal.node.onError
 
 internal class NodeJsProcess internal constructor(
     private val jsProcess: JsChildProcess,
+    isAsync: Boolean,
     private val isDetached: Boolean,
     command: String,
     args: List<String>,
@@ -54,11 +55,16 @@ internal class NodeJsProcess internal constructor(
 ) {
 
     private var _exitCode: Int? = null
+    internal var spawnError: Throwable? = null
+        private set
 
     init {
-        @OptIn(InternalProcessApi::class)
         jsProcess.onError { t ->
             if (isDestroyed) return@onError
+            if (isAsync && pid() <= 0) {
+                spawnError = t
+                return@onError
+            }
             val e = t.toIOException()
             onError(e, context = ERROR_CONTEXT)
         }
@@ -66,7 +72,7 @@ internal class NodeJsProcess internal constructor(
         if (isDetached) jsProcess.unref()
     }
 
-    // @Throws(Throwable::class)
+    @Throws(Throwable::class)
     protected override fun destroyProtected(immediate: Boolean) {
         val wasDestroyed = !isDestroyed
         isDestroyed = true

@@ -17,6 +17,7 @@
 
 package io.matthewnelson.kmp.process
 
+import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.file.InterruptedException
 import io.matthewnelson.kmp.process.internal.commonWaitFor
 import io.matthewnelson.kmp.process.internal.threadSleep
@@ -26,9 +27,8 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 
 /**
- * Extended by [OutputFeed.Handler] (which is extended
- * by [Process]) in order to provide blocking APIs for
- * Jvm & Native.
+ * Extended by [OutputFeed.Handler] (which is extended by [Process]) in order to provide
+ * blocking APIs for Jvm & Native.
  *
  * @see [threadSleep]
  * */
@@ -83,10 +83,10 @@ public actual sealed class Blocking protected actual constructor() {
     }
 
     /**
-     * Extended by [OutputFeed.Waiter] in order to
-     * provide blocking APIs for Jvm & Native.
+     * Extended by [OutputFeed.Waiter] in order to provide blocking APIs for Jvm & Native.
      * */
     public actual sealed class Waiter actual constructor(
+        /** @suppress */
         @JvmField
         protected actual val process: Process,
     ) {
@@ -113,7 +113,27 @@ public actual sealed class Blocking protected actual constructor() {
             return process
         }
 
+        /** @suppress */
         protected actual abstract fun isStarted(): Boolean
+        /** @suppress */
         protected actual abstract fun isStopped(): Boolean
+    }
+
+    /**
+     * Extended by [Process.Builder] in order to provide blocking APIs for Jvm/Native
+     * */
+    public actual sealed class Builder protected actual constructor() {
+
+        /**
+         * Create the [Process] synchronously.
+         *
+         * @see [Process.Builder.createProcessAsync]
+         * */
+        @Throws(IOException::class)
+        public fun createProcess(): Process = createProcessProtected()
+
+        /** @suppress */
+        @Throws(IOException::class)
+        protected actual abstract fun createProcessProtected(): Process
     }
 }

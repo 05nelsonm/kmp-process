@@ -48,6 +48,7 @@ internal actual val FD_DIR: String get() = "/proc/self/fd"
  * [action] return [Unit] to break from loop, or `null` to continue.
  *
  * @return [errno] if `fdopendir` fails, otherwise `null`.
+ * @suppress
  * */
 @OptIn(ExperimentalForeignApi::class)
 internal actual inline fun ChildProcess.parseDir(fdDir: Int, action: (CPointer<dirent>) -> Unit?): Int? {

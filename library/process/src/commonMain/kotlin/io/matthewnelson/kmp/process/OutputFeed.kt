@@ -47,7 +47,7 @@ import kotlin.time.Duration.Companion.milliseconds
  *
  * e.g.
  *
- *     val p = builder.spawn()
+ *     val p = builder.createProcess()
  *         .stdoutFeed { line ->
  *             println(line ?: "--STDOUT EOS--")
  *         }.stderrFeed(
@@ -94,6 +94,7 @@ public fun interface OutputFeed {
      * */
     public sealed class Handler(private val stdio: Stdio.Config): Blocking() {
 
+        /** @suppress */
         @JvmField
         @Volatile
         protected var isDestroyed: Boolean = false
@@ -337,9 +338,6 @@ public fun interface OutputFeed {
          *  - No [OutputFeed] were attached before [Process.destroy]
          *    was called (i.e. never started)
          *  - Has already stopped
-         *
-         * **NOTE:** For Jvm & Android the `kotlinx.coroutines.core`
-         * dependency is needed.
          *
          * See: [Blocking.Waiter.awaitStop](https://kmp-process.matthewnelson.io/library/process/io.matthewnelson.kmp.process/-blocking/-waiter/await-stop.html)
          *

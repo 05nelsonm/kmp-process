@@ -19,6 +19,7 @@
 package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.*
+import io.matthewnelson.kmp.file.async.AsyncFs
 import io.matthewnelson.kmp.process.*
 import io.matthewnelson.kmp.process.internal.RealLineOutputFeed.Companion.LF
 import io.matthewnelson.kmp.process.internal.js.JsArray
@@ -35,13 +36,27 @@ import io.matthewnelson.kmp.process.internal.js.new
 import io.matthewnelson.kmp.process.internal.js.set
 import io.matthewnelson.kmp.process.internal.js.toJsArray
 import io.matthewnelson.kmp.process.internal.js.toThrowable
+import io.matthewnelson.kmp.process.internal.node.JsStats
 import io.matthewnelson.kmp.process.internal.node.ModuleFs
 import io.matthewnelson.kmp.process.internal.node.asBuffer
 import io.matthewnelson.kmp.process.internal.node.node_child_process
 import io.matthewnelson.kmp.process.internal.node.node_fs
 import io.matthewnelson.kmp.process.internal.node.node_process
 import io.matthewnelson.kmp.process.internal.node.node_stream
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.yield
+import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.InvocationKind
+import kotlin.contracts.contract
+import kotlin.coroutines.cancellation.CancellationException
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
+import kotlin.coroutines.suspendCoroutine
 import kotlin.let
+import kotlin.time.Duration.Companion.milliseconds
 
 // jsWasmJsMain
 internal actual class PlatformBuilder private actual constructor() {
@@ -114,7 +129,8 @@ internal actual class PlatformBuilder private actual constructor() {
         val output = jsStdio.closeDescriptorsOnFailure {
             try {
                 node_child_process.let { m ->
-                    jsExternTryCatch { m.spawnSync(command, args.toJsArray(), opts) }
+                    val argsArray = args.toJsArray()
+                    jsExternTryCatch { m.spawnSync(command, argsArray, opts) }
                 }
             } finally {
                 input?.fill()
@@ -170,6 +186,84 @@ internal actual class PlatformBuilder private actual constructor() {
         )
     }
 
+    @Throws(CancellationException::class, IOException::class)
+    internal actual suspend fun spawnAsync(
+        fs: AsyncFs,
+        command: String,
+        args: List<String>,
+        chdir: File?,
+        env: Map<String, String>,
+        stdio: Stdio.Config,
+        destroy: Signal,
+        handler: ProcessException.Handler,
+    ): Process = withContext(fs.ctx) {
+        val p = spawn(
+            command,
+            args,
+            chdir,
+            env,
+            stdio,
+            destroy,
+            handler,
+            isAsync = true,
+            isDetached = detached,
+            shell = shell,
+            windowsVerbatimArguments = windowsVerbatimArguments,
+            windowsHide = windowsHide,
+            _close = { fd ->
+                // non-cancellable
+                suspendCoroutine { cont ->
+                    close(fd) { err ->
+                        if (err != null) {
+                            val e = err.toThrowable().toIOException()
+                            cont.resumeWithException(e)
+                        } else {
+                            cont.resume(Unit)
+                        }
+                    }
+                }
+            },
+            _fstat = { fd ->
+                suspendCancellableCoroutine { cont ->
+                    fstat(fd) { err, stats ->
+                        if (err != null) {
+                            val e = err.toThrowable().toIOException()
+                            cont.resumeWithException(e)
+                        } else {
+                            cont.resume(stats!!)
+                        }
+                    }
+                }
+            },
+            _open = { path, flags ->
+                suspendCancellableCoroutine { cont ->
+                    open(path, flags) { err, fd ->
+                        if (err != null) {
+                            val e = err.toThrowable().toIOException(path.toFile())
+                            cont.resumeWithException(e)
+                        } else {
+                            cont.resume(fd!!)
+                        }
+                    }
+                }
+            },
+            _isCanonicallyEqualTo = { other -> isCanonicallyEqualTo(other, fs) },
+        )
+
+        withContext(NonCancellable) {
+            while (p.pid() <= 0) {
+                p.spawnError?.let { t ->
+                    p.destroy()
+                    throw t.toIOException(command.toFile())
+                }
+                yield()
+            }
+        }
+
+        p
+    }
+
+    // Deprecated
     @Throws(IOException::class)
     internal actual fun spawn(
         command: String,
@@ -179,136 +273,217 @@ internal actual class PlatformBuilder private actual constructor() {
         stdio: Stdio.Config,
         destroy: Signal,
         handler: ProcessException.Handler,
-    ): Process {
-        node_stream
-        val jsStdio = stdio.toJsStdio()
-        val isDetached = detached
-
-        val opts = JsObject.new()
-        chdir?.let { opts["cwd"] = it.path }
-        opts["env"] = env.toJsObject()
-        opts["stdio"] = jsStdio.toJsArray()
-        opts["detached"] = isDetached
-        when (val _shell = shell) {
-            is String -> opts["shell"] = _shell
-            is Boolean -> opts["shell"] = _shell
-        }
-        opts["windowsVerbatimArguments"] = windowsVerbatimArguments
-        opts["windowsHide"] = windowsHide
-        opts["killSignal"] = destroy.name
-
-        val jsProcess = jsStdio.closeDescriptorsOnFailure {
-            node_child_process.let { m ->
-                jsExternTryCatch { m.spawn(command, args.toJsArray(), opts) }
-            }
-        }
-
-        return NodeJsProcess(
-            jsProcess,
-            isDetached,
-            command,
-            args,
-            chdir,
-            env,
-            stdio,
-            destroy,
-            handler,
-        )
-    }
+    ): Process = spawn(
+        command,
+        args,
+        chdir,
+        env,
+        stdio,
+        destroy,
+        handler,
+        isAsync = false,
+        isDetached = detached,
+        shell = shell,
+        windowsVerbatimArguments = windowsVerbatimArguments,
+        windowsHide = windowsHide,
+    )
 
     internal actual companion object {
 
         internal actual fun get(): PlatformBuilder = PlatformBuilder()
+    }
+}
 
-        private fun Map<String, String>.toJsObject(): JsObject {
-            val obj = JsObject.new()
-            entries.forEach { (key, value) -> obj[key] = value }
-            return obj
+private fun Map<String, String>.toJsObject(): JsObject {
+    val obj = JsObject.new()
+    entries.forEach { (key, value) -> obj[key] = value }
+    return obj
+}
+
+// Accepts only String and Double
+@Throws(IllegalStateException::class)
+private fun List<Any>.toJsArray(): JsArray {
+    val array = JsArray.of(size)
+    for (i in indices) {
+        when (val value = this[i]) {
+            is String -> array[i] = value
+            is Double -> array[i] = value
+            else -> throw IllegalStateException("Unknown type[${value::class}]")
         }
+    }
+    return array
+}
 
-        // Accepts only String and Double
-        @Throws(IllegalStateException::class)
-        private fun List<Any>.toJsArray(): JsArray {
-            val array = JsArray.of(size)
-            for (i in indices) {
-                when (val value = this[i]) {
-                    is String -> array[i] = value
-                    is Double -> array[i] = value
-                    else -> throw IllegalStateException("Unknown type[${value::class}]")
-                }
-            }
-            return array
+@Suppress("NOTHING_TO_INLINE")
+private inline fun Buffer.toUtf8Trimmed(): String {
+    var limit = length.toInt()
+    if (limit == 0) return ""
+
+    if (readInt8(limit - 1) == LF) limit--
+    return toUtf8(end = limit)
+}
+
+@OptIn(ExperimentalContracts::class)
+@Throws(IOException::class, UnsupportedOperationException::class)
+private inline fun spawn(
+    command: String,
+    args: List<String>,
+    chdir: File?,
+    env: Map<String, String>,
+    stdio: Stdio.Config,
+    destroy: Signal,
+    handler: ProcessException.Handler,
+    isAsync: Boolean,
+    isDetached: Boolean,
+    shell: Any,
+    windowsVerbatimArguments: Boolean,
+    windowsHide: Boolean,
+    _close: ModuleFs.(Double) -> Unit = { fd -> jsExternTryCatch { closeSync(fd) } },
+    _fstat: ModuleFs.(Double) -> JsStats = { fd -> jsExternTryCatch { fstatSync(fd) } },
+    _open: ModuleFs.(String, String) -> Double = { path, flags -> jsExternTryCatch { openSync(path, flags) } },
+    _isCanonicallyEqualTo: File.(File) -> Boolean = File::isCanonicallyEqualTo,
+): NodeJsProcess {
+    contract {
+        callsInPlace(_close, InvocationKind.UNKNOWN)
+        callsInPlace(_fstat, InvocationKind.UNKNOWN)
+        callsInPlace(_open, InvocationKind.UNKNOWN)
+        callsInPlace(_isCanonicallyEqualTo, InvocationKind.UNKNOWN)
+    }
+
+    node_stream
+    val jsStdio = stdio.toJsStdio(_close, _fstat, _isCanonicallyEqualTo, _open)
+
+    val opts = JsObject.new()
+    chdir?.let { opts["cwd"] = it.path }
+    opts["env"] = env.toJsObject()
+    opts["stdio"] = jsStdio.toJsArray()
+    opts["detached"] = isDetached
+    when (shell) {
+        is String -> opts["shell"] = shell
+        is Boolean -> opts["shell"] = shell
+    }
+    opts["windowsVerbatimArguments"] = windowsVerbatimArguments
+    opts["windowsHide"] = windowsHide
+    opts["killSignal"] = destroy.name
+
+    val jsProcess = jsStdio.closeDescriptorsOnFailure(_close) {
+        node_child_process.let { m ->
+            val argsArray = args.toJsArray()
+            jsExternTryCatch { m.spawn(command, argsArray, opts) }
         }
+    }
 
-        @Throws(IOException::class, UnsupportedOperationException::class)
-        private fun Stdio.Config.toJsStdio(): List<Any> {
-            val fs = node_fs
-            val jsStdio = ArrayList<Any>(3)
-            jsStdio.closeDescriptorsOnFailure {
-                stdin.toJsStdio(fs, isStdin = true).let { jsStdio.add(it) }
-                stdout.toJsStdio(fs, isStdin = false).let { jsStdio.add(it) }
-                if (isStderrSameFileAsStdout()) {
-                    // use the same file descriptor as stdout
-                    jsStdio[1]
-                } else {
-                    stderr.toJsStdio(fs, isStdin = false)
-                }.let { jsStdio.add(it) }
-            }
-            return jsStdio
-        }
+    return NodeJsProcess(
+        jsProcess,
+        isAsync,
+        isDetached,
+        command,
+        args,
+        chdir,
+        env,
+        stdio,
+        destroy,
+        handler,
+    )
+}
 
-        @Throws(Throwable::class)
-        private fun Stdio.toJsStdio(fs: ModuleFs, isStdin: Boolean): Any = when (this) {
-            is Stdio.Inherit -> "inherit"
-            is Stdio.Pipe -> "pipe"
-            is Stdio.File -> when {
-                file == STDIO_NULL -> "ignore"
-                isStdin -> {
-                    val fd = jsExternTryCatch { fs.openSync(file.path, "r") }
+@OptIn(ExperimentalContracts::class)
+@Throws(IOException::class, UnsupportedOperationException::class)
+private inline fun Stdio.Config.toJsStdio(
+    _close: ModuleFs.(Double) -> Unit = { fd -> jsExternTryCatch { closeSync(fd) } },
+    _fstat: ModuleFs.(Double) -> JsStats = { fd -> jsExternTryCatch { fstatSync(fd) } },
+    _isCanonicallyEqualTo: File.(File) -> Boolean = File::isCanonicallyEqualTo,
+    _open: ModuleFs.(String, String) -> Double = { path, flags -> jsExternTryCatch { openSync(path, flags) } },
+): List<Any> {
+    contract {
+        callsInPlace(_close, InvocationKind.UNKNOWN)
+        callsInPlace(_fstat, InvocationKind.UNKNOWN)
+        callsInPlace(_isCanonicallyEqualTo, InvocationKind.UNKNOWN)
+        callsInPlace(_open, InvocationKind.UNKNOWN)
+    }
 
-                    try {
-                        val isDirectory = jsExternTryCatch { fs.fstatSync(fd).isDirectory() }
-                        if (isDirectory) throw FileSystemException(file, null, "EISDIR: Is a Directory")
-                    } catch (t: Throwable) {
-                        try {
-                            jsExternTryCatch { fs.closeSync(fd) }
-                        } catch (tt: Throwable) {
-                            t.addSuppressed(tt)
-                        }
-                        throw t
-                    }
+    val fs = node_fs
+    val jsStdio = ArrayList<Any>(3)
+    jsStdio.closeDescriptorsOnFailure(_close) {
+        stdin.toJsStdio(fs, isStdin = true, _close, _fstat, _open).let { jsStdio.add(it) }
+        stdout.toJsStdio(fs, isStdin = false, _close, _fstat, _open).let { jsStdio.add(it) }
+        if (isStderrSameFileAsStdout(_isCanonicallyEqualTo)) {
+            // use the same file descriptor as stdout
+            jsStdio[1]
+        } else {
+            stderr.toJsStdio(fs, isStdin = false, _close, _fstat, _open)
+        }.let { jsStdio.add(it) }
+    }
+    return jsStdio
+}
 
-                    fd
-                }
-                append -> jsExternTryCatch { fs.openSync(file.path, "a") }
-                else -> jsExternTryCatch { fs.openSync(file.path, "w") }
-            }
-        }
+@Throws(Throwable::class)
+@OptIn(ExperimentalContracts::class)
+private inline fun Stdio.toJsStdio(
+    fs: ModuleFs,
+    isStdin: Boolean,
+    _close: ModuleFs.(Double) -> Unit,
+    _fstat: ModuleFs.(Double) -> JsStats,
+    _open: ModuleFs.(String, String) -> Double,
+): Any {
+    contract {
+        callsInPlace(_close, InvocationKind.AT_MOST_ONCE)
+        callsInPlace(_fstat, InvocationKind.AT_MOST_ONCE)
+        callsInPlace(_open, InvocationKind.AT_MOST_ONCE)
+    }
 
-        @Throws(IOException::class)
-        private inline fun <T: Any?> List<Any>.closeDescriptorsOnFailure(block: () -> T): T = try {
-            block()
-        } catch (t: Throwable) {
-            forEach { stdio ->
-                val fd = stdio as? Double ?: return@forEach
+    return when (this) {
+        is Stdio.Inherit -> "inherit"
+        is Stdio.Pipe -> "pipe"
+        is Stdio.File -> when {
+            file == STDIO_NULL -> "ignore"
+            isStdin -> {
+                val fd = fs._open(file.path, "r")
 
                 try {
-                    node_fs.closeSync(fd)
-                } catch (tt: Throwable) {
-                    t.addSuppressed(tt)
+                    val isDirectory = fs._fstat(fd).isDirectory()
+                    if (isDirectory) throw FileSystemException(file, null, "EISDIR: Is a Directory")
+                } catch (t: Throwable) {
+                    try {
+                        fs._close(fd)
+                    } catch (tt: Throwable) {
+                        t.addSuppressed(tt)
+                    }
+                    throw t
                 }
+
+                fd
             }
 
-            throw t.toIOException()
+            append -> fs._open(file.path, "a")
+            else -> fs._open(file.path, "w")
         }
+    }
+}
 
-        @Suppress("NOTHING_TO_INLINE")
-        private inline fun Buffer.toUtf8Trimmed(): String {
-            var limit = length.toInt()
-            if (limit == 0) return ""
+@Throws(IOException::class)
+@OptIn(ExperimentalContracts::class)
+private inline fun <T: Any?> List<Any>.closeDescriptorsOnFailure(
+    _close: ModuleFs.(Double) -> Unit = { fd -> jsExternTryCatch { closeSync(fd) } },
+    block: () -> T,
+): T {
+    contract {
+        callsInPlace(_close, InvocationKind.UNKNOWN)
+        callsInPlace(block, InvocationKind.EXACTLY_ONCE)
+    }
 
-            if (readInt8(limit - 1) == LF) limit--
-            return toUtf8(end = limit)
+    return try {
+        block()
+    } catch (t: Throwable) {
+        val e = t.toIOException()
+        forEach { stdio ->
+            val fd = stdio as? Double ?: return@forEach
+            try {
+                node_fs._close(fd)
+            } catch (tt: Throwable) {
+                e.addSuppressed(tt)
+            }
         }
+        throw e
     }
 }

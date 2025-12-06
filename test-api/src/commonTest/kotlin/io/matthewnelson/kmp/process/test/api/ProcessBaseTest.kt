@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("DEPRECATION", "PropertyName", "UnusedReceiverParameter")
+@file:Suppress("PropertyName", "UnusedReceiverParameter")
 
 package io.matthewnelson.kmp.process.test.api
 
@@ -67,8 +67,8 @@ abstract class ProcessBaseTest {
         val tempDir = SysTempDir.resolve("kmp_process")
         val testCat = tempDir.resolve("test.cat")
 
-        testCat.delete()
-        testCat.parentFile?.mkdirs()
+        testCat.delete2()
+        testCat.parentFile?.mkdirs2(mode = null)
 
         val expected = """
             abc
@@ -77,11 +77,11 @@ abstract class ProcessBaseTest {
             456
         """.trimIndent()
 
-        testCat.writeUtf8(expected)
+        testCat.writeUtf8(excl = null, expected)
 
         val out = Process.Builder(command = if (IsAppleSimulator) "/bin/cat" else "cat")
             .args("-")
-            .chdir(if (IsAppleSimulator) null else tempDir)
+            .changeDirectory(if (IsAppleSimulator) null else tempDir)
             .stdin(Stdio.File.of(testCat))
             .output()
 
@@ -153,86 +153,106 @@ abstract class ProcessBaseTest {
             return
         }
 
-        val d = SysTempDir.resolve("try_chdir")
-        d.delete()
-        assertTrue(d.mkdirs())
+        val d = SysTempDir
+            .resolve("try_chdir")
+            .mkdirs2(mode = null)
 
         val output = Process.Builder(command = "sh")
             .args("-c")
             .args("echo \"$(pwd)\"; sleep 0.25; exit 0")
-            .chdir(d)
+            .changeDirectory(d)
             .stdin(Stdio.Null)
             .output { timeoutMillis = 500 }
 
         println(output.stdout)
         println(output.stderr)
         println(output)
-        assertEquals(d.canonicalPath(), output.stdout)
+        assertEquals(d.canonicalPath2(), output.stdout)
     }
 
     @Test
-    fun givenOutput_whenInvalidCommand_thenThrowsException() {
+    fun givenCommand_whenInvalid_thenThrowsExceptionOnSpawn() = runTest {
         val dir1 = SysTempDir.resolve(Random.nextBytes(8).toHexString())
         val dir2 = dir1.resolve("path")
         val invalid = dir2.resolve("not_a_program").delete2(ignoreReadOnly = true)
 
         // Absolute path
-        assertFailsWith<FileNotFoundException> {
-            Process.Builder(command = invalid.path).output().let { println(it) }
+        var b = Process.Builder(command = invalid.path)
+        assertFailsWith<FileNotFoundException> { b.output() }
+        assertFailsWith<FileNotFoundException> { b.createProcessAsync().destroy() }
+
+        fun Throwable.assertRelativePathException() = when(this) {
+            is FileNotFoundException -> {} // pass
+            // Android may error out with EPERM/EACCES b/c cwd is /
+            is AccessDeniedException -> {} // pass
+            is IOException -> if (AndroidNativeDeviceAPILevel?.let { it >= 28 } == true) {
+                // AndroidNative posix_spawnp may not fail with ENOENT, but fail
+                // on its exec step. As a result, the spawnFailureToIOException
+                // will not be able to deduce the proper exception type because
+                // of the command is not an absolute path.
+                //
+                // pass
+            } else {
+                fail("!(AndroidNativeDeviceAPILevel >= 28) && is IOException", this)
+            }
+            else -> throw this
         }
 
         // Relative path
+        b = Process.Builder(command = invalid.name)
         try {
-            Process.Builder(command = invalid.name).output().let { println(it) }
+            b.output()
             fail("Process.Builder.output should have thrown an IOException")
         } catch (t: Throwable) {
-            when (t) {
-                is FileNotFoundException -> {} // pass
-                // Android may error out with EPERM/EACCES b/c cwd is /
-                is AccessDeniedException -> {} // pass
-                is IOException -> if (AndroidNativeDeviceAPILevel?.let { it >= 28 } == true) {
-                    // AndroidNative posix_spawnp may not fail with ENOENT, but fail
-                    // on its exec step. As a result, the spawnFailureToIOException
-                    // will not be able to deduce the proper exception type because
-                    // of the command is not an absolute path.
-                    //
-                    // pass
-                } else {
-                    fail("!(AndroidNativeDeviceAPILevel >= 28) && is IOException", t)
-                }
-                else -> throw t
-            }
+            t.assertRelativePathException()
+        }
+        try {
+            b.createProcessAsync().destroy()
+            fail("Process.Builder.createProcessAsync should have thrown an IOException")
+        } catch (t: Throwable) {
+            t.assertRelativePathException()
         }
 
+        fun Throwable.assertPermissionsException() = when(this) {
+            is FileNotFoundException -> if (IsWindows) {
+                // Windows has no concept of file permissions, so may instead
+                // fail with ENOENT b/c the file is not an executable with a
+                // main function.
+                //
+                // pass
+            } else {
+                fail("!IsWindows && is FileNotFoundException", this)
+            }
+            is AccessDeniedException -> {} // pass
+            is IOException -> if (IsWindows) {
+                // Windows may also fail due to it being an invalid program on Jvm (error 193)
+                //
+                // pass
+            } else {
+                fail("!IsWindows && is IOException", this)
+            }
+            else -> throw this
+        }
+
+        // Invalid permissions
+        b = Process.Builder(command = invalid.path)
         try {
             dir2.mkdirs2(mode = null, mustCreate = true)
             invalid.writeUtf8(excl = OpenExcl.MustCreate.of("666"), "Non-Executable")
             assertTrue(invalid.exists2())
 
             try {
-                Process.Builder(command = invalid.path).output().let { println(it) }
+                b.output()
                 fail("Process.Builder.output should have thrown an IOException")
             } catch (t: Throwable) {
-                when (t) {
-                    is FileNotFoundException -> if (IsWindows) {
-                        // Windows has no concept of file permissions, so may instead
-                        // fail with ENOENT b/c the file is not an executable with a
-                        // main function.
-                        //
-                        // pass
-                    } else {
-                        fail("!IsWindows && is FileNotFoundException", t)
-                    }
-                    is AccessDeniedException -> {} // pass
-                    is IOException -> if (IsWindows) {
-                        // Windows may also fail due to it being an invalid program on Jvm (error 193)
-                        //
-                        // pass
-                    } else {
-                        fail("!IsWindows && is IOException", t)
-                    }
-                    else -> throw t
-                }
+                t.assertPermissionsException()
+            }
+
+            try {
+                b.createProcessAsync().destroy()
+                fail("Process.Builder.createProcessAsync should have thrown an IOException")
+            } catch (t: Throwable) {
+                t.assertPermissionsException()
             }
         } finally {
             invalid.delete2()
@@ -340,7 +360,7 @@ abstract class ProcessBaseTest {
             .stdin(Stdio.Null)
             .stdout(Stdio.Pipe)
             .stderr(Stdio.Pipe)
-            .spawn()
+            .createProcessAsync()
 
         p.stdoutFeed { line ->
             throw IllegalStateException(line)
@@ -381,7 +401,7 @@ abstract class ProcessBaseTest {
 
         val exitCode = Process.Builder(command = if (IsAppleSimulator) "/bin/cat" else "cat")
             .args("-")
-            .useSpawn { p ->
+            .createProcessAsync().use { p ->
                 val data = expected
                     .joinToString("\n", postfix = "\n")
                     .encodeToByteArray()
@@ -429,10 +449,7 @@ abstract class ProcessBaseTest {
         val f = SysTempDir
             .resolve("kmp_process_redirect")
             .resolve("stdout_stderr.txt")
-
-        if (f.exists() && !f.delete()) {
-            fail("Failed to delete test file[$f]")
-        }
+            .delete2()
 
         Process.Builder(command = if (IsAppleSimulator) "/bin/sh" else "sh")
             .args("-c")
@@ -440,7 +457,7 @@ abstract class ProcessBaseTest {
             .stdin(Stdio.Null)
             .stdout(Stdio.File.of(f))
             .stderr(Stdio.File.of(f))
-            .useSpawn { p ->
+            .createProcessAsync().use { p ->
                 p.waitForAsync()
 
                 delayTest(250.milliseconds)
@@ -470,7 +487,7 @@ abstract class ProcessBaseTest {
 
             Process.Builder(command = command.path)
                 .args("--version")
-                .chdir(tor.parentFile)
+                .changeDirectory(tor.parentFile)
                 .environment(configureEnv)
         }.output { timeoutMillis = 2_000 }
 
@@ -487,17 +504,14 @@ abstract class ProcessBaseTest {
         val stdoutFile = logsDir.resolve("tor.log")
         val stderrFile = logsDir.resolve("tor.err")
 
-        stdoutFile.delete()
-        stderrFile.delete()
-        logsDir.delete()
-
-        assertFalse(stdoutFile.exists())
-        assertFalse(stderrFile.exists())
+        stdoutFile.delete2()
+        stderrFile.delete2()
+        logsDir.delete2()
 
         LOADER.toProcessBuilder()
             .stdout(Stdio.File.of(stdoutFile, append = true))
             .stderr(Stdio.File.of(stderrFile))
-            .useSpawn { p ->
+            .createProcessAsync().use { p ->
                 println(p)
 
                 withContext(Dispatchers.Default) {
@@ -505,8 +519,8 @@ abstract class ProcessBaseTest {
                 }
 
                 // parent dir was created by Stdio.Config.Builder.build
-                assertTrue(stdoutFile.exists())
-                assertTrue(stderrFile.exists())
+                assertTrue(stdoutFile.exists2())
+                assertTrue(stderrFile.exists2())
 
                 withContext(Dispatchers.Default) {
                     p.waitForAsync(2.seconds)
@@ -535,7 +549,7 @@ abstract class ProcessBaseTest {
 
     @Test
     open fun givenExecutable_whenPipeOutputFeeds_thenIsAsExpected() = runTest(timeout = 25.seconds) {
-        LOADER.toProcessBuilder().useSpawn { p ->
+        LOADER.toProcessBuilder().createProcessAsync().use { p ->
             val stdoutBuilder = StringBuilder()
             val stderrBuilder = StringBuilder()
 
@@ -606,9 +620,9 @@ abstract class ProcessBaseTest {
         val b = process(TorResourceBinder) { tor, configureEnv ->
             Process.Builder(executable = tor)
                 .args("--DataDirectory")
-                .args(dataDir.also { it.mkdirs() }.path)
+                .args(dataDir.mkdirs2(mode = "700").path)
                 .args("--CacheDirectory")
-                .args(cacheDir.also { it.mkdirs() }.path)
+                .args(cacheDir.mkdirs2(mode = "700").path)
                 .args("--GeoIPFile")
                 .args(geoipFiles.geoip.path)
                 .args("--GeoIPv6File")
@@ -631,10 +645,14 @@ abstract class ProcessBaseTest {
                 .stderr(Stdio.Pipe)
         }
 
-        if (!IsAppleSimulator) {
-            b.chdir(homeDir)
-        }
+        if (!IsAppleSimulator) b.changeDirectory(homeDir)
 
         return b
+    }
+
+    @Suppress("NOTHING_TO_INLINE", "DEPRECATION")
+    private inline fun Process.Builder.changeDirectory(dir: File?): Process.Builder {
+        // TODO: Move to expect/actual and use changeDir extension
+        return chdir(dir)
     }
 }

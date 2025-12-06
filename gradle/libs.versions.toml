@@ -32,6 +32,7 @@ gradle-publish-maven        = { module = "com.vanniktech:gradle-maven-publish-pl
 immutable-collections       = { module = "io.matthewnelson.immutable:collections", version.ref = "immutable" }
 
 kmp-file                    = { module = "io.matthewnelson.kmp-file:file", version.ref = "kmp-file" }
+kmp-file-async              = { module = "io.matthewnelson.kmp-file:async", version.ref = "kmp-file" }
 kotlinx-coroutines-core     = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
 
 # tests
