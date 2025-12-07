@@ -26,6 +26,7 @@ import io.matthewnelson.kmp.file.canonicalFile2
 import io.matthewnelson.kmp.file.mkdirs2
 import io.matthewnelson.kmp.file.normalize
 import io.matthewnelson.kmp.file.parentFile
+import io.matthewnelson.kmp.file.path
 import io.matthewnelson.kmp.process.Output
 import io.matthewnelson.kmp.process.Stdio
 import kotlin.contracts.ExperimentalContracts
@@ -107,6 +108,7 @@ internal inline fun ((Stdio, Stdio, Stdio) -> Stdio.Config).build(
         if (isOutput && stdio is Stdio.Pipe) return@let Stdio.Null
 
         if (stdio !is Stdio.File) return@let stdio
+        stdio.file.path.checkFileName { "stdin file name" }
         if (!stdio.append) return@let stdio
         Stdio.File.of(stdio.file, append = false)
     }
@@ -120,6 +122,7 @@ internal inline fun ((Stdio, Stdio, Stdio) -> Stdio.Config).build(
     ).forEach { (name, stdio) ->
         if (stdio !is Stdio.File) return@forEach
         if (stdio.file == STDIO_NULL) return@forEach
+        stdio.file.path.checkFileName { "$name file name" }
 
         if (stdin is Stdio.File) {
             if (stdin.file._isCanonicallyEqualTo(stdio.file)) {
