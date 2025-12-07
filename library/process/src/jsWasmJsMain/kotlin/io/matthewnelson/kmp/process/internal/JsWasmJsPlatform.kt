@@ -13,11 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
+@file:Suppress("NOTHING_TO_INLINE")
+
 package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.file.SysDirSep
 import io.matthewnelson.kmp.file.toFile
+import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.internal.node.node_os
 
 internal actual val STDIO_NULL: File by lazy {
@@ -35,3 +38,6 @@ internal actual val IsDesktop: Boolean get() = try {
 } catch (_: Throwable) {
     false
 }
+
+internal actual inline fun Process.hasStdoutStarted(): Boolean = (this as NodeJsProcess)._hasStdoutStarted
+internal actual inline fun Process.hasStderrStarted(): Boolean = (this as NodeJsProcess)._hasStderrStarted

@@ -14,7 +14,7 @@
  * limitations under the License.
  **/
 @file:OptIn(DelicateFileApi::class)
-@file:Suppress("RedundantVisibilityModifier")
+@file:Suppress("PropertyName", "RedundantVisibilityModifier")
 
 package io.matthewnelson.kmp.process.internal
 
@@ -57,6 +57,10 @@ internal class NodeJsProcess internal constructor(
 ) {
 
     private var _exitCode: Int? = null
+    internal var _hasStdoutStarted: Boolean = false
+        private set
+    internal var _hasStderrStarted: Boolean = false
+        private set
     internal var spawnError: IOException? = null
         private set
 
@@ -192,6 +196,7 @@ internal class NodeJsProcess internal constructor(
 
         @OptIn(InternalProcessApi::class)
         ReadBuffer.lineOutputFeed(::dispatchStdout).apply {
+            _hasStdoutStarted = true
             stdout.onClose {
                 close()
             }.onData { data ->
@@ -205,6 +210,7 @@ internal class NodeJsProcess internal constructor(
 
         @OptIn(InternalProcessApi::class)
         ReadBuffer.lineOutputFeed(::dispatchStderr).apply {
+            _hasStderrStarted = true
             stderr.onClose {
                 close()
             }.onData { data ->
