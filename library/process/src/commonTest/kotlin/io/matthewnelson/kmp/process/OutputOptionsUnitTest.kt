@@ -22,10 +22,10 @@ class OutputOptionsUnitTest {
 
     @Test
     fun givenBuilder_whenOptionsLessThanMin_thenOptionsUseMinValues() {
-        val o = Output.Options.Builder.build {
+        val o = Output.Options.Builder.get().apply {
             timeoutMillis = 2
             maxBuffer = 5
-        }
+        }.build()
 
         assertEquals(250.milliseconds, o.timeout)
         assertEquals(1024 * 16, o.maxBuffer)
@@ -36,10 +36,10 @@ class OutputOptionsUnitTest {
 
     @Test
     fun givenOptions_whenInputBytesConsumed_thenDereferencesCallback() {
-        val o = Output.Options.Builder.build {
+        val o = Output.Options.Builder.get().apply {
             inputUtf8 { "Hello" }
             input { "Hello".encodeToByteArray() }
-        }
+        }.build()
 
         assertTrue(o.hasInput)
         assertNull(o.consumeInputUtf8())
@@ -49,10 +49,10 @@ class OutputOptionsUnitTest {
 
     @Test
     fun givenOptions_whenInputUtf8Consumed_thenDereferencesCallback() {
-        val o = Output.Options.Builder.build {
+        val o = Output.Options.Builder.get().apply {
             input { "Hello".encodeToByteArray() }
             inputUtf8 { "Hello" }
-        }
+        }.build()
 
         assertTrue(o.hasInput)
         assertNull(o.consumeInputBytes())

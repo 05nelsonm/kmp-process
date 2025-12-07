@@ -115,7 +115,7 @@ myScope.launch {
 }
 
 // Direct output (Blocking API for all platforms)
-builder.output {
+builder.createOutput {
     maxBuffer = 1024 * 24
     timeoutMillis = 500
 }.let { output ->

@@ -259,7 +259,7 @@ public abstract class Process internal constructor(
      *         .destroySignal(Signal.SIGKILL)
      *         .stdin(Stdio.Null)
      *         // Synchronous API (All platforms)
-     *         .output { timeoutMillis = 1_500 }
+     *         .createOutput { timeoutMillis = 1_500 }
      *
      *     assertEquals(5, out.processInfo.exitCode)
      *
@@ -370,7 +370,7 @@ public abstract class Process internal constructor(
          * Configure a [ProcessException.Handler] to manage internal-ish
          * [Process] errors for spawned processes.
          *
-         * **NOTE:** [output] utilizes its own [ProcessException.Handler]
+         * **NOTE:** [createOutput] utilizes its own [ProcessException.Handler]
          * and does **not** use whatever may be set by [onError].
          *
          * @see [ProcessException]
@@ -414,8 +414,9 @@ public abstract class Process internal constructor(
          *
          * See: [Blocking.Builder.createProcess](https://kmp-process.matthewnelson.io/library/process/io.matthewnelson.kmp.process/-blocking/-builder/create-process.html)
          * @see [async]
+         * @see [createOutput]
          *
-         * @return the [Process]
+         * @return The [Process]
          *
          * @throws [CancellationException]
          * @throws [IOException] If [Process] creation failed.
@@ -432,6 +433,60 @@ public abstract class Process internal constructor(
                 _spawn = { command, args, chdir, env, stdio, signal, handler ->
                     spawnAsync(fs, command, args, chdir, env, stdio, signal, handler)
                 },
+            )
+        }
+
+        /**
+         * Blocks the current thread until [Process] completion,
+         * [Output.Options.Builder.timeoutMillis] is exceeded,
+         * or [Output.Options.Builder.maxBuffer] is exceeded.
+         *
+         * Utilizes the default [Output.Options]
+         *
+         * **NOTE:** For a long-running [Process], `createProcess`
+         * or [createProcessAsync] + [use] should be preferred.
+         *
+         * @return The [Output]
+         *
+         * @throws [IOException] If [Process] creation failed.
+         * @throws [UnsupportedOperationException] On Js/WasmJs Browser.
+         * */
+        @Throws(IOException::class)
+        public fun createOutput(): Output = createOutput(b = Output.Options.Builder.get())
+
+        /**
+         * Blocks the current thread until [Process] completion,
+         * [Output.Options.Builder.timeoutMillis] is exceeded,
+         * or [Output.Options.Builder.maxBuffer] is exceeded.
+         *
+         * **NOTE:** For a long-running [Process], `createProcess`
+         * or [createProcessAsync] + [use] should be preferred.
+         *
+         * @param [block] lambda to configure [Output.Options]
+         *
+         * @return The [Output]
+         *
+         * @see [Output.Options.Builder]
+         *
+         * @throws [IOException] If [Process] creation failed.
+         * @throws [UnsupportedOperationException] on Js/WasmJs Browser.
+         * */
+        @Throws(IOException::class)
+        @OptIn(ExperimentalContracts::class)
+        public inline fun createOutput(block: Output.Options.Builder.() -> Unit): Output {
+            contract { callsInPlace(block, InvocationKind.EXACTLY_ONCE) }
+            val b = Output.Options.Builder.get().apply(block)
+            return createOutput(b)
+        }
+
+        @JvmSynthetic
+        @PublishedApi
+        @Throws(IOException::class)
+        internal fun createOutput(b: Output.Options.Builder): Output {
+            return platformOutput(
+                b = b,
+                _build = Stdio.Config.Builder::build,
+                _output = PlatformBuilder::output,
             )
         }
 
@@ -455,8 +510,7 @@ public abstract class Process internal constructor(
                 callsInPlace(_build, InvocationKind.AT_MOST_ONCE)
                 callsInPlace(_spawn, InvocationKind.AT_MOST_ONCE)
             }
-            if (command.isBlank()) throw IOException("command cannot be blank")
-
+            checkCommand()
             val stdio = _stdio._build(/* outputOptions = */ null)
 
             val args = _args.toImmutableList()
@@ -466,75 +520,80 @@ public abstract class Process internal constructor(
             return _platform._spawn(command, args, _chdir, env, stdio, _signal, handler)
         }
 
-        /**
-         * Blocks the current thread until [Process] completion,
-         * [Output.Options.Builder.timeoutMillis] is exceeded,
-         * or [Output.Options.Builder.maxBuffer] is exceeded.
-         *
-         * Utilizes the default [Output.Options]
-         *
-         * For a long-running [Process], [createProcessAsync] and
-         * [use] should be utilized.
-         *
-         * @return [Output]
-         * @throws [IOException] if [Process] creation failed
-         * @throws [UnsupportedOperationException] on Js/WasmJs Browser
-         * */
-        // TODO: Deprecate & replace with createOutput/createOutputAsync
         @Throws(IOException::class)
-        public fun output(): Output = output { /* defaults */ }
-
-        /**
-         * Blocks the current thread until [Process] completion,
-         * [Output.Options.Builder.timeoutMillis] is exceeded,
-         * or [Output.Options.Builder.maxBuffer] is exceeded.
-         *
-         * For a long-running [Process], [createProcessAsync] and
-         * [use] should be utilized.
-         *
-         * @param [block] lambda to configure [Output.Options]
-         * @return [Output]
-         * @see [Output.Options.Builder]
-         * @throws [IOException] if [Process] creation failed
-         * @throws [UnsupportedOperationException] on Js/WasmJs Browser
-         * */
-        // TODO: Deprecate & replace with createOutput/createOutputAsync
-        @Throws(IOException::class)
-        public fun output(
-            block: Output.Options.Builder.() -> Unit,
+        @OptIn(ExperimentalContracts::class)
+        private inline fun platformOutput(
+            b: Output.Options.Builder,
+            _build: Stdio.Config.Builder.(Output.Options?) -> Stdio.Config,
+            _output: PlatformBuilder.(String, List<String>, File?, Map<String, String>, Stdio.Config, Output.Options, Signal) -> Output,
         ): Output {
-            if (command.isBlank()) throw IOException("command cannot be blank")
-
-            val options = Output.Options.Builder.build(block)
-            val stdio = _stdio.build(outputOptions = options)
+            contract {
+                callsInPlace(_build, InvocationKind.AT_MOST_ONCE)
+                callsInPlace(_output, InvocationKind.AT_MOST_ONCE)
+            }
+            checkCommand()
+            val options = b.build()
+            val stdio = _stdio._build(/* outputOptions = */ options)
 
             val args = _args.toImmutableList()
             val env = _platform.env.toImmutableMap()
 
-            return _platform.output(command, args, _chdir, env, stdio, options, _signal)
+            return _platform._output(command, args, _chdir, env, stdio, options, _signal)
+        }
+
+        @Throws(IOException::class)
+        @Suppress("NOTHING_TO_INLINE")
+        private inline fun checkCommand() {
+            if (command.isBlank()) throw IOException("command cannot be blank")
         }
 
         /**
-         * DEPRECATED
+         * DEPRECATED since `0.5.0`
+         * @suppress
+         * */
+        @Throws(IOException::class)
+        @Deprecated(
+            message = "Renamed to createOutput",
+            replaceWith = ReplaceWith("createOutput()"),
+            level = DeprecationLevel.WARNING,
+        )
+        public fun output(): Output = createOutput()
+
+        /**
+         * DEPRECATED since `0.5.0`
+         * @suppress
+         * */
+        @Throws(IOException::class)
+        @Deprecated(
+            message = "Renamed to createOutput and inlined",
+            replaceWith = ReplaceWith("createOutput(block)"),
+            level = DeprecationLevel.WARNING,
+        )
+        public fun output(
+            block: Output.Options.Builder.() -> Unit,
+        ): Output = createOutput(block)
+
+        /**
+         * DEPRECATED since `0.5.0`
          * See: https://github.com/05nelsonm/kmp-process/issues/198
          * @suppress
          * */
         @Throws(IOException::class)
         @Deprecated(
-            message = "Replaced with .createProcess() (Jvm/Native) and .createProcessAsync() (All platforms)",
+            message = "Replaced with createProcess (Jvm/Native) and createProcessAsync (All platforms)",
             level = DeprecationLevel.WARNING,
         )
         public fun spawn(): Process = createProcessProtected()
 
         /**
-         * DEPRECATED
+         * DEPRECATED since `0.5.0`
          * See: https://github.com/05nelsonm/kmp-process/issues/198
          * @suppress
          * */
         @Throws(IOException::class)
         @OptIn(ExperimentalContracts::class)
         @Deprecated(
-            message = "Replaced with Closeable.use. Use Builder.{createProcess/createProcessAsync}.use { } instead.",
+            message = "Replaced with Closeable.use functionality. Use Builder.{createProcess/createProcessAsync}.use { ... } instead.",
             level = DeprecationLevel.WARNING,
         )
         public inline fun <T: Any?> useSpawn(block: (process: Process) -> T): T {
@@ -544,14 +603,13 @@ public abstract class Process internal constructor(
         }
 
         /**
-         * DEPRECATED
-         * See: https://github.com/05nelsonm/kmp-process/issues/198
+         * DEPRECATED since `0.3.0`
          * @suppress
          * */
         @Throws(IOException::class)
         @OptIn(ExperimentalContracts::class)
         @Deprecated(
-            message = "Replaced with Closeable.use",
+            message = "Replaced with Closeable.use functionality",
             replaceWith = ReplaceWith("useSpawn(block)"),
             level = DeprecationLevel.WARNING,
         )
@@ -562,7 +620,7 @@ public abstract class Process internal constructor(
         }
 
         /**
-         * DEPRECATED
+         * DEPRECATED since `0.1.1`
          * @suppress
          * */
         @Deprecated(

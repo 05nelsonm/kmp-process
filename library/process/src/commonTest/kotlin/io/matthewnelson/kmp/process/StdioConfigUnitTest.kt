@@ -66,7 +66,7 @@ class StdioConfigUnitTest {
         b.stdout = Stdio.File.of("stdout")
         b.stderr = Stdio.File.of("stderr")
 
-        val config = b.build(Output.Options.Builder.build {  })
+        val config = b.build(Output.Options.Builder.get().build())
         assertEquals(Stdio.Pipe, config.stdout)
         assertEquals(Stdio.Pipe, config.stderr)
 
@@ -79,7 +79,7 @@ class StdioConfigUnitTest {
     @Test
     fun givenBuilder_whenOutputOptionsWithInput_thenStdinIsAsExpected() {
         val b = Stdio.Config.Builder.get()
-        val o = Output.Options.Builder.build { inputUtf8 { "text" } }
+        val o = Output.Options.Builder.get().apply { inputUtf8 { "text" } }.build()
 
         b.stdin = Stdio.Inherit
         assertEquals(Stdio.Pipe, b.build(o).stdin)
