@@ -573,9 +573,10 @@ public abstract class Process internal constructor(
                         _close = { closeAsync() },
                         _write = { buf, offset, len -> writeAsync(buf, offset, len) },
 
+                        _sleep = { duration -> delay(duration) },
                         // Using withContext b/c test coroutine dispatcher will advance time
-                        // which we do NOT want here, as output may be missed.
-                        _sleep = { duration -> withContext(AsyncFs.Default.ctx) { delay(duration) } },
+                        // which we do NOT want here, as output may get missed.
+                        _sleepWithContext = { duration -> withContext(AsyncFs.Default.ctx) { delay(duration) } },
 
                         _awaitStop = { awaitStopAsync() },
                         _waitFor = { waitForAsync() },

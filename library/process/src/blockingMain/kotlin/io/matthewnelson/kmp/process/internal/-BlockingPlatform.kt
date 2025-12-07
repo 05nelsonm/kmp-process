@@ -48,6 +48,7 @@ internal inline fun PlatformBuilder.blockingOutput(
     _close = AsyncWriteStream::close,
     _write = AsyncWriteStream::write,
     _sleep = Duration::threadSleep,
+    _sleepWithContext = Duration::threadSleep,
     _awaitStop = OutputFeed.Waiter::awaitStop,
     _waitFor = Process::waitFor,
 )

@@ -57,6 +57,8 @@ internal inline fun PlatformBuilder.commonOutput(
     _close: AsyncWriteStream.() -> Unit,
     _write: AsyncWriteStream.(ByteArray, Int, Int) -> Unit,
     _sleep: (Duration) -> Unit,
+    // Specifically for coroutines
+    _sleepWithContext: (Duration) -> Unit,
     _awaitStop: OutputFeed.Waiter.() -> Process,
     _waitFor: Process.() -> Int,
 ): Output {
@@ -65,6 +67,7 @@ internal inline fun PlatformBuilder.commonOutput(
         callsInPlace(_close, InvocationKind.AT_MOST_ONCE)
         callsInPlace(_write, InvocationKind.UNKNOWN)
         callsInPlace(_sleep, InvocationKind.UNKNOWN)
+        callsInPlace(_sleepWithContext, InvocationKind.UNKNOWN)
         callsInPlace(_awaitStop, InvocationKind.UNKNOWN)
         callsInPlace(_waitFor, InvocationKind.AT_MOST_ONCE)
     }
@@ -133,7 +136,7 @@ internal inline fun PlatformBuilder.commonOutput(
                 if (stdoutBuffer.maxSizeExceeded || stderrBuffer.maxSizeExceeded) {
                     throw ProcessException.of(CONTEXT_MAX_BUFFER_SIZE, Throwable())
                 }
-                _sleep(millis)
+                if (postExitTicks > 0) _sleepWithContext(millis) else _sleep(millis)
             },
         )
     } catch (e: ProcessException) {
