@@ -18,13 +18,39 @@
 package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.File
+import io.matthewnelson.kmp.file.IOException
+import io.matthewnelson.kmp.file.SysDirSep
 import io.matthewnelson.kmp.file.path
 import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.Stdio
+import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.InvocationKind
+import kotlin.contracts.contract
 
 internal expect val IsDesktop: Boolean
 
 internal inline val IsWindows: Boolean get() = STDIO_NULL.path == "NUL"
+
+private const val DOT = "."
+private const val DOT_DOT = ".."
+private val SLASH = "$SysDirSep"
+
+@Throws(IOException::class)
+@OptIn(ExperimentalContracts::class)
+internal inline fun String.checkFileName(paramName: () -> String) {
+    contract { callsInPlace(paramName, InvocationKind.AT_MOST_ONCE) }
+    if (isEmpty()) {
+        val n = paramName()
+        throw IOException("$n cannot be empty")
+    }
+    when (this) {
+        DOT, DOT_DOT, SLASH -> {
+            val n = paramName()
+            throw IOException("$n cannot be '$this'")
+        }
+        else -> return
+    }
+}
 
 internal fun StringBuilder.appendProcessInfo(
     className: String,

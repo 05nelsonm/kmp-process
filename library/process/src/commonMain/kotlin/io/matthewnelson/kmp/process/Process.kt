@@ -25,6 +25,7 @@ import io.matthewnelson.kmp.process.ProcessException.Companion.CTX_DESTROY
 import io.matthewnelson.kmp.process.internal.PID
 import io.matthewnelson.kmp.process.internal.PlatformBuilder
 import io.matthewnelson.kmp.process.internal.appendProcessInfo
+import io.matthewnelson.kmp.process.internal.checkFileName
 import io.matthewnelson.kmp.process.internal.commonOutput
 import io.matthewnelson.kmp.process.internal.commonWaitFor
 import kotlinx.coroutines.delay
@@ -605,7 +606,7 @@ public abstract class Process internal constructor(
                 callsInPlace(_build, InvocationKind.AT_MOST_ONCE)
                 callsInPlace(_spawn, InvocationKind.AT_MOST_ONCE)
             }
-            checkCommand()
+            command.checkFileName { "command" }
             val stdio = _stdio._build(/* outputOptions = */ null)
 
             val args = _args.toImmutableList()
@@ -626,7 +627,7 @@ public abstract class Process internal constructor(
                 callsInPlace(_build, InvocationKind.AT_MOST_ONCE)
                 callsInPlace(_output, InvocationKind.AT_MOST_ONCE)
             }
-            checkCommand()
+            command.checkFileName { "command" }
             val options = b.build()
             val stdio = _stdio._build(/* outputOptions = */ options)
 
@@ -634,12 +635,6 @@ public abstract class Process internal constructor(
             val env = _platform.env.toImmutableMap()
 
             return _platform._output(command, args, _chdir, env, stdio, options, _signal)
-        }
-
-        @Throws(IOException::class)
-        @Suppress("NOTHING_TO_INLINE")
-        private inline fun checkCommand() {
-            if (command.isBlank()) throw IOException("command cannot be blank")
         }
 
         /**
