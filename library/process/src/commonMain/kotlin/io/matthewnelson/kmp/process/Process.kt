@@ -258,6 +258,7 @@ public abstract class Process internal constructor(
      *         .args("sleep 1; exit 5")
      *         .destroySignal(Signal.SIGKILL)
      *         .stdin(Stdio.Null)
+     *         // Synchronous API (All platforms)
      *         .output { timeoutMillis = 1_500 }
      *
      *     assertEquals(5, out.processInfo.exitCode)
@@ -276,22 +277,22 @@ public abstract class Process internal constructor(
      *         .stdout(Stdio.File.of("logs/myExecutable.log", append = true))
      *         .stderr(Stdio.File.of("logs/myExecutable.err"))
      *
+     *     // Synchronous API (Jvm/Native)
+     *     b.createProcess().use { p ->
+     *         // ...
+     *     }
+     *
      *     // Asynchronous API (All platforms)
      *     myScope.launch {
      *         b.createProcessAsync().use { p ->
      *             // ...
      *         }
      *     }
-     *
-     *     // Synchronous API (Jvm/Native)
-     *     b.createProcess().use { p ->
-     *         // ...
-     *     }
      * */
     public class Builder(
 
         /**
-         * The command to run, such as a program name on `PATH`, or a file path (relative or
+         * The command to run, such as a program on `PATH`, or a file path (relative or
          * absolute) to a program.
          * */
         @JvmField
@@ -335,7 +336,7 @@ public abstract class Process internal constructor(
         /**
          * DEFAULT: `Dispatchers.IO` (Jvm/Native), `Dispatchers.Default` (Js/WasmJs)
          *
-         * Set the [CoroutineContext] to utilize for [createProcessAsync]. If `null`,
+         * Configure the [CoroutineContext] to utilize for [createProcessAsync]. If `null`,
          * the `DEFAULT` will be used.
          * */
         public fun async(context: CoroutineContext?): Builder = apply { _async = AsyncFs.of(context) }
@@ -343,32 +344,31 @@ public abstract class Process internal constructor(
         /**
          * DEFAULT: [Signal.SIGTERM]
          *
-         * Set the [Signal] to use when [Process.destroy] is called.
+         * Configure the [Signal] to use when [Process.destroy] is called.
          * */
         public fun destroySignal(signal: Signal): Builder = apply { _signal = signal }
 
         /**
-         * Set/overwrite an environment variable
+         * Configure/overwrite an environment variable
          *
          * By default, the new [Process] will inherit all environment
-         * variables from the current one.
+         * variables from the current one (its parent process).
          * */
         public fun environment(key: String, value: String): Builder = apply { _platform.env[key] = value }
 
         /**
-         * Modify the environment via lambda
+         * Configure the process' environment via lambda
          *
          * By default, the new [Process] will inherit all environment
-         * variables from the current one.
+         * variables from the current one (its parent process).
          * */
         public fun environment(block: MutableMap<String, String>.() -> Unit): Builder = apply { block(_platform.env) }
 
         /**
-         * Set a [ProcessException.Handler] to manage internal
-         * [Process] errors for spawned processes.
+         * DEFAULT: `null` (i.e. use [ProcessException.Handler.IGNORE])
          *
-         * By default, [ProcessException.Handler.IGNORE] is used
-         * if one is not set.
+         * Configure a [ProcessException.Handler] to manage internal-ish
+         * [Process] errors for spawned processes.
          *
          * **NOTE:** [output] utilizes its own [ProcessException.Handler]
          * and does **not** use whatever may be set by [onError].
@@ -380,7 +380,7 @@ public abstract class Process internal constructor(
         /**
          * DEFAULT: [Stdio.Pipe]
          *
-         * Modify the standard input source
+         * Configure the standard input source
          *
          * @see [Stdio]
          * */
@@ -389,7 +389,7 @@ public abstract class Process internal constructor(
         /**
          * DEFAULT: [Stdio.Pipe]
          *
-         * Modify the standard output destination
+         * Configure the standard output destination
          *
          * @see [Stdio]
          * */
@@ -398,7 +398,7 @@ public abstract class Process internal constructor(
         /**
          * DEFAULT: [Stdio.Pipe]
          *
-         * Modify the standard error output destination
+         * Configure the standard error destination
          *
          * @see [Stdio]
          * */
@@ -407,7 +407,19 @@ public abstract class Process internal constructor(
         /**
          * Create the [Process] asynchronously using the configured [async] context.
          *
+         * **NOTE:** [Process.destroy] **MUST** be called before de-referencing the
+         * process instance in order to close resources. This is best done via a
+         * try/finally block, or utilization of the [Closeable.use] function which
+         * handles it for you.
+         *
          * See: [Blocking.Builder.createProcess](https://kmp-process.matthewnelson.io/library/process/io.matthewnelson.kmp.process/-blocking/-builder/create-process.html)
+         * @see [async]
+         *
+         * @return the [Process]
+         *
+         * @throws [CancellationException]
+         * @throws [IOException] If [Process] creation failed.
+         * @throws [UnsupportedOperationException] On Js/WasmJs Browser.
          * */
         @Throws(CancellationException::class, IOException::class)
         public suspend fun createProcessAsync(): Process {
@@ -556,7 +568,7 @@ public abstract class Process internal constructor(
         @Deprecated(
             message = "Not available for iOS/tvOS/watchOS targets. Use Builder.changeDir",
             replaceWith = ReplaceWith("this.changeDir(directory)", "io.matthewnelson.kmp.process.changeDir"),
-            level = DeprecationLevel.WARNING, // TODO: Update to ERROR
+            level = DeprecationLevel.ERROR,
         )
         public fun chdir(
             directory: File?,

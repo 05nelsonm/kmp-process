@@ -17,8 +17,10 @@
 
 package io.matthewnelson.kmp.process
 
+import io.matthewnelson.kmp.file.Closeable
 import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.file.InterruptedException
+import io.matthewnelson.kmp.file.use
 import io.matthewnelson.kmp.process.internal.commonWaitFor
 import io.matthewnelson.kmp.process.internal.threadSleep
 import kotlin.jvm.JvmField
@@ -127,7 +129,16 @@ public actual sealed class Blocking protected actual constructor() {
         /**
          * Create the [Process] synchronously.
          *
+         * **NOTE:** [Process.destroy] **MUST** be called before de-referencing the
+         * process instance in order to close resources. This is best done via a
+         * try/finally block, or utilization of the [Closeable.use] function which
+         * handles it for you.
+         *
          * @see [Process.Builder.createProcessAsync]
+         *
+         * @return the [Process]
+         *
+         * @throws [IOException] If [Process] creation failed.
          * */
         @Throws(IOException::class)
         public fun createProcess(): Process = createProcessProtected()

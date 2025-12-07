@@ -26,6 +26,6 @@ import io.matthewnelson.kmp.file.File
 public fun Process.Builder.changeDir(
     directory: File?,
 ): Process.Builder = apply {
-    @Suppress("DEPRECATION")
+    @Suppress("DEPRECATION_ERROR")
     chdir(directory)
 }

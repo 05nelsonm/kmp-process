@@ -20,8 +20,10 @@ package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.file.DelicateFileApi
 import io.matthewnelson.kmp.file.File
+import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.file.errorCodeOrNull
 import io.matthewnelson.kmp.file.jsExternTryCatch
+import io.matthewnelson.kmp.file.toFile
 import io.matthewnelson.kmp.file.toIOException
 import io.matthewnelson.kmp.process.*
 import io.matthewnelson.kmp.process.internal.node.node_process
@@ -55,18 +57,25 @@ internal class NodeJsProcess internal constructor(
 ) {
 
     private var _exitCode: Int? = null
-    internal var spawnError: Throwable? = null
+    internal var spawnError: IOException? = null
         private set
 
     init {
         jsProcess.onError { t ->
             if (isDestroyed) return@onError
-            if (isAsync && pid() <= 0) {
-                spawnError = t
-                return@onError
-            }
-            val e = t.toIOException()
-            onError(e, context = ERROR_CONTEXT)
+            if (pid() <= 0) {
+                val e = t.toIOException(command.toFile())
+                if (isAsync) {
+                    // Hoist out of onError listener lambda so that
+                    // PlatformBuilder.spawnAsync can pick it up to
+                    // throw it.
+                    spawnError = e
+                    return@onError
+                }
+                e
+            } else {
+                t.toIOException()
+            }.let { onError(it, context = ERROR_CONTEXT) }
         }
 
         if (isDetached) jsProcess.unref()
@@ -80,7 +89,7 @@ internal class NodeJsProcess internal constructor(
         @Suppress("UNUSED_VARIABLE")
         val error: Throwable? = if (!jsProcess.killed && isAlive) {
             try {
-                jsProcess.kill(destroySignal.name)
+                jsExternTryCatch { jsProcess.kill(destroySignal.name) }
                 null
             } catch (t: Throwable) {
                 val code = t.errorCodeOrNull

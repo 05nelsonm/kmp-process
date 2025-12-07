@@ -158,7 +158,7 @@ myScope.launch {
             // do something
         }.waitForAsync(50.milliseconds)
 
-        p // return Process to spawn lambda
+        p // return Process to use lambda
     } // << Process.destroy automatically called on Closeable.use lambda closure
 
         // blocking APIs also available for Jvm/Native

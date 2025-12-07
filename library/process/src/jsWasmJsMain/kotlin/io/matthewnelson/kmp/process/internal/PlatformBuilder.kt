@@ -44,7 +44,6 @@ import io.matthewnelson.kmp.process.internal.node.node_fs
 import io.matthewnelson.kmp.process.internal.node.node_process
 import io.matthewnelson.kmp.process.internal.node.node_stream
 import kotlinx.coroutines.NonCancellable
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
@@ -56,7 +55,6 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
 import kotlin.let
-import kotlin.time.Duration.Companion.milliseconds
 
 // jsWasmJsMain
 internal actual class PlatformBuilder private actual constructor() {
@@ -252,9 +250,13 @@ internal actual class PlatformBuilder private actual constructor() {
 
         withContext(NonCancellable) {
             while (p.pid() <= 0) {
-                p.spawnError?.let { t ->
-                    p.destroy()
-                    throw t.toIOException(command.toFile())
+                p.spawnError?.let { e ->
+                    try {
+                        p.destroy()
+                    } catch (t: Throwable) {
+                        e.addSuppressed(t)
+                    }
+                    throw e
                 }
                 yield()
             }
@@ -461,7 +463,7 @@ private inline fun Stdio.toJsStdio(
     }
 }
 
-@Throws(IOException::class)
+@Throws(CancellationException::class, IOException::class)
 @OptIn(ExperimentalContracts::class)
 private inline fun <T: Any?> List<Any>.closeDescriptorsOnFailure(
     _close: ModuleFs.(Double) -> Unit = { fd -> jsExternTryCatch { closeSync(fd) } },
@@ -475,7 +477,7 @@ private inline fun <T: Any?> List<Any>.closeDescriptorsOnFailure(
     return try {
         block()
     } catch (t: Throwable) {
-        val e = t.toIOException()
+        val e = (t as? CancellationException) ?: t.toIOException()
         forEach { stdio ->
             val fd = stdio as? Double ?: return@forEach
             try {
