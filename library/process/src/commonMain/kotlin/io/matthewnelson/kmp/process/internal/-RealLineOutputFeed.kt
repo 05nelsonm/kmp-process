@@ -17,98 +17,71 @@
 
 package io.matthewnelson.kmp.process.internal
 
+import io.matthewnelson.encoding.utf8.UTF8
 import io.matthewnelson.kmp.process.ReadBuffer
-import kotlin.concurrent.Volatile
 
 internal class RealLineOutputFeed internal constructor(
-    private val dispatch: (line: String?) -> Unit
+    private var dispatch: (line: String?) -> Unit
 ): ReadBuffer.LineOutputFeed() {
 
-    @Volatile
-    private var _isClosed: Boolean = false
-    private val overflow = ArrayDeque<ByteArray>(1)
     private var skipLF: Boolean = false
+    private val sb = StringBuilder(2 * 1024)
+    private val feed = UTF8.newEncoderFeed { c -> sb.append(c) }
+    private var sbMaxLen = 0
 
     @Throws(IllegalStateException::class)
     public override fun onData(buf: ReadBuffer, len: Int) {
-        if (_isClosed) throw IllegalStateException("LineOutputFeed.isClosed[true]")
-
+        if (feed.isClosed()) throw IllegalStateException("LineOutputFeed.isClosed[true]")
         if (buf.capacity() <= 0) return
         buf.capacity().checkBounds(0, len)
-        var iNext = 0
 
         for (i in 0 until len) {
             val b = buf[i]
 
             if (skipLF) {
                 skipLF = false
-
-                if (b == LF) {
-                    iNext++
-                    continue
-                }
+                if (b == LF) continue
             }
 
             when(b) {
                 CR -> skipLF = true
                 LF -> {}
-                else -> continue
+                else -> {
+                    feed.consume(b)
+                    continue
+                }
             }
 
-            val line = overflow.consumeAndAppend(buf.decodeToUtf8(iNext, i))
-            iNext = i + 1
-
-            dispatch(line)
+            feed.flush()
+            if (sb.length > sbMaxLen) sbMaxLen = sb.length
+            dispatch(sb.toString())
+            sb.clear()
         }
-
-        if (iNext == len) return
-
-        // last character of input was not terminating,
-        // buffer it until more data comes in.
-        val remainder = ByteArray(len - iNext) { index -> buf[index + iNext] }
-        overflow.add(remainder)
     }
 
     public override fun close() {
-        if (_isClosed) return
-        _isClosed = true
-        skipLF = false
-
+        val d = dispatch
+        dispatch = NoOp
+        if (feed.isClosed()) return
         try {
-            if (overflow.isNotEmpty()) {
-                // Assume implicit line break
-                val line = overflow.consumeAndAppend(remainder = "")
-                dispatch(line)
+            feed.doFinal()
+            if (sb.isNotEmpty()) {
+                if (sb.length > sbMaxLen) sbMaxLen = sb.length
+                d(sb.toString())
             }
         } finally {
-            dispatch(null)
+            sb.clear()
+            repeat(sbMaxLen) { sb.append(' ') }
+            sbMaxLen = 0
+            skipLF = false
+            d(null)
         }
-    }
-
-    private fun MutableList<ByteArray>.consumeAndAppend(remainder: String): String {
-        if (isEmpty()) return remainder
-
-        var size = remainder.length
-        forEach { size += it.size }
-        val sb = StringBuilder(size)
-
-        while (isNotEmpty()) {
-            val segment = removeAt(0)
-            sb.append(segment.decodeToString())
-            segment.fill(0)
-        }
-
-        sb.append(remainder)
-
-        val s = sb.toString()
-        sb.clear()
-        repeat(size) { sb.append(' ') }
-
-        return s
     }
 
     internal companion object {
         internal const val CR: Byte = '\r'.code.toByte()
         internal const val LF: Byte = '\n'.code.toByte()
+
+        private val NoOp: (line: String?) -> Unit = {}
     }
 }

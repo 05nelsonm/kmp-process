@@ -25,6 +25,7 @@ package io.matthewnelson.kmp.process
  * to mitigate unnecessarily copying a `Node.js` Buffer to a ByteArray.
  *
  * @see [LineOutputFeed]
+ * @suppress
  * */
 public expect value class ReadBuffer private constructor(private val _buf: Any) {
 
@@ -32,9 +33,6 @@ public expect value class ReadBuffer private constructor(private val _buf: Any) 
 
     @Throws(IndexOutOfBoundsException::class)
     internal operator fun get(index: Int): Byte
-
-    @Throws(IllegalArgumentException::class, IndexOutOfBoundsException::class)
-    internal fun decodeToUtf8(startIndex: Int, endIndex: Int): String
 
     /**
      * Scans buffered input and dispatches lines, disregarding

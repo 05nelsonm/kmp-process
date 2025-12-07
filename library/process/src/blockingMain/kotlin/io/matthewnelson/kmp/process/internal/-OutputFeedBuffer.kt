@@ -61,7 +61,7 @@ internal class OutputFeedBuffer private constructor(maxSize: Int): OutputFeed {
                 return
             }
 
-            val truncate = line.substring(0, remaining)
+            val truncate = line.take(remaining)
             lines.add(truncate)
             size += newLineChar
             size += truncate.length

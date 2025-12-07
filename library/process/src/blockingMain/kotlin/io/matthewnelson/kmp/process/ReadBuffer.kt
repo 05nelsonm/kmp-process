@@ -28,6 +28,7 @@ import kotlin.jvm.JvmInline
  * to mitigate unnecessarily copying a `Node.js` Buffer to a ByteArray.
  *
  * @see [LineOutputFeed]
+ * @suppress
  * */
 @JvmInline
 public actual value class ReadBuffer private actual constructor(private actual val _buf: Any) {
@@ -43,12 +44,6 @@ public actual value class ReadBuffer private actual constructor(private actual v
     internal actual operator fun get(
         index: Int,
     ): Byte = buf[index]
-
-    @Throws(IllegalArgumentException::class, IndexOutOfBoundsException::class)
-    internal actual fun decodeToUtf8(
-        startIndex: Int,
-        endIndex: Int,
-    ): String = buf.decodeToString(startIndex, endIndex)
 
     /**
      * Scans buffered input and dispatches lines, disregarding
