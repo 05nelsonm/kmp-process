@@ -62,10 +62,15 @@ public final class io/matthewnelson/kmp/process/Output$Options {
 }
 
 public final class io/matthewnelson/kmp/process/Output$Options$Builder {
+	public static final field Companion Lio/matthewnelson/kmp/process/Output$Options$Builder$Companion;
 	public field maxBuffer I
 	public field timeoutMillis I
 	public final fun input (Lkotlin/jvm/functions/Function0;)Lio/matthewnelson/kmp/process/Output$Options$Builder;
 	public final fun inputUtf8 (Lkotlin/jvm/functions/Function0;)Lio/matthewnelson/kmp/process/Output$Options$Builder;
+}
+
+public final class io/matthewnelson/kmp/process/Output$Options$Builder$Companion {
+	public final synthetic fun get ()Lio/matthewnelson/kmp/process/Output$Options$Builder;
 }
 
 public final class io/matthewnelson/kmp/process/Output$ProcessInfo {
@@ -138,6 +143,9 @@ public final class io/matthewnelson/kmp/process/Process$Builder : io/matthewnels
 	public final fun args ([Ljava/lang/String;)Lio/matthewnelson/kmp/process/Process$Builder;
 	public final fun async (Lkotlin/coroutines/CoroutineContext;)Lio/matthewnelson/kmp/process/Process$Builder;
 	public final fun chdir (Ljava/io/File;)Lio/matthewnelson/kmp/process/Process$Builder;
+	public final fun createOutput ()Lio/matthewnelson/kmp/process/Output;
+	public final synthetic fun createOutput (Lio/matthewnelson/kmp/process/Output$Options$Builder;)Lio/matthewnelson/kmp/process/Output;
+	public final fun createOutput (Lkotlin/jvm/functions/Function1;)Lio/matthewnelson/kmp/process/Output;
 	public final fun createProcessAsync (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun destroySignal (Lio/matthewnelson/kmp/process/Signal;)Lio/matthewnelson/kmp/process/Process$Builder;
 	public final fun environment (Ljava/lang/String;Ljava/lang/String;)Lio/matthewnelson/kmp/process/Process$Builder;
