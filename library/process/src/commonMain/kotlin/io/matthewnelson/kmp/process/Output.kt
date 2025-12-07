@@ -64,14 +64,17 @@ public class Output private constructor(
      * */
     public class Options private constructor(
         @Volatile
-        private var input: (() -> ByteArray)?,
+        private var inputBytes: (() -> ByteArray)?,
+        @Volatile
+        private var inputUtf8: (() -> String)?,
         internal val maxBuffer: Int,
         internal val timeout: Duration,
     ) {
 
         public class Builder private constructor() {
 
-            private var _input: (() -> ByteArray)? = null
+            private var _inputBytes: (() -> ByteArray)? = null
+            private var _inputUtf8: (() -> String)? = null
 
             /**
              * Any input that needs to be passed to the process's
@@ -96,7 +99,10 @@ public class Output private constructor(
              * */
             public fun input(
                 block: () -> ByteArray,
-            ): Builder = apply { _input = block }
+            ): Builder = apply {
+                _inputBytes = block
+                _inputUtf8 = null
+            }
 
             /**
              * Any input that needs be passed to the process's
@@ -117,7 +123,10 @@ public class Output private constructor(
              * */
             public fun inputUtf8(
                 block: () -> String,
-            ): Builder = input { block().encodeToByteArray() }
+            ): Builder = apply {
+                _inputBytes = null
+                _inputUtf8 = block
+            }
 
             /**
              * Maximum number of bytes that can be buffered
@@ -162,23 +171,24 @@ public class Output private constructor(
                         if (millis < MIN_TIMEOUT) MIN_TIMEOUT else millis
                     }
 
-                    return Options(b._input, maxBuffer, timeout.milliseconds)
+                    return Options(b._inputBytes, b._inputUtf8, maxBuffer, timeout.milliseconds)
                 }
             }
         }
 
         @get:JvmSynthetic
-        internal val hasInput: Boolean get() = input != null
+        internal val hasInput: Boolean get() = inputBytes != null || inputUtf8 != null
 
         @JvmSynthetic
-        internal fun consumeInput(): ByteArray? {
-            val i = input ?: return null
-            dropInput()
+        @Throws(IOException::class)
+        internal fun consumeInputBytes(): ByteArray? {
+            val block = inputBytes ?: return null
+            inputBytes = null
 
             val result = try {
-                i()
+                block()
             } catch (t: Throwable) {
-                // wrap it for caller
+                // Wrap it for caller
                 throw IOException("Output.Options.input invocation threw exception", t)
             }
 
@@ -186,7 +196,26 @@ public class Output private constructor(
         }
 
         @JvmSynthetic
-        internal fun dropInput() { input = null }
+        @Throws(IOException::class)
+        internal fun consumeInputUtf8(): String? {
+            val block = inputUtf8 ?: return null
+            inputUtf8 = null
+
+            val result = try {
+                block()
+            } catch (t: Throwable) {
+                // Wrap it for caller
+                throw IOException("Output.Options.inputUtf8 invocation threw exception", t)
+            }
+
+            return result
+        }
+
+        @JvmSynthetic
+        internal fun dropAllInput() {
+            inputBytes = null
+            inputUtf8 = null
+        }
     }
 
     /**
@@ -245,7 +274,7 @@ public class Output private constructor(
         }
 
         /** @suppress */
-        override fun toString(): String = buildString {
+        public override fun toString(): String = buildString {
             appendProcessInfo(
                 "Output.ProcessInfo",
                 pid,
@@ -260,7 +289,7 @@ public class Output private constructor(
     }
 
     /** @suppress */
-    override fun toString(): String = buildString {
+    public override fun toString(): String = buildString {
         appendLine("Output: [")
         appendLine("    stdout: [Omitted]")
         appendLine("    stderr: [Omitted]")

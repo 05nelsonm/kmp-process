@@ -29,16 +29,34 @@ class OutputOptionsUnitTest {
 
         assertEquals(250.milliseconds, o.timeout)
         assertEquals(1024 * 16, o.maxBuffer)
+        assertFalse(o.hasInput)
+        assertNull(o.consumeInputBytes())
+        assertNull(o.consumeInputUtf8())
     }
 
     @Test
-    fun givenOptions_whenInputConsumed_thenDereferencesCallback() {
+    fun givenOptions_whenInputBytesConsumed_thenDereferencesCallback() {
         val o = Output.Options.Builder.build {
+            inputUtf8 { "Hello" }
             input { "Hello".encodeToByteArray() }
         }
 
         assertTrue(o.hasInput)
-        assertNotNull(o.consumeInput())
-        assertNull(o.consumeInput())
+        assertNull(o.consumeInputUtf8())
+        assertNotNull(o.consumeInputBytes())
+        assertNull(o.consumeInputBytes())
+    }
+
+    @Test
+    fun givenOptions_whenInputUtf8Consumed_thenDereferencesCallback() {
+        val o = Output.Options.Builder.build {
+            input { "Hello".encodeToByteArray() }
+            inputUtf8 { "Hello" }
+        }
+
+        assertTrue(o.hasInput)
+        assertNull(o.consumeInputBytes())
+        assertNotNull(o.consumeInputUtf8())
+        assertNull(o.consumeInputUtf8())
     }
 }
