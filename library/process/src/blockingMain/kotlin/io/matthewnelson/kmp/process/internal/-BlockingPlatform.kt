@@ -17,6 +17,9 @@
 
 package io.matthewnelson.kmp.process.internal
 
+import io.matthewnelson.encoding.core.Decoder.Companion.decodeToByteArray
+import io.matthewnelson.encoding.core.use
+import io.matthewnelson.encoding.utf8.UTF8
 import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.file.InterruptedException
@@ -47,7 +50,7 @@ internal fun PlatformBuilder.blockingOutput(
     val p = try {
         spawn(command, args, chdir, env, stdio, destroy, ProcessException.Handler.IGNORE)
     } catch (e: IOException) {
-        options.dropInput()
+        options.dropAllInput()
         throw e
     }
 
@@ -65,17 +68,44 @@ internal fun PlatformBuilder.blockingOutput(
         p.stdoutFeed(stdoutBuffer)
         p.stderrFeed(stderrBuffer)
 
-        options.consumeInput()?.let { bytes ->
-            try {
-                val stream = p.input
-                    // Will never happen b/c Stdio.Config.Builder.build
-                    // will always set stdin to Stdio.Pipe when Output.Options.input
-                    // is not null, but must throw IOException instead of NPE using !!
-                    ?: throw IOException("Misconfigured Stdio.Config. stdin should be Stdio.Pipe")
+        // input will be non-null if and only if Output.Options.hasInput is true.
+        p.input?.use { stream ->
+            options.consumeInputBytes()?.let { b ->
+                try {
+                    stream.write(b, 0, b.size)
+                } finally {
+                    b.fill(0)
+                }
+            }
+            options.consumeInputUtf8()?.let { text ->
+                if (text.length <= (8192 / 3)) {
+                    val utf8 = text.decodeToByteArray(UTF8)
+                    try {
+                        stream.write(utf8, 0, utf8.size)
+                        return@let
+                    } finally {
+                        utf8.fill(0)
+                    }
+                }
 
-                stream.use { it.write(bytes) }
-            } finally {
-                bytes.fill(0)
+                // Chunk
+                val buf = ByteArray(8192)
+                val limit = buf.size - 4
+                var iBuf = 0
+                var iText = 0
+                try {
+                    UTF8.newDecoderFeed { b -> buf[iBuf++] = b }.use { feed ->
+                        while (iText < text.length) {
+                            feed.consume(text[iText++])
+                            if (iBuf <= limit) continue
+                            stream.write(buf, 0, iBuf)
+                            iBuf = 0
+                        }
+                    }
+                    if (iBuf > 0) stream.write(buf, 0, iBuf)
+                } finally {
+                    buf.fill(0)
+                }
             }
         }
 
