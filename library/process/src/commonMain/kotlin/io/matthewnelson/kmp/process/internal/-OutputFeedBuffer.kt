@@ -23,8 +23,8 @@ import kotlin.jvm.JvmSynthetic
 
 internal class OutputFeedBuffer private constructor(maxSize: Int): OutputFeed {
 
-    private val maxSize = maxSize.takeIf { it > 1 } ?: 1
-    private val lines = mutableListOf<String>()
+    private val maxSize = maxSize.coerceAtLeast(1)
+    private val lines = ArrayList<String>(20)
 
     @Volatile
     @get:JvmName("size")
@@ -35,6 +35,7 @@ internal class OutputFeedBuffer private constructor(maxSize: Int): OutputFeed {
     @get:JvmName("hasEnded")
     internal var hasEnded: Boolean = false
         private set
+
     @Volatile
     @get:JvmName("maxSizeExceeded")
     internal var maxSizeExceeded: Boolean = false
@@ -63,17 +64,15 @@ internal class OutputFeedBuffer private constructor(maxSize: Int): OutputFeed {
 
             val truncate = line.take(remaining)
             lines.add(truncate)
-            size += newLineChar
-            size += truncate.length
+            size += (newLineChar + truncate.length)
         } else {
             lines.add(line)
-            size += newLineChar
-            size += line.length
+            size += (newLineChar + line.length)
         }
     }
 
     internal fun doFinal(): String {
-        val sb = StringBuilder(size)
+        val sb = StringBuilder(size + 1)
         lines.joinTo(sb, separator = "\n")
         lines.clear()
         val s = sb.toString()

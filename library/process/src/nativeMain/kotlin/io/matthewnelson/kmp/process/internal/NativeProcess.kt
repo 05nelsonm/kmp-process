@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("RedundantVisibilityModifier")
+@file:Suppress("PropertyName", "RedundantVisibilityModifier")
 
 package io.matthewnelson.kmp.process.internal
 
@@ -66,27 +66,27 @@ internal constructor(
         }
     }
 
-    @Volatile
-    internal var wasStdoutThreadStarted: Boolean = false
-        private set
-    @Volatile
-    internal var wasStderrThreadStarted: Boolean = false
-        private set
-    private val destroyLock = newLock()
     private val _exitCode = AtomicInt(NO_EXIT)
+    private val destroyLock = newLock()
+    @Volatile
+    internal var _hasStdoutStarted: Boolean = false
+        private set
+    @Volatile
+    internal var _hasStderrStarted: Boolean = false
+        private set
 
     private val stdoutWorker = Instance(create = {
         if (isDestroyed) return@Instance null
         val reader = handle.stdoutStream() ?: return@Instance null
 
-        Worker.execute("stdout", ::wasStdoutThreadStarted, reader, ::dispatchStdout)
+        Worker.execute("stdout", ::_hasStdoutStarted, reader, ::dispatchStdout)
     })
 
     private val stderrWorker = Instance(create = {
         if (isDestroyed) return@Instance null
         val reader = handle.stderrStream() ?: return@Instance null
 
-        Worker.execute("stderr", ::wasStderrThreadStarted, reader, ::dispatchStderr)
+        Worker.execute("stderr", ::_hasStderrStarted, reader, ::dispatchStderr)
     })
 
     @Throws(Throwable::class)

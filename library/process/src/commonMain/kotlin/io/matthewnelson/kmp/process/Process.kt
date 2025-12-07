@@ -25,8 +25,10 @@ import io.matthewnelson.kmp.process.ProcessException.Companion.CTX_DESTROY
 import io.matthewnelson.kmp.process.internal.PID
 import io.matthewnelson.kmp.process.internal.PlatformBuilder
 import io.matthewnelson.kmp.process.internal.appendProcessInfo
+import io.matthewnelson.kmp.process.internal.commonOutput
 import io.matthewnelson.kmp.process.internal.commonWaitFor
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 import kotlin.DeprecationLevel
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
@@ -413,8 +415,10 @@ public abstract class Process internal constructor(
          * handles it for you.
          *
          * See: [Blocking.Builder.createProcess](https://kmp-process.matthewnelson.io/library/process/io.matthewnelson.kmp.process/-blocking/-builder/create-process.html)
+         * @see [use]
          * @see [async]
          * @see [createOutput]
+         * @see [createOutputAsync]
          *
          * @return The [Process]
          *
@@ -427,9 +431,7 @@ public abstract class Process internal constructor(
             val fs = _async
 
             return platformSpawn(
-                _build = { options ->
-                    buildAsync(fs, options)
-                },
+                _build = { options -> buildAsync(fs, options) },
                 _spawn = { command, args, chdir, env, stdio, signal, handler ->
                     spawnAsync(fs, command, args, chdir, env, stdio, signal, handler)
                 },
@@ -441,12 +443,14 @@ public abstract class Process internal constructor(
          * [Output.Options.Builder.timeoutMillis] is exceeded,
          * or [Output.Options.Builder.maxBuffer] is exceeded.
          *
-         * Utilizes the default [Output.Options]
+         * Utilizes the default [Output.Options].
          *
          * **NOTE:** For a long-running [Process], `createProcess`
          * or [createProcessAsync] + [use] should be preferred.
          *
          * @return The [Output]
+         *
+         * @see [createOutputAsync]
          *
          * @throws [IOException] If [Process] creation failed.
          * @throws [UnsupportedOperationException] On Js/WasmJs Browser.
@@ -467,6 +471,7 @@ public abstract class Process internal constructor(
          * @return The [Output]
          *
          * @see [Output.Options.Builder]
+         * @see [createOutputAsync]
          *
          * @throws [IOException] If [Process] creation failed.
          * @throws [UnsupportedOperationException] on Js/WasmJs Browser.
@@ -479,6 +484,56 @@ public abstract class Process internal constructor(
             return createOutput(b)
         }
 
+        /**
+         * Creates the [Process] asynchronously using the configured [async] context
+         * and suspends until its completion, [Output.Options.Builder.timeoutMillis]
+         * is exceeded, or [Output.Options.Builder.maxBuffer] is exceeded.
+         *
+         * Utilizes the default [Output.Options].
+         *
+         * **NOTE:** For a long-running [Process], [createProcessAsync] or
+         * `createProcess` + [use] should be preferred.
+         *
+         * @return The [Output]
+         *
+         * @see [async]
+         * @see [createOutput]
+         *
+         * @throws [CancellationException]
+         * @throws [IOException] If [Process] creation failed.
+         * @throws [UnsupportedOperationException] On Js/WasmJs Browser.
+         * */
+        @Throws(CancellationException::class, IOException::class)
+        public suspend fun createOutputAsync(): Output = createOutputAsync(b = Output.Options.Builder.get())
+
+        /**
+         * Creates the [Process] asynchronously using the configured [async] context
+         * and suspends until its completion, [Output.Options.Builder.timeoutMillis]
+         * is exceeded, or [Output.Options.Builder.maxBuffer] is exceeded.
+         *
+         * **NOTE:** For a long-running [Process], [createProcessAsync] or
+         * `createProcess` + [use] should be preferred.
+         *
+         * @param [block] lambda to configure [Output.Options]
+         *
+         * @return The [Output]
+         *
+         * @see [async]
+         * @see [createOutput]
+         * @see [Output.Options.Builder]
+         *
+         * @throws [CancellationException]
+         * @throws [IOException] If [Process] creation failed.
+         * @throws [UnsupportedOperationException] on Js/WasmJs Browser.
+         * */
+        @OptIn(ExperimentalContracts::class)
+        @Throws(CancellationException::class, IOException::class)
+        public suspend inline fun createOutputAsync(block: Output.Options.Builder.() -> Unit): Output {
+            contract { callsInPlace(block, InvocationKind.EXACTLY_ONCE) }
+            val b = Output.Options.Builder.get().apply(block)
+            return createOutputAsync(b)
+        }
+
         @JvmSynthetic
         @PublishedApi
         @Throws(IOException::class)
@@ -487,6 +542,46 @@ public abstract class Process internal constructor(
                 b = b,
                 _build = Stdio.Config.Builder::build,
                 _output = PlatformBuilder::output,
+            )
+        }
+
+        @JvmSynthetic
+        @PublishedApi
+        @Throws(CancellationException::class, IOException::class)
+        internal suspend fun createOutputAsync(b: Output.Options.Builder): Output {
+            val fs = _async
+
+            return platformOutput(
+                b = b,
+                _build = { options -> buildAsync(fs, options) },
+                _output = { command, args, chdir, env, stdio, options, destroy ->
+                    commonOutput(
+                        command,
+                        args,
+                        chdir,
+                        env,
+                        stdio,
+                        options,
+                        destroy,
+                        _spawn = { command2, args2, chdir2, env2, stdio2, destroy2, handler ->
+                            spawnAsync(fs, command2, args2, chdir2, env2, stdio2, destroy2, handler, isOutput = true)
+                        },
+
+                        // Jvm/Native uses Dispatcher.IO under the hood for these calls. If
+                        // AsyncFs.ctx is single-threaded, the underlying blocking calls could
+                        // make for a bad time.
+                        _close = { closeAsync() },
+                        _write = { buf, offset, len -> writeAsync(buf, offset, len) },
+
+                        _sleep = { duration -> delay(duration) },
+                        // Using withContext b/c test coroutine dispatcher will advance time
+                        // which we do NOT want here, as output may get missed.
+                        _sleepWithContext = { duration -> withContext(AsyncFs.Default.ctx) { delay(duration) } },
+
+                        _awaitStop = { awaitStopAsync() },
+                        _waitFor = { waitForAsync() },
+                    )
+                },
             )
         }
 

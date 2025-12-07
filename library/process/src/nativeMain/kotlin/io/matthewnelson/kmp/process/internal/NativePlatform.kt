@@ -83,8 +83,8 @@ internal actual inline fun Duration.threadSleep() {
     }
 }
 
-internal actual inline fun Process.wasStdoutThreadStarted(): Boolean = (this as NativeProcess).wasStdoutThreadStarted
-internal actual inline fun Process.wasStderrThreadStarted(): Boolean = (this as NativeProcess).wasStderrThreadStarted
+internal actual inline fun Process.hasStdoutStarted(): Boolean = (this as NativeProcess)._hasStdoutStarted
+internal actual inline fun Process.hasStderrStarted(): Boolean = (this as NativeProcess)._hasStderrStarted
 
 @OptIn(ExperimentalForeignApi::class)
 internal fun List<String>.toArgv(

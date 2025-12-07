@@ -35,8 +35,8 @@ internal actual inline fun Duration.threadSleep() {
     Thread.sleep(inWholeMilliseconds)
 }
 
-internal actual inline fun Process.wasStdoutThreadStarted(): Boolean = (this as JvmProcess).wasStdoutThreadStarted
-internal actual inline fun Process.wasStderrThreadStarted(): Boolean = (this as JvmProcess).wasStderrThreadStarted
+internal actual inline fun Process.hasStdoutStarted(): Boolean = (this as JvmProcess)._hasStdoutStarted
+internal actual inline fun Process.hasStderrStarted(): Boolean = (this as JvmProcess)._hasStderrStarted
 
 @Suppress("ACTUAL_WITHOUT_EXPECT")
 internal actual typealias ReadStream = java.io.InputStream

@@ -202,6 +202,7 @@ internal actual class PlatformBuilder private actual constructor() {
         stdio: Stdio.Config,
         destroy: Signal,
         handler: ProcessException.Handler,
+        isOutput: Boolean,
     ): Process = withContext(fs.ctx) {
         val p = spawn(
             command,
@@ -212,7 +213,7 @@ internal actual class PlatformBuilder private actual constructor() {
             destroy,
             handler,
             isAsync = true,
-            isDetached = detached,
+            isDetached = if (isOutput) false else detached,
             shell = shell,
             windowsVerbatimArguments = windowsVerbatimArguments,
             windowsHide = windowsHide,

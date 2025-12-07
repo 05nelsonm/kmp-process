@@ -75,6 +75,7 @@ internal actual class PlatformBuilder private actual constructor() {
         stdio: Stdio.Config,
         destroy: Signal,
         handler: ProcessException.Handler,
+        isOutput: Boolean,
     ): Process = withContext(fs.ctx) {
         spawn(
             command,

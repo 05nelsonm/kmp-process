@@ -16,6 +16,8 @@
 package io.matthewnelson.kmp.process
 
 /**
+ * DEFAULT: `true`
+ *
  * By default, [posix_spawn](https://man7.org/linux/man-pages/man3/posix_spawn.3.html) and
  * [posix_spawnp](https://man7.org/linux/man-pages/man3/posix_spawn.3.html) are always preferred
  * when spawning processes, given that the necessary API availability is present (e.g. Android
@@ -26,9 +28,7 @@ package io.matthewnelson.kmp.process
  * regardless of its API availability, and go directly to the alternative implementation using
  * [fork](https://man7.org/linux/man-pages/man2/fork.2.html) and [execve](https://man7.org/linux/man-pages/man2/execve.2.html).
  *
- * Default: `true`
- *
- * @param [use] if `true`, [posix_spawn](https://man7.org/linux/man-pages/man3/posix_spawn.3.html)
+ * @param [use] If `true`, [posix_spawn](https://man7.org/linux/man-pages/man3/posix_spawn.3.html)
  *   or [posix_spawnp](https://man7.org/linux/man-pages/man3/posix_spawn.3.html) will be used, if
  *   available, with a fallback to using [fork](https://man7.org/linux/man-pages/man2/fork.2.html)
  *   and [execve](https://man7.org/linux/man-pages/man2/execve.2.html). If `false`, then the

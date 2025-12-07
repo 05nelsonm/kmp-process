@@ -18,6 +18,7 @@
 package io.matthewnelson.kmp.process.test.api
 
 import io.matthewnelson.kmp.file.*
+import io.matthewnelson.kmp.process.Output
 import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.ProcessException.Companion.CTX_FEED_STDOUT
 import io.matthewnelson.kmp.process.Signal
@@ -58,10 +59,10 @@ abstract class ProcessBaseTest {
     }
 
     @Test
-    fun givenStdin_whenFile_thenOutputIsAsExpected() {
+    fun givenStdin_whenFile_thenOutputIsAsExpected() = runTest {
         if (IsWindows) {
             println("Skipping...")
-            return
+            return@runTest
         }
 
         val tempDir = SysTempDir.resolve("kmp_process")
@@ -79,95 +80,116 @@ abstract class ProcessBaseTest {
 
         testCat.writeUtf8(excl = null, expected)
 
-        val out = Process.Builder(command = if (IsAppleSimulator) "/bin/cat" else "cat")
-            .args("-")
-            .changeDirectory(if (IsAppleSimulator) null else tempDir)
-            .stdin(Stdio.File.of(testCat))
-            .createOutput()
+        fun Output.assertOutput() {
+            try {
+                assertEquals(expected, stdout)
+                assertEquals("", stderr)
+                assertNull(processError)
+                assertEquals(0, processInfo.exitCode)
+            } catch (t: AssertionError) {
+                println(stdout)
+                println(stderr)
+                println(this)
+                throw t
+            }
+        }
 
-        println(out.stdout)
-        println(out.stderr)
-        println(out)
+        try {
+            val b = Process.Builder(command = if (IsAppleSimulator) "/bin/cat" else "cat")
+                .args("-")
+                .changeDirectory(if (IsAppleSimulator) null else tempDir)
+                .stdin(Stdio.File.of(testCat))
 
-        assertEquals(expected, out.stdout)
-        assertEquals("", out.stderr)
-        assertNull(out.processError)
-        assertEquals(0, out.processInfo.exitCode)
+            b.createOutput().assertOutput()
+            b.createOutputAsync().assertOutput()
+        } finally {
+            testCat.delete2()
+        }
     }
 
     @Test
-    fun givenExitCode_whenCompleted_thenIsStatusCode() {
+    fun givenExitCode_whenCompleted_thenIsStatusCode() = runTest {
         if (IsWindows) {
             println("Skipping...")
-            return
+            return@runTest
         }
 
         val expected = 42
 
-        val actual = Process.Builder(command = if (IsAppleSimulator) "/bin/sh" else "sh")
+        val b = Process.Builder(command = if (IsAppleSimulator) "/bin/sh" else "sh")
             .args("-c")
             .args("sleep 0.25; exit $expected")
             .destroySignal(Signal.SIGKILL)
-            // Should complete and exit before timing out
-            .createOutput { timeoutMillis = 1.seconds.inWholeMilliseconds.toInt() }
+
+        // Should complete and exit before timing out
+        b.createOutput { timeoutMillis = 1.seconds.inWholeMilliseconds.toInt() }
             .processInfo
             .exitCode
+            .let { assertEquals(expected, it, "output") }
 
-        assertEquals(expected, actual)
+        // Should complete and exit before timing out
+        b.createOutputAsync { timeoutMillis = 1.seconds.inWholeMilliseconds.toInt() }
+            .processInfo
+            .exitCode
+            .let { assertEquals(expected, it, "outputAsync") }
     }
 
     @Test
-    fun givenExitCode_whenTerminated_thenIsSignalCode() {
+    fun givenExitCode_whenTerminated_thenIsSignalCode() = runTest {
         if (IsAppleSimulator || IsWindows) {
             println("Skipping...")
-            return
+            return@runTest
         }
 
-        val output = Process.Builder(command = "sh")
+        fun Output.assertOutput() {
+            // Depending on Android API, destroySignal is modified
+            // at build time to reflect the underlying kill signal
+            // used when destroy is invoked.
+            val expected = processInfo.destroySignal.code
+            assertEquals(expected, processInfo.exitCode)
+        }
+
+        val b = Process.Builder(command = "sh")
             .args("-c")
             .args("sleep 2; exit 42")
             .destroySignal(Signal.SIGKILL)
             // Should be killed before completing via signal
-            .createOutput{ timeoutMillis = 250 }
 
-        val actual = output
-            .processInfo
-            .exitCode
-
-        // Depending on Android API, destroySignal is modified
-        // at build time to reflect the underlying kill signal
-        // used when destroy is invoked.
-        val expected = output
-            .processInfo
-            .destroySignal
-            .code
-
-        assertEquals(expected, actual)
+        b.createOutput{ timeoutMillis = 250 }.assertOutput()
+        b.createOutputAsync { timeoutMillis = 250 }.assertOutput()
     }
 
     @Test
-    fun givenChdir_whenExpressed_thenChangesDirectories() {
+    fun givenChdir_whenExpressed_thenChangesDirectories() = runTest {
         if (IsAppleSimulator || IsWindows) {
             // no chdir on apple simulator
             println("Skipping...")
-            return
+            return@runTest
         }
 
         val d = SysTempDir
             .resolve("try_chdir")
             .mkdirs2(mode = null)
 
-        val output = Process.Builder(command = "sh")
+        fun Output.assertOutput() {
+            try {
+                assertEquals(d.canonicalPath2(), stdout)
+            } catch (t: AssertionError) {
+                println(stdout)
+                println(stderr)
+                println(this)
+                throw t
+            }
+        }
+
+        val b = Process.Builder(command = "sh")
             .args("-c")
             .args("echo \"$(pwd)\"; sleep 0.25; exit 0")
             .changeDirectory(d)
             .stdin(Stdio.Null)
-            .createOutput { timeoutMillis = 500 }
 
-        println(output.stdout)
-        println(output.stderr)
-        println(output)
-        assertEquals(d.canonicalPath2(), output.stdout)
+        b.createOutput { timeoutMillis = 500 }.assertOutput()
+        b.createOutputAsync { timeoutMillis = 500 }.assertOutput()
     }
 
     @Test
@@ -179,6 +201,7 @@ abstract class ProcessBaseTest {
         // Absolute path
         var b = Process.Builder(command = invalid.path)
         assertFailsWith<FileNotFoundException> { b.createOutput() }
+        assertFailsWith<FileNotFoundException> { b.createOutputAsync() }
         assertFailsWith<FileNotFoundException> { b.createProcessAsync().destroy() }
 
         fun Throwable.assertRelativePathException() = when(this) {
@@ -202,7 +225,13 @@ abstract class ProcessBaseTest {
         b = Process.Builder(command = invalid.name)
         try {
             b.createOutput()
-            fail("Process.Builder.output should have thrown an IOException")
+            fail("Process.Builder.createOutput should have thrown an IOException")
+        } catch (t: Throwable) {
+            t.assertRelativePathException()
+        }
+        try {
+            b.createOutputAsync()
+            fail("Process.Builder.createOutputAsync should have thrown an IOException")
         } catch (t: Throwable) {
             t.assertRelativePathException()
         }
@@ -243,11 +272,16 @@ abstract class ProcessBaseTest {
 
             try {
                 b.createOutput()
-                fail("Process.Builder.output should have thrown an IOException")
+                fail("Process.Builder.createOutput should have thrown an IOException")
             } catch (t: Throwable) {
                 t.assertPermissionsException()
             }
-
+            try {
+                b.createOutputAsync()
+                fail("Process.Builder.createOutputAsync should have thrown an IOException")
+            } catch (t: Throwable) {
+                t.assertPermissionsException()
+            }
             try {
                 b.createProcessAsync().destroy()
                 fail("Process.Builder.createProcessAsync should have thrown an IOException")
@@ -262,75 +296,119 @@ abstract class ProcessBaseTest {
     }
 
     @Test
-    fun givenOutput_whenStderrOutput_thenIsAsExpected() {
+    fun givenOutput_whenStderrOutput_thenIsAsExpected() = runTest {
         if (IsWindows) {
             println("Skipping...")
-            return
+            return@runTest
         }
 
         val expected = "Hello World!"
-        val out = Process.Builder(command = if (IsAppleSimulator) "/bin/sh" else "sh")
+
+        fun Output.assertOutput() {
+            try {
+                assertEquals("", stdout)
+                assertEquals(expected, stderr)
+            } catch (t: AssertionError) {
+                println(stdout)
+                println(stderr)
+                println(this)
+                throw t
+            }
+        }
+
+        val b = Process.Builder(command = if (IsAppleSimulator) "/bin/sh" else "sh")
             .args("-c")
             .args("echo 1>&2 \"$expected\"")
-            .createOutput()
 
-        assertEquals("", out.stdout, "STDOUT:" + out.stdout)
-        assertEquals(expected, out.stderr, "STDERR:" + out.stderr)
+        b.createOutput().assertOutput()
+        b.createOutputAsync().assertOutput()
     }
 
     @Test
-    fun givenOutput_whenInput_thenStdoutIsAsExpected() {
+    fun givenOutput_whenInput_thenStdoutIsAsExpected() = runTest {
         if (IsWindows) {
             println("Skipping...")
-            return
+            return@runTest
         }
 
         val expected = buildString {
             repeat(100_000) { appendLine(it) }
             append("100000")
         }
-        val out = Process.Builder(command = if (IsAppleSimulator) "/bin/cat" else "cat")
+
+        @Suppress("ReplaceAssertBooleanWithAssertEquality")
+        fun Output.assertOutput() {
+            try {
+                assertNull(processError)
+                assertEquals(Stdio.Pipe, processInfo.stdio.stdin)
+                assertTrue(
+                    expected == stdout,
+                    "STDOUT did not match expected >> actual.length[${stdout.length}] vs expected.length[${expected.length}]"
+                )
+                assertEquals("", stderr)
+            } catch (t: AssertionError) {
+//                println(stdout)
+                println(stderr)
+                println(this)
+                throw t
+            }
+        }
+
+        val b = Process.Builder(command = if (IsAppleSimulator) "/bin/cat" else "cat")
             .args("-")
             // should be automatically set
             // to Pipe because there is input
             .stdin(Stdio.Inherit)
-            .createOutput {
-                inputUtf8 { expected }
-                timeoutMillis = 5.seconds.inWholeMilliseconds.toInt()
-                maxBuffer = Int.MAX_VALUE / 2
-            }
 
-        assertNull(out.processError)
-        assertEquals(Stdio.Pipe, out.processInfo.stdio.stdin)
-        @Suppress("ReplaceAssertBooleanWithAssertEquality")
-        assertTrue(expected == out.stdout, "STDOUT did not match expected")
-        assertEquals("", out.stderr)
+        b.createOutput {
+            inputUtf8 { expected }
+            timeoutMillis = 5.seconds.inWholeMilliseconds.toInt()
+            maxBuffer = Int.MAX_VALUE / 2
+        }.assertOutput()
+
+        b.createOutputAsync {
+            inputUtf8 { expected }
+            timeoutMillis = 5.seconds.inWholeMilliseconds.toInt()
+            maxBuffer = Int.MAX_VALUE / 2
+        }.assertOutput()
     }
 
     @Test
-    fun givenOutput_whenNoOutput_thenReturnsBeforeTimeout() {
+    fun givenOutput_whenNoOutput_thenReturnsBeforeTimeout() = runTest {
         if (IsAppleSimulator || IsWindows) {
             println("Skipping...")
-            return
+            return@runTest
         }
 
         // Test to see that, if the program ends, threads that are reading
         // stdout and stderr pop out on their own and does not wait the
         // entire 10-second timeout.
         val mark = TimeSource.Monotonic.markNow()
-        val out = Process.Builder(command = "sh")
+
+        fun Output.assertOutput() {
+            val elapsed = mark.elapsedNow()
+            println("elapsed[${elapsed.inWholeMilliseconds}ms]")
+
+            try {
+                assertNull(processError, "processError != null")
+                assertEquals(42, processInfo.exitCode, "code[${processInfo.exitCode}]")
+                assertTrue(stdout.isEmpty(), "stdout was not empty")
+                assertTrue(stderr.isEmpty(), "stderr was not empty")
+                assertTrue(elapsed in 975.milliseconds..1_500.seconds)
+            } catch (t: AssertionError) {
+                println(stdout)
+                println(stderr)
+                println(this)
+                throw t
+            }
+        }
+
+        val b = Process.Builder(command = "sh")
             .args("-c")
             .args("sleep 1; exit 42")
-            .createOutput { timeoutMillis = 10.seconds.inWholeMilliseconds.toInt() }
 
-        val elapsed = mark.elapsedNow()
-        println("elapsed[${elapsed.inWholeMilliseconds}ms]")
-
-        assertNull(out.processError, "processError != null")
-        assertEquals(42, out.processInfo.exitCode, "code[${out.processInfo.exitCode}]")
-        assertTrue(out.stdout.isEmpty(), "stdout was not empty")
-        assertTrue(out.stderr.isEmpty(), "stderr was not empty")
-        assertTrue(elapsed in 975.milliseconds..1_500.seconds)
+        b.createOutput { timeoutMillis = 10.seconds.inWholeMilliseconds.toInt() }.assertOutput()
+        b.createOutputAsync { timeoutMillis = 10.seconds.inWholeMilliseconds.toInt() }.assertOutput()
     }
 
     @Test
@@ -470,14 +548,25 @@ abstract class ProcessBaseTest {
     }
 
     @Test
-    open fun givenExecutable_whenRelativePathWithChDir_thenExecutes() {
+    open fun givenExecutable_whenRelativePathWithChDir_thenExecutes() = runTest {
         if (IsAppleSimulator) {
             // chdir not supported
             println("Skipping...")
-            return
+            return@runTest
         }
 
-        val out = LOADER.process(TorResourceBinder) { tor, configureEnv ->
+        fun Output.assertOutput() {
+            try {
+                assertTrue(stdout.startsWith("Tor version "))
+            } catch (t: AssertionError) {
+                println(stdout)
+                println(stderr)
+                println(this)
+                throw t
+            }
+        }
+
+        val b = LOADER.process(TorResourceBinder) { tor, configureEnv ->
             val parentDirName = tor.parentPath?.substringAfterLast(SysDirSep)
             assertNotNull(parentDirName)
 
@@ -489,13 +578,10 @@ abstract class ProcessBaseTest {
                 .args("--version")
                 .changeDirectory(tor.parentFile)
                 .environment(configureEnv)
-        }.createOutput { timeoutMillis = 2_000 }
+        }
 
-        println(out)
-        println(out.stdout)
-        println(out.stderr)
-
-        assertTrue(out.stdout.startsWith("Tor version "))
+        b.createOutput { timeoutMillis = 2_000 }.assertOutput()
+        b.createOutputAsync { timeoutMillis = 2_000 }.assertOutput()
     }
 
     @Test
