@@ -37,6 +37,7 @@ kmpConfiguration {
 
             sourceSetMain {
                 dependencies {
+                    implementation(libs.encoding.utf8)
                     implementation(libs.immutable.collections)
                     api(libs.kmp.file)
                     implementation(libs.kmp.file.async)

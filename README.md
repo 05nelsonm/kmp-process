@@ -5,6 +5,7 @@
 [![badge-kotlin]][url-kotlin]
 [![badge-coroutines]][url-coroutines]
 [![badge-bitops]][url-bitops]
+[![badge-encoding]][url-encoding]
 [![badge-immutable]][url-immutable]
 [![badge-kmp-file]][url-kmp-file]
 
@@ -225,8 +226,9 @@ dependencies {
 [badge-license]: https://img.shields.io/badge/license-Apache%20License%202.0-blue.svg?style=flat
 
 <!-- TAG_DEPENDENCIES -->
+[badge-bitops]: https://img.shields.io/badge/KotlinCrypto.bitops-0.3.0-blue.svg?style=flat
 [badge-coroutines]: https://img.shields.io/badge/kotlinx.coroutines-1.10.2-blue.svg?logo=kotlin
-[badge-bitops]: https://img.shields.io/badge/kotlincrypto.bitops-0.3.0-blue.svg?style=flat
+[badge-encoding]: https://img.shields.io/badge/encoding-2.6.0--SNAPSHOT-blue.svg?style=flat
 [badge-immutable]: https://img.shields.io/badge/immutable-0.3.0-blue.svg?style=flat
 [badge-kmp-file]: https://img.shields.io/badge/kmp--file-0.6.0--SNAPSHOT-blue.svg?style=flat
 [badge-kotlin]: https://img.shields.io/badge/kotlin-2.2.21-blue.svg?logo=kotlin
@@ -249,8 +251,9 @@ dependencies {
 [url-docs]: https://kmp-process.matthewnelson.io
 [url-latest-release]: https://github.com/05nelsonm/kmp-process/releases/latest
 [url-license]: https://www.apache.org/licenses/LICENSE-2.0
-[url-coroutines]: https://github.com/Kotlin/kotlinx.coroutines
 [url-bitops]: https://github.com/KotlinCrypto/bitops
+[url-encoding]: https://github.com/05nelsonm/encoding
+[url-coroutines]: https://github.com/Kotlin/kotlinx.coroutines
 [url-immutable]: https://github.com/05nelsonm/immutable
 [url-kmp-file]: https://github.com/05nelsonm/kmp-file
 [url-kotlin]: https://kotlinlang.org
