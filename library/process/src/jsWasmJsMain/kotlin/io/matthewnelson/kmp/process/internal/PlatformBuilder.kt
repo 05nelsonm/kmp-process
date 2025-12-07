@@ -98,20 +98,28 @@ internal actual class PlatformBuilder private actual constructor() {
         val jsStdio = try {
             stdio.toJsStdio()
         } catch (e: IOException) {
-            options.dropInput()
+            options.dropAllInput()
             throw e
         }
 
-        val input = jsStdio.closeDescriptorsOnFailure {
-            val b = options.consumeInput() ?: return@closeDescriptorsOnFailure null
-            val a = b.toJsArray(factory = ::JsInt8Array)
-            b.fill(0)
-            a
+        val opts = JsObject.new()
+
+        // To fill after spawnSync completes
+        var input: JsInt8Array? = null
+
+        jsStdio.closeDescriptorsOnFailure {
+            options.consumeInputBytes()?.let { b ->
+                val a = b.toJsArray(factory = ::JsInt8Array)
+                b.fill(0)
+                input = a
+                opts["input"] = a
+            }
+            options.consumeInputUtf8()?.let { utf8 ->
+                opts["input"] = utf8
+            }
         }
 
-        val opts = JsObject.new()
         chdir?.let { opts["cwd"] = it.path }
-        input?.let { opts["input"] = it }
         opts["stdio"] = jsStdio.toJsArray()
         opts["env"] = env.toJsObject()
         opts["timeout"] = options.timeout.inWholeMilliseconds.toInt()
