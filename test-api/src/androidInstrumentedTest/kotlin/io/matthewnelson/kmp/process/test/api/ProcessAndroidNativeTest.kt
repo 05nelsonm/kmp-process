@@ -48,7 +48,7 @@ class ProcessAndroidNativeTest {
 
         val out = Process.Builder(executable = nativeLibraryDir.resolve(libName))
             .stdin(Stdio.Null)
-            .output {
+            .createOutput {
                 maxBuffer = Int.MAX_VALUE / 2
                 timeoutMillis = timeout.inWholeMilliseconds.toInt()
             }

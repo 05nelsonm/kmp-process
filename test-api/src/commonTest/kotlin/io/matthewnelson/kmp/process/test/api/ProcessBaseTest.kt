@@ -83,7 +83,7 @@ abstract class ProcessBaseTest {
             .args("-")
             .changeDirectory(if (IsAppleSimulator) null else tempDir)
             .stdin(Stdio.File.of(testCat))
-            .output()
+            .createOutput()
 
         println(out.stdout)
         println(out.stderr)
@@ -109,7 +109,7 @@ abstract class ProcessBaseTest {
             .args("sleep 0.25; exit $expected")
             .destroySignal(Signal.SIGKILL)
             // Should complete and exit before timing out
-            .output { timeoutMillis = 1.seconds.inWholeMilliseconds.toInt() }
+            .createOutput { timeoutMillis = 1.seconds.inWholeMilliseconds.toInt() }
             .processInfo
             .exitCode
 
@@ -128,7 +128,7 @@ abstract class ProcessBaseTest {
             .args("sleep 2; exit 42")
             .destroySignal(Signal.SIGKILL)
             // Should be killed before completing via signal
-            .output{ timeoutMillis = 250 }
+            .createOutput{ timeoutMillis = 250 }
 
         val actual = output
             .processInfo
@@ -162,7 +162,7 @@ abstract class ProcessBaseTest {
             .args("echo \"$(pwd)\"; sleep 0.25; exit 0")
             .changeDirectory(d)
             .stdin(Stdio.Null)
-            .output { timeoutMillis = 500 }
+            .createOutput { timeoutMillis = 500 }
 
         println(output.stdout)
         println(output.stderr)
@@ -178,7 +178,7 @@ abstract class ProcessBaseTest {
 
         // Absolute path
         var b = Process.Builder(command = invalid.path)
-        assertFailsWith<FileNotFoundException> { b.output() }
+        assertFailsWith<FileNotFoundException> { b.createOutput() }
         assertFailsWith<FileNotFoundException> { b.createProcessAsync().destroy() }
 
         fun Throwable.assertRelativePathException() = when(this) {
@@ -201,7 +201,7 @@ abstract class ProcessBaseTest {
         // Relative path
         b = Process.Builder(command = invalid.name)
         try {
-            b.output()
+            b.createOutput()
             fail("Process.Builder.output should have thrown an IOException")
         } catch (t: Throwable) {
             t.assertRelativePathException()
@@ -242,7 +242,7 @@ abstract class ProcessBaseTest {
             assertTrue(invalid.exists2())
 
             try {
-                b.output()
+                b.createOutput()
                 fail("Process.Builder.output should have thrown an IOException")
             } catch (t: Throwable) {
                 t.assertPermissionsException()
@@ -272,7 +272,7 @@ abstract class ProcessBaseTest {
         val out = Process.Builder(command = if (IsAppleSimulator) "/bin/sh" else "sh")
             .args("-c")
             .args("echo 1>&2 \"$expected\"")
-            .output()
+            .createOutput()
 
         assertEquals("", out.stdout, "STDOUT:" + out.stdout)
         assertEquals(expected, out.stderr, "STDERR:" + out.stderr)
@@ -294,7 +294,7 @@ abstract class ProcessBaseTest {
             // should be automatically set
             // to Pipe because there is input
             .stdin(Stdio.Inherit)
-            .output {
+            .createOutput {
                 inputUtf8 { expected }
                 timeoutMillis = 5.seconds.inWholeMilliseconds.toInt()
                 maxBuffer = Int.MAX_VALUE / 2
@@ -321,7 +321,7 @@ abstract class ProcessBaseTest {
         val out = Process.Builder(command = "sh")
             .args("-c")
             .args("sleep 1; exit 42")
-            .output { timeoutMillis = 10.seconds.inWholeMilliseconds.toInt() }
+            .createOutput { timeoutMillis = 10.seconds.inWholeMilliseconds.toInt() }
 
         val elapsed = mark.elapsedNow()
         println("elapsed[${elapsed.inWholeMilliseconds}ms]")
@@ -489,7 +489,7 @@ abstract class ProcessBaseTest {
                 .args("--version")
                 .changeDirectory(tor.parentFile)
                 .environment(configureEnv)
-        }.output { timeoutMillis = 2_000 }
+        }.createOutput { timeoutMillis = 2_000 }
 
         println(out)
         println(out.stdout)
@@ -535,7 +535,7 @@ abstract class ProcessBaseTest {
     @Test
     open fun givenExecutable_whenOutput_thenIsAsExpected() = runTest(timeout = 25.seconds) {
         val out = LOADER.toProcessBuilder()
-            .output { timeoutMillis = 2_000 }
+            .createOutput { timeoutMillis = 2_000 }
 
         println(out)
         println(out.stdout)

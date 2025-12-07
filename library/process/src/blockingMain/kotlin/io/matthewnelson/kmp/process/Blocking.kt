@@ -135,8 +135,9 @@ public actual sealed class Blocking protected actual constructor() {
          * handles it for you.
          *
          * @see [Process.Builder.createProcessAsync]
+         * @see [Process.Builder.createOutput]
          *
-         * @return the [Process]
+         * @return The [Process]
          *
          * @throws [IOException] If [Process] creation failed.
          * */

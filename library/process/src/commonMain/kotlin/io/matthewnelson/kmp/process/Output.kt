@@ -26,7 +26,7 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 
 /**
- * Output results from [Process.Builder.output]
+ * Output results from [Process.Builder.createOutput]
  * */
 public class Output private constructor(
 
@@ -58,7 +58,7 @@ public class Output private constructor(
 ) {
 
     /**
-     * Options for [Process.Builder.output]
+     * Options for [Process.Builder.createOutput]
      *
      * @see [Builder]
      * */
@@ -91,7 +91,7 @@ public class Output private constructor(
              * is dropped.
              *
              * **NOTE:** [block] will be called from the same
-             * thread that [Process.Builder.output] is called from.
+             * thread that [Process.Builder.createOutput] is called from.
              *
              * Declaring this will override any [Process.Builder.stdin]
              * configuration if it is set to something other than
@@ -115,7 +115,7 @@ public class Output private constructor(
              * the process.
              *
              * **NOTE:** [block] will be invoked from the same
-             * thread that [Process.Builder.output] is called from.
+             * thread that [Process.Builder.createOutput] is called from.
              *
              * Declaring this will override any [Process.Builder.stdin]
              * configuration if it is set to something other than
@@ -153,26 +153,27 @@ public class Output private constructor(
             @JvmField
             public var timeoutMillis: Int = MIN_TIMEOUT
 
+            @PublishedApi
             internal companion object {
 
                 private const val MIN_TIMEOUT: Int = 250
                 private const val MIN_BUFFER: Int = 1024 * 16
 
                 @JvmSynthetic
-                internal fun build(
-                    block: Builder.() -> Unit,
-                ): Options {
-                    val b = Builder().apply(block)
+                @PublishedApi
+                internal fun get(): Builder = Builder()
+            }
 
-                    val maxBuffer = b.maxBuffer.let { max ->
-                        if (max < MIN_BUFFER) MIN_BUFFER else max
-                    }
-                    val timeout = b.timeoutMillis.let { millis ->
-                        if (millis < MIN_TIMEOUT) MIN_TIMEOUT else millis
-                    }
-
-                    return Options(b._inputBytes, b._inputUtf8, maxBuffer, timeout.milliseconds)
+            @JvmSynthetic
+            internal fun build(): Options {
+                val maxBuffer = maxBuffer.let { max ->
+                    if (max < MIN_BUFFER) MIN_BUFFER else max
                 }
+                val timeout = timeoutMillis.let { millis ->
+                    if (millis < MIN_TIMEOUT) MIN_TIMEOUT else millis
+                }
+
+                return Options(_inputBytes, _inputUtf8, maxBuffer, timeout.milliseconds)
             }
         }
 
