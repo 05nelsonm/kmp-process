@@ -23,6 +23,8 @@ kotlincrypto-catalog        = "0.8.0" # Utilized from settings.gradle.kts
 kotlinx-coroutines          = "1.10.2"
 
 [libraries]
+encoding-utf8               = { module = "io.matthewnelson.encoding:utf8", version.ref = "encoding" }
+
 gradle-android              = { module = "com.android.tools.build:gradle", version.ref = "gradle-android" }
 gradle-dokka                = { module = "org.jetbrains.dokka:dokka-gradle-plugin", version.ref = "gradle-dokka" }
 gradle-kmp-configuration    = { module = "io.matthewnelson:gradle-kmp-configuration-plugin", version.ref = "gradle-kmp-configuration" }
