@@ -111,7 +111,10 @@ abstract class io.matthewnelson.kmp.process/Process : io.matthewnelson.kmp.file/
         final inline fun <#A2: kotlin/Any?> spawn(kotlin/Function1<io.matthewnelson.kmp.process/Process, #A2>): #A2 // io.matthewnelson.kmp.process/Process.Builder.spawn|spawn(kotlin.Function1<io.matthewnelson.kmp.process.Process,0:0>){0§<kotlin.Any?>}[0]
         final inline fun <#A2: kotlin/Any?> useSpawn(kotlin/Function1<io.matthewnelson.kmp.process/Process, #A2>): #A2 // io.matthewnelson.kmp.process/Process.Builder.useSpawn|useSpawn(kotlin.Function1<io.matthewnelson.kmp.process.Process,0:0>){0§<kotlin.Any?>}[0]
         final inline fun createOutput(kotlin/Function1<io.matthewnelson.kmp.process/Output.Options.Builder, kotlin/Unit>): io.matthewnelson.kmp.process/Output // io.matthewnelson.kmp.process/Process.Builder.createOutput|createOutput(kotlin.Function1<io.matthewnelson.kmp.process.Output.Options.Builder,kotlin.Unit>){}[0]
+        final suspend fun createOutputAsync(): io.matthewnelson.kmp.process/Output // io.matthewnelson.kmp.process/Process.Builder.createOutputAsync|createOutputAsync(){}[0]
+        final suspend fun createOutputAsync(io.matthewnelson.kmp.process/Output.Options.Builder): io.matthewnelson.kmp.process/Output // io.matthewnelson.kmp.process/Process.Builder.createOutputAsync|createOutputAsync(io.matthewnelson.kmp.process.Output.Options.Builder){}[0]
         final suspend fun createProcessAsync(): io.matthewnelson.kmp.process/Process // io.matthewnelson.kmp.process/Process.Builder.createProcessAsync|createProcessAsync(){}[0]
+        final suspend inline fun createOutputAsync(kotlin/Function1<io.matthewnelson.kmp.process/Output.Options.Builder, kotlin/Unit>): io.matthewnelson.kmp.process/Output // io.matthewnelson.kmp.process/Process.Builder.createOutputAsync|createOutputAsync(kotlin.Function1<io.matthewnelson.kmp.process.Output.Options.Builder,kotlin.Unit>){}[0]
     }
 
     final object Companion // io.matthewnelson.kmp.process/Process.Companion|null[0]

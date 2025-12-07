@@ -16,15 +16,16 @@
 package io.matthewnelson.kmp.process
 
 /**
+ * DEFAULT: `false`
+ *
  * Configures the `detached` option for `spawn`.
  *
- * **NOTE:** This setting is ignored when using [Process.Builder.createOutput].
+ * **NOTE:** This setting is ignored when using [Process.Builder.createOutput]
+ * and [Process.Builder.createOutputAsync].
  *
  * **NOTE:** `unref` will be called immediately on the underlying child process.
  * It is upon API consumers to ensure an appropriate [Stdio] configuration is had
  * for their detached [Process], as detailed in the documentation linked below.
- *
- * Default: `false`
  *
  * [docs#spawn](https://nodejs.org/api/child_process.html#optionsdetached)
  * */
@@ -35,9 +36,9 @@ public fun Process.Builder.detached(
 }
 
 /**
- * Configures the `shell` option for `spawn` and `spawnSync`
+ * DEFAULT: `false`
  *
- * Default: `false`
+ * Configures the `shell` option for `spawn` and `spawnSync`
  *
  * [docs#spawn](https://nodejs.org/api/child_process.html#child_processspawncommand-args-options)
  * [docs#spawnSync](https://nodejs.org/api/child_process.html#child_processspawnsynccommand-args-options)
@@ -49,9 +50,9 @@ public fun Process.Builder.shell(
 }
 
 /**
- * Configures the `shell` option for `spawn` and `spawnSync`.
+ * DEFAULT: `false`
  *
- * Default: `false`
+ * Configures the `shell` option for `spawn` and `spawnSync`.
  *
  * [docs#spawn](https://nodejs.org/api/child_process.html#child_processspawncommand-args-options)
  * [docs#spawnSync](https://nodejs.org/api/child_process.html#child_processspawnsynccommand-args-options)
@@ -63,9 +64,9 @@ public fun Process.Builder.shell(
 }
 
 /**
- * Configures the `windowsVerbatimArguments` option for `spawn` and `spawnSync`
+ * DEFAULT: `false`
  *
- * Default: `false`
+ * Configures the `windowsVerbatimArguments` option for `spawn` and `spawnSync`
  *
  * [docs#spawn](https://nodejs.org/api/child_process.html#child_processspawncommand-args-options)
  * [docs#spawnSync](https://nodejs.org/api/child_process.html#child_processspawnsynccommand-args-options)
@@ -77,9 +78,9 @@ public fun Process.Builder.windowsVerbatimArguments(
 }
 
 /**
- * Configures the `windowsHide` option for `spawn` and `spawnSync`
+ * DEFAULT: `true`
  *
- * Default: `true`
+ * Configures the `windowsHide` option for `spawn` and `spawnSync`
  *
  * [docs#spawn](https://nodejs.org/api/child_process.html#child_processspawncommand-args-options)
  * [docs#spawnSync](https://nodejs.org/api/child_process.html#child_processspawnsynccommand-args-options)

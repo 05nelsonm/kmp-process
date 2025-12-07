@@ -48,6 +48,7 @@ internal expect class PlatformBuilder private constructor() {
         stdio: Stdio.Config,
         destroy: Signal,
         handler: ProcessException.Handler,
+        isOutput: Boolean = false,
     ): Process
 
     @Throws(IOException::class)

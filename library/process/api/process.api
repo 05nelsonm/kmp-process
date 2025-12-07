@@ -146,6 +146,9 @@ public final class io/matthewnelson/kmp/process/Process$Builder : io/matthewnels
 	public final fun createOutput ()Lio/matthewnelson/kmp/process/Output;
 	public final synthetic fun createOutput (Lio/matthewnelson/kmp/process/Output$Options$Builder;)Lio/matthewnelson/kmp/process/Output;
 	public final fun createOutput (Lkotlin/jvm/functions/Function1;)Lio/matthewnelson/kmp/process/Output;
+	public final synthetic fun createOutputAsync (Lio/matthewnelson/kmp/process/Output$Options$Builder;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun createOutputAsync (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun createOutputAsync (Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun createProcessAsync (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun destroySignal (Lio/matthewnelson/kmp/process/Signal;)Lio/matthewnelson/kmp/process/Process$Builder;
 	public final fun environment (Ljava/lang/String;Ljava/lang/String;)Lio/matthewnelson/kmp/process/Process$Builder;
