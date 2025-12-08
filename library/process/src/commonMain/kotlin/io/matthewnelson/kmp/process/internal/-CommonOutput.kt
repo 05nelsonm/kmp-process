@@ -17,8 +17,6 @@
 
 package io.matthewnelson.kmp.process.internal
 
-import io.matthewnelson.encoding.core.Decoder.Companion.decodeToByteArray
-import io.matthewnelson.encoding.core.use
 import io.matthewnelson.encoding.utf8.UTF8
 import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.file.IOException
@@ -56,6 +54,7 @@ internal inline fun PlatformBuilder.commonOutput(
     _spawn: PlatformBuilder.(String, List<String>, File?, Map<String, String>, Stdio.Config, Signal, ProcessException.Handler) -> Process,
     _close: AsyncWriteStream.() -> Unit,
     _write: AsyncWriteStream.(ByteArray, Int, Int) -> Unit,
+    _decodeBuffered: String.(UTF8, AsyncWriteStream) -> Long,
     _sleep: (Duration) -> Unit,
     // Specifically for coroutines
     _sleepWithContext: (Duration) -> Unit,
@@ -65,7 +64,8 @@ internal inline fun PlatformBuilder.commonOutput(
     contract {
         callsInPlace(_spawn, InvocationKind.EXACTLY_ONCE)
         callsInPlace(_close, InvocationKind.AT_MOST_ONCE)
-        callsInPlace(_write, InvocationKind.UNKNOWN)
+        callsInPlace(_write, InvocationKind.AT_MOST_ONCE)
+        callsInPlace(_decodeBuffered, InvocationKind.AT_MOST_ONCE)
         callsInPlace(_sleep, InvocationKind.UNKNOWN)
         callsInPlace(_sleepWithContext, InvocationKind.UNKNOWN)
         callsInPlace(_awaitStop, InvocationKind.UNKNOWN)
@@ -94,7 +94,7 @@ internal inline fun PlatformBuilder.commonOutput(
         p.stderrFeed(stderrBuffer)
 
         // input will be non-null if and only if Output.Options.hasInput is true.
-        p.input?.writeInputAndClose(options, _close, _write)
+        p.input?.writeInputAndClose(options, _close, _write, _decodeBuffered)
 
         // Ensure Jvm/Native threads are in their read loops
         condition {
@@ -194,10 +194,12 @@ internal inline fun AsyncWriteStream.writeInputAndClose(
     options: Output.Options,
     _close: AsyncWriteStream.() -> Unit,
     _write: AsyncWriteStream.(ByteArray, Int, Int) -> Unit,
+    _decodeBuffered: String.(UTF8, AsyncWriteStream) -> Long,
 ) {
     contract {
         callsInPlace(_close, InvocationKind.EXACTLY_ONCE)
-        callsInPlace(_write, InvocationKind.UNKNOWN)
+        callsInPlace(_write, InvocationKind.AT_MOST_ONCE)
+        callsInPlace(_decodeBuffered, InvocationKind.AT_MOST_ONCE)
     }
 
     var threw: Throwable? = null
@@ -209,36 +211,7 @@ internal inline fun AsyncWriteStream.writeInputAndClose(
                 b.fill(0)
             }
         }
-        options.consumeInputUtf8()?.let { text ->
-            if (text.length <= (8192 / 3)) {
-                val utf8 = text.decodeToByteArray(UTF8)
-                try {
-                    _write(utf8, 0, utf8.size)
-                    return@let
-                } finally {
-                    utf8.fill(0)
-                }
-            }
-
-            // Chunk
-            val buf = ByteArray(8192)
-            val limit = buf.size - 4
-            var iBuf = 0
-            var iText = 0
-            try {
-                UTF8.newDecoderFeed { b -> buf[iBuf++] = b }.use { feed ->
-                    while (iText < text.length) {
-                        feed.consume(text[iText++])
-                        if (iBuf <= limit) continue
-                        _write(buf, 0, iBuf)
-                        iBuf = 0
-                    }
-                }
-                if (iBuf > 0) _write(buf, 0, iBuf)
-            } finally {
-                buf.fill(0)
-            }
-        }
+        options.consumeInputUtf8()?._decodeBuffered(UTF8, this)
     } catch (t: Throwable) {
         threw = t
         throw t

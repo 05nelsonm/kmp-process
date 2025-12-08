@@ -26,7 +26,7 @@ internal class RealLineOutputFeed internal constructor(
 
     private var skipLF: Boolean = false
     private val sb = StringBuilder(2 * 1024)
-    private val feed = UTF8.newEncoderFeed { c -> sb.append(c) }
+    private val feed = UTF8.newEncoderFeed(sb::append)
     private var sbMaxLen = 0
 
     @Throws(IllegalStateException::class)

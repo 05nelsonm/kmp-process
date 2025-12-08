@@ -17,6 +17,7 @@
 
 package io.matthewnelson.kmp.process.internal
 
+import io.matthewnelson.encoding.core.Decoder.Companion.decodeBuffered
 import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.file.InterruptedException
@@ -47,6 +48,9 @@ internal inline fun PlatformBuilder.blockingOutput(
     _spawn = PlatformBuilder::spawn,
     _close = AsyncWriteStream::close,
     _write = AsyncWriteStream::write,
+    _decodeBuffered = { decoder, stream ->
+        decodeBuffered(decoder, stream::write)
+    },
     _sleep = Duration::threadSleep,
     _sleepWithContext = Duration::threadSleep,
     _awaitStop = OutputFeed.Waiter::awaitStop,

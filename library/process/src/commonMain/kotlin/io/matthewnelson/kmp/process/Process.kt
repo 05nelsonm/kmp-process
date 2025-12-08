@@ -17,6 +17,7 @@
 
 package io.matthewnelson.kmp.process
 
+import io.matthewnelson.encoding.core.Decoder.Companion.decodeBufferedAsync
 import io.matthewnelson.immutable.collections.toImmutableList
 import io.matthewnelson.immutable.collections.toImmutableMap
 import io.matthewnelson.kmp.file.*
@@ -573,6 +574,9 @@ public abstract class Process internal constructor(
                         // make for a bad time.
                         _close = { closeAsync() },
                         _write = { buf, offset, len -> writeAsync(buf, offset, len) },
+                        _decodeBuffered = { decoder, stream ->
+                            decodeBufferedAsync(decoder, stream::writeAsync)
+                        },
 
                         _sleep = { duration -> delay(duration) },
                         // Using withContext b/c test coroutine dispatcher will advance time
