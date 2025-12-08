@@ -620,17 +620,23 @@ abstract class ProcessBaseTest {
 
     @Test
     open fun givenExecutable_whenOutput_thenIsAsExpected() = runTest(timeout = 25.seconds) {
-        val out = LOADER.toProcessBuilder()
-            .createOutput { timeoutMillis = 2_000 }
+        suspend fun Output.assertOutput() {
+            delayTest(250.milliseconds)
 
-        println(out)
-        println(out.stdout)
-        println(out.stderr)
+            try {
+                assertExitCode(processInfo.exitCode)
+                stdout.assertTorRan()
+            } catch (t: AssertionError) {
+                println(stdout)
+                println(stderr)
+                println(this)
+                throw t
+            }
+        }
 
-        delayTest(250.milliseconds)
-
-        assertExitCode(out.processInfo.exitCode)
-        out.stdout.assertTorRan()
+        val b = LOADER.toProcessBuilder()
+        b.createOutput { timeoutMillis = 2_000 }.assertOutput()
+        b.createOutputAsync { timeoutMillis = 2_000 }.assertOutput()
     }
 
     @Test
