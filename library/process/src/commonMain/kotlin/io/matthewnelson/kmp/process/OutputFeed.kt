@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("NOTHING_TO_INLINE", "RemoveRedundantQualifierName")
+@file:Suppress("LocalVariableName", "NOTHING_TO_INLINE", "RemoveRedundantQualifierName")
 
 package io.matthewnelson.kmp.process
 
@@ -122,7 +122,7 @@ public fun interface OutputFeed {
          * */
         public fun stdoutFeed(
             feed: OutputFeed,
-        ): Process = stdoutFeed(*Array(1) { feed })
+        ): Process = addStdoutFeeds(1, _get = { feed })
 
         /**
          * Attaches multiple [OutputFeed] to obtain `stdout` output.
@@ -138,12 +138,23 @@ public fun interface OutputFeed {
          * */
         public fun stdoutFeed(
             vararg feeds: OutputFeed,
-        ): Process = stdoutFeeds.addFeeds(
-            feeds,
-            stdio.stdout,
-            isStopped = { stdoutStopped },
-            startStdio = { stdoutStarted = true; startStdout() },
-        )
+        ): Process = addStdoutFeeds(feeds.size, feeds::get)
+
+        /**
+         * Attaches multiple [OutputFeed] to obtain `stdout` output.
+         * This is handy at [Process] startup such that no data is
+         * missed if there are multiple feeds needing to be attached.
+         *
+         * [Process] will begin outputting data to all [OutputFeed]
+         * for `stdout` upon the first attachment of [OutputFeed].
+         *
+         * If [Stdio.Config.stdout] is **not** [Stdio.Pipe], this
+         * does nothing. If the [Process] has been destroyed, this
+         * does nothing.
+         * */
+        public fun stdoutFeed(
+            feeds: List<OutputFeed>,
+        ): Process = addStdoutFeeds(feeds.size, feeds::get)
 
         /**
          * Attaches a single [OutputFeed] to obtain `stderr` output.
@@ -157,7 +168,7 @@ public fun interface OutputFeed {
          * */
         public fun stderrFeed(
             feed: OutputFeed,
-        ): Process = stderrFeed(*Array(1) { feed })
+        ): Process = addStderrFeeds(1, _get = { feed })
 
         /**
          * Attaches multiple [OutputFeed] to obtain `stderr` output.
@@ -173,12 +184,23 @@ public fun interface OutputFeed {
          * */
         public fun stderrFeed(
             vararg feeds: OutputFeed,
-        ): Process = stderrFeeds.addFeeds(
-            feeds,
-            stdio.stderr,
-            isStopped = { stderrStopped },
-            startStdio = { stderrStarted = true; startStderr() },
-        )
+        ): Process = addStderrFeeds(feeds.size, feeds::get)
+
+        /**
+         * Attaches multiple [OutputFeed] to obtain `stderr` output.
+         * This is handy at [Process] startup such that no data is
+         * missed if there are multiple feeds needing to be attached.
+         *
+         * [Process] will begin outputting data to all [OutputFeed]
+         * for `stderr` upon the first attachment of [OutputFeed].
+         *
+         * If [Stdio.Config.stderr] is **not** [Stdio.Pipe], this
+         * does nothing. If the [Process] has been destroyed, this
+         * does nothing.
+         * */
+        public fun stderrFeed(
+            feeds: List<OutputFeed>,
+        ): Process = addStderrFeeds(feeds.size, feeds::get)
 
         /**
          * Returns a [Waiter] for `stdout` in order to await any
@@ -236,31 +258,64 @@ public fun interface OutputFeed {
         protected abstract fun startStderr()
 
         @OptIn(ExperimentalContracts::class)
+        private inline fun addStdoutFeeds(
+            numFeeds: Int,
+            _get: (i: Int) -> OutputFeed,
+        ): Process {
+            contract { callsInPlace(_get, InvocationKind.UNKNOWN) }
+            return stdoutFeeds.addFeeds(
+                numFeeds,
+                stdio.stdout,
+                _get,
+                _isStopped = { stdoutStopped },
+                _startStdio = { stdoutStarted = true; startStdout() },
+            )
+        }
+
+        @OptIn(ExperimentalContracts::class)
+        private inline fun addStderrFeeds(
+            numFeeds: Int,
+            _get: (i: Int) -> OutputFeed,
+        ): Process {
+            contract { callsInPlace(_get, InvocationKind.UNKNOWN) }
+            return stderrFeeds.addFeeds(
+                numFeeds,
+                stdio.stderr,
+                _get,
+                _isStopped = { stderrStopped },
+                _startStdio = { stderrStarted = true; startStderr() },
+            )
+        }
+
+        @OptIn(ExperimentalContracts::class)
         private inline fun SynchronizedSet<OutputFeed>.addFeeds(
-            feeds: Array<out OutputFeed>,
+            numFeeds: Int,
             stdio: Stdio,
-            isStopped: () -> Boolean,
-            startStdio: () -> Unit,
+            _get: (i: Int) -> OutputFeed,
+            _isStopped: () -> Boolean,
+            _startStdio: () -> Unit,
         ): Process {
             contract {
-                callsInPlace(isStopped, InvocationKind.UNKNOWN)
-                callsInPlace(startStdio, InvocationKind.AT_MOST_ONCE)
+                callsInPlace(_get, InvocationKind.UNKNOWN)
+                callsInPlace(_isStopped, InvocationKind.UNKNOWN)
+                callsInPlace(_startStdio, InvocationKind.AT_MOST_ONCE)
             }
 
             if (isDestroyed) return This
-            if (feeds.isEmpty()) return This
+            if (numFeeds <= 0) return This
             if (stdio !is Stdio.Pipe) return This
-            if (isStopped()) return This
+            if (_isStopped()) return This
 
             val start = withLock {
                 if (isDestroyed) return@withLock false
-                if (isStopped()) return@withLock false
+                if (_isStopped()) return@withLock false
                 val wasEmpty = isEmpty()
-                feeds.forEach { add(it) }
+                var i = 0
+                while (i < numFeeds) { add(_get(i++)) }
                 wasEmpty && isNotEmpty()
             }
 
-            if (start) startStdio()
+            if (start) _startStdio()
 
             return This
         }
@@ -293,8 +348,8 @@ public fun interface OutputFeed {
                     onError(t, context = onErrorContext)
                     // Handler swallowed it
                     threw = null
-                } catch (e: Throwable) {
-                    threw = e
+                } catch (t: Throwable) {
+                    threw = t
                 }
             }
 

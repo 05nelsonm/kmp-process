@@ -621,7 +621,7 @@ abstract class ProcessBaseTest {
     @Test
     open fun givenExecutable_whenOutput_thenIsAsExpected() = runTest(timeout = 25.seconds) {
         suspend fun Output.assertOutput() {
-            delayTest(250.milliseconds)
+            delayTest(500.milliseconds)
 
             try {
                 assertExitCode(processInfo.exitCode)

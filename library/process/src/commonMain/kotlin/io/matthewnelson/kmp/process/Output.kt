@@ -26,7 +26,7 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 
 /**
- * Output results from [Process.Builder.createOutput]
+ * Output results for [Process.Builder.createOutput] and [Process.Builder.createOutputAsync].
  * */
 public class Output private constructor(
 
@@ -58,7 +58,7 @@ public class Output private constructor(
 ) {
 
     /**
-     * Options for [Process.Builder.createOutput]
+     * Options for [Process.Builder.createOutput] and [Process.Builder.createOutputAsync].
      *
      * @see [Builder]
      * */
@@ -77,25 +77,27 @@ public class Output private constructor(
             private var _inputUtf8: (() -> String)? = null
 
             /**
-             * Any input that needs to be passed to the process's
-             * `stdin` stream once it has spawned.
+             * Add any input that needs to be passed to the process's standard
+             * input stream, after it has spawned.
              *
-             * [block] is invoked once and only once. On Jvm/Native,
-             * if the process fails to spawn then [block] is never
-             * invoked. On Js there is no way to lazily provide
-             * the input, so it is always invoked before spawning
-             * the process.
+             * [block] is invoked once and only once. If it is not invoked
+             * due to an error, then the reference to [block] is always dropped.
              *
-             * **NOTE:** After being written to stdin, the array
-             * produced by [block] is zeroed out before the reference
-             * is dropped.
+             * [block] is always invoked lazily after the process has spawned,
+             * **except** when using the blocking [Process.Builder.createOutput]
+             * call on Js/WasmJs which requires it as an argument for `spawnSync`,
+             * so must be invoked beforehand.
              *
-             * **NOTE:** [block] will be called from the same
-             * thread that [Process.Builder.createOutput] is called from.
+             * **NOTE:** After being written to stdin, the array produced by
+             * [block] is zeroed out before its reference is dropped.
              *
-             * Declaring this will override any [Process.Builder.stdin]
-             * configuration if it is set to something other than
-             * [Stdio.Pipe].
+             * **NOTE:** [block] will be called from the same thread that
+             * [Process.Builder.createOutput] is called from, or within the
+             * same coroutine context that [Process.Builder.createOutputAsync]
+             * is called from.
+             *
+             * Defining this input argument will override any [Process.Builder.stdin]
+             * configuration if it is set to something other than [Stdio.Pipe].
              * */
             public fun input(
                 block: () -> ByteArray,
@@ -105,21 +107,24 @@ public class Output private constructor(
             }
 
             /**
-             * Any input that needs be passed to the process's
-             * `stdin` stream once it has spawned.
+             * Add any input that needs to be passed to the process's standard
+             * input stream, after it has spawned.
              *
-             * [block] is invoked once and only once. On Jvm/Native,
-             * if the process fails to spawn then [block] is never
-             * invoked. On Js there is no way to lazily provide
-             * the input, so it is always invoked before spawning
-             * the process.
+             * [block] is invoked once and only once. If it is not invoked
+             * due to an error, then the reference to [block] is always dropped.
              *
-             * **NOTE:** [block] will be invoked from the same
-             * thread that [Process.Builder.createOutput] is called from.
+             * [block] is always invoked lazily after the process has spawned,
+             * **except** when using the blocking [Process.Builder.createOutput]
+             * call on Js/WasmJs which requires it as an argument for `spawnSync`,
+             * so must be invoked beforehand.
              *
-             * Declaring this will override any [Process.Builder.stdin]
-             * configuration if it is set to something other than
-             * [Stdio.Pipe].
+             * **NOTE:** [block] will be called from the same thread that
+             * [Process.Builder.createOutput] is called from, or within the
+             * same coroutine context that [Process.Builder.createOutputAsync]
+             * is called from.
+             *
+             * Defining this input argument will override any [Process.Builder.stdin]
+             * configuration if it is set to something other than [Stdio.Pipe].
              * */
             public fun inputUtf8(
                 block: () -> String,
