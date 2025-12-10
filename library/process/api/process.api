@@ -99,9 +99,11 @@ public abstract class io/matthewnelson/kmp/process/OutputFeed$Handler : io/matth
 	protected abstract fun startStderr ()V
 	protected abstract fun startStdout ()V
 	public final fun stderrFeed (Lio/matthewnelson/kmp/process/OutputFeed;)Lio/matthewnelson/kmp/process/Process;
+	public final fun stderrFeed (Ljava/util/Collection;)Lio/matthewnelson/kmp/process/Process;
 	public final fun stderrFeed ([Lio/matthewnelson/kmp/process/OutputFeed;)Lio/matthewnelson/kmp/process/Process;
 	public final fun stderrWaiter ()Lio/matthewnelson/kmp/process/OutputFeed$Waiter;
 	public final fun stdoutFeed (Lio/matthewnelson/kmp/process/OutputFeed;)Lio/matthewnelson/kmp/process/Process;
+	public final fun stdoutFeed (Ljava/util/Collection;)Lio/matthewnelson/kmp/process/Process;
 	public final fun stdoutFeed ([Lio/matthewnelson/kmp/process/OutputFeed;)Lio/matthewnelson/kmp/process/Process;
 	public final fun stdoutWaiter ()Lio/matthewnelson/kmp/process/OutputFeed$Waiter;
 }

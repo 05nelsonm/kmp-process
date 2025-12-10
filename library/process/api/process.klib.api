@@ -41,9 +41,11 @@ abstract fun interface io.matthewnelson.kmp.process/OutputFeed { // io.matthewne
         final fun dispatchStderr(kotlin/String?) // io.matthewnelson.kmp.process/OutputFeed.Handler.dispatchStderr|dispatchStderr(kotlin.String?){}[0]
         final fun dispatchStdout(kotlin/String?) // io.matthewnelson.kmp.process/OutputFeed.Handler.dispatchStdout|dispatchStdout(kotlin.String?){}[0]
         final fun stderrFeed(io.matthewnelson.kmp.process/OutputFeed): io.matthewnelson.kmp.process/Process // io.matthewnelson.kmp.process/OutputFeed.Handler.stderrFeed|stderrFeed(io.matthewnelson.kmp.process.OutputFeed){}[0]
+        final fun stderrFeed(kotlin.collections/Collection<io.matthewnelson.kmp.process/OutputFeed>): io.matthewnelson.kmp.process/Process // io.matthewnelson.kmp.process/OutputFeed.Handler.stderrFeed|stderrFeed(kotlin.collections.Collection<io.matthewnelson.kmp.process.OutputFeed>){}[0]
         final fun stderrFeed(kotlin/Array<out io.matthewnelson.kmp.process/OutputFeed>...): io.matthewnelson.kmp.process/Process // io.matthewnelson.kmp.process/OutputFeed.Handler.stderrFeed|stderrFeed(kotlin.Array<out|io.matthewnelson.kmp.process.OutputFeed>...){}[0]
         final fun stderrWaiter(): io.matthewnelson.kmp.process/OutputFeed.Waiter // io.matthewnelson.kmp.process/OutputFeed.Handler.stderrWaiter|stderrWaiter(){}[0]
         final fun stdoutFeed(io.matthewnelson.kmp.process/OutputFeed): io.matthewnelson.kmp.process/Process // io.matthewnelson.kmp.process/OutputFeed.Handler.stdoutFeed|stdoutFeed(io.matthewnelson.kmp.process.OutputFeed){}[0]
+        final fun stdoutFeed(kotlin.collections/Collection<io.matthewnelson.kmp.process/OutputFeed>): io.matthewnelson.kmp.process/Process // io.matthewnelson.kmp.process/OutputFeed.Handler.stdoutFeed|stdoutFeed(kotlin.collections.Collection<io.matthewnelson.kmp.process.OutputFeed>){}[0]
         final fun stdoutFeed(kotlin/Array<out io.matthewnelson.kmp.process/OutputFeed>...): io.matthewnelson.kmp.process/Process // io.matthewnelson.kmp.process/OutputFeed.Handler.stdoutFeed|stdoutFeed(kotlin.Array<out|io.matthewnelson.kmp.process.OutputFeed>...){}[0]
         final fun stdoutWaiter(): io.matthewnelson.kmp.process/OutputFeed.Waiter // io.matthewnelson.kmp.process/OutputFeed.Handler.stdoutWaiter|stdoutWaiter(){}[0]
     }
