@@ -43,6 +43,7 @@ import io.matthewnelson.kmp.process.internal.node.node_child_process
 import io.matthewnelson.kmp.process.internal.node.node_fs
 import io.matthewnelson.kmp.process.internal.node.node_process
 import io.matthewnelson.kmp.process.internal.node.node_stream
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
@@ -257,7 +258,11 @@ internal actual class PlatformBuilder private actual constructor() {
             _isCanonicallyEqualTo = { other -> isCanonicallyEqualTo(other, fs) },
         )
 
-        withContext(NonCancellable) {
+        // Dispatchers.Default is used here, which under the hood is NodeDispatcher,
+        // in order for yield to work as intended in the event Process.Builder.async
+        // was configured with a CoroutineContext that does not include a proper
+        // dispatcher.
+        withContext(NonCancellable + Dispatchers.Default) {
             while (p.pid() <= 0) {
                 p.spawnError?.let { e ->
                     try {
@@ -267,6 +272,11 @@ internal actual class PlatformBuilder private actual constructor() {
                     }
                     throw e
                 }
+
+                // Yield should normally not be used to wait for things, but in this specific
+                // use-case, it is OK because Js/WasmJs yield dispatches via process.nextTick
+                // which we need here to allow the jsProcess.onError listener to dispatch its
+                // spawn error (if there is one) so we can catch it.
                 yield()
             }
         }

@@ -189,7 +189,7 @@ public fun interface OutputFeed {
          * */
         @Throws(IllegalStateException::class)
         public fun stdoutWaiter(): OutputFeed.Waiter {
-            return object : RealWaiter() {
+            return object : RealWaiter(This, isDestroyed) {
                 override fun isStarted(): Boolean = stdoutStarted
                 override fun isStopped(): Boolean = stdoutStopped
             }
@@ -204,7 +204,7 @@ public fun interface OutputFeed {
          * */
         @Throws(IllegalStateException::class)
         public fun stderrWaiter(): OutputFeed.Waiter {
-            return object : RealWaiter() {
+            return object : RealWaiter(This, isDestroyed) {
                 override fun isStarted(): Boolean = stderrStarted
                 override fun isStopped(): Boolean = stderrStopped
             }
@@ -264,8 +264,6 @@ public fun interface OutputFeed {
 
             return This
         }
-
-        private abstract inner class RealWaiter: OutputFeed.Waiter(This, isDestroyed)
 
         @Suppress("PrivatePropertyName")
         private inline val This: Process get() = this as Process
@@ -356,3 +354,5 @@ public fun interface OutputFeed {
         }
     }
 }
+
+private abstract class RealWaiter(process: Process, isDestroyed: Boolean): OutputFeed.Waiter(process, isDestroyed)
