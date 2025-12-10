@@ -80,7 +80,9 @@ internal actual class PlatformBuilder private actual constructor() {
             stdio,
             destroy,
             handler,
-        )
+        ).apply {
+            if (isOutput) input?.configureForAsyncOutput()
+        }
     }
 
     @Throws(IOException::class)

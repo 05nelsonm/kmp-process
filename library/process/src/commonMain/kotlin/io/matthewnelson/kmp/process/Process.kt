@@ -435,7 +435,7 @@ public abstract class Process internal constructor(
             return platformSpawn(
                 _build = { options -> buildAsync(fs, options) },
                 _spawn = { command, args, chdir, env, stdio, signal, handler ->
-                    spawnAsync(fs, command, args, chdir, env, stdio, signal, handler)
+                    spawnAsync(fs, command, args, chdir, env, stdio, signal, handler, isOutput = false)
                 },
             )
         }
@@ -569,13 +569,17 @@ public abstract class Process internal constructor(
                             spawnAsync(fs, command2, args2, chdir2, env2, stdio2, destroy2, handler, isOutput = true)
                         },
 
-                        // Jvm/Native uses Dispatcher.IO under the hood for these calls. If
-                        // AsyncFs.ctx is single-threaded, the underlying blocking calls could
-                        // make for a bad time.
+                        // AsyncWriteStream calls
                         _close = { closeAsync() },
-                        _write = { buf, offset, len -> writeAsync(buf, offset, len) },
-                        _decodeBuffered = { decoder, stream ->
-                            decodeBufferedAsync(decoder, stream::writeAsync)
+                        _write = { buf, offset, len ->
+                            withContext(AsyncFs.Default.ctx) {
+                                writeAsync(buf, offset, len)
+                            }
+                        },
+                        _decodeBuffered = { utf8, stream ->
+                            withContext(AsyncFs.Default.ctx) {
+                                decodeBufferedAsync(utf8, stream::writeAsync)
+                            }
                         },
 
                         _sleep = { duration -> delay(duration) },
