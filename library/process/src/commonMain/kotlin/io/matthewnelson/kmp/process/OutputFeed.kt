@@ -153,8 +153,8 @@ public fun interface OutputFeed {
          * does nothing.
          * */
         public fun stdoutFeed(
-            feeds: Collection<OutputFeed>,
-        ): Process = addStdoutFeeds(feeds.size, feeds::elementAt)
+            feeds: List<OutputFeed>,
+        ): Process = addStdoutFeeds(feeds.size, feeds::get)
 
         /**
          * Attaches a single [OutputFeed] to obtain `stderr` output.
@@ -199,8 +199,8 @@ public fun interface OutputFeed {
          * does nothing.
          * */
         public fun stderrFeed(
-            feeds: Collection<OutputFeed>,
-        ): Process = addStderrFeeds(feeds.size, feeds::elementAt)
+            feeds: List<OutputFeed>,
+        ): Process = addStderrFeeds(feeds.size, feeds::get)
 
         /**
          * Returns a [Waiter] for `stdout` in order to await any
