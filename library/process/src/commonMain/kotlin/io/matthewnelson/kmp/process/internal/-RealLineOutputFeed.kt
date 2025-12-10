@@ -17,6 +17,7 @@
 
 package io.matthewnelson.kmp.process.internal
 
+import io.matthewnelson.encoding.core.util.wipe
 import io.matthewnelson.encoding.utf8.UTF8
 import io.matthewnelson.kmp.process.ReadBuffer
 
@@ -55,7 +56,7 @@ internal class RealLineOutputFeed internal constructor(
             feed.flush()
             if (sb.length > sbMaxLen) sbMaxLen = sb.length
             dispatch(sb.toString())
-            sb.clear()
+            sb.setLength(0)
         }
     }
 
@@ -70,8 +71,7 @@ internal class RealLineOutputFeed internal constructor(
                 d(sb.toString())
             }
         } finally {
-            sb.clear()
-            repeat(sbMaxLen) { sb.append(' ') }
+            sb.wipe(len = sbMaxLen)
             sbMaxLen = 0
             skipLF = false
             d(null)
