@@ -25,6 +25,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
+import kotlin.concurrent.Volatile
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.jvm.JvmSynthetic
 
@@ -38,6 +39,11 @@ import kotlin.jvm.JvmSynthetic
  * */
 public actual class AsyncWriteStream private constructor(stream: WriteStream): BufferedWriteStream(stream), Closeable {
 
+    // Process.Builder.createOutputAsync implementation wraps calls using
+    // withContext. This de-duplicates things.
+    @Volatile
+    private var _isAsyncOutput: Boolean = false
+
     /**
      * Writes [len] number of bytes from [buf], starting at index [offset].
      *
@@ -50,7 +56,11 @@ public actual class AsyncWriteStream private constructor(stream: WriteStream): B
      * */
     @Throws(CancellationException::class, IOException::class)
     public actual suspend fun writeAsync(buf: ByteArray, offset: Int, len: Int) {
-        withContext(NonCancellable + Dispatchers.IO) { write(buf, offset, len) }
+        if (_isAsyncOutput) {
+            write(buf, offset, len)
+        } else {
+            withContext(NonCancellable + Dispatchers.IO) { write(buf, offset, len) }
+        }
     }
 
     /**
@@ -62,7 +72,11 @@ public actual class AsyncWriteStream private constructor(stream: WriteStream): B
      * */
     @Throws(CancellationException::class, IOException::class)
     public actual suspend fun writeAsync(buf: ByteArray) {
-        withContext(NonCancellable + Dispatchers.IO) { write(buf) }
+        if (_isAsyncOutput) {
+            write(buf)
+        } else {
+            withContext(NonCancellable + Dispatchers.IO) { write(buf) }
+        }
     }
 
     /**
@@ -72,7 +86,11 @@ public actual class AsyncWriteStream private constructor(stream: WriteStream): B
      * */
     @Throws(CancellationException::class, IOException::class)
     public actual suspend fun flushAsync() {
-        withContext(NonCancellable + Dispatchers.IO) { flush() }
+        if (_isAsyncOutput) {
+            flush()
+        } else {
+            withContext(NonCancellable + Dispatchers.IO) { flush() }
+        }
     }
 
     /**
@@ -117,5 +135,10 @@ public actual class AsyncWriteStream private constructor(stream: WriteStream): B
 
         @JvmSynthetic
         internal fun of(stream: WriteStream) = AsyncWriteStream(stream)
+    }
+
+    @JvmSynthetic
+    internal fun configureForAsyncOutput() {
+        _isAsyncOutput = true
     }
 }

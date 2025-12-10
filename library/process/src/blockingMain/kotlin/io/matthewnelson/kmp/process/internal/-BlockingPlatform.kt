@@ -48,8 +48,8 @@ internal inline fun PlatformBuilder.blockingOutput(
     _spawn = PlatformBuilder::spawn,
     _close = AsyncWriteStream::close,
     _write = AsyncWriteStream::write,
-    _decodeBuffered = { decoder, stream ->
-        decodeBuffered(decoder, stream::write)
+    _decodeBuffered = { utf8, stream ->
+        decodeBuffered(utf8, stream::write)
     },
     _sleep = Duration::threadSleep,
     _sleepWithContext = Duration::threadSleep,
