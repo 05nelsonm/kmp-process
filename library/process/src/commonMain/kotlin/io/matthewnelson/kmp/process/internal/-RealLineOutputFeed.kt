@@ -55,7 +55,14 @@ internal class RealLineOutputFeed internal constructor(
 
             feed.flush()
             if (sb.length > sbMaxLen) sbMaxLen = sb.length
-            dispatch(sb.toString())
+            try {
+                dispatch(sb.toString())
+            } catch (t: Throwable) {
+                feed.close()
+                dispatch = NoOp
+                sb.wipe(len = sbMaxLen)
+                throw t
+            }
             sb.setLength(0)
         }
     }

@@ -17,6 +17,7 @@
 
 package io.matthewnelson.kmp.process
 
+import io.matthewnelson.encoding.core.EncoderDecoder.Companion.DEFAULT_BUFFER_SIZE
 import io.matthewnelson.kmp.file.Closeable
 import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.file.use
@@ -36,7 +37,7 @@ public actual sealed class BufferedWriteStream actual constructor(private val st
 
     @Volatile
     private var _bufLen = 0
-    private val buf = ByteArray(1024 * 8)
+    private val buf = ByteArray(DEFAULT_BUFFER_SIZE)
     private val lock = newLock()
 
     /**

@@ -44,18 +44,23 @@ public expect value class ReadBuffer private constructor(private val _buf: Any) 
      *
      * This is **NOT** thread safe.
      *
-     * e.g. (Jvm)
+     * e.g. (Using `io.matthewnelson.kmp-file:file`)
      *
      *     val feed = ReadBuffer.lineOutputFeed { line ->
      *         println(line ?: "--EOS--")
      *     }
      *
-     *     myInputStream.use { iStream ->
+     *     "/path/to/file.txt".toFile().openRead().use { stream ->
      *         val buf = ReadBuffer.allocate()
      *
      *         try {
      *             while(true) {
-     *                 val read = iStream.read(buf.buf)
+     *                 // ReadBuffer.buf available from blockingMain
+     *                 // source set (Jvm/Native) as ByteArray
+     *                 //
+     *                 // ReadBuffer.buf available from jsWasmJsMain
+     *                 // source set (Js/WasmJs) as Buffer
+     *                 val read = stream.read(buf.buf)
      *                 if (read == -1) break
      *                 feed.onData(buf, read)
      *             }
@@ -77,6 +82,9 @@ public expect value class ReadBuffer private constructor(private val _buf: Any) 
          * individual lines, dispatching each line to provided [lineOutputFeed]
          * dispatcher callback.
          *
+         * **NOTE:** If dispatching to [lineOutputFeed] callback results in an
+         * exception, the feed is closed and exception re-thrown.
+         *
          * @throws [IllegalStateException] If closed.
          * @throws [IndexOutOfBoundsException] If [len] is inappropriate.
          * */
@@ -84,7 +92,9 @@ public expect value class ReadBuffer private constructor(private val _buf: Any) 
         public abstract fun onData(buf: ReadBuffer, len: Int)
 
         /**
-         * Closes the [LineOutputFeed].
+         * Closes the [LineOutputFeed]. Any buffered input will be dispatched
+         * to the provided [lineOutputFeed] callback, followed by `null` to
+         * indicate end of stream. Successive invocations of [close] are ignored.
          * */
         public abstract fun close()
     }
@@ -92,17 +102,18 @@ public expect value class ReadBuffer private constructor(private val _buf: Any) 
     public companion object {
 
         /**
-         * Allocates a new buffer with capacity of (8 * 1024) bytes
+         * Allocates a new buffer with capacity of (8 * 1024) bytes.
          *
-         * @throws [UnsupportedOperationException] on Kotlin/JS-Browser
+         * @throws [UnsupportedOperationException] on Js/WasmJs Browser.
          * */
         @InternalProcessApi
         public fun allocate(): ReadBuffer
 
         /**
-         * Creates a new [LineOutputFeed]
+         * Creates a new [LineOutputFeed].
          *
-         * **NOTE:** [dispatch] should not throw exception
+         * **NOTE:** [dispatch] should not throw exception. If it does, the feed
+         * will be closed and the exception re-thrown.
          * */
         @InternalProcessApi
         public fun lineOutputFeed(dispatch: (line: String?) -> Unit): LineOutputFeed

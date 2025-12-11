@@ -17,6 +17,7 @@
 
 package io.matthewnelson.kmp.process
 
+import io.matthewnelson.encoding.core.EncoderDecoder.Companion.DEFAULT_BUFFER_SIZE
 import io.matthewnelson.kmp.file.Buffer
 import io.matthewnelson.kmp.process.internal.RealLineOutputFeed
 
@@ -54,18 +55,23 @@ public actual value class ReadBuffer private actual constructor(private actual v
      *
      * This is **NOT** thread safe.
      *
-     * e.g. (Jvm)
+     * e.g. (Using `io.matthewnelson.kmp-file:file`)
      *
      *     val feed = ReadBuffer.lineOutputFeed { line ->
      *         println(line ?: "--EOS--")
      *     }
      *
-     *     myInputStream.use { iStream ->
+     *     "/path/to/file.txt".toFile().openRead().use { stream ->
      *         val buf = ReadBuffer.allocate()
      *
      *         try {
      *             while(true) {
-     *                 val read = iStream.read(buf.buf)
+     *                 // ReadBuffer.buf available from blockingMain
+     *                 // source set (Jvm/Native) as ByteArray
+     *                 //
+     *                 // ReadBuffer.buf available from jsWasmJsMain
+     *                 // source set (Js/WasmJs) as Buffer
+     *                 val read = stream.read(buf.buf)
      *                 if (read == -1) break
      *                 feed.onData(buf, read)
      *             }
@@ -87,6 +93,9 @@ public actual value class ReadBuffer private actual constructor(private actual v
          * individual lines, dispatching each line to provided [lineOutputFeed]
          * dispatcher callback.
          *
+         * **NOTE:** If dispatching to [lineOutputFeed] callback results in an
+         * exception, the feed is closed and exception re-thrown.
+         *
          * @throws [IllegalStateException] If closed.
          * @throws [IndexOutOfBoundsException] If [len] is inappropriate.
          * */
@@ -94,7 +103,9 @@ public actual value class ReadBuffer private actual constructor(private actual v
         public actual abstract fun onData(buf: ReadBuffer, len: Int)
 
         /**
-         * Closes the [LineOutputFeed].
+         * Closes the [LineOutputFeed]. Any buffered input will be dispatched
+         * to the provided [lineOutputFeed] callback, followed by `null` to
+         * indicate end of stream. Successive invocations of [close] are ignored.
          * */
         public actual abstract fun close()
     }
@@ -102,19 +113,20 @@ public actual value class ReadBuffer private actual constructor(private actual v
     public actual companion object {
 
         /**
-         * Allocates a new buffer with capacity of (8 * 1024) bytes
+         * Allocates a new buffer with capacity of (8 * 1024) bytes.
          *
-         * @throws [UnsupportedOperationException] on Kotlin/JS-Browser
+         * @throws [UnsupportedOperationException] on Js/WasmJs Browser
          * */
         @InternalProcessApi
         public actual fun allocate(): ReadBuffer {
-            return ReadBuffer(Buffer.alloc(8 * 1024))
+            return ReadBuffer(Buffer.alloc(DEFAULT_BUFFER_SIZE))
         }
 
         /**
-         * Creates a new [LineOutputFeed]
+         * Creates a new [LineOutputFeed].
          *
-         * **NOTE:** [dispatch] should not throw exception
+         * **NOTE:** [dispatch] should not throw exception. If it does, the feed
+         * will be closed and the exception re-thrown.
          * */
         @InternalProcessApi
         public actual fun lineOutputFeed(
@@ -124,7 +136,7 @@ public actual value class ReadBuffer private actual constructor(private actual v
         /**
          * Wraps a [Buffer] to use as [ReadBuffer].
          *
-         * @see [buf]
+         * @see [ReadBuffer.buf]
          * */
         @InternalProcessApi
         public fun of(buf: Buffer): ReadBuffer = ReadBuffer(buf)
