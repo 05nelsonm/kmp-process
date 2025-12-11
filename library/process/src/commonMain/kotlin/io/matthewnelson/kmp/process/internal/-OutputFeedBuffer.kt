@@ -15,6 +15,7 @@
  **/
 package io.matthewnelson.kmp.process.internal
 
+import io.matthewnelson.encoding.core.util.wipe
 import io.matthewnelson.kmp.process.Output
 import io.matthewnelson.kmp.process.OutputFeed
 import kotlin.concurrent.Volatile
@@ -72,16 +73,15 @@ internal class OutputFeedBuffer private constructor(maxSize: Int): OutputFeed {
     }
 
     internal fun doFinal(): String {
-        val sb = StringBuilder(size + 1)
+        val sb = StringBuilder(size)
         lines.joinTo(sb, separator = "\n")
         lines.clear()
-        val s = sb.toString()
-        sb.clear()
-        repeat(size) { sb.append(' ') }
+        val result = sb.toString()
+        sb.wipe()
         size = 0
         hasEnded = false
         maxSizeExceeded = false
-        return s
+        return result
     }
 
     internal companion object {

@@ -18,6 +18,7 @@
 package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.encoding.core.Decoder.Companion.decodeBuffered
+import io.matthewnelson.encoding.core.EncoderDecoder.Companion.DEFAULT_BUFFER_SIZE
 import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.file.InterruptedException
@@ -59,7 +60,7 @@ internal inline fun PlatformBuilder.blockingOutput(
 
 internal fun ReadStream.scanLines(
     dispatch: (line: String?) -> Unit,
-) { scanLines(1024 * 8, dispatch) }
+) { scanLines(DEFAULT_BUFFER_SIZE, dispatch) }
 
 @OptIn(InternalProcessApi::class)
 @Throws(IllegalArgumentException::class)

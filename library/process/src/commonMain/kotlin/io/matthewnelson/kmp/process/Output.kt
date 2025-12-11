@@ -15,6 +15,7 @@
  **/
 package io.matthewnelson.kmp.process
 
+import io.matthewnelson.encoding.core.EncoderDecoder.Companion.DEFAULT_BUFFER_SIZE
 import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.process.internal.IsDesktop
@@ -162,7 +163,7 @@ public class Output private constructor(
             internal companion object {
 
                 private const val MIN_TIMEOUT: Int = 250
-                private const val MIN_BUFFER: Int = 1024 * 16
+                private const val MIN_BUFFER: Int = DEFAULT_BUFFER_SIZE * 2
 
                 @JvmSynthetic
                 @PublishedApi
