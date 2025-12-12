@@ -54,7 +54,7 @@ internal inline fun PlatformBuilder.commonOutput(
     _spawn: PlatformBuilder.(String, List<String>, File?, Map<String, String>, Stdio.Config, Signal, ProcessException.Handler) -> Process,
     _close: AsyncWriteStream.() -> Unit,
     _write: AsyncWriteStream.(ByteArray, Int, Int) -> Unit,
-    _decodeBuffered: String.(UTF8, AsyncWriteStream) -> Long,
+    _decodeBuffered: String.(UTF8, Boolean, AsyncWriteStream) -> Long,
     _sleep: (Duration) -> Unit,
     // Specifically for coroutines
     _sleepWithContext: (Duration) -> Unit,
@@ -194,7 +194,7 @@ internal inline fun AsyncWriteStream.writeInputAndClose(
     options: Output.Options,
     _close: AsyncWriteStream.() -> Unit,
     _write: AsyncWriteStream.(ByteArray, Int, Int) -> Unit,
-    _decodeBuffered: String.(UTF8, AsyncWriteStream) -> Long,
+    _decodeBuffered: String.(UTF8, Boolean, AsyncWriteStream) -> Long,
 ) {
     contract {
         callsInPlace(_close, InvocationKind.EXACTLY_ONCE)
@@ -204,6 +204,7 @@ internal inline fun AsyncWriteStream.writeInputAndClose(
 
     var threw: Throwable? = null
     try {
+        // Will be either bytes or text, never both.
         options.consumeInputBytes()?.let { b ->
             try {
                 _write(b, 0, b.size)
@@ -211,7 +212,7 @@ internal inline fun AsyncWriteStream.writeInputAndClose(
                 b.fill(0)
             }
         }
-        options.consumeInputUtf8()?._decodeBuffered(UTF8, this)
+        options.consumeInputUtf8()?._decodeBuffered(UTF8, /* throwOnOverflow = */ false, this)
     } catch (t: Throwable) {
         threw = t
         throw t
