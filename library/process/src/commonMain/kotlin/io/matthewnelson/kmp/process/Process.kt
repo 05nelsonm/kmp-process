@@ -576,9 +576,9 @@ public abstract class Process internal constructor(
                                 writeAsync(buf, offset, len)
                             }
                         },
-                        _decodeBuffered = { utf8, stream ->
+                        _decodeBuffered = { utf8, throwOnOverflow, stream ->
                             withContext(AsyncFs.Default.ctx) {
-                                decodeBufferedAsync(utf8, stream::writeAsync)
+                                decodeBufferedAsync(utf8, throwOnOverflow, stream::writeAsync)
                             }
                         },
 
