@@ -1,5 +1,34 @@
 # CHANGELOG
 
+## Version 0.5.0 (2025-12-16)
+ - Updates `kotlin` to `2.2.21` [[#199]][199]
+ - Updates `encoding` to `2.6.0` [[#199]][199]
+ - Updates `kmp-file` to `0.6.0` [[#199]][199]
+ - Fixes Js/WasmJs `Process` creation failing to throw exception on spawn failure [[#202]][202]:
+     - Jvm/Android no-longer needs to add the `kotlinx.coroutines.core` dependency to use 
+       Async APIs. `kmp-process` now defines the dependency as `implementation` instead of 
+       `compileOnly`
+     - Deprecates `Process.Builder.spawn`
+     - Deprecates `Process.Builder.useSpawn`
+     - Adds `Process.Builder.createProcessAsync` to `commonMain` (All platforms)
+     - Adds `Process.Builder.createProcess` to `blockingMain` (Jvm/Native)
+     - `Process` now implements `io.matthewnelson.kmp.file.Closeable` interface to replace 
+       `useSpawn` functionality
+     - Adds `Process.Builder.async` function to change `CoroutineContext` from the default 
+       `Dispatchers.IO` (Jvm/Native) / `Dispatcher.Default` (Js/WasmJs) used by `createProcessAsync`
+ - Fixes `Process.Builder.command` validation check to now allow blank, which is a valid file name [[#213]][213]
+ - Improves `Process` creation failure `IOException` type throwing when `command` is not found, 
+   or invalid access/permissions [[#201]][201]
+ - Increases `Process.Builder.chdir` deprecation level to `ERROR` [[#206]][206]
+ - Replaces `Process.Builder.output` with `Process.Builder.createOutput` [[#210]][210]:
+     - `Process.Builder.output` is now Deprecated
+ - Adds `Process.Builder.createOutputAsync` [[#211]][211]
+ - Improves `Process.Builder.createOutput` and `Process.Builder.createOutputAsync` functionality 
+   when a `Output.Builder.inputUtf8` callback has been defined. Implementation now stream encodes 
+   `UTF-8` to a buffer, flushing to `AsyncWriteStream.write` and `AsyncWriteStream.writeAsync` 
+   when needed, instead of encoding all at once and then writing [[#207]][207] [[#209]][209] [[#214]][214] [[#216]][216]
+ - Add ability to subscribe multiple `OutputFeed` via `stdoutFeed`/`stderrFeed` using a `List` [[#220]][220]
+
 ## Version 0.4.0 (2025-09-19)
  - Updates `kotlin` to `2.2.20` [[#194]][194]
  - Updates `immutable` to `0.3.0` [[#196]][196]
@@ -210,4 +239,15 @@
 [195]: https://github.com/05nelsonm/kmp-process/pull/195
 [196]: https://github.com/05nelsonm/kmp-process/pull/196
 [197]: https://github.com/05nelsonm/kmp-process/pull/197
-
+[199]: https://github.com/05nelsonm/kmp-process/pull/199
+[201]: https://github.com/05nelsonm/kmp-process/pull/201
+[202]: https://github.com/05nelsonm/kmp-process/pull/202
+[206]: https://github.com/05nelsonm/kmp-process/pull/206
+[207]: https://github.com/05nelsonm/kmp-process/pull/207
+[209]: https://github.com/05nelsonm/kmp-process/pull/209
+[210]: https://github.com/05nelsonm/kmp-process/pull/210
+[211]: https://github.com/05nelsonm/kmp-process/pull/211
+[213]: https://github.com/05nelsonm/kmp-process/pull/213
+[214]: https://github.com/05nelsonm/kmp-process/pull/214
+[216]: https://github.com/05nelsonm/kmp-process/pull/216
+[220]: https://github.com/05nelsonm/kmp-process/pull/220
