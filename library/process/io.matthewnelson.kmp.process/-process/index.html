@@ -1,22 +1,22 @@
 <!doctype html>
-<html class="no-js">
+<html class="no-js" lang="en">
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8">
     <title>Process</title>
-<link href="../../../../images/logo-icon.svg" rel="icon" type="image/svg">    <script>var pathToRoot = "../../../../";</script>
-    <script>document.documentElement.classList.replace("no-js","js");</script>
+<link href="../../../../images/logo-icon.svg" rel="icon" type="image/svg"><script>var pathToRoot = "../../../../";</script>
+    <script>document.documentElement.classList.replace("no-js", "js");</script>
     <script>const storage = localStorage.getItem("dokka-dark-mode")
-    if (storage == null) {
+      if (storage == null) {
         const osDarkSchemePreferred = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
         if (osDarkSchemePreferred === true) {
-            document.getElementsByTagName("html")[0].classList.add("theme-dark")
+          document.getElementsByTagName("html")[0].classList.add("theme-dark")
         }
-    } else {
+      } else {
         const savedDarkMode = JSON.parse(storage)
-        if(savedDarkMode === true) {
-            document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        if (savedDarkMode === true) {
+          document.getElementsByTagName("html")[0].classList.add("theme-dark")
         }
-    }
+      }
     </script>
 <script type="text/javascript" src="https://unpkg.com/kotlin-playground@1/dist/playground.min.js" async></script>
 <script type="text/javascript" src="../../../../scripts/sourceset_dependencies.js" async></script>
@@ -24,33 +24,31 @@
 <link href="../../../../styles/main.css" rel="Stylesheet">
 <link href="../../../../styles/prism.css" rel="Stylesheet">
 <link href="../../../../styles/logo-styles.css" rel="Stylesheet">
-<link href="../../../../styles/font-jb-sans-auto.css" rel="Stylesheet">
 <link href="../../../../ui-kit/ui-kit.min.css" rel="Stylesheet">
-<script type="text/javascript" src="../../../../scripts/clipboard.js" async></script>
+<script type="text/javascript" src="../../../../scripts/safe-local-storage_blocking.js"></script>
 <script type="text/javascript" src="../../../../scripts/navigation-loader.js" async></script>
 <script type="text/javascript" src="../../../../scripts/platform-content-handler.js" async></script>
 <script type="text/javascript" src="../../../../scripts/main.js" defer></script>
 <script type="text/javascript" src="../../../../scripts/prism.js" async></script>
-<script type="text/javascript" src="../../../../ui-kit/ui-kit.min.js" defer></script>
-<script type="text/javascript" src="../../../../scripts/symbol-parameters-wrapper_deferred.js" defer></script></head>
+<script type="text/javascript" src="../../../../ui-kit/ui-kit.min.js" defer></script></head>
 <body>
-    <div class="root">
-    <nav class="navigation theme-dark" id="navigation-wrapper">
-<a class="library-name--link" href="../../../../index.html">
+<div class="root">
+    <header class="navigation theme-dark" id="navigation-wrapper" role="banner">
+<a class="library-name--link" href="../../../../index.html" tabindex="1">
                     kmp-process
             </a>        <button class="navigation-controls--btn navigation-controls--btn_toc ui-kit_mobile-only" id="toc-toggle" type="button">Toggle table of contents
         </button>
         <div class="navigation-controls--break ui-kit_mobile-only"></div>
-        <div class="library-version" id="library-version">0.4.0
+        <div class="library-version" id="library-version">0.5.0
         </div>
         <div class="navigation-controls">
-        <div class="filter-section filter-section_loading" id="filter-section">
-                <button class="platform-tag platform-selector common-like" data-active="" data-filter=":library:process/commonMain">common</button>
+        <ul class="filter-section filter-section_loading" id="filter-section" aria-label="Target filter">
+                <button class="platform-tag platform-selector common-like" data-active="" aria-pressed="true" data-filter=":library:process/commonMain">common</button>
             <div class="dropdown filter-section--dropdown" data-role="dropdown" id="filter-section-dropdown">
                 <button class="button button_dropdown filter-section--dropdown-toggle" role="combobox" data-role="dropdown-toggle" aria-controls="platform-tags-listbox" aria-haspopup="listbox" aria-expanded="false" aria-label="Toggle source sets"></button>
-                <ul role="listbox" id="platform-tags-listbox" class="dropdown--list" data-role="dropdown-listbox">
-                    <div class="dropdown--header"><span>Platform filter</span>
-                        <button class="button" data-role="dropdown-toggle" aria-label="Close platform filter">
+                <ul role="listbox" id="platform-tags-listbox" class="dropdown--list" data-role="dropdown-listbox" aria-label="Target filter">
+                    <div class="dropdown--header"><span>Target filter</span>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close target filter">
                             <i class="ui-kit-icon ui-kit-icon_cross"></i>
                         </button>
                     </div>
@@ -64,45 +62,47 @@
                 </ul>
                 <div class="dropdown--overlay"></div>
             </div>
-        </div>
+        </ul>
             <button class="navigation-controls--btn navigation-controls--btn_theme" id="theme-toggle-button" type="button">Switch theme
             </button>
             <div class="navigation-controls--btn navigation-controls--btn_search" id="searchBar" role="button">Search in
                 API
             </div>
         </div>
-    </nav>
-        <div id="container">
-            <div class="sidebar" id="leftColumn">
-                <div class="dropdown theme-dark_mobile" data-role="dropdown" id="toc-dropdown">
-                    <ul role="listbox" id="toc-listbox" class="dropdown--list dropdown--list_toc-list" data-role="dropdown-listbox">
-                        <div class="dropdown--header">
+    </header>
+    <div id="container">
+        <nav id="leftColumn" class="sidebar" data-item-type="SECTION" data-item-config="{&quot;defaultSize&quot;: 280, &quot;minSize&quot;: 200, &quot;maxSize&quot;: 400}">
+            <a class="toc--skip-link" href="#main">Skip to content</a>
+            <div class="dropdown theme-dark_mobile" data-role="dropdown" id="toc-dropdown">
+                <ul role="listbox" id="toc-listbox" class="dropdown--list dropdown--list_toc-list" data-role="dropdown-listbox" aria-label="Table of contents">
+                    <div class="dropdown--header">
                             <span>
                                     kmp-process
                             </span>
-                            <button class="button" data-role="dropdown-toggle" aria-label="Close table of contents">
-                                <i class="ui-kit-icon ui-kit-icon_cross"></i>
-                            </button>
-                        </div>
-                        <div class="sidebar--inner" id="sideMenu"></div>
-                    </ul>
-                    <div class="dropdown--overlay"></div>
-                </div>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close table of contents">
+                            <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                        </button>
+                    </div>
+                    <div class="sidebar--inner" id="sideMenu"></div>
+                </ul>
+                <div class="dropdown--overlay"></div>
             </div>
-            <div id="main">
+        </nav>
+        <div id="resizer" class="resizer" data-item-type="BAR"></div>
+        <div id="main" data-item-type="SECTION" role="main">
 <div class="main-content" data-page-type="classlike" id="content" pageids="process::io.matthewnelson.kmp.process/Process///PointingToDeclaration//1506791849">
   <div class="breadcrumbs"><a href="../../index.html">process</a><span class="delimiter">/</span><a href="../index.html">io.matthewnelson.kmp.process</a><span class="delimiter">/</span><span class="current">Process</span></div>
   <div class="cover ">
     <h1 class="cover"><span><span>Process</span></span></h1>
-    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library:process/commonMain"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">class </span><a href="index.html">Process</a> : <a href="../-output-feed/-handler/index.html">OutputFeed.Handler</a><span class="clearfix"><span class="floating-right">(<a href="https://github.com/05nelsonm/kmp-process/tree/master/library/process/src/commonMain/kotlin/io/matthewnelson/kmp/process/Process.kt#L48">source</a>)</span></span></div><p class="paragraph">A Process.</p><h4 class="">See also</h4><div class="table"><div class="table-row" data-filterable-current=":library:process/commonMain" data-filterable-set=":library:process/commonMain"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="-builder/index.html"><span>Process.</span><wbr><span>Builder</span></a></div></span></div><div></div></div></div><div class="table-row" data-filterable-current=":library:process/commonMain" data-filterable-set=":library:process/commonMain"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="-current/index.html"><span>Process.</span><wbr><span>Current</span></a></div></span></div><div></div></div></div><div class="table-row" data-filterable-current=":library:process/commonMain" data-filterable-set=":library:process/commonMain"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="../-output-feed/-handler/index.html"><span>OutputFeed.</span><wbr><span>Handler</span></a></div></span></div><div></div></div></div><div class="table-row" data-filterable-current=":library:process/commonMain" data-filterable-set=":library:process/commonMain"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="../-blocking/index.html"><span><span>Blocking</span></span></a></div></span></div><div></div></div></div></div></div></div>
+    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library:process/commonMain"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">class </span><a href="index.html">Process</a> : <a href="../-output-feed/-handler/index.html">OutputFeed.Handler</a>, <a href="https://kmp-file.matthewnelson.io/library/file/io.matthewnelson.kmp.file/-closeable/index.html">Closeable</a><span class="source-link-wrapper"><span class="source-link" data-element-type="source-link">(<a href="https://github.com/05nelsonm/kmp-process/tree/master/library/process/src/commonMain/kotlin/io/matthewnelson/kmp/process/Process.kt#L56">source</a>)</span></span></div><p class="paragraph">A Process.</p><h4 class="tableheader">See also</h4><div class="table"><div class="table-row table-row_content" data-filterable-current=":library:process/commonMain" data-filterable-set=":library:process/commonMain"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="-builder/index.html"><span>Process.</span><wbr><span>Builder</span></a></div></span></div><div></div></div></div><div class="table-row table-row_content" data-filterable-current=":library:process/commonMain" data-filterable-set=":library:process/commonMain"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="-current/index.html"><span>Process.</span><wbr><span>Current</span></a></div></span></div><div></div></div></div><div class="table-row table-row_content" data-filterable-current=":library:process/commonMain" data-filterable-set=":library:process/commonMain"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="../-output-feed/-handler/index.html"><span>OutputFeed.</span><wbr><span>Handler</span></a></div></span></div><div></div></div></div><div class="table-row table-row_content" data-filterable-current=":library:process/commonMain" data-filterable-set=":library:process/commonMain"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="../-blocking/index.html"><span><span>Blocking</span></span></a></div></span></div><div></div></div></div></div></div></div>
   </div>
   <div class="tabbedcontent">
     <div class="tabs-section" tabs-section="tabs-section"><button class="section-tab" data-active="" data-togglable="CONSTRUCTOR,TYPE,PROPERTY,FUNCTION">Members</button></div>
     <div class="tabs-section-body">
       <div data-togglable="TYPE">
-        <h2 class="">Types</h2>
+        <h2 class="tableheader">Types</h2>
         <div class="table"><a data-name="75451656%2FClasslikes%2F1506791849" anchor-label="Builder" id="75451656%2FClasslikes%2F1506791849" data-filterable-set=":library:process/commonMain"></a>
-          <div class="table-row" data-filterable-current=":library:process/commonMain" data-filterable-set=":library:process/commonMain">
+          <div class="table-row table-row_content" data-filterable-current=":library:process/commonMain" data-filterable-set=":library:process/commonMain">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="-builder/index.html"><span><span>Builder</span></span></a></div>
@@ -111,13 +111,13 @@
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library:process/commonMain"><div class="symbol monospace"><span class="token keyword">class </span><a href="-builder/index.html">Builder</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span class="token keyword">val </span>command<span class="token operator">: </span><span data-unresolved-link="kotlin/String///PointingToDeclaration/">String</span></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Creates a new <a href="index.html">Process</a>.</p></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library:process/commonMain"><div class="symbol monospace"><span class="token keyword">class </span><a href="-builder/index.html">Builder</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span class="token keyword">val </span>command<span class="token operator">: </span><span data-unresolved-link="kotlin/String///PointingToDeclaration/">String</span></span></span><span class="token punctuation">)</span> : <a href="../-blocking/-builder/index.html">Blocking.Builder</a></div><div class="brief "><p class="paragraph">Creates a new <a href="index.html">Process</a>.</p></div></div></div>
                 </div>
               </div>
             </div>
           </div>
 <a data-name="-2097269526%2FClasslikes%2F1506791849" anchor-label="Current" id="-2097269526%2FClasslikes%2F1506791849" data-filterable-set=":library:process/commonMain"></a>
-          <div class="table-row" data-filterable-current=":library:process/commonMain" data-filterable-set=":library:process/commonMain">
+          <div class="table-row table-row_content" data-filterable-current=":library:process/commonMain" data-filterable-set=":library:process/commonMain">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="-current/index.html"><span><span>Current</span></span></a></div>
@@ -134,9 +134,9 @@
         </div>
       </div>
       <div data-togglable="PROPERTY">
-        <h2 class="">Properties</h2>
+        <h2 class="tableheader">Properties</h2>
         <div class="table"><a data-name="-836589459%2FProperties%2F1506791849" anchor-label="args" id="-836589459%2FProperties%2F1506791849" data-filterable-set=":library:process/commonMain"></a>
-          <div class="table-row" data-filterable-current=":library:process/commonMain" data-filterable-set=":library:process/commonMain">
+          <div class="table-row table-row_content" data-filterable-current=":library:process/commonMain" data-filterable-set=":library:process/commonMain">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="args.html"><span><span>args</span></span></a></div>
@@ -151,7 +151,7 @@
             </div>
           </div>
 <a data-name="109996229%2FProperties%2F1506791849" anchor-label="command" id="109996229%2FProperties%2F1506791849" data-filterable-set=":library:process/commonMain"></a>
-          <div class="table-row" data-filterable-current=":library:process/commonMain" data-filterable-set=":library:process/commonMain">
+          <div class="table-row table-row_content" data-filterable-current=":library:process/commonMain" data-filterable-set=":library:process/commonMain">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="command.html"><span><span>command</span></span></a></div>
@@ -166,7 +166,7 @@
             </div>
           </div>
 <a data-name="-1413866816%2FProperties%2F1506791849" anchor-label="cwd" id="-1413866816%2FProperties%2F1506791849" data-filterable-set=":library:process/commonMain"></a>
-          <div class="table-row" data-filterable-current=":library:process/commonMain" data-filterable-set=":library:process/commonMain">
+          <div class="table-row table-row_content" data-filterable-current=":library:process/commonMain" data-filterable-set=":library:process/commonMain">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="cwd.html"><span><span>cwd</span></span></a></div>
@@ -181,7 +181,7 @@
             </div>
           </div>
 <a data-name="2123776622%2FProperties%2F1506791849" anchor-label="destroySignal" id="2123776622%2FProperties%2F1506791849" data-filterable-set=":library:process/commonMain"></a>
-          <div class="table-row" data-filterable-current=":library:process/commonMain" data-filterable-set=":library:process/commonMain">
+          <div class="table-row table-row_content" data-filterable-current=":library:process/commonMain" data-filterable-set=":library:process/commonMain">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="destroy-signal.html"><span>destroy</span><wbr><span><span>Signal</span></span></a></div>
@@ -196,7 +196,7 @@
             </div>
           </div>
 <a data-name="2082477437%2FProperties%2F1506791849" anchor-label="environment" id="2082477437%2FProperties%2F1506791849" data-filterable-set=":library:process/commonMain"></a>
-          <div class="table-row" data-filterable-current=":library:process/commonMain" data-filterable-set=":library:process/commonMain">
+          <div class="table-row table-row_content" data-filterable-current=":library:process/commonMain" data-filterable-set=":library:process/commonMain">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="environment.html"><span><span>environment</span></span></a></div>
@@ -211,7 +211,7 @@
             </div>
           </div>
 <a data-name="-1618473498%2FProperties%2F1506791849" anchor-label="input" id="-1618473498%2FProperties%2F1506791849" data-filterable-set=":library:process/commonMain"></a>
-          <div class="table-row" data-filterable-current=":library:process/commonMain" data-filterable-set=":library:process/commonMain">
+          <div class="table-row table-row_content" data-filterable-current=":library:process/commonMain" data-filterable-set=":library:process/commonMain">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="input.html"><span><span>input</span></span></a></div>
@@ -226,7 +226,7 @@
             </div>
           </div>
 <a data-name="-1757431475%2FProperties%2F1506791849" anchor-label="isAlive" id="-1757431475%2FProperties%2F1506791849" data-filterable-set=":library:process/commonMain"></a>
-          <div class="table-row" data-filterable-current=":library:process/commonMain" data-filterable-set=":library:process/commonMain">
+          <div class="table-row table-row_content" data-filterable-current=":library:process/commonMain" data-filterable-set=":library:process/commonMain">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="is-alive.html"><span>is</span><wbr><span><span>Alive</span></span></a></div>
@@ -240,23 +240,8 @@
               </div>
             </div>
           </div>
-<a data-name="1973623535%2FProperties%2F1506791849" anchor-label="isDestroyed" id="1973623535%2FProperties%2F1506791849" data-filterable-set=":library:process/commonMain"></a>
-          <div class="table-row" data-filterable-current=":library:process/commonMain" data-filterable-set=":library:process/commonMain">
-            <div class="main-subrow keyValue ">
-              <div class=""><span class="inline-flex">
-                  <div><a href="../-output-feed/-handler/is-destroyed.html"><span>is</span><wbr><span><span>Destroyed</span></span></a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1973623535%2FProperties%2F1506791849"></span>
-                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
-                  </span></span></div>
-              <div>
-                <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library:process/commonMain"><div class="symbol monospace"><div class="block"><div class="block"><span class="token annotation builtin">@</span><span data-unresolved-link="kotlin.jvm/JvmField///PointingToDeclaration/"><span class="token annotation builtin">JvmField</span></span></div><div class="block"><span class="token annotation builtin">@</span><span data-unresolved-link="kotlin.concurrent/Volatile///PointingToDeclaration/"><span class="token annotation builtin">Volatile</span></span></div></div><span class="token keyword">protected </span><span class="token keyword">var </span><a href="../-output-feed/-handler/is-destroyed.html">isDestroyed</a><span class="token operator">: </span><span data-unresolved-link="kotlin/Boolean///PointingToDeclaration/">Boolean</span></div></div></div>
-                </div>
-              </div>
-            </div>
-          </div>
 <a data-name="-1300776575%2FProperties%2F1506791849" anchor-label="startTime" id="-1300776575%2FProperties%2F1506791849" data-filterable-set=":library:process/commonMain"></a>
-          <div class="table-row" data-filterable-current=":library:process/commonMain" data-filterable-set=":library:process/commonMain">
+          <div class="table-row table-row_content" data-filterable-current=":library:process/commonMain" data-filterable-set=":library:process/commonMain">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="start-time.html"><span>start</span><wbr><span><span>Time</span></span></a></div>
@@ -271,7 +256,7 @@
             </div>
           </div>
 <a data-name="-1689363449%2FProperties%2F1506791849" anchor-label="stdio" id="-1689363449%2FProperties%2F1506791849" data-filterable-set=":library:process/commonMain"></a>
-          <div class="table-row" data-filterable-current=":library:process/commonMain" data-filterable-set=":library:process/commonMain">
+          <div class="table-row table-row_content" data-filterable-current=":library:process/commonMain" data-filterable-set=":library:process/commonMain">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="stdio.html"><span><span>stdio</span></span></a></div>
@@ -288,9 +273,24 @@
         </div>
       </div>
       <div data-togglable="FUNCTION">
-        <h2 class="">Functions</h2>
-        <div class="table"><a data-name="1088977654%2FFunctions%2F1506791849" anchor-label="destroy" id="1088977654%2FFunctions%2F1506791849" data-filterable-set=":library:process/commonMain"></a>
-          <div class="table-row" data-filterable-current=":library:process/commonMain" data-filterable-set=":library:process/commonMain">
+        <h2 class="tableheader">Functions</h2>
+        <div class="table"><a data-name="-911394952%2FFunctions%2F1506791849" anchor-label="close" id="-911394952%2FFunctions%2F1506791849" data-filterable-set=":library:process/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":library:process/commonMain" data-filterable-set=":library:process/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="close.html"><span><span>close</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-911394952%2FFunctions%2F1506791849"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library:process/commonMain"><div class="symbol monospace"><span class="token keyword">override </span><span class="token keyword">fun </span><a href="close.html"><span class="token function">close</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Destroys the <a href="index.html">Process</a>.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1088977654%2FFunctions%2F1506791849" anchor-label="destroy" id="1088977654%2FFunctions%2F1506791849" data-filterable-set=":library:process/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":library:process/commonMain" data-filterable-set=":library:process/commonMain">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="destroy.html"><span><span>destroy</span></span></a></div>
@@ -305,7 +305,7 @@
             </div>
           </div>
 <a data-name="-1633496481%2FFunctions%2F1506791849" anchor-label="exitCode" id="-1633496481%2FFunctions%2F1506791849" data-filterable-set=":library:process/commonMain"></a>
-          <div class="table-row" data-filterable-current=":library:process/commonMain" data-filterable-set=":library:process/commonMain">
+          <div class="table-row table-row_content" data-filterable-current=":library:process/commonMain" data-filterable-set=":library:process/commonMain">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="exit-code.html"><span>exit</span><wbr><span><span>Code</span></span></a></div>
@@ -320,7 +320,7 @@
             </div>
           </div>
 <a data-name="-818533899%2FFunctions%2F1506791849" anchor-label="exitCodeOrNull" id="-818533899%2FFunctions%2F1506791849" data-filterable-set=":library:process/commonMain"></a>
-          <div class="table-row" data-filterable-current=":library:process/commonMain" data-filterable-set=":library:process/commonMain">
+          <div class="table-row table-row_content" data-filterable-current=":library:process/commonMain" data-filterable-set=":library:process/commonMain">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="exit-code-or-null.html"><span>exit</span><wbr><span>Code</span><wbr><span>Or</span><wbr><span><span>Null</span></span></a></div>
@@ -335,7 +335,7 @@
             </div>
           </div>
 <a data-name="-1008168955%2FFunctions%2F1506791849" anchor-label="pid" id="-1008168955%2FFunctions%2F1506791849" data-filterable-set=":library:process/commonMain"></a>
-          <div class="table-row" data-filterable-current=":library:process/commonMain" data-filterable-set=":library:process/commonMain">
+          <div class="table-row table-row_content" data-filterable-current=":library:process/commonMain" data-filterable-set=":library:process/commonMain">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="pid.html"><span><span>pid</span></span></a></div>
@@ -349,23 +349,23 @@
               </div>
             </div>
           </div>
-<a data-name="1096191476%2FFunctions%2F1506791849" anchor-label="stderrFeed" id="1096191476%2FFunctions%2F1506791849" data-filterable-set=":library:process/commonMain"></a>
-          <div class="table-row" data-filterable-current=":library:process/commonMain" data-filterable-set=":library:process/commonMain">
+<a data-name="-996255760%2FFunctions%2F1506791849" anchor-label="stderrFeed" id="-996255760%2FFunctions%2F1506791849" data-filterable-set=":library:process/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":library:process/commonMain" data-filterable-set=":library:process/commonMain">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="../-output-feed/-handler/stderr-feed.html"><span>stderr</span><wbr><span><span>Feed</span></span></a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1096191476%2FFunctions%2F1506791849"></span>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-996255760%2FFunctions%2F1506791849"></span>
                     <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library:process/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="../-output-feed/-handler/stderr-feed.html"><span class="token function">stderrFeed</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">feed<span class="token operator">: </span><a href="../-output-feed/index.html">OutputFeed</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">Process</a></div><div class="brief "><p class="paragraph">Attaches a single <a href="../-output-feed/index.html">OutputFeed</a> to obtain <code class="lang-kotlin">stderr</code> output.</p></div><div class="symbol monospace"><span class="token keyword">fun </span><a href="../-output-feed/-handler/stderr-feed.html"><span class="token function">stderrFeed</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span class="token keyword">vararg </span>feeds<span class="token operator">: </span><a href="../-output-feed/index.html">OutputFeed</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">Process</a></div><div class="brief "><p class="paragraph">Attaches multiple <a href="../-output-feed/index.html">OutputFeed</a> to obtain <code class="lang-kotlin">stderr</code> output. This is handy at <a href="index.html">Process</a> startup such that no data is missed if there are multiple feeds needing to be attached.</p></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library:process/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="../-output-feed/-handler/stderr-feed.html"><span class="token function">stderrFeed</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">feed<span class="token operator">: </span><a href="../-output-feed/index.html">OutputFeed</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">Process</a></div><div class="brief "><p class="paragraph">Attaches a single <a href="../-output-feed/index.html">OutputFeed</a> to obtain <code class="lang-kotlin">stderr</code> output.</p></div><div class="symbol monospace"><span class="token keyword">fun </span><a href="../-output-feed/-handler/stderr-feed.html"><span class="token function">stderrFeed</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span class="token keyword">vararg </span>feeds<span class="token operator">: </span><a href="../-output-feed/index.html">OutputFeed</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">Process</a></div><div class="symbol monospace"><span class="token keyword">fun </span><a href="../-output-feed/-handler/stderr-feed.html"><span class="token function">stderrFeed</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">feeds<span class="token operator">: </span><span data-unresolved-link="kotlin.collections/List///PointingToDeclaration/">List</span><span class="token operator">&lt;</span><a href="../-output-feed/index.html">OutputFeed</a><span class="token operator">&gt;</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">Process</a></div><div class="brief "><p class="paragraph">Attaches multiple <a href="../-output-feed/index.html">OutputFeed</a> to obtain <code class="lang-kotlin">stderr</code> output. This is handy at <a href="index.html">Process</a> startup such that no data is missed if there are multiple feeds needing to be attached.</p></div></div></div>
                 </div>
               </div>
             </div>
           </div>
 <a data-name="-1568472040%2FFunctions%2F1506791849" anchor-label="stderrWaiter" id="-1568472040%2FFunctions%2F1506791849" data-filterable-set=":library:process/commonMain"></a>
-          <div class="table-row" data-filterable-current=":library:process/commonMain" data-filterable-set=":library:process/commonMain">
+          <div class="table-row table-row_content" data-filterable-current=":library:process/commonMain" data-filterable-set=":library:process/commonMain">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="../-output-feed/-handler/stderr-waiter.html"><span>stderr</span><wbr><span><span>Waiter</span></span></a></div>
@@ -374,28 +374,28 @@
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library:process/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="../-output-feed/-handler/stderr-waiter.html"><span class="token function">stderrWaiter</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../-output-feed/-waiter/index.html">OutputFeed.Waiter</a></div><div class="brief "><p class="paragraph">Returns a <a href="../-output-feed/-waiter/index.html">Waiter</a> for <code class="lang-kotlin">stderr</code> in order to await any final asynchronous output after resource closure occurs.</p></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library:process/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="../-output-feed/-handler/stderr-waiter.html"><span class="token function">stderrWaiter</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../-output-feed/-waiter/index.html">OutputFeed.Waiter</a></div><div class="brief "><p class="paragraph">Returns a <a href="../-blocking/-waiter/index.html">Waiter</a> for <code class="lang-kotlin">stderr</code> in order to await any final asynchronous output after resource closure occurs.</p></div></div></div>
                 </div>
               </div>
             </div>
           </div>
-<a data-name="384198086%2FFunctions%2F1506791849" anchor-label="stdoutFeed" id="384198086%2FFunctions%2F1506791849" data-filterable-set=":library:process/commonMain"></a>
-          <div class="table-row" data-filterable-current=":library:process/commonMain" data-filterable-set=":library:process/commonMain">
+<a data-name="-1320433442%2FFunctions%2F1506791849" anchor-label="stdoutFeed" id="-1320433442%2FFunctions%2F1506791849" data-filterable-set=":library:process/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":library:process/commonMain" data-filterable-set=":library:process/commonMain">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="../-output-feed/-handler/stdout-feed.html"><span>stdout</span><wbr><span><span>Feed</span></span></a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="384198086%2FFunctions%2F1506791849"></span>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1320433442%2FFunctions%2F1506791849"></span>
                     <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library:process/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="../-output-feed/-handler/stdout-feed.html"><span class="token function">stdoutFeed</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">feed<span class="token operator">: </span><a href="../-output-feed/index.html">OutputFeed</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">Process</a></div><div class="brief "><p class="paragraph">Attaches a single <a href="../-output-feed/index.html">OutputFeed</a> to obtain <code class="lang-kotlin">stdout</code> output.</p></div><div class="symbol monospace"><span class="token keyword">fun </span><a href="../-output-feed/-handler/stdout-feed.html"><span class="token function">stdoutFeed</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span class="token keyword">vararg </span>feeds<span class="token operator">: </span><a href="../-output-feed/index.html">OutputFeed</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">Process</a></div><div class="brief "><p class="paragraph">Attaches multiple <a href="../-output-feed/index.html">OutputFeed</a> to obtain <code class="lang-kotlin">stdout</code> output. This is handy at <a href="index.html">Process</a> startup such that no data is missed if there are multiple feeds needing to be attached.</p></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library:process/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="../-output-feed/-handler/stdout-feed.html"><span class="token function">stdoutFeed</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">feed<span class="token operator">: </span><a href="../-output-feed/index.html">OutputFeed</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">Process</a></div><div class="brief "><p class="paragraph">Attaches a single <a href="../-output-feed/index.html">OutputFeed</a> to obtain <code class="lang-kotlin">stdout</code> output.</p></div><div class="symbol monospace"><span class="token keyword">fun </span><a href="../-output-feed/-handler/stdout-feed.html"><span class="token function">stdoutFeed</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span class="token keyword">vararg </span>feeds<span class="token operator">: </span><a href="../-output-feed/index.html">OutputFeed</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">Process</a></div><div class="symbol monospace"><span class="token keyword">fun </span><a href="../-output-feed/-handler/stdout-feed.html"><span class="token function">stdoutFeed</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">feeds<span class="token operator">: </span><span data-unresolved-link="kotlin.collections/List///PointingToDeclaration/">List</span><span class="token operator">&lt;</span><a href="../-output-feed/index.html">OutputFeed</a><span class="token operator">&gt;</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">Process</a></div><div class="brief "><p class="paragraph">Attaches multiple <a href="../-output-feed/index.html">OutputFeed</a> to obtain <code class="lang-kotlin">stdout</code> output. This is handy at <a href="index.html">Process</a> startup such that no data is missed if there are multiple feeds needing to be attached.</p></div></div></div>
                 </div>
               </div>
             </div>
           </div>
 <a data-name="-1884790513%2FFunctions%2F1506791849" anchor-label="stdoutWaiter" id="-1884790513%2FFunctions%2F1506791849" data-filterable-set=":library:process/commonMain"></a>
-          <div class="table-row" data-filterable-current=":library:process/commonMain" data-filterable-set=":library:process/commonMain">
+          <div class="table-row table-row_content" data-filterable-current=":library:process/commonMain" data-filterable-set=":library:process/commonMain">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="../-output-feed/-handler/stdout-waiter.html"><span>stdout</span><wbr><span><span>Waiter</span></span></a></div>
@@ -404,13 +404,13 @@
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library:process/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="../-output-feed/-handler/stdout-waiter.html"><span class="token function">stdoutWaiter</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../-output-feed/-waiter/index.html">OutputFeed.Waiter</a></div><div class="brief "><p class="paragraph">Returns a <a href="../-output-feed/-waiter/index.html">Waiter</a> for <code class="lang-kotlin">stdout</code> in order to await any final asynchronous output after resource closure occurs.</p></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library:process/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="../-output-feed/-handler/stdout-waiter.html"><span class="token function">stdoutWaiter</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../-output-feed/-waiter/index.html">OutputFeed.Waiter</a></div><div class="brief "><p class="paragraph">Returns a <a href="../-blocking/-waiter/index.html">Waiter</a> for <code class="lang-kotlin">stdout</code> in order to await any final asynchronous output after resource closure occurs.</p></div></div></div>
                 </div>
               </div>
             </div>
           </div>
 <a data-name="-1127819472%2FFunctions%2F1506791849" anchor-label="waitForAsync" id="-1127819472%2FFunctions%2F1506791849" data-filterable-set=":library:process/commonMain"></a>
-          <div class="table-row" data-filterable-current=":library:process/commonMain" data-filterable-set=":library:process/commonMain">
+          <div class="table-row table-row_content" data-filterable-current=":library:process/commonMain" data-filterable-set=":library:process/commonMain">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="wait-for-async.html"><span>wait</span><wbr><span>For</span><wbr><span><span>Async</span></span></a></div>
@@ -430,17 +430,21 @@
   </div>
 </div>
     <div class="footer">
-        <a href="#content" id="go-to-top-link" class="footer--button footer--button_go-to-top"></a>
-        <span>© 2024-2025 Copyright Matthew Nelson</span>
-        <span class="pull-right">
-            <span>Generated by </span>
-            <a class="footer--link footer--link_external" href="https://github.com/Kotlin/dokka">
-                <span>dokka</span>
-            </a>
-        </span>
-    </div>
+        <div class="footer--container">
+            <a href="#content" id="go-to-top-link" class="footer--button footer--button_go-to-top"></a>
+            <div class="footer--content">
+                <div>
+                    <span>Generated by </span>
+                    <a class="footer--link footer--link_external" href="https://github.com/Kotlin/dokka">
+                        Dokka
+                    </a>
+                    <div>© 2024-2025 Copyright Matthew Nelson</div>
+                </div>
             </div>
         </div>
     </div>
+        </div>
+    </div>
+</div>
 </body>
 </html>
