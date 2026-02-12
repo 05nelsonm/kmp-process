@@ -21,4 +21,4 @@ internal actual class Lock
 
 internal actual fun newLock(): Lock = Lock()
 
-internal actual inline fun <T: Any?> Lock.withLockImpl(block: () -> T): T = synchronized(this, block)
+internal actual inline fun <T> Lock.withLockImpl(block: () -> T): T = synchronized(this, block)

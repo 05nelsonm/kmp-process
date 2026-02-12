@@ -27,9 +27,9 @@ internal expect fun newLock(): Lock
 
 @OptIn(ExperimentalContracts::class)
 @Suppress("WRONG_INVOCATION_KIND", "LEAKED_IN_PLACE_LAMBDA")
-internal inline fun <T: Any?> Lock.withLock(block: () -> T): T {
+internal inline fun <T> Lock.withLock(block: () -> T): T {
     contract { callsInPlace(block, InvocationKind.EXACTLY_ONCE) }
     return withLockImpl(block)
 }
 
-internal expect inline fun <T: Any?> Lock.withLockImpl(block: () -> T): T
+internal expect inline fun <T> Lock.withLockImpl(block: () -> T): T

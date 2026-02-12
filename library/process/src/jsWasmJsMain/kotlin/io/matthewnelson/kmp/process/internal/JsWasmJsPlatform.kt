@@ -22,6 +22,7 @@ import io.matthewnelson.kmp.file.SysDirSep
 import io.matthewnelson.kmp.file.toFile
 import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.internal.node.node_os
+import io.matthewnelson.kmp.process.internal.node.node_process
 
 internal actual val STDIO_NULL: File by lazy {
     val isWindows = try {
@@ -38,6 +39,9 @@ internal actual val IsDesktop: Boolean get() = try {
 } catch (_: Throwable) {
     false
 }
+
+@Throws(UnsupportedOperationException::class)
+internal actual inline fun Process.Current.platformPID(): Int = node_process.pid
 
 internal actual inline fun Process.hasStdoutStarted(): Boolean = (this as NodeJsProcess)._hasStdoutStarted
 internal actual inline fun Process.hasStderrStarted(): Boolean = (this as NodeJsProcess)._hasStderrStarted

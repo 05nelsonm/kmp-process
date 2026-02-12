@@ -20,15 +20,21 @@ package io.matthewnelson.kmp.process
 import io.matthewnelson.encoding.core.Decoder.Companion.decodeBufferedAsync
 import io.matthewnelson.immutable.collections.toImmutableList
 import io.matthewnelson.immutable.collections.toImmutableMap
-import io.matthewnelson.kmp.file.*
+import io.matthewnelson.kmp.file.Closeable
+import io.matthewnelson.kmp.file.File
+import io.matthewnelson.kmp.file.IOException
+import io.matthewnelson.kmp.file.absoluteFile2
 import io.matthewnelson.kmp.file.async.AsyncFs
+import io.matthewnelson.kmp.file.normalize
+import io.matthewnelson.kmp.file.path
+import io.matthewnelson.kmp.file.use
 import io.matthewnelson.kmp.process.ProcessException.Companion.CTX_DESTROY
-import io.matthewnelson.kmp.process.internal.PID
 import io.matthewnelson.kmp.process.internal.PlatformBuilder
 import io.matthewnelson.kmp.process.internal.appendProcessInfo
 import io.matthewnelson.kmp.process.internal.checkFileName
 import io.matthewnelson.kmp.process.internal.commonOutput
 import io.matthewnelson.kmp.process.internal.commonWaitFor
+import io.matthewnelson.kmp.process.internal.platformPID
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import kotlin.DeprecationLevel
@@ -133,7 +139,7 @@ public abstract class Process internal constructor(
          *   - Js/WasmJs Browser
          * */
         @JvmStatic
-        public fun pid(): Int = PID.get()
+        public fun pid(): Int = platformPID()
     }
 
     /**
