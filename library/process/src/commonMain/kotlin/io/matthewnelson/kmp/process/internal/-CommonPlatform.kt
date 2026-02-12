@@ -21,6 +21,7 @@ import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.file.SysDirSep
 import io.matthewnelson.kmp.file.path
+import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.Stdio
 import kotlin.contracts.ExperimentalContracts
@@ -28,6 +29,9 @@ import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
 
 internal expect val IsDesktop: Boolean
+
+@Throws(UnsupportedOperationException::class)
+internal expect inline fun Process.Current.platformPID(): Int
 
 internal inline val IsWindows: Boolean get() = STDIO_NULL.path == "NUL"
 

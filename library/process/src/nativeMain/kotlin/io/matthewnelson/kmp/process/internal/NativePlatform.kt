@@ -17,10 +17,22 @@
 
 package io.matthewnelson.kmp.process.internal
 
-import io.matthewnelson.kmp.file.*
+import io.matthewnelson.kmp.file.IOException
+import io.matthewnelson.kmp.file.InterruptedException
+import io.matthewnelson.kmp.file.SysDirSep
+import io.matthewnelson.kmp.file.errnoToIOException
 import io.matthewnelson.kmp.process.Process
-import kotlinx.cinterop.*
-import platform.posix.*
+import kotlinx.cinterop.AutofreeScope
+import kotlinx.cinterop.ByteVar
+import kotlinx.cinterop.CArrayPointer
+import kotlinx.cinterop.CPointerVar
+import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.allocArray
+import kotlinx.cinterop.cstr
+import kotlinx.cinterop.set
+import platform.posix.errno
+import platform.posix.getpid
+import platform.posix.usleep
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
@@ -45,6 +57,9 @@ internal actual val IsDesktop: Boolean get() {
         else -> true
     }
 }
+
+@Throws(UnsupportedOperationException::class)
+internal actual inline fun Process.Current.platformPID(): Int = getpid()
 
 internal inline fun NativeProcess.destroySuppressed(other: Throwable): Throwable {
     try {
@@ -125,7 +140,7 @@ internal fun Map<String, String>.toEnvp(
 }
 
 @Throws(IOException::class)
-@OptIn(ExperimentalContracts::class)
+@OptIn(ExperimentalContracts::class, ExperimentalForeignApi::class)
 internal inline fun Int.check(
     condition: (result: Int) -> Boolean = { it >= 0 },
 ): Int {
@@ -134,6 +149,5 @@ internal inline fun Int.check(
     }
 
     if (condition(this)) return this
-    @OptIn(ExperimentalForeignApi::class)
     throw errnoToIOException(errno)
 }
