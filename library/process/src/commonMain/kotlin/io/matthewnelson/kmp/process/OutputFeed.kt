@@ -13,13 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("LocalVariableName", "NOTHING_TO_INLINE", "RemoveRedundantQualifierName")
+@file:Suppress("LocalVariableName", "RedundantVisibilityModifier", "RemoveRedundantQualifierName")
 
 package io.matthewnelson.kmp.process
 
 import io.matthewnelson.kmp.process.ProcessException.Companion.CTX_FEED_STDERR
 import io.matthewnelson.kmp.process.ProcessException.Companion.CTX_FEED_STDOUT
-import io.matthewnelson.kmp.process.internal.SynchronizedSet
+import io.matthewnelson.kmp.process.internal.Lock
+import io.matthewnelson.kmp.process.internal.newLock
 import io.matthewnelson.kmp.process.internal.withLock
 import kotlinx.coroutines.delay
 import kotlin.concurrent.Volatile
@@ -92,23 +93,29 @@ public fun interface OutputFeed {
      *
      * Upon [Process] destruction, all attached [OutputFeed] are ejected.
      * */
-    public sealed class Handler(private val stdio: Stdio.Config): Blocking() {
+    public sealed class Handler(stdio: Stdio.Config): Blocking() {
 
         /** @suppress */
         @JvmField
         @Volatile
         protected var isDestroyed: Boolean = false
-        @Volatile
-        private var stdoutStarted: Boolean = stdio.stdout !is Stdio.Pipe
-        @Volatile
-        private var stdoutStopped: Boolean = stdio.stdout !is Stdio.Pipe
-        @Volatile
-        private var stderrStarted: Boolean = stdio.stderr !is Stdio.Pipe
-        @Volatile
-        private var stderrStopped: Boolean = stdio.stderr !is Stdio.Pipe
 
-        private val stdoutFeeds = SynchronizedSet<OutputFeed>()
-        private val stderrFeeds = SynchronizedSet<OutputFeed>()
+        @Volatile
+        private var _stdoutStarted: Boolean = stdio.stdout !is Stdio.Pipe
+        @Volatile
+        private var _stdoutStopped: Boolean = stdio.stdout !is Stdio.Pipe
+        @Volatile
+        private var _stderrStarted: Boolean = stdio.stderr !is Stdio.Pipe
+        @Volatile
+        private var _stderrStopped: Boolean = stdio.stderr !is Stdio.Pipe
+
+        private val stdoutLock = if (stdio.stdout !is Stdio.Pipe) null else newLock()
+        private val stderrLock = if (stdio.stderr !is Stdio.Pipe) null else newLock()
+
+        @Volatile
+        private var _stdoutFeeds = if (stdoutLock == null) emptyArray() else arrayOfNulls<OutputFeed>(1)
+        @Volatile
+        private var _stderrFeeds = if (stderrLock == null) emptyArray() else arrayOfNulls<OutputFeed>(1)
 
         /**
          * Attaches a single [OutputFeed] to obtain `stdout` output.
@@ -120,9 +127,7 @@ public fun interface OutputFeed {
          * does nothing. If the [Process] has been destroyed, this
          * does nothing.
          * */
-        public fun stdoutFeed(
-            feed: OutputFeed,
-        ): Process = addStdoutFeeds(1, _get = { feed })
+        public fun stdoutFeed(feed: OutputFeed): Process = addStdoutFeeds(mutableSetOf(feed))
 
         /**
          * Attaches multiple [OutputFeed] to obtain `stdout` output.
@@ -136,9 +141,10 @@ public fun interface OutputFeed {
          * does nothing. If the [Process] has been destroyed, this
          * does nothing.
          * */
-        public fun stdoutFeed(
-            vararg feeds: OutputFeed,
-        ): Process = addStdoutFeeds(feeds.size, feeds::get)
+        public fun stdoutFeed(vararg feeds: OutputFeed): Process {
+            if (feeds.isEmpty()) return This
+            return addStdoutFeeds(feeds.toMutableSet())
+        }
 
         /**
          * Attaches multiple [OutputFeed] to obtain `stdout` output.
@@ -152,9 +158,10 @@ public fun interface OutputFeed {
          * does nothing. If the [Process] has been destroyed, this
          * does nothing.
          * */
-        public fun stdoutFeed(
-            feeds: List<OutputFeed>,
-        ): Process = addStdoutFeeds(feeds.size, feeds::get)
+        public fun stdoutFeed(feeds: List<OutputFeed>): Process {
+            if (feeds.isEmpty()) return This
+            return addStdoutFeeds(feeds.toMutableSet())
+        }
 
         /**
          * Attaches a single [OutputFeed] to obtain `stderr` output.
@@ -166,9 +173,7 @@ public fun interface OutputFeed {
          * does nothing. If the [Process] has been destroyed, this
          * does nothing.
          * */
-        public fun stderrFeed(
-            feed: OutputFeed,
-        ): Process = addStderrFeeds(1, _get = { feed })
+        public fun stderrFeed(feed: OutputFeed): Process = addStderrFeeds(mutableSetOf(feed))
 
         /**
          * Attaches multiple [OutputFeed] to obtain `stderr` output.
@@ -182,9 +187,10 @@ public fun interface OutputFeed {
          * does nothing. If the [Process] has been destroyed, this
          * does nothing.
          * */
-        public fun stderrFeed(
-            vararg feeds: OutputFeed,
-        ): Process = addStderrFeeds(feeds.size, feeds::get)
+        public fun stderrFeed(vararg feeds: OutputFeed): Process {
+            if (feeds.isEmpty()) return This
+            return addStderrFeeds(feeds.toMutableSet())
+        }
 
         /**
          * Attaches multiple [OutputFeed] to obtain `stderr` output.
@@ -198,9 +204,10 @@ public fun interface OutputFeed {
          * does nothing. If the [Process] has been destroyed, this
          * does nothing.
          * */
-        public fun stderrFeed(
-            feeds: List<OutputFeed>,
-        ): Process = addStderrFeeds(feeds.size, feeds::get)
+        public fun stderrFeed(feeds: List<OutputFeed>): Process {
+            if (feeds.isEmpty()) return This
+            return addStderrFeeds(feeds.toMutableSet())
+        }
 
         /**
          * Returns a [Waiter] for `stdout` in order to await any
@@ -210,11 +217,9 @@ public fun interface OutputFeed {
          *   not been called yet.
          * */
         @Throws(IllegalStateException::class)
-        public fun stdoutWaiter(): OutputFeed.Waiter {
-            return object : RealWaiter(This, isDestroyed) {
-                override fun isStarted(): Boolean = stdoutStarted
-                override fun isStopped(): Boolean = stdoutStopped
-            }
+        public fun stdoutWaiter(): OutputFeed.Waiter = object : RealWaiter(This, isDestroyed) {
+            override fun isStarted(): Boolean = _stdoutStarted
+            override fun isStopped(): Boolean = _stdoutStopped
         }
 
         /**
@@ -225,27 +230,34 @@ public fun interface OutputFeed {
          *   not been called yet.
          * */
         @Throws(IllegalStateException::class)
-        public fun stderrWaiter(): OutputFeed.Waiter {
-            return object : RealWaiter(This, isDestroyed) {
-                override fun isStarted(): Boolean = stderrStarted
-                override fun isStopped(): Boolean = stderrStopped
-            }
+        public fun stderrWaiter(): OutputFeed.Waiter = object : RealWaiter(This, isDestroyed) {
+            override fun isStarted(): Boolean = _stderrStarted
+            override fun isStopped(): Boolean = _stderrStopped
         }
 
         /** @suppress */
         protected fun dispatchStdout(line: String?) {
-            stdoutFeeds.dispatch(
+            dispatch(
                 line,
                 onErrorContext = CTX_FEED_STDOUT,
-                onClosed = { stdoutStopped = true },
+                _feedsGet = { _stdoutFeeds },
+                _onClosed = {
+                    _stdoutStopped = true
+                    stdoutLock?.withLock { _stdoutFeeds = emptyArray() }
+                },
             )
         }
+
         /** @suppress */
         protected fun dispatchStderr(line: String?) {
-            stderrFeeds.dispatch(
+            dispatch(
                 line,
                 onErrorContext = CTX_FEED_STDERR,
-                onClosed = { stderrStopped = true },
+                _feedsGet = { _stderrFeeds },
+                _onClosed = {
+                    _stderrStopped = true
+                    stderrLock?.withLock { _stderrFeeds = emptyArray() }
+                },
             )
         }
 
@@ -257,90 +269,38 @@ public fun interface OutputFeed {
         /** @suppress */
         protected abstract fun startStderr()
 
-        @OptIn(ExperimentalContracts::class)
-        private inline fun addStdoutFeeds(
-            numFeeds: Int,
-            _get: (i: Int) -> OutputFeed,
-        ): Process {
-            contract { callsInPlace(_get, InvocationKind.UNKNOWN) }
-            return stdoutFeeds.addFeeds(
-                numFeeds,
-                stdio.stdout,
-                _get,
-                _isStopped = { stdoutStopped },
-                _startStdio = { stdoutStarted = true; startStdout() },
-            )
-        }
-
-        @OptIn(ExperimentalContracts::class)
-        private inline fun addStderrFeeds(
-            numFeeds: Int,
-            _get: (i: Int) -> OutputFeed,
-        ): Process {
-            contract { callsInPlace(_get, InvocationKind.UNKNOWN) }
-            return stderrFeeds.addFeeds(
-                numFeeds,
-                stdio.stderr,
-                _get,
-                _isStopped = { stderrStopped },
-                _startStdio = { stderrStarted = true; startStderr() },
-            )
-        }
-
-        @OptIn(ExperimentalContracts::class)
-        private inline fun SynchronizedSet<OutputFeed>.addFeeds(
-            numFeeds: Int,
-            stdio: Stdio,
-            _get: (i: Int) -> OutputFeed,
-            _isStopped: () -> Boolean,
-            _startStdio: () -> Unit,
-        ): Process {
-            contract {
-                callsInPlace(_get, InvocationKind.UNKNOWN)
-                callsInPlace(_isStopped, InvocationKind.UNKNOWN)
-                callsInPlace(_startStdio, InvocationKind.AT_MOST_ONCE)
-            }
-
-            if (isDestroyed) return This
-            if (numFeeds <= 0) return This
-            if (stdio !is Stdio.Pipe) return This
-            if (_isStopped()) return This
-
-            val start = withLock {
-                if (isDestroyed) return@withLock false
-                if (_isStopped()) return@withLock false
-                val wasEmpty = isEmpty()
-                var i = 0
-                while (i < numFeeds) { add(_get(i++)) }
-                wasEmpty && isNotEmpty()
-            }
-
-            if (start) _startStdio()
-
-            return This
-        }
-
         @Suppress("PrivatePropertyName")
         private inline val This: Process get() = this as Process
 
         @OptIn(ExperimentalContracts::class)
-        private inline fun SynchronizedSet<OutputFeed>.dispatch(
+        private inline fun dispatch(
             line: String?,
             onErrorContext: String,
-            onClosed: () -> Unit,
+            _feedsGet: () -> Array<OutputFeed?>,
+            _onClosed: () -> Unit,
         ) {
             contract {
-                callsInPlace(onClosed, InvocationKind.AT_MOST_ONCE)
+                callsInPlace(_feedsGet, InvocationKind.AT_LEAST_ONCE)
+                callsInPlace(_onClosed, InvocationKind.AT_MOST_ONCE)
             }
 
             var threw: Throwable? = null
 
-            withLock { toSet() }.forEach { feed ->
+            var i = 0
+            var feeds = _feedsGet()
+            while (i < feeds.size) {
+                val feed = feeds[i++] ?: break
+
                 try {
                     feed.onOutput(line)
                 } catch (t: Throwable) {
                     threw?.addSuppressed(t) ?: run { threw = t }
                 }
+
+                // Array of OutputFeed only ever grows, so upon each iteration
+                // can set locally in case additional OutputFeed were picked up
+                // while dispatching this line.
+                feeds = _feedsGet()
             }
 
             threw?.let { t ->
@@ -358,14 +318,97 @@ public fun interface OutputFeed {
             }
 
             // Line was null (end of stream), or error. Close up shop.
-            withLock { clear(); onClosed() }
+            _onClosed()
             threw?.let { throw it }
         }
 
+        private fun addStdoutFeeds(feeds: MutableSet<OutputFeed>): Process = addFeeds(
+            newFeeds = feeds,
+            feedsLock = stdoutLock,
+            _feedsGet = { _stdoutFeeds },
+            _feedsSet = { new -> _stdoutFeeds = new },
+            _isStopped = { _stdoutStopped },
+            _startStdio = { _stdoutStarted = true; startStdout() },
+        )
+
+        private fun addStderrFeeds(feeds: MutableSet<OutputFeed>): Process = addFeeds(
+            newFeeds = feeds,
+            feedsLock = stderrLock,
+            _feedsGet = { _stderrFeeds },
+            _feedsSet = { new -> _stderrFeeds = new },
+            _isStopped = { _stderrStopped },
+            _startStdio = { _stderrStarted = true; startStderr() },
+        )
+
+        @OptIn(ExperimentalContracts::class)
+        private inline fun addFeeds(
+            newFeeds: MutableSet<OutputFeed>,
+            feedsLock: Lock?,
+            _feedsGet: () -> Array<OutputFeed?>,
+            _feedsSet: (new: Array<OutputFeed?>) -> Unit,
+            _isStopped: () -> Boolean,
+            _startStdio: () -> Unit,
+        ): Process {
+            contract {
+                callsInPlace(_feedsGet, InvocationKind.AT_MOST_ONCE)
+                callsInPlace(_feedsSet, InvocationKind.AT_MOST_ONCE)
+                callsInPlace(_isStopped, InvocationKind.UNKNOWN)
+                callsInPlace(_startStdio, InvocationKind.AT_MOST_ONCE)
+            }
+
+            if (feedsLock == null) return This
+            if (newFeeds.isEmpty()) return This
+            if (isDestroyed) return This
+            if (_isStopped()) return This
+
+            val startStdio: Boolean = feedsLock.withLock {
+                if (isDestroyed) return@withLock false
+                if (_isStopped()) return@withLock false
+
+                var feeds = _feedsGet()
+                if (feeds.isEmpty()) return This
+
+                val wasEmpty = feeds[0] == null
+
+                var iNext = 0
+                while (iNext < feeds.size) {
+                    val feed = feeds[iNext] ?: break
+
+                    if (newFeeds.contains(feed)) {
+                        newFeeds.remove(feed)
+                        if (newFeeds.isEmpty()) return This
+                    }
+
+                    iNext++
+                }
+
+                if (isDestroyed) return This
+                if (_isStopped()) return This
+
+                val requiredSize = iNext + newFeeds.size
+                val wasGrown = if (feeds.size < requiredSize) {
+                    // Need to grow to accommodate new feeds
+                    val newSize = (feeds.size + (feeds.size / 2)).coerceAtLeast(requiredSize)
+                    feeds = feeds.copyOf(newSize)
+                    true
+                } else {
+                    false
+                }
+
+                newFeeds.forEach { feed -> feeds[iNext++] = feed }
+                if (wasGrown) _feedsSet(feeds)
+
+                wasEmpty && feeds[0] != null
+            }
+
+            if (startStdio) _startStdio()
+            return This
+        }
+
         @JvmSynthetic
-        internal fun stdoutFeedsSize(): Int = stdoutFeeds.withLock { size }
+        internal fun stdoutFeedsSize(): Int = _stdoutFeeds.count { it != null }
         @JvmSynthetic
-        internal fun stderrFeedsSize(): Int = stderrFeeds.withLock { size }
+        internal fun stderrFeedsSize(): Int = _stderrFeeds.count { it != null }
     }
 
     /**

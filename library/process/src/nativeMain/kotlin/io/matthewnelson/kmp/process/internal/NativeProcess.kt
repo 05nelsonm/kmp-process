@@ -25,9 +25,25 @@ import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.ProcessException
 import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.internal.stdio.StdioHandle
-import kotlinx.cinterop.*
-import kotlinx.coroutines.*
-import platform.posix.*
+import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.IntVar
+import kotlinx.cinterop.alloc
+import kotlinx.cinterop.memScoped
+import kotlinx.cinterop.ptr
+import kotlinx.cinterop.value
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.IO
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import platform.posix.SIGKILL
+import platform.posix.SIGTERM
+import platform.posix.WNOHANG
+import platform.posix.WUNTRACED
+import platform.posix.errno
+import platform.posix.kill
+import platform.posix.waitpid
 import kotlin.concurrent.AtomicInt
 import kotlin.concurrent.Volatile
 import kotlin.native.concurrent.ObsoleteWorkersApi
@@ -75,19 +91,17 @@ internal constructor(
     internal var _hasStderrStarted: Boolean = false
         private set
 
-    private val stdoutWorker = Instance(create = {
-        if (isDestroyed) return@Instance null
-        val reader = handle.stdoutStream() ?: return@Instance null
-
+    private val stdoutWorker = lazy {
+        if (isDestroyed) return@lazy null
+        val reader = handle.stdoutStream() ?: return@lazy null
         Worker.execute("stdout", ::_hasStdoutStarted, reader, ::dispatchStdout)
-    })
+    }
 
-    private val stderrWorker = Instance(create = {
-        if (isDestroyed) return@Instance null
-        val reader = handle.stderrStream() ?: return@Instance null
-
+    private val stderrWorker = lazy {
+        if (isDestroyed) return@lazy null
+        val reader = handle.stderrStream() ?: return@lazy null
         Worker.execute("stderr", ::_hasStderrStarted, reader, ::dispatchStderr)
-    })
+    }
 
     @Throws(Throwable::class)
     protected override fun destroyProtected(immediate: Boolean) = destroyLock.withLock {
@@ -102,39 +116,27 @@ internal constructor(
                 Signal.SIGKILL -> SIGKILL
             }
 
-            var errno = if (kill(pid, sig) == -1) {
-                errno
-            } else {
-                null
-            }
+            @Suppress("LocalVariableName")
+            var _errno = if (kill(pid, sig) == -1) errno else null
 
-            // Always call isAlive whether there was an error
-            // or not to ensure _exitCode is set.
-            if (!isAlive) {
-                errno = null
-            }
+            // Always call isAlive whether there was an error or not to ensure _exitCode is set.
+            if (!isAlive) _errno = null
 
-            if (errno != null) {
-                @OptIn(ExperimentalForeignApi::class)
-                threw = errnoToIOException(errno)
-            }
+            @OptIn(ExperimentalForeignApi::class)
+            _errno?.let { threw = errnoToIOException(it) }
         }
 
         try {
             handle.close()
         } catch (t: IOException) {
-            if (threw != null) {
-                threw.addSuppressed(t)
-            } else {
-                threw = t
-            }
+            threw?.addSuppressed(t) ?: run { threw = t }
         }
 
         val terminate: (() -> Unit)? = run {
             if (hasBeenDestroyed) return@run null
 
-            val wStdout = stdoutWorker.getOrNull()
-            val wStderr = stderrWorker.getOrNull()
+            val wStdout = stdoutWorker.value
+            val wStderr = stderrWorker.value
 
             if (wStdout == null && wStderr == null) return@run null
 
@@ -196,8 +198,8 @@ internal constructor(
 
     public override fun pid(): Int = pid
 
-    protected override fun startStdout() { stdoutWorker.getOrCreate() }
-    protected override fun startStderr() { stderrWorker.getOrCreate() }
+    protected override fun startStdout() { stdoutWorker.value }
+    protected override fun startStderr() { stderrWorker.value }
 
     private fun Worker.Companion.execute(
         name: String,
@@ -210,7 +212,6 @@ internal constructor(
             started.set(true)
             reader.scanLines(dispatch)
         }
-
         return w
     }
 

@@ -124,6 +124,29 @@ class ProcessUnitTest {
                     assertEquals(1 + 2, process.stdoutFeedsSize())
                     assertEquals(1 + 3, process.stderrFeedsSize())
 
+                    @Suppress("UNUSED_EXPRESSION")
+                    process.stderrFeed(
+                        // Ensure backing array grows to accommodate
+                        feeds = buildList {
+                            repeat(50) { i ->
+                                add(OutputFeed {
+                                    // reference i so each OutputFeed registers as being different
+                                    i
+                                })
+                            }
+
+                            // Should already be present and NOT added.
+                            add(feed)
+                        }
+                    )
+
+                    assertEquals(1 + 3 + 50, process.stderrFeedsSize())
+
+                    process.stderrFeed(feed)
+                    process.stderrFeed(feed, feed, feed)
+
+                    assertEquals(1 + 3 + 50, process.stderrFeedsSize())
+
                     process.waitForAsync(100.milliseconds)
 
                     process
