@@ -241,9 +241,11 @@ public fun interface OutputFeed {
                 line,
                 onErrorContext = CTX_FEED_STDOUT,
                 _feedsGet = { _stdoutFeeds },
-                _onClosed = {
-                    _stdoutStopped = true
-                    stdoutLock?.withLock { _stdoutFeeds = emptyArray() }
+                _onStopped = {
+                    stdoutLock?.withLock {
+                        _stdoutFeeds = emptyArray()
+                        _stdoutStopped = true
+                    }
                 },
             )
         }
@@ -254,9 +256,11 @@ public fun interface OutputFeed {
                 line,
                 onErrorContext = CTX_FEED_STDERR,
                 _feedsGet = { _stderrFeeds },
-                _onClosed = {
-                    _stderrStopped = true
-                    stderrLock?.withLock { _stderrFeeds = emptyArray() }
+                _onStopped = {
+                    stderrLock?.withLock {
+                        _stderrFeeds = emptyArray()
+                        _stderrStopped = true
+                    }
                 },
             )
         }
@@ -277,11 +281,11 @@ public fun interface OutputFeed {
             line: String?,
             onErrorContext: String,
             _feedsGet: () -> Array<OutputFeed?>,
-            _onClosed: () -> Unit,
+            _onStopped: () -> Unit,
         ) {
             contract {
                 callsInPlace(_feedsGet, InvocationKind.AT_LEAST_ONCE)
-                callsInPlace(_onClosed, InvocationKind.AT_MOST_ONCE)
+                callsInPlace(_onStopped, InvocationKind.AT_MOST_ONCE)
             }
 
             var threw: Throwable? = null
@@ -318,7 +322,7 @@ public fun interface OutputFeed {
             }
 
             // Line was null (end of stream), or error. Close up shop.
-            _onClosed()
+            _onStopped()
             threw?.let { throw it }
         }
 
@@ -405,8 +409,10 @@ public fun interface OutputFeed {
             return This
         }
 
+        // Exposed for testing
         @JvmSynthetic
         internal fun stdoutFeedsSize(): Int = _stdoutFeeds.count { it != null }
+        // Exposed for testing
         @JvmSynthetic
         internal fun stderrFeedsSize(): Int = _stderrFeeds.count { it != null }
     }
