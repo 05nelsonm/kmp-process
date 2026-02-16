@@ -102,8 +102,8 @@ class ProcessUnitTest {
                     process.stdoutFeed {}
                     process.stderrFeed {}
 
-                    assertEquals(1, process.stdoutFeedsSize())
-                    assertEquals(1, process.stderrFeedsSize())
+                    assertEquals(1, process.stdoutFeedsSize(), "stdout")
+                    assertEquals(1, process.stderrFeedsSize(), "stderr")
 
                     val feed = OutputFeed { }
 
@@ -121,8 +121,31 @@ class ProcessUnitTest {
                         OutputFeed { },
                     )
 
-                    assertEquals(1 + 2, process.stdoutFeedsSize())
-                    assertEquals(1 + 3, process.stderrFeedsSize())
+                    assertEquals(1 + 2, process.stdoutFeedsSize(), "stdout")
+                    assertEquals(1 + 3, process.stderrFeedsSize(), "stderr")
+
+                    @Suppress("UNUSED_EXPRESSION")
+                    process.stderrFeed(
+                        // Ensure backing array grows to accommodate
+                        feeds = buildList {
+                            repeat(50) { i ->
+                                add(OutputFeed {
+                                    // reference i so each OutputFeed registers as being different
+                                    i
+                                })
+                            }
+
+                            // Should already be present and NOT added.
+                            add(feed)
+                        }
+                    )
+
+                    assertEquals(1 + 3 + 50, process.stderrFeedsSize(), "stderr")
+
+                    process.stderrFeed(feed)
+                    process.stderrFeed(feed, feed, feed)
+
+                    assertEquals(1 + 3 + 50, process.stderrFeedsSize(), "stderr")
 
                     process.waitForAsync(100.milliseconds)
 
@@ -144,8 +167,8 @@ class ProcessUnitTest {
             .stderrWaiter()
             .awaitStopAsync()
 
-        assertEquals(0, process.stdoutFeedsSize())
-        assertEquals(0, process.stderrFeedsSize())
+        assertEquals(0, process.stdoutFeedsSize(), "stdout")
+        assertEquals(0, process.stderrFeedsSize(), "stderr")
     }
 
     @Test
@@ -169,8 +192,8 @@ class ProcessUnitTest {
                         OutputFeed { },
                     )
 
-                    assertEquals(0, p.stdoutFeedsSize())
-                    assertEquals(0, p.stderrFeedsSize())
+                    assertEquals(0, p.stdoutFeedsSize(), "stdout")
+                    assertEquals(0, p.stderrFeedsSize(), "stderr")
 
                     p.waitForAsync(100.milliseconds)
                 }
