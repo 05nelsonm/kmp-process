@@ -113,9 +113,9 @@ public fun interface OutputFeed {
         private val stderrLock = if (stdio.stderr !is Stdio.Pipe) null else newLock()
 
         @Volatile
-        private var _stdoutFeeds = if (stdoutLock == null) emptyArray() else arrayOfNulls<OutputFeed>(1)
+        private var _stdoutFeeds = emptyArray<OutputFeed>()
         @Volatile
-        private var _stderrFeeds = if (stderrLock == null) emptyArray() else arrayOfNulls<OutputFeed>(1)
+        private var _stderrFeeds = emptyArray<OutputFeed>()
 
         /**
          * Attaches a single [OutputFeed] to obtain `stdout` output.
@@ -280,7 +280,7 @@ public fun interface OutputFeed {
         private inline fun dispatch(
             line: String?,
             onErrorContext: String,
-            _feedsGet: () -> Array<OutputFeed?>,
+            _feedsGet: () -> Array<OutputFeed>,
             _onStopped: () -> Unit,
         ) {
             contract {
@@ -293,7 +293,7 @@ public fun interface OutputFeed {
             var i = 0
             var feeds = _feedsGet()
             while (i < feeds.size) {
-                val feed = feeds[i++] ?: break
+                val feed = feeds[i++]
 
                 try {
                     feed.onOutput(line)
@@ -327,7 +327,7 @@ public fun interface OutputFeed {
         }
 
         private fun addStdoutFeeds(feeds: MutableSet<OutputFeed>): Process = addFeeds(
-            newFeeds = feeds,
+            feedsAdd = feeds,
             feedsLock = stdoutLock,
             _feedsGet = { _stdoutFeeds },
             _feedsSet = { new -> _stdoutFeeds = new },
@@ -336,7 +336,7 @@ public fun interface OutputFeed {
         )
 
         private fun addStderrFeeds(feeds: MutableSet<OutputFeed>): Process = addFeeds(
-            newFeeds = feeds,
+            feedsAdd = feeds,
             feedsLock = stderrLock,
             _feedsGet = { _stderrFeeds },
             _feedsSet = { new -> _stderrFeeds = new },
@@ -346,10 +346,10 @@ public fun interface OutputFeed {
 
         @OptIn(ExperimentalContracts::class)
         private inline fun addFeeds(
-            newFeeds: MutableSet<OutputFeed>,
+            feedsAdd: MutableSet<OutputFeed>,
             feedsLock: Lock?,
-            _feedsGet: () -> Array<OutputFeed?>,
-            _feedsSet: (new: Array<OutputFeed?>) -> Unit,
+            _feedsGet: () -> Array<OutputFeed>,
+            _feedsSet: (new: Array<OutputFeed>) -> Unit,
             _isStopped: () -> Boolean,
             _startStdio: () -> Unit,
         ): Process {
@@ -361,48 +361,31 @@ public fun interface OutputFeed {
             }
 
             if (feedsLock == null) return This
-            if (newFeeds.isEmpty()) return This
+            if (feedsAdd.isEmpty()) return This
             if (isDestroyed) return This
             if (_isStopped()) return This
 
             val startStdio: Boolean = feedsLock.withLock {
-                if (isDestroyed) return@withLock false
-                if (_isStopped()) return@withLock false
-
-                var feeds = _feedsGet()
-                if (feeds.isEmpty()) return This
-
-                val wasEmpty = feeds[0] == null
-
-                var iNext = 0
-                while (iNext < feeds.size) {
-                    val feed = feeds[iNext] ?: break
-
-                    if (newFeeds.contains(feed)) {
-                        newFeeds.remove(feed)
-                        if (newFeeds.isEmpty()) return This
-                    }
-
-                    iNext++
-                }
-
                 if (isDestroyed) return This
                 if (_isStopped()) return This
 
-                val requiredSize = iNext + newFeeds.size
-                val wasGrown = if (feeds.size < requiredSize) {
-                    // Need to grow to accommodate new feeds
-                    val newSize = (feeds.size + (feeds.size / 2)).coerceAtLeast(requiredSize)
-                    feeds = feeds.copyOf(newSize)
-                    true
-                } else {
-                    false
+                val feedsBefore = _feedsGet()
+
+                for (i in feedsBefore.indices) {
+                    val feed = feedsBefore[i]
+                    if (feedsAdd.remove(feed) && feedsAdd.isEmpty()) return This
                 }
 
-                newFeeds.forEach { feed -> feeds[iNext++] = feed }
-                if (wasGrown) _feedsSet(feeds)
+                if (isDestroyed) return This
 
-                wasEmpty && feeds[0] != null
+                val feedsAfter = feedsBefore.copyOf(feedsBefore.size + feedsAdd.size)
+                var i = feedsBefore.size
+                feedsAdd.forEach { feed -> feedsAfter[i++] = feed }
+
+                @Suppress("UNCHECKED_CAST")
+                _feedsSet(feedsAfter as Array<OutputFeed>)
+
+                feedsBefore.isEmpty()
             }
 
             if (startStdio) _startStdio()
@@ -411,10 +394,10 @@ public fun interface OutputFeed {
 
         // Exposed for testing
         @JvmSynthetic
-        internal fun stdoutFeedsSize(): Int = _stdoutFeeds.count { it != null }
+        internal fun stdoutFeedsSize(): Int = _stdoutFeeds.size
         // Exposed for testing
         @JvmSynthetic
-        internal fun stderrFeedsSize(): Int = _stderrFeeds.count { it != null }
+        internal fun stderrFeedsSize(): Int = _stderrFeeds.size
     }
 
     /**
