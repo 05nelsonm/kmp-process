@@ -95,27 +95,29 @@ public fun interface OutputFeed {
      * */
     public sealed class Handler(stdio: Stdio.Config): Blocking() {
 
-        /** @suppress */
+        /**
+         * Is set to `true` via [Process.destroyProtected] implementation.
+         * @suppress
+         * */
         @JvmField
         @Volatile
         protected var isDestroyed: Boolean = false
 
         @Volatile
-        private var _stdoutStarted: Boolean = stdio.stdout !is Stdio.Pipe
+        private var _stdoutStarted = stdio.stdout !is Stdio.Pipe
         @Volatile
-        private var _stdoutStopped: Boolean = stdio.stdout !is Stdio.Pipe
+        private var _stdoutStopped = stdio.stdout !is Stdio.Pipe
         @Volatile
-        private var _stderrStarted: Boolean = stdio.stderr !is Stdio.Pipe
+        private var _stderrStarted = stdio.stderr !is Stdio.Pipe
         @Volatile
-        private var _stderrStopped: Boolean = stdio.stderr !is Stdio.Pipe
-
-        private val stdoutLock = if (stdio.stdout !is Stdio.Pipe) null else newLock()
-        private val stderrLock = if (stdio.stderr !is Stdio.Pipe) null else newLock()
-
+        private var _stderrStopped = stdio.stderr !is Stdio.Pipe
         @Volatile
         private var _stdoutFeeds = emptyArray<OutputFeed>()
         @Volatile
         private var _stderrFeeds = emptyArray<OutputFeed>()
+
+        private val stdoutLock = if (stdio.stdout !is Stdio.Pipe) null else newLock()
+        private val stderrLock = if (stdio.stderr !is Stdio.Pipe) null else newLock()
 
         /**
          * Attaches a single [OutputFeed] to obtain `stdout` output.
@@ -238,30 +240,24 @@ public fun interface OutputFeed {
         /** @suppress */
         protected fun dispatchStdout(line: String?) {
             dispatch(
-                line,
+                line = line,
                 onErrorContext = CTX_FEED_STDOUT,
+                feedsLock = stdoutLock,
                 _feedsGet = { _stdoutFeeds },
-                _onStopped = {
-                    stdoutLock?.withLock {
-                        _stdoutFeeds = emptyArray()
-                        _stdoutStopped = true
-                    }
-                },
+                _feedsSet = { new -> _stdoutFeeds = new },
+                _stoppedSet = { new -> _stdoutStopped = new }
             )
         }
 
         /** @suppress */
         protected fun dispatchStderr(line: String?) {
             dispatch(
-                line,
+                line = line,
                 onErrorContext = CTX_FEED_STDERR,
+                feedsLock = stderrLock,
                 _feedsGet = { _stderrFeeds },
-                _onStopped = {
-                    stderrLock?.withLock {
-                        _stderrFeeds = emptyArray()
-                        _stderrStopped = true
-                    }
-                },
+                _feedsSet = { new -> _stderrFeeds = new },
+                _stoppedSet = { new -> _stderrStopped = new }
             )
         }
 
@@ -280,12 +276,15 @@ public fun interface OutputFeed {
         private inline fun dispatch(
             line: String?,
             onErrorContext: String,
+            feedsLock: Lock?,
             _feedsGet: () -> Array<OutputFeed>,
-            _onStopped: () -> Unit,
+            _feedsSet: (new: Array<OutputFeed>) -> Unit,
+            _stoppedSet: (new: Boolean) -> Unit,
         ) {
             contract {
                 callsInPlace(_feedsGet, InvocationKind.AT_LEAST_ONCE)
-                callsInPlace(_onStopped, InvocationKind.AT_MOST_ONCE)
+                callsInPlace(_feedsSet, InvocationKind.AT_MOST_ONCE)
+                callsInPlace(_stoppedSet, InvocationKind.AT_MOST_ONCE)
             }
 
             var threw: Throwable? = null
@@ -293,10 +292,8 @@ public fun interface OutputFeed {
             var i = 0
             var feeds = _feedsGet()
             while (i < feeds.size) {
-                val feed = feeds[i++]
-
                 try {
-                    feed.onOutput(line)
+                    feeds[i++].onOutput(line)
                 } catch (t: Throwable) {
                     threw?.addSuppressed(t) ?: run { threw = t }
                 }
@@ -322,7 +319,10 @@ public fun interface OutputFeed {
             }
 
             // Line was null (end of stream), or error. Close up shop.
-            _onStopped()
+            feedsLock?.withLock {
+                _feedsSet(emptyArray())
+                _stoppedSet(true)
+            }
             threw?.let { throw it }
         }
 
