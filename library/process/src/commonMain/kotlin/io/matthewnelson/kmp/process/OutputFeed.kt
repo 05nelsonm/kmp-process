@@ -235,18 +235,7 @@ public fun interface OutputFeed: Output.Feed {
                 thing = buf?.functionGet(),
                 onErrorContext = CTX_FEED_STDOUT,
                 feedsLock = stdoutLock,
-                _onFeed = { getOrNull ->
-                    when (this) {
-                        is OutputFeed -> {}
-                        is LineDispatcher -> if (buf != null) {
-                            lineOutputFeed.onData(buf, len)
-                        } else {
-                            lineOutputFeed.close()
-                        }
-                        is OutputFeedBuffer -> onData(buf, len)
-                        is OutputFeed.Raw -> onOutput(len, getOrNull)
-                    }
-                },
+                _onFeed = { onFeedBuf(it, buf, len) },
                 _feedsGet = { _stdoutFeeds },
                 _feedsSet = { new -> _stdoutFeeds = new },
                 _stoppedSet = { new -> _stdoutStopped = new },
@@ -260,18 +249,7 @@ public fun interface OutputFeed: Output.Feed {
                 thing = buf?.functionGet(),
                 onErrorContext = CTX_FEED_STDERR,
                 feedsLock = stdoutLock,
-                _onFeed = { getOrNull ->
-                    when (this) {
-                        is OutputFeed -> {}
-                        is LineDispatcher -> if (buf != null) {
-                            lineOutputFeed.onData(buf, len)
-                        } else {
-                            lineOutputFeed.close()
-                        }
-                        is OutputFeedBuffer -> onData(buf, len)
-                        is OutputFeed.Raw -> onOutput(len, getOrNull)
-                    }
-                },
+                _onFeed = { onFeedBuf(it, buf, len) },
                 _feedsGet = { _stderrFeeds },
                 _feedsSet = { new -> _stderrFeeds = new },
                 _stoppedSet = { new -> _stderrStopped = new },
@@ -308,6 +286,24 @@ public fun interface OutputFeed: Output.Feed {
                 _feedsSet = {},
                 _stoppedSet = {},
             )
+        }
+
+        @Suppress("REDUNDANT_ELSE_IN_WHEN")
+        private inline fun Output.Feed.onFeedBuf(
+            noinline getOrNull: ((index: Int) -> Byte)?,
+            buf: ReadBuffer?,
+            len: Int
+        ): Unit = when (this) {
+            is OutputFeed -> {}
+            is LineDispatcher -> if (buf != null) {
+                lineOutputFeed.onData(buf, len)
+            } else {
+                lineOutputFeed.close()
+            }
+            is OutputFeedBuffer -> onData(buf, len)
+            is OutputFeed.Raw -> onOutput(len, getOrNull)
+            // Output.Feed is expect/actual, so compiler cries. This satisfies it.
+            else -> error("Unknown Output.Feed type ${this::class}")
         }
 
         @Suppress("PrivatePropertyName")
