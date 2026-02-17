@@ -32,21 +32,20 @@ import kotlin.time.Duration.Companion.milliseconds
 public class Output private constructor(
 
     /**
-     * The contents of [Process] `stdout` output
+     * The buffered contents of [Process] `stdout` output.
      * */
     @JvmField
-    public val stdout: String,
+    public val stdoutBuf: Buffered,
 
     /**
-     * The contents of [Process] `stderr` output
+     * The buffered contents of [Process] `stderr` output.
      * */
     @JvmField
-    public val stderr: String,
+    public val stderrBuf: Buffered,
 
     /**
-     * If an error occurred with the [Process], such as
-     * the [Options.maxBuffer] or [Options.timeout] was
-     * exceeded.
+     * If an error occurred with the [Process], such as the [Options.maxBuffer] or
+     * [Options.timeout] was exceeded.
      * */
     @JvmField
     public val processError: String?,
@@ -57,6 +56,39 @@ public class Output private constructor(
     @JvmField
     public val processInfo: ProcessInfo,
 ) {
+
+    /**
+     * TODO
+     * */
+    public abstract class Buffered internal constructor(
+
+        /**
+         * TODO
+         * */
+        @JvmField
+        public val length: Int,
+    ) {
+
+        /**
+         * TODO
+         * */
+        public val indices: IntRange get() = IntRange(0, length - 1)
+
+        /**
+         * TODO
+         * */
+        public abstract operator fun get(index: Int): Byte
+
+        /**
+         * TODO
+         * */
+        public abstract operator fun iterator(): ByteIterator
+
+        /**
+         * TODO
+         * */
+        public abstract fun utf8(): String
+    }
 
     /**
      * TODO
@@ -257,8 +289,8 @@ public class Output private constructor(
 
             @JvmSynthetic
             internal fun createOutput(
-                stdout: String,
-                stderr: String,
+                stdoutBuf: Buffered,
+                stderrBuf: Buffered,
                 processError: String?,
                 pid: Int,
                 exitCode: Int,
@@ -269,8 +301,8 @@ public class Output private constructor(
                 stdio: Stdio.Config,
                 destroySignal: Signal,
             ): Output = Output(
-                stdout,
-                stderr,
+                stdoutBuf,
+                stderrBuf,
                 processError,
                 ProcessInfo(
                     pid,
@@ -299,6 +331,30 @@ public class Output private constructor(
             )
         }
     }
+
+    /**
+     * DEPRECATED since `0.6.0`
+     * @suppress
+     * */
+    @Deprecated(
+        message = "Use stdoutBuf.utf8",
+        replaceWith = ReplaceWith("stdoutBuf.utf8()"),
+        level = DeprecationLevel.WARNING,
+    )
+    @JvmField
+    public val stdout: String = stdoutBuf.utf8()
+
+    /**
+     * DEPRECATED since `0.6.0`
+     * @suppress
+     * */
+    @Deprecated(
+        message = "Use stderrBuf.utf8",
+        replaceWith = ReplaceWith("stderrBuf.utf8()"),
+        level = DeprecationLevel.WARNING,
+    )
+    @JvmField
+    public val stderr: String = stderrBuf.utf8()
 
     /** @suppress */
     public override fun toString(): String = buildString {

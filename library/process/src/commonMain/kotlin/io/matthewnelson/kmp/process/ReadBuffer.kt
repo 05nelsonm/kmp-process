@@ -120,4 +120,6 @@ public expect value class ReadBuffer private constructor(private val _buf: Any) 
     internal operator fun get(index: Int): Byte
 
     internal fun functionGet(): (index: Int) -> Byte
+
+    internal fun copy(len: Int): ReadBuffer
 }

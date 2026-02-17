@@ -13,6 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
+@file:Suppress("NOTHING_TO_INLINE")
+
 package io.matthewnelson.kmp.process
 
 internal expect val IsAppleSimulator: Boolean
+
+internal expect inline operator fun ReadBuffer.set(index: Int, value: Byte)

@@ -20,6 +20,7 @@ package io.matthewnelson.kmp.process
 import io.matthewnelson.kmp.process.ProcessException.Companion.CTX_FEED_STDERR
 import io.matthewnelson.kmp.process.ProcessException.Companion.CTX_FEED_STDOUT
 import io.matthewnelson.kmp.process.internal.Lock
+import io.matthewnelson.kmp.process.internal.OutputFeedBuffer
 import io.matthewnelson.kmp.process.internal.RealLineOutputFeed
 import io.matthewnelson.kmp.process.internal.newLock
 import io.matthewnelson.kmp.process.internal.withLock
@@ -242,6 +243,7 @@ public fun interface OutputFeed: Output.Feed {
                         } else {
                             lineOutputFeed.close()
                         }
+                        is OutputFeedBuffer -> onData(buf, len)
                         is OutputFeed.Raw -> onOutput(len, getOrNull)
                     }
                 },
@@ -266,6 +268,7 @@ public fun interface OutputFeed: Output.Feed {
                         } else {
                             lineOutputFeed.close()
                         }
+                        is OutputFeedBuffer -> onData(buf, len)
                         is OutputFeed.Raw -> onOutput(len, getOrNull)
                     }
                 },

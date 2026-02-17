@@ -177,7 +177,7 @@ class ForkUnitTest {
             return
         }
 
-        val sh = Process.Builder(command = "which").args("sh").createOutput().stdout.toFile()
+        val sh = Process.Builder(command = "which").args("sh").createOutput().stdoutBuf.utf8().toFile()
         val expected = "Hello World!"
         assertTrue(sh.exists2())
         assertTrue(sh.isAbsolute())

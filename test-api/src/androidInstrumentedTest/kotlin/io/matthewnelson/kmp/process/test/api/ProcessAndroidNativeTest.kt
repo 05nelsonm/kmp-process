@@ -56,8 +56,8 @@ class ProcessAndroidNativeTest {
         if (out.processInfo.exitCode == 0) return
 
         System.err.println(out.toString())
-        System.err.println(out.stdout)
-        System.err.println(out.stderr)
+        System.err.println(out.stdoutBuf.utf8())
+        System.err.println(out.stderrBuf.utf8())
         System.err.println("--- ENVIRONMENT ---")
         out.processInfo.environment.forEach { (key, value) -> System.err.println("$key=$value") }
         throw AssertionError("Process.exitCode[${out.processInfo.exitCode}] != 0")

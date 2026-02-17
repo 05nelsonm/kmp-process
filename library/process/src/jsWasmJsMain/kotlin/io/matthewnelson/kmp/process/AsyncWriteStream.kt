@@ -24,7 +24,7 @@ import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.file.jsExternTryCatch
 import io.matthewnelson.kmp.file.toIOException
 import io.matthewnelson.kmp.file.use
-import io.matthewnelson.kmp.process.internal.*
+import io.matthewnelson.kmp.process.internal.checkBounds
 import io.matthewnelson.kmp.process.internal.js.JsUint8Array
 import io.matthewnelson.kmp.process.internal.js.fill
 import io.matthewnelson.kmp.process.internal.js.toJsArray
