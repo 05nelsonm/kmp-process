@@ -20,6 +20,7 @@ package io.matthewnelson.kmp.process
 import io.matthewnelson.kmp.process.ProcessException.Companion.CTX_FEED_STDERR
 import io.matthewnelson.kmp.process.ProcessException.Companion.CTX_FEED_STDOUT
 import io.matthewnelson.kmp.process.internal.Lock
+import io.matthewnelson.kmp.process.internal.RealLineOutputFeed
 import io.matthewnelson.kmp.process.internal.newLock
 import io.matthewnelson.kmp.process.internal.withLock
 import kotlinx.coroutines.delay
@@ -62,7 +63,7 @@ public fun interface OutputFeed: Output.Feed {
         /**
          * TODO
          * */
-        public fun onOutput(len: Int, get: (index: Int) -> Byte)
+        public fun onOutput(len: Int, get: ((index: Int) -> Byte)?)
     }
 
     /**
@@ -219,36 +220,92 @@ public fun interface OutputFeed: Output.Feed {
         public fun stderrFeed(feeds: List<OutputFeed>): Process = stderr(feeds)
 
         /** @suppress */
-        protected fun dispatchStdout(line: String?) {
-            dispatch(
-                line = line,
-                onErrorContext = CTX_FEED_STDOUT,
-                feedsLock = stdoutLock,
-                _feedsGet = { _stdoutFeeds },
-                _feedsSet = { new -> _stdoutFeeds = new },
-                _stoppedSet = { new -> _stdoutStopped = new }
-            )
-        }
-
-        /** @suppress */
-        protected fun dispatchStderr(line: String?) {
-            dispatch(
-                line = line,
-                onErrorContext = CTX_FEED_STDERR,
-                feedsLock = stderrLock,
-                _feedsGet = { _stderrFeeds },
-                _feedsSet = { new -> _stderrFeeds = new },
-                _stoppedSet = { new -> _stderrStopped = new }
-            )
-        }
-
-        /** @suppress */
         @Throws(Throwable::class)
         protected abstract fun onError(t: Throwable, context: String)
         /** @suppress */
         protected abstract fun startStdout()
         /** @suppress */
         protected abstract fun startStderr()
+
+        /** @suppress */
+        @Throws(Throwable::class)
+        protected fun dispatchStdout(buf: ReadBuffer?, len: Int) {
+            dispatch(
+                thing = buf?.functionGet(),
+                onErrorContext = CTX_FEED_STDOUT,
+                feedsLock = stdoutLock,
+                _onFeed = { getOrNull ->
+                    when (this) {
+                        is OutputFeed -> {}
+                        is LineDispatcher -> if (buf != null) {
+                            lineOutputFeed.onData(buf, len)
+                        } else {
+                            lineOutputFeed.close()
+                        }
+                        is OutputFeed.Raw -> onOutput(len, getOrNull)
+                    }
+                },
+                _feedsGet = { _stdoutFeeds },
+                _feedsSet = { new -> _stdoutFeeds = new },
+                _stoppedSet = { new -> _stdoutStopped = new },
+            )
+        }
+
+        /** @suppress */
+        @Throws(Throwable::class)
+        protected fun dispatchStderr(buf: ReadBuffer?, len: Int) {
+            dispatch(
+                thing = buf?.functionGet(),
+                onErrorContext = CTX_FEED_STDERR,
+                feedsLock = stdoutLock,
+                _onFeed = { getOrNull ->
+                    when (this) {
+                        is OutputFeed -> {}
+                        is LineDispatcher -> if (buf != null) {
+                            lineOutputFeed.onData(buf, len)
+                        } else {
+                            lineOutputFeed.close()
+                        }
+                        is OutputFeed.Raw -> onOutput(len, getOrNull)
+                    }
+                },
+                _feedsGet = { _stderrFeeds },
+                _feedsSet = { new -> _stderrFeeds = new },
+                _stoppedSet = { new -> _stderrStopped = new },
+            )
+        }
+
+        @Throws(Throwable::class)
+        private fun dispatchStdout(line: String?) {
+            dispatch(
+                thing = line,
+                onErrorContext = CTX_FEED_STDOUT,
+                // Do not do closure here, do it in other dispatchStderr function.
+                feedsLock = null,
+                _onFeed = { lineOrNull ->
+                    (this as? OutputFeed)?.onOutput(lineOrNull)
+                },
+                _feedsGet = { _stdoutFeeds },
+                _feedsSet = {},
+                _stoppedSet = {},
+            )
+        }
+
+        @Throws(Throwable::class)
+        private fun dispatchStderr(line: String?) {
+            dispatch(
+                thing = line,
+                onErrorContext = CTX_FEED_STDERR,
+                // Do not do closure here, do it in other dispatchStderr function.
+                feedsLock = null,
+                _onFeed = { lineOrNull ->
+                    (this as? OutputFeed)?.onOutput(lineOrNull)
+                },
+                _feedsGet = { _stderrFeeds },
+                _feedsSet = {},
+                _stoppedSet = {},
+            )
+        }
 
         @Suppress("PrivatePropertyName")
         private inline val This: Process get() = this as Process
@@ -264,15 +321,17 @@ public fun interface OutputFeed: Output.Feed {
         }
 
         @OptIn(ExperimentalContracts::class)
-        private inline fun dispatch(
-            line: String?,
+        private inline fun <T> dispatch(
+            thing: T,
             onErrorContext: String,
             feedsLock: Lock?,
+            _onFeed: Output.Feed.(thing: T) -> Unit,
             _feedsGet: () -> Array<Output.Feed>,
             _feedsSet: (new: Array<Output.Feed>) -> Unit,
             _stoppedSet: (new: Boolean) -> Unit,
         ) {
             contract {
+                callsInPlace(_onFeed, InvocationKind.UNKNOWN)
                 callsInPlace(_feedsGet, InvocationKind.AT_LEAST_ONCE)
                 callsInPlace(_feedsSet, InvocationKind.AT_MOST_ONCE)
                 callsInPlace(_stoppedSet, InvocationKind.AT_MOST_ONCE)
@@ -284,16 +343,15 @@ public fun interface OutputFeed: Output.Feed {
             var feeds = _feedsGet()
             while (i < feeds.size) {
                 val feed = feeds[i++]
-                if (feed !is OutputFeed) continue
                 try {
-                    feed.onOutput(line)
+                    feed._onFeed(thing)
                 } catch (t: Throwable) {
                     threw?.addSuppressed(t) ?: run { threw = t }
                 }
 
-                // Array of OutputFeed only ever grows, so upon each iteration
+                // Array of Output.Feed only ever grows, so upon each iteration
                 // can set locally in case additional OutputFeed were picked up
-                // while dispatching this line.
+                // while dispatching this thing.
                 feeds = _feedsGet()
             }
 
@@ -308,13 +366,18 @@ public fun interface OutputFeed: Output.Feed {
             }
 
             if (threw == null) {
-                if (line != null) return
+                if (thing != null) return
             }
 
-            // Line was null (end of stream), or error. Close up shop.
+            // thing was null (end of stream), or error. Close up shop.
             feedsLock?.withLock {
                 _feedsSet(emptyArray())
                 _stoppedSet(true)
+                for (feed in feeds) {
+                    if (feed !is LineDispatcher) continue
+                    feed.lineOutputFeed.dereference()
+                    break
+                }
             }
             threw?.let { throw it }
         }
@@ -322,6 +385,7 @@ public fun interface OutputFeed: Output.Feed {
         private fun addStdoutFeeds(feeds: MutableSet<Output.Feed>): Process = addFeeds(
             feedsAdd = feeds,
             feedsLock = stdoutLock,
+            _dispatchLine = ::dispatchStdout,
             _feedsGet = { _stdoutFeeds },
             _feedsSet = { new -> _stdoutFeeds = new },
             _isStopped = { _stdoutStopped },
@@ -331,6 +395,7 @@ public fun interface OutputFeed: Output.Feed {
         private fun addStderrFeeds(feeds: MutableSet<Output.Feed>): Process = addFeeds(
             feedsAdd = feeds,
             feedsLock = stderrLock,
+            _dispatchLine = ::dispatchStderr,
             _feedsGet = { _stderrFeeds },
             _feedsSet = { new -> _stderrFeeds = new },
             _isStopped = { _stderrStopped },
@@ -341,6 +406,7 @@ public fun interface OutputFeed: Output.Feed {
         private inline fun addFeeds(
             feedsAdd: MutableSet<Output.Feed>,
             feedsLock: Lock?,
+            noinline _dispatchLine: (line: String?) -> Unit,
             _feedsGet: () -> Array<Output.Feed>,
             _feedsSet: (new: Array<Output.Feed>) -> Unit,
             _isStopped: () -> Boolean,
@@ -364,15 +430,37 @@ public fun interface OutputFeed: Output.Feed {
 
                 val feedsBefore = _feedsGet()
 
+                var hasLineDispatcher = false
                 for (i in feedsBefore.indices) {
                     val feed = feedsBefore[i]
+                    if (feed is LineDispatcher) {
+                        hasLineDispatcher = true
+                        continue
+                    }
                     if (feedsAdd.remove(feed) && feedsAdd.isEmpty()) return This
                 }
 
                 if (isDestroyed) return This
 
-                val feedsAfter = feedsBefore.copyOf(feedsBefore.size + feedsAdd.size)
+                var newSize = feedsBefore.size + feedsAdd.size
+                val needsLineDispatcher = if (!hasLineDispatcher) run {
+                    for (feed in feedsAdd) {
+                        if (feed !is OutputFeed) continue
+                        newSize++
+                        return@run true
+                    }
+                    false
+                } else {
+                    false
+                }
+
+                val feedsAfter = feedsBefore.copyOf(newSize)
                 var i = feedsBefore.size
+                if (needsLineDispatcher) {
+                    @OptIn(InternalProcessApi::class)
+                    val lineOutputFeed = ReadBuffer.lineOutputFeed(_dispatchLine)
+                    feedsAfter[i++] = LineDispatcher(lineOutputFeed)
+                }
                 feedsAdd.forEach { feed -> feedsAfter[i++] = feed }
 
                 @Suppress("UNCHECKED_CAST")
@@ -436,3 +524,8 @@ public fun interface OutputFeed: Output.Feed {
 }
 
 private abstract class RealWaiter(process: Process, isDestroyed: Boolean): OutputFeed.Waiter(process, isDestroyed)
+
+private class LineDispatcher(lineOutputFeed: ReadBuffer.LineOutputFeed): OutputFeed.Raw {
+    val lineOutputFeed = lineOutputFeed as RealLineOutputFeed
+    override fun onOutput(len: Int, get: ((index: Int) -> Byte)?) = error("Use lineOutputFeed.{onData/close}")
+}

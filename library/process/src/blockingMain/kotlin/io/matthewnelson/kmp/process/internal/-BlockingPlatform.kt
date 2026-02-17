@@ -18,12 +18,18 @@
 package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.encoding.core.Decoder.Companion.decodeBuffered
-import io.matthewnelson.encoding.core.EncoderDecoder.Companion.DEFAULT_BUFFER_SIZE
 import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.file.InterruptedException
 import io.matthewnelson.kmp.file.use
-import io.matthewnelson.kmp.process.*
+import io.matthewnelson.kmp.process.AsyncWriteStream
+import io.matthewnelson.kmp.process.InternalProcessApi
+import io.matthewnelson.kmp.process.Output
+import io.matthewnelson.kmp.process.OutputFeed
+import io.matthewnelson.kmp.process.Process
+import io.matthewnelson.kmp.process.ReadBuffer
+import io.matthewnelson.kmp.process.Signal
+import io.matthewnelson.kmp.process.Stdio
 import kotlin.time.Duration
 
 @Throws(InterruptedException::class)
@@ -58,20 +64,12 @@ internal inline fun PlatformBuilder.blockingOutput(
     _waitFor = Process::waitFor,
 )
 
-internal fun ReadStream.scanLines(
-    dispatch: (line: String?) -> Unit,
-) { scanLines(DEFAULT_BUFFER_SIZE, dispatch) }
-
+@Throws(Throwable::class)
 @OptIn(InternalProcessApi::class)
-@Throws(IllegalArgumentException::class)
-internal fun ReadStream.scanLines(
-    bufferSize: Int,
-    dispatch: (line: String?) -> Unit,
-) {
-    use { stream ->
-        val buf = ReadBuffer.of(ByteArray(bufferSize))
-        val feed = ReadBuffer.lineOutputFeed(dispatch)
+internal fun ReadStream.bufferedRead(bufSize: Int, dispatch: (buf: ReadBuffer?, len: Int) -> Unit) {
+    val buf = ReadBuffer.of(buf = ByteArray(bufSize))
 
+    use { stream ->
         var threw: Throwable? = null
         while (true) {
             val read = try {
@@ -80,21 +78,20 @@ internal fun ReadStream.scanLines(
                 break
             }
 
-            // If a pipe has no write ends open (i.e. the
-            // child process exited), a zero read is returned,
-            // and we can end early (before process destruction).
+            // If a pipe has no write ends open (i.e. the child process exited), a zero
+            // read is returned, and we can end early (before process destruction).
             if (read <= 0) break
 
             try {
-                feed.onData(buf, read)
+                dispatch(buf, read)
             } catch (t: Throwable) {
+                // An Output.Feed threw exception. Cache it to throw momentarily.
                 threw = t
                 break
             }
         }
-
         buf.buf.fill(0)
         threw?.let { throw it }
-        feed.close()
+        dispatch(null, -1)
     }
 }

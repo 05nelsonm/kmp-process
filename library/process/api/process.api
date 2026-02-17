@@ -96,8 +96,8 @@ public abstract interface class io/matthewnelson/kmp/process/OutputFeed : io/mat
 public abstract class io/matthewnelson/kmp/process/OutputFeed$Handler : io/matthewnelson/kmp/process/Blocking {
 	protected field isDestroyed Z
 	public synthetic fun <init> (Lio/matthewnelson/kmp/process/Stdio$Config;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
-	protected final fun dispatchStderr (Ljava/lang/String;)V
-	protected final fun dispatchStdout (Ljava/lang/String;)V
+	protected final fun dispatchStderr-94qbmno (Ljava/lang/Object;I)V
+	protected final fun dispatchStdout-94qbmno (Ljava/lang/Object;I)V
 	protected abstract fun onError (Ljava/lang/Throwable;Ljava/lang/String;)V
 	protected abstract fun startStderr ()V
 	protected abstract fun startStdout ()V

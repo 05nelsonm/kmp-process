@@ -17,8 +17,12 @@
 
 package io.matthewnelson.kmp.process
 
-import io.matthewnelson.kmp.file.*
-import io.matthewnelson.kmp.process.OutputFeed
+import io.matthewnelson.kmp.file.IOException
+import io.matthewnelson.kmp.file.SysTempDir
+import io.matthewnelson.kmp.file.delete2
+import io.matthewnelson.kmp.file.mkdirs2
+import io.matthewnelson.kmp.file.resolve
+import io.matthewnelson.kmp.file.use
 import io.matthewnelson.kmp.process.internal.IsWindows
 import kotlinx.coroutines.test.runTest
 import kotlin.random.Random
@@ -100,9 +104,10 @@ class ProcessUnitTest {
                 .destroySignal(Signal.SIGKILL)
                 .createProcessAsync().use { process ->
 
-                    process.stdout(OutputFeed {})
-                    process.stderr(OutputFeed {})
+                    process.stdout(OutputFeed.Raw { _, _ -> })
+                    process.stderr(OutputFeed.Raw { _, _ -> })
 
+                    // Ensures that LineDispatcher is not added because no OutputFeed
                     assertEquals(1, process.stdoutFeedsSize(), "stdout")
                     assertEquals(1, process.stderrFeedsSize(), "stderr")
 
@@ -122,8 +127,9 @@ class ProcessUnitTest {
                         OutputFeed { },
                     )
 
-                    assertEquals(1 + 2, process.stdoutFeedsSize(), "stdout")
-                    assertEquals(1 + 3, process.stderrFeedsSize(), "stderr")
+                    // Should also have added one LineDispatcher b/c OutputFeed present
+                    assertEquals(1 + 1 + 2, process.stdoutFeedsSize(), "stdout")
+                    assertEquals(1 + 1 + 3, process.stderrFeedsSize(), "stderr")
 
                     @Suppress("UNUSED_EXPRESSION")
                     process.stderr(
@@ -141,12 +147,12 @@ class ProcessUnitTest {
                         }
                     )
 
-                    assertEquals(1 + 3 + 50, process.stderrFeedsSize(), "stderr")
+                    assertEquals(1 + 1 + 3 + 50, process.stderrFeedsSize(), "stderr")
 
                     process.stderr(feed)
                     process.stderr(feed, feed, feed)
 
-                    assertEquals(1 + 3 + 50, process.stderrFeedsSize(), "stderr")
+                    assertEquals(1 + 1 + 3 + 50, process.stderrFeedsSize(), "stderr")
 
                     process.waitForAsync(100.milliseconds)
 

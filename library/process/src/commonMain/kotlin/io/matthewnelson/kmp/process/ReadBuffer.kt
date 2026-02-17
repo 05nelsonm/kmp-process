@@ -29,11 +29,6 @@ package io.matthewnelson.kmp.process
  * */
 public expect value class ReadBuffer private constructor(private val _buf: Any) {
 
-    internal fun capacity(): Int
-
-    @Throws(IndexOutOfBoundsException::class)
-    internal operator fun get(index: Int): Byte
-
     /**
      * Scans buffered input and dispatches lines, disregarding
      * line breaks CR (`\r`), LF (`\n`), & CRLF (`\r\n`).
@@ -118,4 +113,11 @@ public expect value class ReadBuffer private constructor(private val _buf: Any) 
         @InternalProcessApi
         public fun lineOutputFeed(dispatch: (line: String?) -> Unit): LineOutputFeed
     }
+
+    internal fun capacity(): Int
+
+    @Throws(IndexOutOfBoundsException::class)
+    internal operator fun get(index: Int): Byte
+
+    internal fun functionGet(): (index: Int) -> Byte
 }
