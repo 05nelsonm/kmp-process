@@ -59,6 +59,11 @@ public class Output private constructor(
 ) {
 
     /**
+     * TODO
+     * */
+    public sealed interface Feed
+
+    /**
      * Options for [Process.Builder.createOutput] and [Process.Builder.createOutputAsync].
      *
      * @see [Builder]

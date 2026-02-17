@@ -57,6 +57,9 @@ public final class io/matthewnelson/kmp/process/Output {
 	public fun toString ()Ljava/lang/String;
 }
 
+public abstract interface class io/matthewnelson/kmp/process/Output$Feed {
+}
+
 public final class io/matthewnelson/kmp/process/Output$Options {
 	public synthetic fun <init> (Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;IJLkotlin/jvm/internal/DefaultConstructorMarker;)V
 }
@@ -86,7 +89,7 @@ public final class io/matthewnelson/kmp/process/Output$ProcessInfo {
 	public fun toString ()Ljava/lang/String;
 }
 
-public abstract interface class io/matthewnelson/kmp/process/OutputFeed {
+public abstract interface class io/matthewnelson/kmp/process/OutputFeed : io/matthewnelson/kmp/process/Output$Feed {
 	public abstract fun onOutput (Ljava/lang/String;)V
 }
 
@@ -98,14 +101,24 @@ public abstract class io/matthewnelson/kmp/process/OutputFeed$Handler : io/matth
 	protected abstract fun onError (Ljava/lang/Throwable;Ljava/lang/String;)V
 	protected abstract fun startStderr ()V
 	protected abstract fun startStdout ()V
+	public final fun stderr (Lio/matthewnelson/kmp/process/Output$Feed;)Lio/matthewnelson/kmp/process/Process;
+	public final fun stderr (Ljava/util/Collection;)Lio/matthewnelson/kmp/process/Process;
+	public final fun stderr ([Lio/matthewnelson/kmp/process/Output$Feed;)Lio/matthewnelson/kmp/process/Process;
 	public final fun stderrFeed (Lio/matthewnelson/kmp/process/OutputFeed;)Lio/matthewnelson/kmp/process/Process;
 	public final fun stderrFeed (Ljava/util/List;)Lio/matthewnelson/kmp/process/Process;
 	public final fun stderrFeed ([Lio/matthewnelson/kmp/process/OutputFeed;)Lio/matthewnelson/kmp/process/Process;
 	public final fun stderrWaiter ()Lio/matthewnelson/kmp/process/OutputFeed$Waiter;
+	public final fun stdout (Lio/matthewnelson/kmp/process/Output$Feed;)Lio/matthewnelson/kmp/process/Process;
+	public final fun stdout (Ljava/util/Collection;)Lio/matthewnelson/kmp/process/Process;
+	public final fun stdout ([Lio/matthewnelson/kmp/process/Output$Feed;)Lio/matthewnelson/kmp/process/Process;
 	public final fun stdoutFeed (Lio/matthewnelson/kmp/process/OutputFeed;)Lio/matthewnelson/kmp/process/Process;
 	public final fun stdoutFeed (Ljava/util/List;)Lio/matthewnelson/kmp/process/Process;
 	public final fun stdoutFeed ([Lio/matthewnelson/kmp/process/OutputFeed;)Lio/matthewnelson/kmp/process/Process;
 	public final fun stdoutWaiter ()Lio/matthewnelson/kmp/process/OutputFeed$Waiter;
+}
+
+public abstract interface class io/matthewnelson/kmp/process/OutputFeed$Raw : io/matthewnelson/kmp/process/Output$Feed {
+	public abstract fun onOutput (ILkotlin/jvm/functions/Function1;)V
 }
 
 public abstract class io/matthewnelson/kmp/process/OutputFeed$Waiter : io/matthewnelson/kmp/process/Blocking$Waiter {

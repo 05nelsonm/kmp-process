@@ -90,8 +90,8 @@ internal inline fun PlatformBuilder.commonOutput(
 
     var waitForCode: Int? = null
     try {
-        p.stdoutFeed(stdoutBuffer)
-        p.stderrFeed(stderrBuffer)
+        p.stdout(stdoutBuffer)
+        p.stderr(stderrBuffer)
 
         // input will be non-null if and only if Output.Options.hasInput is true.
         p.input?.writeInputAndClose(options, _close, _write, _decodeBuffered)

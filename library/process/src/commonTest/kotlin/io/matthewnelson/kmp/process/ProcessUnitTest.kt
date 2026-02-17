@@ -18,6 +18,7 @@
 package io.matthewnelson.kmp.process
 
 import io.matthewnelson.kmp.file.*
+import io.matthewnelson.kmp.process.OutputFeed
 import io.matthewnelson.kmp.process.internal.IsWindows
 import kotlinx.coroutines.test.runTest
 import kotlin.random.Random
@@ -99,21 +100,21 @@ class ProcessUnitTest {
                 .destroySignal(Signal.SIGKILL)
                 .createProcessAsync().use { process ->
 
-                    process.stdoutFeed {}
-                    process.stderrFeed {}
+                    process.stdout(OutputFeed {})
+                    process.stderr(OutputFeed {})
 
                     assertEquals(1, process.stdoutFeedsSize(), "stdout")
                     assertEquals(1, process.stderrFeedsSize(), "stderr")
 
                     val feed = OutputFeed { }
 
-                    process.stdoutFeed(
+                    process.stdout(
                         // Ensures that only added once
                         feed,
                         feed,
                         OutputFeed { },
                     )
-                    process.stderrFeed(
+                    process.stderr(
                         // Ensures that only added once
                         feed,
                         feed,
@@ -125,7 +126,7 @@ class ProcessUnitTest {
                     assertEquals(1 + 3, process.stderrFeedsSize(), "stderr")
 
                     @Suppress("UNUSED_EXPRESSION")
-                    process.stderrFeed(
+                    process.stderr(
                         // Ensure backing array grows to accommodate
                         feeds = buildList {
                             repeat(50) { i ->
@@ -142,8 +143,8 @@ class ProcessUnitTest {
 
                     assertEquals(1 + 3 + 50, process.stderrFeedsSize(), "stderr")
 
-                    process.stderrFeed(feed)
-                    process.stderrFeed(feed, feed, feed)
+                    process.stderr(feed)
+                    process.stderr(feed, feed, feed)
 
                     assertEquals(1 + 3 + 50, process.stderrFeedsSize(), "stderr")
 
@@ -181,12 +182,12 @@ class ProcessUnitTest {
                 .stderr(Stdio.Inherit)
                 .createProcessAsync().use { p ->
 
-                    p.stdoutFeed(
+                    p.stdout(
                         OutputFeed { },
                         OutputFeed { },
                     )
 
-                    p.stderrFeed(
+                    p.stderr(
                         OutputFeed { },
                         OutputFeed { },
                         OutputFeed { },

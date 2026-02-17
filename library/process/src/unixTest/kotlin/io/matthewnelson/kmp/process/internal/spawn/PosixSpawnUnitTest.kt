@@ -31,6 +31,7 @@ import io.matthewnelson.kmp.file.toFile
 import io.matthewnelson.kmp.file.writeUtf8
 import io.matthewnelson.kmp.process.Blocking
 import io.matthewnelson.kmp.process.IsAppleSimulator
+import io.matthewnelson.kmp.process.OutputFeed
 import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.ProcessException
 import io.matthewnelson.kmp.process.Signal
@@ -96,10 +97,10 @@ class PosixSpawnUnitTest {
 
         val output = mutableListOf<String>()
         val exitCode = try {
-            p.stdoutFeed { line ->
-                line ?: return@stdoutFeed
+            p.stdout(OutputFeed { line ->
+                line ?: return@OutputFeed
                 output.add(line)
-            }.waitFor()
+            }).waitFor()
         } finally {
             p.destroy()
         }
@@ -162,19 +163,19 @@ class PosixSpawnUnitTest {
             var eosStderr = false
             val fdsLS = mutableListOf<String>()
 
-            p.stdoutFeed { line ->
+            p.stdout(OutputFeed { line ->
                 if (line == null) {
                     eosStdout = true
-                    return@stdoutFeed
+                    return@OutputFeed
                 }
                 fdsLS.add(line)
-            }.stderrFeed { line ->
+            }).stderr(OutputFeed { line ->
                 if (line == null) {
                     eosStderr = true
-                    return@stderrFeed
+                    return@OutputFeed
                 }
                 println(line)
-            }.waitFor()
+            }).waitFor()
 
             while (true) {
                 if (eosStdout && eosStderr) break
@@ -217,10 +218,10 @@ class PosixSpawnUnitTest {
 
         val output = mutableListOf<String>()
         val exitCode = try {
-            p.stdoutFeed { line ->
-                line ?: return@stdoutFeed
+            p.stdout(OutputFeed { line ->
+                line ?: return@OutputFeed
                 output.add(line)
-            }.waitFor()
+            }).waitFor()
         } finally {
             p.destroy()
         }

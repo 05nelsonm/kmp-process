@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("LocalVariableName", "RedundantVisibilityModifier", "RemoveRedundantQualifierName")
+@file:Suppress("LocalVariableName", "NOTHING_TO_INLINE", "RedundantVisibilityModifier", "RemoveRedundantQualifierName")
 
 package io.matthewnelson.kmp.process
 
@@ -34,64 +34,39 @@ import kotlin.time.Duration.Companion.milliseconds
 /**
  * A callback for obtaining `stdout` and `stderr` output.
  *
- * **NOTE:** `Jvm` and `Native` [onOutput] is invoked
- * from a background thread (either the `stdout` thread or
- * the `stderr` thread, whichever is being observed by the
- * [OutputFeed]). It is ill-advised to attach the same
- * [OutputFeed] to both `stdout` and `stderr`.
+ * **NOTE:** `Jvm` and `Native` [OutputFeed.onOutput] and [OutputFeed.Raw.onOutput] are called from a
+ * background thread; either the `stdout` thread or the `stderr` thread. It is ill-advised to register
+ * the same [Output.Feed] to both `stdout` and `stderr`.
  *
- * **NOTE:** Any exceptions that [onOutput] throws will be
- * delegated to [ProcessException.Handler]. If it is re-thrown
- * by the [ProcessException.Handler], the [Process] will be
- * terminated, and all [OutputFeed] for that I/O stream will
- * be ejected immediately.
+ * **NOTE:** Any exceptions that [OutputFeed.onOutput] or [OutputFeed.Raw.onOutput] throws will be
+ * delegated to [ProcessException.Handler]. If it is re-thrown by the [ProcessException.Handler], the
+ * [Process] will be terminated, and all [OutputFeed] for that I/O stream will be ejected immediately.
  *
  * e.g.
  *
- *     val p = builder.createProcess()
- *         .stdoutFeed { line ->
- *             println(line ?: "--STDOUT EOS--")
- *         }.stderrFeed(
- *             // attach multiple at once
- *             OutputFeed { line ->
- *                 println(line ?: "--STDERR EOS--")
- *             },
- *             OutputFeed { line ->
- *                 // do something
- *             }
- *         )
+ *     TODO
  *
- *     p.waitFor(500.milliseconds)
- *
- *     val exitCode = p.destroy()
- *         .stdoutWaiter()
- *         .awaitStop()
- *         .stderrWaiter()
- *         .awaitStop()
- *         .waitFor()
- *
- * @see [Process.destroy]
- * @see [Handler.stdoutFeed]
- * @see [Handler.stderrFeed]
- * @see [Handler.stdoutWaiter]
- * @see [Handler.stderrWaiter]
  * */
-public fun interface OutputFeed {
+public fun interface OutputFeed: Output.Feed {
 
     /**
-     * A line of output from `stdout` or `stderr` (whichever
-     * this [OutputFeed] has been attached to).
-     *
-     * `null` is dispatched to indicate [OutputFeed] closure.
+     * TODO
      * */
     public fun onOutput(line: String?)
 
     /**
-     * Helper class which [Process] implements that handles everything
-     * regarding dispatching of `stdout` and `stderr` output to attached
-     * [OutputFeed].
-     *
-     * Upon [Process] destruction, all attached [OutputFeed] are ejected.
+     * TODO
+     * */
+    public fun interface Raw: Output.Feed {
+
+        /**
+         * TODO
+         * */
+        public fun onOutput(len: Int, get: (index: Int) -> Byte)
+    }
+
+    /**
+     * TODO
      * */
     public sealed class Handler(stdio: Stdio.Config): Blocking() {
 
@@ -112,111 +87,55 @@ public fun interface OutputFeed {
         @Volatile
         private var _stderrStopped = stdio.stderr !is Stdio.Pipe
         @Volatile
-        private var _stdoutFeeds = emptyArray<OutputFeed>()
+        private var _stdoutFeeds = emptyArray<Output.Feed>()
         @Volatile
-        private var _stderrFeeds = emptyArray<OutputFeed>()
+        private var _stderrFeeds = emptyArray<Output.Feed>()
 
         private val stdoutLock = if (stdio.stdout !is Stdio.Pipe) null else newLock()
         private val stderrLock = if (stdio.stderr !is Stdio.Pipe) null else newLock()
 
         /**
-         * Attaches a single [OutputFeed] to obtain `stdout` output.
-         *
-         * [Process] will begin outputting data to all [OutputFeed]
-         * for `stdout` upon the first attachment of [OutputFeed].
-         *
-         * If [Stdio.Config.stdout] is **not** [Stdio.Pipe], this
-         * does nothing. If the [Process] has been destroyed, this
-         * does nothing.
+         * TODO
          * */
-        public fun stdoutFeed(feed: OutputFeed): Process = addStdoutFeeds(mutableSetOf(feed))
+        public fun stdout(feed: Output.Feed): Process {
+            return addStdoutFeeds(mutableSetOf(feed))
+        }
 
         /**
-         * Attaches multiple [OutputFeed] to obtain `stdout` output.
-         * This is handy at [Process] startup such that no data is
-         * missed if there are multiple feeds needing to be attached.
-         *
-         * [Process] will begin outputting data to all [OutputFeed]
-         * for `stdout` upon the first attachment of [OutputFeed].
-         *
-         * If [Stdio.Config.stdout] is **not** [Stdio.Pipe], this
-         * does nothing. If the [Process] has been destroyed, this
-         * does nothing.
+         * TODO
          * */
-        public fun stdoutFeed(vararg feeds: OutputFeed): Process {
+        public fun stdout(vararg feeds: Output.Feed): Process = stdoutVararg(feeds)
+
+        /**
+         * TODO
+         * */
+        public fun stdout(feeds: Collection<Output.Feed>): Process {
             if (feeds.isEmpty()) return This
             return addStdoutFeeds(feeds.toMutableSet())
         }
 
         /**
-         * Attaches multiple [OutputFeed] to obtain `stdout` output.
-         * This is handy at [Process] startup such that no data is
-         * missed if there are multiple feeds needing to be attached.
-         *
-         * [Process] will begin outputting data to all [OutputFeed]
-         * for `stdout` upon the first attachment of [OutputFeed].
-         *
-         * If [Stdio.Config.stdout] is **not** [Stdio.Pipe], this
-         * does nothing. If the [Process] has been destroyed, this
-         * does nothing.
+         * TODO
          * */
-        public fun stdoutFeed(feeds: List<OutputFeed>): Process {
-            if (feeds.isEmpty()) return This
-            return addStdoutFeeds(feeds.toMutableSet())
+        public fun stderr(feed: Output.Feed): Process {
+            return addStderrFeeds(mutableSetOf(feed))
         }
 
         /**
-         * Attaches a single [OutputFeed] to obtain `stderr` output.
-         *
-         * [Process] will begin outputting data to all [OutputFeed]
-         * for `stderr` upon the first attachment of [OutputFeed].
-         *
-         * If [Stdio.Config.stderr] is **not** [Stdio.Pipe], this
-         * does nothing. If the [Process] has been destroyed, this
-         * does nothing.
+         * TODO
          * */
-        public fun stderrFeed(feed: OutputFeed): Process = addStderrFeeds(mutableSetOf(feed))
+        public fun stderr(vararg feeds: Output.Feed): Process = stderrVararg(feeds)
 
         /**
-         * Attaches multiple [OutputFeed] to obtain `stderr` output.
-         * This is handy at [Process] startup such that no data is
-         * missed if there are multiple feeds needing to be attached.
-         *
-         * [Process] will begin outputting data to all [OutputFeed]
-         * for `stderr` upon the first attachment of [OutputFeed].
-         *
-         * If [Stdio.Config.stderr] is **not** [Stdio.Pipe], this
-         * does nothing. If the [Process] has been destroyed, this
-         * does nothing.
+         * TODO
          * */
-        public fun stderrFeed(vararg feeds: OutputFeed): Process {
+        public fun stderr(feeds: Collection<Output.Feed>): Process {
             if (feeds.isEmpty()) return This
             return addStderrFeeds(feeds.toMutableSet())
         }
 
         /**
-         * Attaches multiple [OutputFeed] to obtain `stderr` output.
-         * This is handy at [Process] startup such that no data is
-         * missed if there are multiple feeds needing to be attached.
-         *
-         * [Process] will begin outputting data to all [OutputFeed]
-         * for `stderr` upon the first attachment of [OutputFeed].
-         *
-         * If [Stdio.Config.stderr] is **not** [Stdio.Pipe], this
-         * does nothing. If the [Process] has been destroyed, this
-         * does nothing.
-         * */
-        public fun stderrFeed(feeds: List<OutputFeed>): Process {
-            if (feeds.isEmpty()) return This
-            return addStderrFeeds(feeds.toMutableSet())
-        }
-
-        /**
-         * Returns a [Waiter] for `stdout` in order to await any
-         * final asynchronous output after resource closure occurs.
-         *
-         * @throws [IllegalStateException] if [Process.destroy] has
-         *   not been called yet.
+         * TODO
          * */
         @Throws(IllegalStateException::class)
         public fun stdoutWaiter(): OutputFeed.Waiter = object : RealWaiter(This, isDestroyed) {
@@ -225,17 +144,79 @@ public fun interface OutputFeed {
         }
 
         /**
-         * Returns a [Waiter] for `stderr` in order to await any
-         * final asynchronous output after resource closure occurs.
-         *
-         * @throws [IllegalStateException] if [Process.destroy] has
-         *   not been called yet.
+         * TODO
          * */
         @Throws(IllegalStateException::class)
         public fun stderrWaiter(): OutputFeed.Waiter = object : RealWaiter(This, isDestroyed) {
             override fun isStarted(): Boolean = _stderrStarted
             override fun isStopped(): Boolean = _stderrStopped
         }
+
+        /**
+         * DEPRECATED since `0.6.0`
+         * @suppress
+         * */
+        @Deprecated(
+            message = "Replaced with stdout which accepts OutputFeed and OutputFeed.Raw.",
+            replaceWith = ReplaceWith("stdout(OutputFeed(feed))"),
+            level = DeprecationLevel.WARNING,
+        )
+        public fun stdoutFeed(feed: OutputFeed): Process = stdout(feed)
+
+        /**
+         * DEPRECATED since `0.6.0`
+         * @suppress
+         * */
+        @Deprecated(
+            message = "Replaced with stdout which accepts OutputFeed and OutputFeed.Raw.",
+            replaceWith = ReplaceWith("stdout(*feeds)"),
+            level = DeprecationLevel.WARNING,
+        )
+        public fun stdoutFeed(vararg feeds: OutputFeed): Process = stdoutVararg(feeds)
+
+        /**
+         * DEPRECATED since `0.6.0`
+         * @suppress
+         * */
+        @Deprecated(
+            message = "Replaced with stdout which accepts OutputFeed and OutputFeed.Raw.",
+            replaceWith = ReplaceWith("stdout(feeds)"),
+            level = DeprecationLevel.WARNING,
+        )
+        public fun stdoutFeed(feeds: List<OutputFeed>): Process = stdout(feeds)
+
+        /**
+         * DEPRECATED since `0.6.0`
+         * @suppress
+         * */
+        @Deprecated(
+            message = "Replaced with stderr which accepts OutputFeed and OutputFeed.Raw.",
+            replaceWith = ReplaceWith("stderr(OutputFeed(feed))"),
+            level = DeprecationLevel.WARNING,
+        )
+        public fun stderrFeed(feed: OutputFeed): Process = stderr(feed)
+
+        /**
+         * DEPRECATED since `0.6.0`
+         * @suppress
+         * */
+        @Deprecated(
+            message = "Replaced with stderr which accepts OutputFeed and OutputFeed.Raw.",
+            replaceWith = ReplaceWith("stderr(*feeds)"),
+            level = DeprecationLevel.WARNING,
+        )
+        public fun stderrFeed(vararg feeds: OutputFeed): Process = stderrVararg(feeds)
+
+        /**
+         * DEPRECATED since `0.6.0`
+         * @suppress
+         * */
+        @Deprecated(
+            message = "Replaced with stderr which accepts OutputFeed and OutputFeed.Raw.",
+            replaceWith = ReplaceWith("stderr(feeds)"),
+            level = DeprecationLevel.WARNING,
+        )
+        public fun stderrFeed(feeds: List<OutputFeed>): Process = stderr(feeds)
 
         /** @suppress */
         protected fun dispatchStdout(line: String?) {
@@ -272,13 +253,23 @@ public fun interface OutputFeed {
         @Suppress("PrivatePropertyName")
         private inline val This: Process get() = this as Process
 
+        private inline fun stdoutVararg(feeds: Array<out Output.Feed>): Process {
+            if (feeds.isEmpty()) return This
+            return addStdoutFeeds(feeds.toMutableSet())
+        }
+
+        private inline fun stderrVararg(feeds: Array<out Output.Feed>): Process {
+            if (feeds.isEmpty()) return This
+            return addStderrFeeds(feeds.toMutableSet())
+        }
+
         @OptIn(ExperimentalContracts::class)
         private inline fun dispatch(
             line: String?,
             onErrorContext: String,
             feedsLock: Lock?,
-            _feedsGet: () -> Array<OutputFeed>,
-            _feedsSet: (new: Array<OutputFeed>) -> Unit,
+            _feedsGet: () -> Array<Output.Feed>,
+            _feedsSet: (new: Array<Output.Feed>) -> Unit,
             _stoppedSet: (new: Boolean) -> Unit,
         ) {
             contract {
@@ -292,8 +283,10 @@ public fun interface OutputFeed {
             var i = 0
             var feeds = _feedsGet()
             while (i < feeds.size) {
+                val feed = feeds[i++]
+                if (feed !is OutputFeed) continue
                 try {
-                    feeds[i++].onOutput(line)
+                    feed.onOutput(line)
                 } catch (t: Throwable) {
                     threw?.addSuppressed(t) ?: run { threw = t }
                 }
@@ -326,7 +319,7 @@ public fun interface OutputFeed {
             threw?.let { throw it }
         }
 
-        private fun addStdoutFeeds(feeds: MutableSet<OutputFeed>): Process = addFeeds(
+        private fun addStdoutFeeds(feeds: MutableSet<Output.Feed>): Process = addFeeds(
             feedsAdd = feeds,
             feedsLock = stdoutLock,
             _feedsGet = { _stdoutFeeds },
@@ -335,7 +328,7 @@ public fun interface OutputFeed {
             _startStdio = { _stdoutStarted = true; startStdout() },
         )
 
-        private fun addStderrFeeds(feeds: MutableSet<OutputFeed>): Process = addFeeds(
+        private fun addStderrFeeds(feeds: MutableSet<Output.Feed>): Process = addFeeds(
             feedsAdd = feeds,
             feedsLock = stderrLock,
             _feedsGet = { _stderrFeeds },
@@ -346,10 +339,10 @@ public fun interface OutputFeed {
 
         @OptIn(ExperimentalContracts::class)
         private inline fun addFeeds(
-            feedsAdd: MutableSet<OutputFeed>,
+            feedsAdd: MutableSet<Output.Feed>,
             feedsLock: Lock?,
-            _feedsGet: () -> Array<OutputFeed>,
-            _feedsSet: (new: Array<OutputFeed>) -> Unit,
+            _feedsGet: () -> Array<Output.Feed>,
+            _feedsSet: (new: Array<Output.Feed>) -> Unit,
             _isStopped: () -> Boolean,
             _startStdio: () -> Unit,
         ): Process {
@@ -383,7 +376,7 @@ public fun interface OutputFeed {
                 feedsAdd.forEach { feed -> feedsAfter[i++] = feed }
 
                 @Suppress("UNCHECKED_CAST")
-                _feedsSet(feedsAfter as Array<OutputFeed>)
+                _feedsSet(feedsAfter as Array<Output.Feed>)
 
                 feedsBefore.isEmpty()
             }

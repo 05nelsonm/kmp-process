@@ -19,6 +19,7 @@ package io.matthewnelson.kmp.process.test.api
 
 import io.matthewnelson.kmp.file.*
 import io.matthewnelson.kmp.process.Output
+import io.matthewnelson.kmp.process.OutputFeed
 import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.ProcessException.Companion.CTX_FEED_STDOUT
 import io.matthewnelson.kmp.process.Signal
@@ -440,9 +441,9 @@ abstract class ProcessBaseTest {
             .stderr(Stdio.Pipe)
             .createProcessAsync()
 
-        p.stdoutFeed { line ->
+        p.stdout(OutputFeed { line ->
             throw IllegalStateException(line)
-        }.waitForAsync(500.milliseconds)
+        }).waitForAsync(500.milliseconds)
 
         delayTest(100.milliseconds)
 
@@ -484,10 +485,10 @@ abstract class ProcessBaseTest {
                     .joinToString("\n", postfix = "\n")
                     .encodeToByteArray()
 
-                p.stdoutFeed { line ->
-                    if (line == null) return@stdoutFeed
+                p.stdout(OutputFeed { line ->
+                    if (line == null) return@OutputFeed
                     actual.add(line)
-                }
+                })
 
                 var offset = 0
                 // chunked
@@ -645,19 +646,19 @@ abstract class ProcessBaseTest {
             val stdoutBuilder = StringBuilder()
             val stderrBuilder = StringBuilder()
 
-            p.stdoutFeed { line ->
-                if (line == null) return@stdoutFeed
+            p.stdout(OutputFeed { line ->
+                if (line == null) return@OutputFeed
                 with(stdoutBuilder) {
                     if (isNotEmpty()) appendLine()
                     append(line)
                 }
-            }.stderrFeed { line ->
-                if (line == null) return@stderrFeed
+            }).stderr(OutputFeed { line ->
+                if (line == null) return@OutputFeed
                 with(stderrBuilder) {
                     if (isNotEmpty()) appendLine()
                     append(line)
                 }
-            }
+            })
 
             assertFailsWith<IllegalStateException> {
                 p.stdoutWaiter()
