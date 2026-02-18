@@ -397,7 +397,10 @@ abstract class ProcessBaseTest {
                 assertTrue(stdoutBuf.utf8().isEmpty(), "stdout was not empty")
                 assertTrue(stderrBuf.utf8().isEmpty(), "stderr was not empty")
                 val min = sleepSeconds.seconds
-                val max = min + 2.seconds
+                // Only need to ensure that the process ended early, before the 10s timeout.
+                // Native/Linux & Native/Android are sometimes incredibly slow to spawn because
+                // of how the posix_spawn implementation closes file descriptors.
+                val max = min + 3.seconds
                 assertTrue(
                     elapsed in min..max,
                     "elapsed[${elapsed.inWholeMilliseconds}ms] !in min[${min.inWholeMilliseconds}ms]..max[${max.inWholeMilliseconds}ms]"
