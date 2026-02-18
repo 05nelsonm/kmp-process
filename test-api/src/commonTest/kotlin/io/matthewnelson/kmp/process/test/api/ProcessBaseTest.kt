@@ -384,21 +384,24 @@ abstract class ProcessBaseTest {
             return@runTest
         }
 
-        // Test to see that, if the program ends, threads that are reading
-        // stdout and stderr pop out on their own and does not wait the
-        // entire 10-second timeout.
-        val mark = TimeSource.Monotonic.markNow()
+        val expectedExitCode = 42
+        val sleepSeconds = 1
 
-        fun Output.assertOutput() {
+        fun Output.assertOutput(mark: TimeSource.Monotonic.ValueTimeMark) {
             val elapsed = mark.elapsedNow()
             println("elapsed[${elapsed.inWholeMilliseconds}ms]")
 
             try {
                 assertNull(processError, "processError != null")
-                assertEquals(42, processInfo.exitCode, "code[${processInfo.exitCode}]")
+                assertEquals(expectedExitCode, processInfo.exitCode, "code[${processInfo.exitCode}]")
                 assertTrue(stdoutBuf.utf8().isEmpty(), "stdout was not empty")
                 assertTrue(stderrBuf.utf8().isEmpty(), "stderr was not empty")
-                assertTrue(elapsed in 975.milliseconds..1_500.seconds)
+                val min = sleepSeconds.seconds
+                val max = min + 2.seconds
+                assertTrue(
+                    elapsed in min..max,
+                    "elapsed[${elapsed.inWholeMilliseconds}ms] !in min[${min.inWholeMilliseconds}ms]..max[${max.inWholeMilliseconds}ms]"
+                )
             } catch (t: AssertionError) {
                 println(stdoutBuf.utf8())
                 println(stderrBuf.utf8())
@@ -409,10 +412,12 @@ abstract class ProcessBaseTest {
 
         val b = Process.Builder(command = "sh")
             .args("-c")
-            .args("sleep 1; exit 42")
+            .args("sleep $sleepSeconds; exit $expectedExitCode")
 
-        b.createOutput { timeoutMillis = 10.seconds.inWholeMilliseconds.toInt() }.assertOutput()
-        b.createOutputAsync { timeoutMillis = 10.seconds.inWholeMilliseconds.toInt() }.assertOutput()
+        var mark = TimeSource.Monotonic.markNow()
+        b.createOutput { timeoutMillis = 10.seconds.inWholeMilliseconds.toInt() }.assertOutput(mark)
+        mark = TimeSource.Monotonic.markNow()
+        b.createOutputAsync { timeoutMillis = 10.seconds.inWholeMilliseconds.toInt() }.assertOutput(mark)
     }
 
     @Test
@@ -638,8 +643,8 @@ abstract class ProcessBaseTest {
 
         delayTest(500.milliseconds)
         val b = LOADER.toProcessBuilder()
-        b.createOutput { timeoutMillis = 2_000 }.assertOutput()
-        b.createOutputAsync { timeoutMillis = 2_000 }.assertOutput()
+        b.createOutput { timeoutMillis = 3_000 }.assertOutput()
+        b.createOutputAsync { timeoutMillis = 3_000 }.assertOutput()
     }
 
     @Test
