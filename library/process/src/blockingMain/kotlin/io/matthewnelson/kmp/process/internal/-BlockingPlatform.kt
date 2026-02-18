@@ -32,7 +32,7 @@ import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.Stdio
 import kotlin.time.Duration
 
-@Throws(InterruptedException::class)
+@Throws(IllegalArgumentException::class, InterruptedException::class)
 internal expect inline fun Duration.threadSleep()
 
 @Throws(IOException::class)

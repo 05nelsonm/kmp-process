@@ -39,7 +39,7 @@ public expect sealed class Blocking protected constructor() {
     }
 
     /**
-     * Extended by [Process.Builder] in order to provide blocking APIs for Jvm/Native
+     * Extended by [Process.Builder] in order to provide blocking APIs for Jvm & Native.
      * */
     public sealed class Builder protected constructor() {
 

@@ -40,7 +40,7 @@ public actual sealed class Blocking protected actual constructor() {
     }
 
     /**
-     * Extended by [Process.Builder] in order to provide blocking APIs for Jvm/Native
+     * Extended by [Process.Builder] in order to provide blocking APIs for Jvm & Native.
      * */
     public actual sealed class Builder protected actual constructor() {
 

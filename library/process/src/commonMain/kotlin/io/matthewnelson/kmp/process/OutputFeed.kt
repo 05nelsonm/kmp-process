@@ -29,46 +29,123 @@ import kotlin.concurrent.Volatile
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.jvm.JvmField
 import kotlin.jvm.JvmSynthetic
 import kotlin.time.Duration.Companion.milliseconds
 
 /**
- * A callback for obtaining `stdout` and `stderr` output.
+ * A callback for obtaining `stdout` and `stderr` output as UTF-8 lines.
  *
- * **NOTE:** `Jvm` and `Native` [OutputFeed.onOutput] and [OutputFeed.Raw.onOutput] are called from a
- * background thread; either the `stdout` thread or the `stderr` thread. It is ill-advised to register
- * the same [Output.Feed] to both `stdout` and `stderr`.
+ * **NOTE:** `Jvm` and `Native` [onOutput] is called from a background thread; either the `stdout`
+ * thread or the `stderr` thread. It is ill-advised to register the same [Output.Feed] to both
+ * [Handler.stdout] and [Handler.stderr].
  *
- * **NOTE:** Any exceptions that [OutputFeed.onOutput] or [OutputFeed.Raw.onOutput] throws will be
- * delegated to [ProcessException.Handler]. If it is re-thrown by the [ProcessException.Handler], the
- * [Process] will be terminated, and all [OutputFeed] for that I/O stream will be ejected immediately.
+ * **NOTE:** Any exceptions that [onOutput] throws will be delegated to [ProcessException.Handler] (if
+ * configured). If it is re-thrown by the [ProcessException.Handler], the [Process] will be terminated,
+ * and all [Output.Feed] for that I/O stream will be ejected immediately.
  *
  * e.g.
  *
- *     TODO
+ *     val exitCode = builder.createProcessAsync().use { p ->
+ *         p.stdout(
+ *             OutputFeed { line -> println(line ?: "--STDOUT EOS--") },
+ *             OutputFeed.Raw { len, get ->
+ *                 if (get == null) {
+ *                     println("--STDOUT EOS--")
+ *                     return@Raw
+ *                 }
+ *                 // Retrieve bytes from the buffer
+ *                 for (i in 0 until len) { get(i) }
+ *                 repeat(len) { i -> get(i) }
+ *             },
+ *         ).stderr(
+ *             OutputFeed { line -> println(line ?: "--STDERR EOS--") },
+ *         ).waitForAsync(500.milliseconds)
+ *         p // << Return Process to use
+ *     } // << Process.destroy() called on use lambda closure
+ *         .stdoutWaiter()
+ *         .awaitStopAsync()
+ *         .stderrWaiter()
+ *         .awaitStopAsync()
+ *         .waitForAsync()
  *
+ * @see [Raw]
+ * @see [Handler.stdout]
+ * @see [Handler.stderr]
  * */
 public fun interface OutputFeed: Output.Feed {
 
     /**
-     * TODO
+     * Receive a single UTF-8 line of output from [Process], or `null` to indicate end-of-stream.
+     *
+     * @param [line] The single UTF-8 line of output, or `null` to indicate end-of-stream.
      * */
     public fun onOutput(line: String?)
 
     /**
-     * TODO
+     * A callback for obtaining `stdout` and `stderr` output bytes.
+     *
+     * **NOTE:** `Jvm` and `Native` [onOutput] is called from a background thread; either the `stdout`
+     * thread or the `stderr` thread. It is ill-advised to register the same [Output.Feed] to both
+     * [Handler.stdout] and [Handler.stderr].
+     *
+     * **NOTE:** Any exceptions that [onOutput] throws will be delegated to [ProcessException.Handler] (if
+     * configured). If it is re-thrown by the [ProcessException.Handler], the [Process] will be terminated,
+     * and all [Output.Feed] for that I/O stream will be ejected immediately.
+     *
+     * e.g.
+     *
+     *     val exitCode = builder.createProcessAsync().use { p ->
+     *         p.stdout(
+     *             OutputFeed { line -> println(line ?: "--STDOUT EOS--") },
+     *             OutputFeed.Raw { len, get ->
+     *                 if (get == null) {
+     *                     println("--STDOUT EOS--")
+     *                     return@Raw
+     *                 }
+     *                 // Retrieve bytes from the buffer
+     *                 for (i in 0 until len) { get(i) }
+     *                 repeat(len) { i -> get(i) }
+     *             },
+     *         ).stderr(
+     *             OutputFeed { line -> println(line ?: "--STDERR EOS--") },
+     *         ).waitForAsync(500.milliseconds)
+     *         p // << Return Process to use
+     *     } // << Process.destroy() called on use lambda closure
+     *         .stdoutWaiter()
+     *         .awaitStopAsync()
+     *         .stderrWaiter()
+     *         .awaitStopAsync()
+     *         .waitForAsync()
+     *
+     * @see [OutputFeed]
+     * @see [Handler.stdout]
+     * @see [Handler.stderr]
      * */
     public fun interface Raw: Output.Feed {
 
         /**
-         * TODO
+         * Receive a read-only view to the buffered bytes of output from [Process].
+         *
+         * **NOTE:** [get] must **only** be referenced within the [onOutput] function body; caching it for
+         * use outside of [onOutput] will prevent the underlying buffer for which it belongs from being
+         * deallocated.
+         *
+         * @param [len] The number of bytes, starting from `0`, that are available.
+         * @param [get] The function for retrieving bytes from the underlying buffer, or `null` to indicate
+         *   end-of-stream.
          * */
         public fun onOutput(len: Int, get: ((index: Int) -> Byte)?)
     }
 
     /**
-     * TODO
+     * Helper class which [Process] extends that handles everything regarding dispatching of `stdout` and
+     * `stderr` I/O stream output to attached [Output.Feed].
+     *
+     * **NOTE:** Reading of [Process] output begins upon first attachment of [Output.Feed] for the respective
+     * [stdout] or [stderr] I/O stream. When the respective [stdout] or [stderr] I/O stream ends, all attached
+     * [Output.Feed] for the respective I/O stream are dereferenced.
      * */
     public sealed class Handler(stdio: Stdio.Config): Blocking() {
 
@@ -97,128 +174,128 @@ public fun interface OutputFeed: Output.Feed {
         private val stderrLock = if (stdio.stderr !is Stdio.Pipe) null else newLock()
 
         /**
-         * TODO
+         * Attach a single [Output.Feed] to obtain `stdout` output.
+         *
+         * **NOTE:** This function has no effect when:
+         *  - [Stdio.Config.stdout] is **not** [Stdio.Pipe]
+         *  - The `stdout` I/O stream has ended
+         *  - [Process.destroy] has been called
+         *
+         * @param [feed] The [OutputFeed] or [OutputFeed.Raw] to attach.
+         *
+         * @return The [Process] for chaining operations.
          * */
         public fun stdout(feed: Output.Feed): Process {
             return addStdoutFeeds(mutableSetOf(feed))
         }
 
         /**
-         * TODO
+         * Attach multiple [Output.Feed] to obtain `stdout` output.
+         *
+         * **NOTE:** This function has no effect when:
+         *  - [Stdio.Config.stdout] is **not** [Stdio.Pipe]
+         *  - The `stdout` I/O stream has ended
+         *  - [Process.destroy] has been called
+         *  - [feeds] is empty
+         *
+         * @param [feeds] The [OutputFeed] and/or [OutputFeed.Raw] to attach.
+         *
+         * @return The [Process] for chaining operations.
          * */
         public fun stdout(vararg feeds: Output.Feed): Process = stdoutVararg(feeds)
 
         /**
-         * TODO
+         * Attach multiple [Output.Feed] to obtain `stdout` output.
+         *
+         * **NOTE:** This function has no effect when:
+         *  - [Stdio.Config.stdout] is **not** [Stdio.Pipe]
+         *  - The `stdout` I/O stream has ended
+         *  - [Process.destroy] has been called
+         *  - [feeds] is empty
+         *
+         * @param [feeds] The [OutputFeed] and/or [OutputFeed.Raw] to attach.
+         *
+         * @return The [Process] for chaining operations.
          * */
         public fun stdout(feeds: Collection<Output.Feed>): Process {
-            if (feeds.isEmpty()) return This
+            if (feeds.isEmpty()) return _this
             return addStdoutFeeds(feeds.toMutableSet())
         }
 
         /**
-         * TODO
+         * Attach a single [Output.Feed] to obtain `stderr` output.
+         *
+         * **NOTE:** This function has no effect when:
+         *  - [Stdio.Config.stderr] is **not** [Stdio.Pipe]
+         *  - The `stderr` I/O stream has ended
+         *  - [Process.destroy] has been called
+         *
+         * @param [feed] The [OutputFeed] or [OutputFeed.Raw] to attach.
+         *
+         * @return The [Process] for chaining operations.
          * */
         public fun stderr(feed: Output.Feed): Process {
             return addStderrFeeds(mutableSetOf(feed))
         }
 
         /**
-         * TODO
+         * Attach multiple [Output.Feed] to obtain `stderr` output.
+         *
+         * **NOTE:** This function has no effect when:
+         *  - [Stdio.Config.stderr] is **not** [Stdio.Pipe]
+         *  - The `stderr` I/O stream has ended
+         *  - [Process.destroy] has been called
+         *  - [feeds] is empty
+         *
+         * @param [feeds] The [OutputFeed] and/or [OutputFeed.Raw] to attach.
+         *
+         * @return The [Process] for chaining operations.
          * */
         public fun stderr(vararg feeds: Output.Feed): Process = stderrVararg(feeds)
 
         /**
-         * TODO
+         * Attach multiple [Output.Feed] to obtain `stderr` output.
+         *
+         * **NOTE:** This function has no effect when:
+         *  - [Stdio.Config.stderr] is **not** [Stdio.Pipe]
+         *  - The `stderr` I/O stream has ended
+         *  - [Process.destroy] has been called
+         *  - [feeds] is empty
+         *
+         * @param [feeds] The [OutputFeed] and/or [OutputFeed.Raw] to attach.
+         *
+         * @return The [Process] for chaining operations.
          * */
         public fun stderr(feeds: Collection<Output.Feed>): Process {
-            if (feeds.isEmpty()) return This
+            if (feeds.isEmpty()) return _this
             return addStderrFeeds(feeds.toMutableSet())
         }
 
         /**
-         * TODO
+         * Produces a new [OutputFeed.Waiter] for `stdout` in order to await any final output after resource
+         * closure occurs.
+         *
+         * @return The [OutputFeed.Waiter]
+         *
+         * @throws [IllegalStateException] If [Process.destroy] has not been called yet.
          * */
-        @Throws(IllegalStateException::class)
-        public fun stdoutWaiter(): OutputFeed.Waiter = object : RealWaiter(This, isDestroyed) {
+        public fun stdoutWaiter(): OutputFeed.Waiter = object : RealWaiter(_this, isDestroyed) {
             override fun isStarted(): Boolean = _stdoutStarted
             override fun isStopped(): Boolean = _stdoutStopped
         }
 
         /**
-         * TODO
+         * Produces a new [OutputFeed.Waiter] for `stderr` in order to await any final output after resource
+         * closure occurs.
+         *
+         * @return The [OutputFeed.Waiter]
+         *
+         * @throws [IllegalStateException] If [Process.destroy] has not been called yet.
          * */
-        @Throws(IllegalStateException::class)
-        public fun stderrWaiter(): OutputFeed.Waiter = object : RealWaiter(This, isDestroyed) {
+        public fun stderrWaiter(): OutputFeed.Waiter = object : RealWaiter(_this, isDestroyed) {
             override fun isStarted(): Boolean = _stderrStarted
             override fun isStopped(): Boolean = _stderrStopped
         }
-
-        /**
-         * DEPRECATED since `0.6.0`
-         * @suppress
-         * */
-        @Deprecated(
-            message = "Replaced with stdout which accepts OutputFeed and OutputFeed.Raw.",
-            replaceWith = ReplaceWith("stdout(OutputFeed(feed))"),
-            level = DeprecationLevel.WARNING,
-        )
-        public fun stdoutFeed(feed: OutputFeed): Process = stdout(feed)
-
-        /**
-         * DEPRECATED since `0.6.0`
-         * @suppress
-         * */
-        @Deprecated(
-            message = "Replaced with stdout which accepts OutputFeed and OutputFeed.Raw.",
-            replaceWith = ReplaceWith("stdout(*feeds)"),
-            level = DeprecationLevel.WARNING,
-        )
-        public fun stdoutFeed(vararg feeds: OutputFeed): Process = stdoutVararg(feeds)
-
-        /**
-         * DEPRECATED since `0.6.0`
-         * @suppress
-         * */
-        @Deprecated(
-            message = "Replaced with stdout which accepts OutputFeed and OutputFeed.Raw.",
-            replaceWith = ReplaceWith("stdout(feeds)"),
-            level = DeprecationLevel.WARNING,
-        )
-        public fun stdoutFeed(feeds: List<OutputFeed>): Process = stdout(feeds)
-
-        /**
-         * DEPRECATED since `0.6.0`
-         * @suppress
-         * */
-        @Deprecated(
-            message = "Replaced with stderr which accepts OutputFeed and OutputFeed.Raw.",
-            replaceWith = ReplaceWith("stderr(OutputFeed(feed))"),
-            level = DeprecationLevel.WARNING,
-        )
-        public fun stderrFeed(feed: OutputFeed): Process = stderr(feed)
-
-        /**
-         * DEPRECATED since `0.6.0`
-         * @suppress
-         * */
-        @Deprecated(
-            message = "Replaced with stderr which accepts OutputFeed and OutputFeed.Raw.",
-            replaceWith = ReplaceWith("stderr(*feeds)"),
-            level = DeprecationLevel.WARNING,
-        )
-        public fun stderrFeed(vararg feeds: OutputFeed): Process = stderrVararg(feeds)
-
-        /**
-         * DEPRECATED since `0.6.0`
-         * @suppress
-         * */
-        @Deprecated(
-            message = "Replaced with stderr which accepts OutputFeed and OutputFeed.Raw.",
-            replaceWith = ReplaceWith("stderr(feeds)"),
-            level = DeprecationLevel.WARNING,
-        )
-        public fun stderrFeed(feeds: List<OutputFeed>): Process = stderr(feeds)
 
         /** @suppress */
         @Throws(Throwable::class)
@@ -306,19 +383,19 @@ public fun interface OutputFeed: Output.Feed {
             else -> error("Unknown Output.Feed type ${this::class}")
         }
 
-        @Suppress("PrivatePropertyName")
-        private inline val This: Process get() = this as Process
+        private inline val _this: Process get() = this as Process
 
         private inline fun stdoutVararg(feeds: Array<out Output.Feed>): Process {
-            if (feeds.isEmpty()) return This
+            if (feeds.isEmpty()) return _this
             return addStdoutFeeds(feeds.toMutableSet())
         }
 
         private inline fun stderrVararg(feeds: Array<out Output.Feed>): Process {
-            if (feeds.isEmpty()) return This
+            if (feeds.isEmpty()) return _this
             return addStderrFeeds(feeds.toMutableSet())
         }
 
+        @Throws(Throwable::class)
         @OptIn(ExperimentalContracts::class)
         private inline fun <T> dispatch(
             thing: T,
@@ -349,7 +426,7 @@ public fun interface OutputFeed: Output.Feed {
                 }
 
                 // Array of Output.Feed only ever grows, so upon each iteration
-                // can set locally in case additional OutputFeed were picked up
+                // can set locally in case additional Output.Feed were picked up
                 // while dispatching this thing.
                 feeds = _feedsGet()
             }
@@ -418,14 +495,14 @@ public fun interface OutputFeed: Output.Feed {
                 callsInPlace(_startStdio, InvocationKind.AT_MOST_ONCE)
             }
 
-            if (feedsLock == null) return This
-            if (feedsAdd.isEmpty()) return This
-            if (isDestroyed) return This
-            if (_isStopped()) return This
+            if (feedsLock == null) return _this
+            if (feedsAdd.isEmpty()) return _this
+            if (isDestroyed) return _this
+            if (_isStopped()) return _this
 
             val startStdio: Boolean = feedsLock.withLock {
-                if (isDestroyed) return This
-                if (_isStopped()) return This
+                if (isDestroyed) return _this
+                if (_isStopped()) return _this
 
                 val feedsBefore = _feedsGet()
 
@@ -436,10 +513,10 @@ public fun interface OutputFeed: Output.Feed {
                         hasLineDispatcher = true
                         continue
                     }
-                    if (feedsAdd.remove(feed) && feedsAdd.isEmpty()) return This
+                    if (feedsAdd.remove(feed) && feedsAdd.isEmpty()) return _this
                 }
 
-                if (isDestroyed) return This
+                if (isDestroyed) return _this
 
                 var newSize = feedsBefore.size + feedsAdd.size
                 val needsLineDispatcher = if (!hasLineDispatcher) run {
@@ -469,7 +546,7 @@ public fun interface OutputFeed: Output.Feed {
             }
 
             if (startStdio) _startStdio()
-            return This
+            return _this
         }
 
         // Exposed for testing
@@ -478,35 +555,101 @@ public fun interface OutputFeed: Output.Feed {
         // Exposed for testing
         @JvmSynthetic
         internal fun stderrFeedsSize(): Int = _stderrFeeds.size
+
+        /**
+         * DEPRECATED since `0.6.0`
+         * @suppress
+         * */
+        @Deprecated(
+            message = "Replaced with stdout which accepts OutputFeed and OutputFeed.Raw.",
+            replaceWith = ReplaceWith("stdout(OutputFeed(feed))"),
+            level = DeprecationLevel.WARNING,
+        )
+        public fun stdoutFeed(feed: OutputFeed): Process = stdout(feed)
+
+        /**
+         * DEPRECATED since `0.6.0`
+         * @suppress
+         * */
+        @Deprecated(
+            message = "Replaced with stdout which accepts OutputFeed and OutputFeed.Raw.",
+            replaceWith = ReplaceWith("stdout(*feeds)"),
+            level = DeprecationLevel.WARNING,
+        )
+        public fun stdoutFeed(vararg feeds: OutputFeed): Process = stdoutVararg(feeds)
+
+        /**
+         * DEPRECATED since `0.6.0`
+         * @suppress
+         * */
+        @Deprecated(
+            message = "Replaced with stdout which accepts OutputFeed and OutputFeed.Raw.",
+            replaceWith = ReplaceWith("stdout(feeds)"),
+            level = DeprecationLevel.WARNING,
+        )
+        public fun stdoutFeed(feeds: List<OutputFeed>): Process = stdout(feeds)
+
+        /**
+         * DEPRECATED since `0.6.0`
+         * @suppress
+         * */
+        @Deprecated(
+            message = "Replaced with stderr which accepts OutputFeed and OutputFeed.Raw.",
+            replaceWith = ReplaceWith("stderr(OutputFeed(feed))"),
+            level = DeprecationLevel.WARNING,
+        )
+        public fun stderrFeed(feed: OutputFeed): Process = stderr(feed)
+
+        /**
+         * DEPRECATED since `0.6.0`
+         * @suppress
+         * */
+        @Deprecated(
+            message = "Replaced with stderr which accepts OutputFeed and OutputFeed.Raw.",
+            replaceWith = ReplaceWith("stderr(*feeds)"),
+            level = DeprecationLevel.WARNING,
+        )
+        public fun stderrFeed(vararg feeds: OutputFeed): Process = stderrVararg(feeds)
+
+        /**
+         * DEPRECATED since `0.6.0`
+         * @suppress
+         * */
+        @Deprecated(
+            message = "Replaced with stderr which accepts OutputFeed and OutputFeed.Raw.",
+            replaceWith = ReplaceWith("stderr(feeds)"),
+            level = DeprecationLevel.WARNING,
+        )
+        public fun stderrFeed(feeds: List<OutputFeed>): Process = stderr(feeds)
     }
 
     /**
-     * A helper to wait for `stdout` and `stderr` asynchronous
-     * output to stop after [Process.destroy] has been called.
+     * A helper to wait for `stdout` and `stderr` stream output completion, after [Process.destroy] has
+     * been called. Completion of [awaitStopAsync] (or `awaitStop` for Jvm & Native) guarantees that the
+     * I/O stream being monitored has ended, and all [Output.Feed] attached to the respective stream have
+     * been invoked and dereferenced by [Handler].
      *
      * @see [Handler.stdoutWaiter]
      * @see [Handler.stderrWaiter]
      * */
     public sealed class Waiter
     @Throws(IllegalStateException::class)
-    protected constructor(
-        process: Process,
-        isDestroyed: Boolean,
-    ): Blocking.Waiter(process) {
+    protected constructor(process: Process, isDestroyed: Boolean): Blocking.Waiter(process) {
 
         /**
-         * Delays the current coroutine until the [Stdio.Pipe]
-         * stops producing output.
+         * Delays the current coroutine until the [Stdio.Pipe] stops producing output.
          *
          * Does nothing if:
-         *  - Stdio was not [Stdio.Pipe]
-         *  - No [OutputFeed] were attached before [Process.destroy]
+         *  - [Stdio] was **not** [Stdio.Pipe] for the I/O stream being monitored
+         *  - No [Output.Feed] were attached to the I/O stream being monitored, before [Process.destroy]
          *    was called (i.e. never started)
-         *  - Has already stopped
+         *  - The I/O stream being monitored has already stopped
          *
          * See: [Blocking.Waiter.awaitStop](https://kmp-process.matthewnelson.io/library/process/io.matthewnelson.kmp.process/-blocking/-waiter/await-stop.html)
          *
-         * @return [Process] for chaining calls
+         * @return The [Process] for chaining operations.
+         *
+         * @throws [CancellationException]
          * */
         public suspend fun awaitStopAsync(): Process {
             while (isStarted() && !isStopped()) {

@@ -22,77 +22,68 @@ import io.matthewnelson.kmp.file.IOException
 import kotlin.time.Duration
 
 /**
- * TODO
+ * Results of [Process.Builder.createOutput] and [Process.Builder.createOutputAsync].
  * */
 public expect class Output {
 
     /**
-     * TODO
+     * The buffered contents of [Process.stdout].
      * */
     public val stdoutBuf: Buffered
 
     /**
-     * TODO
+     * The buffered contents of [Process.stderr].
      * */
     public val stderrBuf: Buffered
 
     /**
-     * TODO
+     * If an error occurred with the [Process], such as the [Options.Builder.maxBuffer] or
+     * [Options.Builder.timeoutMillis] being exceeded.
      * */
     public val processError: String?
 
     /**
-     * TODO
+     * Information about the [Process] that ran.
      * */
     public val processInfo: ProcessInfo
 
     /**
-     * TODO
+     * A read-only view of buffered I/O stream contents.
      * */
     public abstract class Buffered internal constructor(length: Int) {
 
         /**
-         * TODO
+         * The number of bytes buffered.
          * */
         public val length: Int
 
-        /**
-         * TODO
-         * */
         public val indices: IntRange
 
-        /**
-         * TODO
-         * */
         public abstract operator fun get(index: Int): Byte
 
-        /**
-         * TODO
-         * */
         public abstract operator fun iterator(): ByteIterator
 
         /**
-         * TODO
+         * The UTF-8 decoded text of the buffered bytes.
          * */
         public abstract fun utf8(): String
     }
 
     /**
-     * TODO
+     * A "root" interface for obtaining [Process] I/O stream data.
+     *
+     * @see [OutputFeed]
+     * @see [OutputFeed.Raw]
      * */
     public sealed interface Feed
 
     /**
-     * TODO
+     * Options for [Process.Builder.createOutput] and [Process.Builder.createOutputAsync]
+     *
+     * @see [Builder]
      * */
     public class Options {
 
-        internal val maxBuffer: Int
-        internal val timeout: Duration
-
-        /**
-         * TODO
-         * */
         public class Builder private constructor() {
 
             internal var _inputBytes: (() -> ByteArray)?
@@ -101,22 +92,70 @@ public expect class Output {
                 private set
 
             /**
-             * TODO
+             * DEFAULT: `null` (i.e. no input)
+             *
+             * Add any input that needs to be passed to the process's standard input stream, after it
+             * has spawned.
+             *
+             * [block] is invoked once and only once. If it is not invoked due to an error, then the
+             * reference to [block] is always dropped.
+             *
+             * [block] is always invoked lazily after the process has spawned, **except** when using the
+             * blocking [Process.Builder.createOutput] call on Js/WasmJs which requires it as an argument
+             * for `spawnSync`, so must be invoked beforehand.
+             *
+             * **NOTE:** After being written to stdin, the array produced by [block] is zeroed out before
+             * its reference is dropped.
+             *
+             * **NOTE:** [block] will be called from the same thread that [Process.Builder.createOutput]
+             * is called from, or within the same coroutine context that [Process.Builder.createOutputAsync]
+             * is called from.
+             *
+             * Defining this input argument will override any [Process.Builder.stdin] configuration if it
+             * is set to something other than [Stdio.Pipe].
              * */
             public fun input(block: () -> ByteArray): Builder
 
             /**
-             * TODO
+             * DEFAULT: `null` (i.e. no input)
+             *
+             * Add any input that needs to be passed to the process's standard input stream, after it
+             * has spawned.
+             *
+             * [block] is invoked once and only once. If it is not invoked due to an error, then the
+             * reference to [block] is always dropped.
+             *
+             * [block] is always invoked lazily after the process has spawned, **except** when using the
+             * blocking [Process.Builder.createOutput] call on Js/WasmJs which requires it as an argument
+             * for `spawnSync`, so must be invoked beforehand.
+             *
+             * **NOTE:** [block] will be called from the same thread that [Process.Builder.createOutput]
+             * is called from, or within the same coroutine context that [Process.Builder.createOutputAsync]
+             * is called from.
+             *
+             * Defining this input argument will override any [Process.Builder.stdin] configuration if it
+             * is set to something other than [Stdio.Pipe].
              * */
             public fun inputUtf8(block: () -> String): Builder
 
             /**
-             * TODO
+             * DEFAULT: `1024 * 5000` on `Android`/`AndroidNative`/`iOS`, otherwise `Int.MAX_VALUE / 2`
+             *
+             * Define a maximum number of bytes that can be buffered on `stdout` or `stderr`. If exceeded,
+             * the [Process] will be terminated and output truncated for the respective I/O streams, not
+             * to exceed this setting.
+             *
+             * **NOTE:** If configured to less than `1024 * 16`, then `1024 * 16` will be used.
              * */
             public var maxBuffer: Int
 
             /**
-             * TODO
+             * DEFAULT: `250`
+             *
+             * Define a maximum number of milliseconds the [Process] is allowed to run for. If exceeded,
+             * the [Process] will be terminated.
+             *
+             * **NOTE:** If configured to less than `250`, then `250` will be used.
              * */
             public var timeoutMillis: Int
 
@@ -130,6 +169,9 @@ public expect class Output {
             internal fun build(): Options
         }
 
+        internal val maxBuffer: Int
+        internal val timeout: Duration
+
         internal val hasInput: Boolean
 
         @Throws(IOException::class)
@@ -141,7 +183,7 @@ public expect class Output {
     }
 
     /**
-     * TODO
+     * Information about a [Process] which ran in order to produce an [Output].
      * */
     public class ProcessInfo {
 

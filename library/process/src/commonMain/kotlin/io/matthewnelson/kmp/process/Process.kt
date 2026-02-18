@@ -126,13 +126,13 @@ public abstract class Process internal constructor(
     public object Current {
 
         /**
-         * Retrieves the current process' environment
+         * Retrieves the current process' environment.
          * */
         @JvmStatic
         public fun environment(): Map<String, String> = PlatformBuilder.get().env.toImmutableMap()
 
         /**
-         * Retrieves the current process' ID
+         * Retrieves the current process' ID.
          *
          * @throws [UnsupportedOperationException] when:
          *   - Java9+ and module 'java.management' is not present
@@ -146,7 +146,7 @@ public abstract class Process internal constructor(
      * Destroys the [Process] by:
      *  - Sending it [destroySignal] (if it has not completed yet)
      *  - Closes all I/O streams
-     *  - Stops all [OutputFeed] production (See [OutputFeed.Waiter])
+     *  - Stops all [Output.Feed] production (See [OutputFeed.Waiter])
      *    - **NOTE:** This may not be immediate if there is buffered
      *      data on `stdout` or `stderr`. The contents of what are
      *      left on the stream(s) will be drained which may stay live
@@ -162,7 +162,7 @@ public abstract class Process internal constructor(
      * choose to ignore it (e.g. log only) by not throwing when the
      * [ProcessException.context] is equal to [CTX_DESTROY].
      *
-     * @return this [Process] instance
+     * @return The [Process] for chaining operations.
      *
      * @see [Signal]
      * @see [OutputFeed.Waiter]
@@ -204,7 +204,7 @@ public abstract class Process internal constructor(
     public abstract fun exitCodeOrNull(): Int?
 
     /**
-     * Checks if the [Process] is still running
+     * Checks if the [Process] is still running.
      * */
     @get:JvmName("isAlive")
     public val isAlive: Boolean get() = exitCodeOrNull() == null
@@ -231,6 +231,8 @@ public abstract class Process internal constructor(
      * See: [Blocking.waitFor](https://kmp-process.matthewnelson.io/library/process/io.matthewnelson.kmp.process/-blocking/wait-for.html)
      *
      * @return The [Process.exitCode]
+     *
+     * @throws [CancellationException]
      * */
     public suspend fun waitForAsync(): Int {
         var exitCode: Int? = null
@@ -250,13 +252,14 @@ public abstract class Process internal constructor(
      *
      * See: [Blocking.waitFor](https://kmp-process.matthewnelson.io/library/process/io.matthewnelson.kmp.process/-blocking/wait-for.html)
      *
-     * @param [duration] the [Duration] to wait
+     * @param [duration] The [Duration] to wait.
+     *
      * @return The [Process.exitCode], or null if [duration] is
      *   exceeded without [Process] completion.
+     *
+     * @throws [CancellationException]
      * */
-    public suspend fun waitForAsync(
-        duration: Duration,
-    ): Int? = commonWaitFor(duration) { millis -> delay(millis) }
+    public suspend fun waitForAsync(duration: Duration): Int? = commonWaitFor(duration) { delay(it) }
 
     /**
      * Creates a new [Process].
@@ -700,7 +703,7 @@ public abstract class Process internal constructor(
             message = "Replaced with Closeable.use functionality. Use Builder.{createProcess/createProcessAsync}.use { ... } instead.",
             level = DeprecationLevel.WARNING,
         )
-        public inline fun <T: Any?> useSpawn(block: (process: Process) -> T): T {
+        public inline fun <T> useSpawn(block: (process: Process) -> T): T {
             contract { callsInPlace(block, InvocationKind.AT_MOST_ONCE) }
             @Suppress("DEPRECATION")
             return spawn().use(block)
@@ -717,7 +720,7 @@ public abstract class Process internal constructor(
             replaceWith = ReplaceWith("useSpawn(block)"),
             level = DeprecationLevel.WARNING,
         )
-        public inline fun <T: Any?> spawn(block: (process: Process) -> T): T {
+        public inline fun <T> spawn(block: (process: Process) -> T): T {
             contract { callsInPlace(block, InvocationKind.AT_MOST_ONCE) }
             @Suppress("DEPRECATION")
             return useSpawn(block)
