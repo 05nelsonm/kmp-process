@@ -16,13 +16,11 @@
 package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.encoding.core.util.wipe
-import io.matthewnelson.encoding.utf8.UTF8
 import io.matthewnelson.kmp.process.InternalProcessApi
 import io.matthewnelson.kmp.process.Output
 import io.matthewnelson.kmp.process.OutputFeed
 import io.matthewnelson.kmp.process.ReadBuffer
 import kotlin.concurrent.Volatile
-import kotlin.jvm.JvmName
 import kotlin.jvm.JvmSynthetic
 
 internal class OutputFeedBuffer private constructor(maxSize: Int): OutputFeed.Raw {
@@ -31,18 +29,15 @@ internal class OutputFeedBuffer private constructor(maxSize: Int): OutputFeed.Ra
     private val _buffered = ArrayList<ReadBuffer>(10)
 
     @Volatile
-    @get:JvmName("size")
     internal var size = 0
         private set
 
     @Volatile
-    @get:JvmName("hasEnded")
-    internal var hasEnded: Boolean = false
+    internal var hasEnded = false
         private set
 
     @Volatile
-    @get:JvmName("maxSizeExceeded")
-    internal var maxSizeExceeded: Boolean = false
+    internal var maxSizeExceeded = false
         private set
 
     internal fun onData(buf: ReadBuffer?, len: Int) {
@@ -54,11 +49,11 @@ internal class OutputFeedBuffer private constructor(maxSize: Int): OutputFeed.Ra
         if (copyLen <= 0) return
         _buffered.add(buf.copy(copyLen))
         size += copyLen
-        if (copyLen != len) maxSizeExceeded = true
+        if (size >= maxSize) maxSizeExceeded = true
     }
 
     internal fun doFinal(): Output.Buffered {
-        val ret = if (size <= 0) EMPTY_OUTPUT else object : Output.Buffered(size) {
+        val ret = if (_buffered.isEmpty()) EMPTY_OUTPUT else object : Output.Buffered(size) {
 
             private val buffered = _buffered.toTypedArray()
 
@@ -94,21 +89,12 @@ internal class OutputFeedBuffer private constructor(maxSize: Int): OutputFeed.Ra
             override fun utf8(): String = _utf8
 
             private val _utf8: String by lazy {
-                val sb = run {
-                    var capacity = UTF8.config.decodeOutMaxSize(length.toLong())
-                    if (capacity > Int.MAX_VALUE) capacity = Int.MAX_VALUE.toLong()
-                    StringBuilder(capacity.toInt())
-                }
+                val sb = StringBuilder(length)
+                // TODO: Issue #229
 
                 @OptIn(InternalProcessApi::class)
                 val feed = ReadBuffer.lineOutputFeed { line ->
                     if (line == null) return@lineOutputFeed
-
-                    if ((sb.length + 1 + line.length) > Int.MAX_VALUE) {
-                        // Truncated UTF-8 text
-                        return@lineOutputFeed
-                    }
-
                     if (sb.isNotEmpty()) sb.appendLine()
                     sb.append(line)
                 }

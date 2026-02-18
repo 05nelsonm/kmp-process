@@ -342,11 +342,9 @@ private fun JsBuffer?.toBufferedOutput(): Output.Buffered {
     if (this == null) return OutputFeedBuffer.EMPTY_OUTPUT
     val buf = this.asBuffer()
 
+    // TODO: Issue #229
     var len = buf.length.toInt()
-    while (len > 1) {
-        if (buf.readInt8(len - 1) != LF) break
-        len--
-    }
+    if (len > 0 && buf.readInt8(len - 1) == LF) len--
     if (len <= 0) return OutputFeedBuffer.EMPTY_OUTPUT
 
     return object : Output.Buffered(length = len) {
