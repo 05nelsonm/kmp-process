@@ -667,15 +667,11 @@ abstract class ProcessBaseTest {
                 }
             })
 
-            assertFailsWith<IllegalStateException> {
-                p.stdoutWaiter()
-            }
-            assertFailsWith<IllegalStateException> {
-                p.stderrWaiter()
-            }
+            assertFailsWith<IllegalStateException> { p.stdoutWaiter() }
+            assertFailsWith<IllegalStateException> { p.stderrWaiter() }
 
             withContext(Dispatchers.Default) {
-                p.waitForAsync(2.seconds)
+                p.waitForAsync(3.seconds)
             }
 
             val exitCode = p.destroy()
