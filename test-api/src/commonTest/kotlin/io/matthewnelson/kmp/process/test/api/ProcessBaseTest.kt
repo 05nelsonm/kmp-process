@@ -172,9 +172,11 @@ abstract class ProcessBaseTest {
             .resolve("try_chdir")
             .mkdirs2(mode = null)
 
+        val expected = d.canonicalPath2() + '\n' // echo appends a new line character
+
         fun Output.assertOutput() {
             try {
-                assertEquals(d.canonicalPath2(), stdoutBuf.utf8())
+                assertEquals(expected, stdoutBuf.utf8())
             } catch (t: AssertionError) {
                 println(stdoutBuf.utf8())
                 println(stderrBuf.utf8())
@@ -303,7 +305,8 @@ abstract class ProcessBaseTest {
             return@runTest
         }
 
-        val expected = "Hello World!"
+        val echo = "Hello World!"
+        val expected = "$echo\n" // echo appends a new line character
 
         fun Output.assertOutput() {
             try {
@@ -319,7 +322,7 @@ abstract class ProcessBaseTest {
 
         val b = Process.Builder(command = if (IsAppleSimulator) "/bin/sh" else "sh")
             .args("-c")
-            .args("echo 1>&2 \"$expected\"")
+            .args("echo 1>&2 \"$echo\"")
 
         b.createOutput().assertOutput()
         b.createOutputAsync().assertOutput()
