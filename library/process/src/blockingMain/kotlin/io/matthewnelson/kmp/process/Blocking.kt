@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
+@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING", "RedundantVisibilityModifier")
 
 package io.matthewnelson.kmp.process
 
@@ -40,6 +40,7 @@ public actual sealed class Blocking protected actual constructor() {
      * Blocks the current thread until [Process] completion.
      *
      * @return The [Process.exitCode]
+     *
      * @throws [InterruptedException]
      * */
     @Throws(InterruptedException::class)
@@ -52,32 +53,29 @@ public actual sealed class Blocking protected actual constructor() {
     }
 
     /**
-     * Blocks the current thread for the specified [duration],
-     * or until [Process.exitCode] is available (i.e. the
-     * [Process] completed).
+     * Blocks the current thread for the specified [duration], or until [Process.exitCode] is
+     * available (i.e. the [Process] completed).
      *
      * @param [duration] the [Duration] to wait
-     * @return The [Process.exitCode], or null if [duration] is
-     *   exceeded without [Process] completion.
+     *
+     * @return The [Process.exitCode], or `null` if [duration] is exceeded without [Process] completion.
+     *
      * @throws [InterruptedException]
      * */
     @Throws(InterruptedException::class)
-    public fun waitFor(
-        duration: Duration,
-    ): Int? = (this as Process).commonWaitFor(duration) { millis -> millis.threadSleep() }
+    public fun waitFor(duration: Duration): Int? = (this as Process).commonWaitFor(duration) { it.threadSleep() }
 
     public companion object {
 
         /**
-         * Helper function for Jvm & Native for blocking the thread for
-         * the specified [Duration]
+         * Helper function for Jvm & Native for blocking the thread for the specified [Duration].
          *
          * e.g.
          *
          *     Blocking.threadSleep(50.milliseconds)
          *
-         * @throws [IllegalArgumentException] when [Duration] is improper
-         * @throws [InterruptedException] if the calling thread was interrupted
+         * @throws [IllegalArgumentException] When [Duration] is less than `0`.
+         * @throws [InterruptedException] If the calling thread was interrupted.
          * */
         @JvmStatic
         @Throws(InterruptedException::class)
@@ -94,8 +92,7 @@ public actual sealed class Blocking protected actual constructor() {
     ) {
 
         /**
-         * Blocks the current thread until the [Stdio.Pipe]
-         * stops producing output.
+         * Blocks the current thread until the [Stdio.Pipe] stops producing output.
          *
          * Does nothing if:
          *  - Stdio was not [Stdio.Pipe]
@@ -103,8 +100,9 @@ public actual sealed class Blocking protected actual constructor() {
          *    was called (i.e. never started)
          *  - Has already stopped
          *
-         * @return [Process] for chaining calls
-         * @throws [InterruptedException]
+         * @return The [Process] for chaining operations.
+         *
+         * @throws [InterruptedException] If the calling thread was interrupted.
          * */
         @Throws(InterruptedException::class)
         public fun awaitStop(): Process {
@@ -122,7 +120,7 @@ public actual sealed class Blocking protected actual constructor() {
     }
 
     /**
-     * Extended by [Process.Builder] in order to provide blocking APIs for Jvm/Native
+     * Extended by [Process.Builder] in order to provide blocking APIs for Jvm & Native.
      * */
     public actual sealed class Builder protected actual constructor() {
 

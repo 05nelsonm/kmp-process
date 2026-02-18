@@ -13,247 +13,193 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
+@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING", "PropertyName", "UNUSED")
+
 package io.matthewnelson.kmp.process
 
-import io.matthewnelson.encoding.core.EncoderDecoder.Companion.DEFAULT_BUFFER_SIZE
 import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.file.IOException
-import io.matthewnelson.kmp.process.internal.IsDesktop
-import io.matthewnelson.kmp.process.internal.appendProcessInfo
-import kotlin.concurrent.Volatile
-import kotlin.jvm.JvmField
-import kotlin.jvm.JvmSynthetic
 import kotlin.time.Duration
-import kotlin.time.Duration.Companion.milliseconds
 
 /**
- * Output results for [Process.Builder.createOutput] and [Process.Builder.createOutputAsync].
+ * Results of [Process.Builder.createOutput] and [Process.Builder.createOutputAsync].
  * */
-public class Output private constructor(
+public expect class Output {
 
     /**
-     * The contents of [Process] `stdout` output
+     * The buffered contents of [Process.stdout].
      * */
-    @JvmField
-    public val stdout: String,
+    public val stdoutBuf: Buffered
 
     /**
-     * The contents of [Process] `stderr` output
+     * The buffered contents of [Process.stderr].
      * */
-    @JvmField
-    public val stderr: String,
+    public val stderrBuf: Buffered
 
     /**
-     * If an error occurred with the [Process], such as
-     * the [Options.maxBuffer] or [Options.timeout] was
-     * exceeded.
+     * If an error occurred with the [Process], such as the [Options.Builder.maxBuffer] or
+     * [Options.Builder.timeoutMillis] being exceeded.
      * */
-    @JvmField
-    public val processError: String?,
+    public val processError: String?
 
     /**
      * Information about the [Process] that ran.
      * */
-    @JvmField
-    public val processInfo: ProcessInfo,
-) {
+    public val processInfo: ProcessInfo
 
     /**
-     * Options for [Process.Builder.createOutput] and [Process.Builder.createOutputAsync].
+     * A read-only view of buffered I/O stream contents.
+     * */
+    public abstract class Buffered internal constructor(length: Int) {
+
+        /**
+         * The number of bytes buffered.
+         * */
+        public val length: Int
+
+        public val indices: IntRange
+
+        public abstract operator fun get(index: Int): Byte
+
+        public abstract operator fun iterator(): ByteIterator
+
+        /**
+         * The UTF-8 decoded text of the buffered bytes.
+         * */
+        public abstract fun utf8(): String
+    }
+
+    /**
+     * A "root" interface for obtaining [Process] I/O stream data.
+     *
+     * @see [OutputFeed]
+     * @see [OutputFeed.Raw]
+     * */
+    public sealed interface Feed
+
+    /**
+     * Options for [Process.Builder.createOutput] and [Process.Builder.createOutputAsync]
      *
      * @see [Builder]
      * */
-    public class Options private constructor(
-        @Volatile
-        private var inputBytes: (() -> ByteArray)?,
-        @Volatile
-        private var inputUtf8: (() -> String)?,
-        internal val maxBuffer: Int,
-        internal val timeout: Duration,
-    ) {
+    public class Options {
 
         public class Builder private constructor() {
 
-            private var _inputBytes: (() -> ByteArray)? = null
-            private var _inputUtf8: (() -> String)? = null
+            internal var _inputBytes: (() -> ByteArray)?
+                private set
+            internal var _inputUtf8: (() -> String)?
+                private set
 
             /**
-             * Add any input that needs to be passed to the process's standard
-             * input stream, after it has spawned.
+             * DEFAULT: `null` (i.e. no input)
              *
-             * [block] is invoked once and only once. If it is not invoked
-             * due to an error, then the reference to [block] is always dropped.
+             * Add any input that needs to be passed to the process's standard input stream, after it
+             * has spawned.
              *
-             * [block] is always invoked lazily after the process has spawned,
-             * **except** when using the blocking [Process.Builder.createOutput]
-             * call on Js/WasmJs which requires it as an argument for `spawnSync`,
-             * so must be invoked beforehand.
+             * [block] is invoked once and only once. If it is not invoked due to an error, then the
+             * reference to [block] is always dropped.
              *
-             * **NOTE:** After being written to stdin, the array produced by
-             * [block] is zeroed out before its reference is dropped.
+             * [block] is always invoked lazily after the process has spawned, **except** when using the
+             * blocking [Process.Builder.createOutput] call on Js/WasmJs which requires it as an argument
+             * for `spawnSync`, so must be invoked beforehand.
              *
-             * **NOTE:** [block] will be called from the same thread that
-             * [Process.Builder.createOutput] is called from, or within the
-             * same coroutine context that [Process.Builder.createOutputAsync]
+             * **NOTE:** After being written to stdin, the array produced by [block] is zeroed out before
+             * its reference is dropped.
+             *
+             * **NOTE:** [block] will be called from the same thread that [Process.Builder.createOutput]
+             * is called from, or within the same coroutine context that [Process.Builder.createOutputAsync]
              * is called from.
              *
-             * Defining this input argument will override any [Process.Builder.stdin]
-             * configuration if it is set to something other than [Stdio.Pipe].
+             * Defining this input argument will override any [Process.Builder.stdin] configuration if it
+             * is set to something other than [Stdio.Pipe].
              * */
-            public fun input(
-                block: () -> ByteArray,
-            ): Builder = apply {
-                _inputBytes = block
-                _inputUtf8 = null
-            }
+            public fun input(block: () -> ByteArray): Builder
 
             /**
-             * Add any input that needs to be passed to the process's standard
-             * input stream, after it has spawned.
+             * DEFAULT: `null` (i.e. no input)
              *
-             * [block] is invoked once and only once. If it is not invoked
-             * due to an error, then the reference to [block] is always dropped.
+             * Add any input that needs to be passed to the process's standard input stream, after it
+             * has spawned.
              *
-             * [block] is always invoked lazily after the process has spawned,
-             * **except** when using the blocking [Process.Builder.createOutput]
-             * call on Js/WasmJs which requires it as an argument for `spawnSync`,
-             * so must be invoked beforehand.
+             * [block] is invoked once and only once. If it is not invoked due to an error, then the
+             * reference to [block] is always dropped.
              *
-             * **NOTE:** [block] will be called from the same thread that
-             * [Process.Builder.createOutput] is called from, or within the
-             * same coroutine context that [Process.Builder.createOutputAsync]
+             * [block] is always invoked lazily after the process has spawned, **except** when using the
+             * blocking [Process.Builder.createOutput] call on Js/WasmJs which requires it as an argument
+             * for `spawnSync`, so must be invoked beforehand.
+             *
+             * **NOTE:** [block] will be called from the same thread that [Process.Builder.createOutput]
+             * is called from, or within the same coroutine context that [Process.Builder.createOutputAsync]
              * is called from.
              *
-             * Defining this input argument will override any [Process.Builder.stdin]
-             * configuration if it is set to something other than [Stdio.Pipe].
+             * Defining this input argument will override any [Process.Builder.stdin] configuration if it
+             * is set to something other than [Stdio.Pipe].
              * */
-            public fun inputUtf8(
-                block: () -> String,
-            ): Builder = apply {
-                _inputBytes = null
-                _inputUtf8 = block
-            }
+            public fun inputUtf8(block: () -> String): Builder
 
             /**
-             * Maximum number of bytes that can be buffered
-             * on `stdout` or `stderr`. If exceeded, [Process]
-             * will be terminated and output truncated.
+             * DEFAULT: `1024 * 5000` on `Android`/`AndroidNative`/`iOS`, otherwise `Int.MAX_VALUE / 2`
              *
-             * - Default (mobile): 1024 * 5000
-             * - Default (desktop): 2147483647 / 2
-             * - Minimum: 1024 * 16
-             * - Maximum: 2147483647
+             * Define a maximum number of bytes that can be buffered on `stdout` or `stderr`. If exceeded,
+             * the [Process] will be terminated and output truncated for the respective I/O streams, not
+             * to exceed this setting.
+             *
+             * **NOTE:** If configured to less than `1024 * 16`, then `1024 * 16` will be used.
              * */
-            @JvmField
-            public var maxBuffer: Int = if (!IsDesktop) 1024 * 5000 else Int.MAX_VALUE / 2
+            public var maxBuffer: Int
 
             /**
-             * Maximum number of milliseconds the [Process] is
-             * allowed to run. If exceeded, [Process] will be
-             * terminated.
+             * DEFAULT: `250`
              *
-             * - Default: 250
-             * - Minimum: 250
-             * - Maximum: 2147483647 (ill-advised)
+             * Define a maximum number of milliseconds the [Process] is allowed to run for. If exceeded,
+             * the [Process] will be terminated.
+             *
+             * **NOTE:** If configured to less than `250`, then `250` will be used.
              * */
-            @JvmField
-            public var timeoutMillis: Int = MIN_TIMEOUT
+            public var timeoutMillis: Int
 
             @PublishedApi
             internal companion object {
 
-                private const val MIN_TIMEOUT: Int = 250
-                private const val MIN_BUFFER: Int = DEFAULT_BUFFER_SIZE * 2
-
-                @JvmSynthetic
                 @PublishedApi
-                internal fun get(): Builder = Builder()
+                internal fun get(): Builder
             }
 
-            @JvmSynthetic
-            internal fun build(): Options {
-                val maxBuffer = maxBuffer.let { max ->
-                    if (max < MIN_BUFFER) MIN_BUFFER else max
-                }
-                val timeout = timeoutMillis.let { millis ->
-                    if (millis < MIN_TIMEOUT) MIN_TIMEOUT else millis
-                }
-
-                return Options(_inputBytes, _inputUtf8, maxBuffer, timeout.milliseconds)
-            }
+            internal fun build(): Options
         }
 
-        @get:JvmSynthetic
-        internal val hasInput: Boolean get() = inputBytes != null || inputUtf8 != null
+        internal val maxBuffer: Int
+        internal val timeout: Duration
 
-        @JvmSynthetic
+        internal val hasInput: Boolean
+
         @Throws(IOException::class)
-        internal fun consumeInputBytes(): ByteArray? {
-            val block = inputBytes ?: return null
-            inputBytes = null
-
-            val result = try {
-                block()
-            } catch (t: Throwable) {
-                // Wrap it for caller
-                throw IOException("Output.Options.input invocation threw exception", t)
-            }
-
-            return result
-        }
-
-        @JvmSynthetic
+        internal fun consumeInputBytes(): ByteArray?
         @Throws(IOException::class)
-        internal fun consumeInputUtf8(): String? {
-            val block = inputUtf8 ?: return null
-            inputUtf8 = null
+        internal fun consumeInputUtf8(): String?
 
-            val result = try {
-                block()
-            } catch (t: Throwable) {
-                // Wrap it for caller
-                throw IOException("Output.Options.inputUtf8 invocation threw exception", t)
-            }
-
-            return result
-        }
-
-        @JvmSynthetic
-        internal fun dropAllInput() {
-            inputBytes = null
-            inputUtf8 = null
-        }
+        internal fun dropAllInput()
     }
 
     /**
-     * Information about the [Process] that ran in order
-     * to produce [Output].
+     * Information about a [Process] which ran in order to produce an [Output].
      * */
-    public class ProcessInfo private constructor(
-        @JvmField
-        public val pid: Int,
-        @JvmField
-        public val exitCode: Int,
-        @JvmField
-        public val command: String,
-        @JvmField
-        public val args: List<String>,
-        @JvmField
-        public val cwd: File?,
-        @JvmField
-        public val environment: Map<String, String>,
-        @JvmField
-        public val stdio: Stdio.Config,
-        @JvmField
-        public val destroySignal: Signal,
-    ) {
+    public class ProcessInfo {
+
+        public val pid: Int
+        public val exitCode: Int
+        public val command: String
+        public val args: List<String>
+        public val cwd: File?
+        public val environment: Map<String, String>
+        public val stdio: Stdio.Config
+        public val destroySignal: Signal
 
         internal companion object {
-
-            @JvmSynthetic
             internal fun createOutput(
-                stdout: String,
-                stderr: String,
+                stdoutBuf: Buffered,
+                stderrBuf: Buffered,
                 processError: String?,
                 pid: Int,
                 exitCode: Int,
@@ -263,54 +209,35 @@ public class Output private constructor(
                 environment: Map<String, String>,
                 stdio: Stdio.Config,
                 destroySignal: Signal,
-            ): Output = Output(
-                stdout,
-                stderr,
-                processError,
-                ProcessInfo(
-                    pid,
-                    exitCode,
-                    command,
-                    args,
-                    cwd,
-                    environment,
-                    stdio,
-                    destroySignal,
-                )
-            )
+            ): Output
         }
 
         /** @suppress */
-        public override fun toString(): String = buildString {
-            appendProcessInfo(
-                "Output.ProcessInfo",
-                pid,
-                exitCode.toString(),
-                command,
-                args,
-                cwd,
-                stdio,
-                destroySignal
-            )
-        }
+        public override fun toString(): String
     }
+
+    /**
+     * DEPRECATED since `0.6.0`
+     * @suppress
+     * */
+    @Deprecated(
+        message = "Use stdoutBuf.utf8",
+        replaceWith = ReplaceWith("stdoutBuf.utf8()"),
+        level = DeprecationLevel.WARNING,
+    )
+    public val stdout: String
+
+    /**
+     * DEPRECATED since `0.6.0`
+     * @suppress
+     * */
+    @Deprecated(
+        message = "Use stderrBuf.utf8",
+        replaceWith = ReplaceWith("stderrBuf.utf8()"),
+        level = DeprecationLevel.WARNING,
+    )
+    public val stderr: String
 
     /** @suppress */
-    public override fun toString(): String = buildString {
-        appendLine("Output: [")
-        appendLine("    stdout: [Omitted]")
-        appendLine("    stderr: [Omitted]")
-        append("    processError: ")
-        appendLine(processError)
-
-        processInfo.toString().lines().let { lines ->
-            appendLine("    processInfo: [")
-            for (i in 1 until lines.size) {
-                append("    ")
-                appendLine(lines[i])
-            }
-        }
-
-        append(']')
-    }
+    public override fun toString(): String
 }

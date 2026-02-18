@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Matthew Nelson
+ * Copyright (c) 2026 Matthew Nelson
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,5 @@
 @file:Suppress("NOTHING_TO_INLINE")
 
 package io.matthewnelson.kmp.process
-
-import io.matthewnelson.kmp.file.set
-import io.matthewnelson.kmp.process.internal.js.JsArrayBufferView
-
-internal actual val IsAppleSimulator: Boolean = false
-
-internal expect fun <T: JsArrayBufferView> jsArrayGet(a: T, index: Int): Byte
 
 internal actual inline operator fun ReadBuffer.set(index: Int, value: Byte) { buf[index] = value }

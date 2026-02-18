@@ -20,11 +20,11 @@ package io.matthewnelson.kmp.process.internal
 import io.matthewnelson.encoding.core.util.wipe
 import io.matthewnelson.encoding.utf8.UTF8
 import io.matthewnelson.kmp.process.ReadBuffer
+import kotlin.jvm.JvmSynthetic
 
-internal class RealLineOutputFeed internal constructor(
-    private var dispatch: (line: String?) -> Unit
-): ReadBuffer.LineOutputFeed() {
+internal class RealLineOutputFeed internal constructor(dispatch: (line: String?) -> Unit): ReadBuffer.LineOutputFeed() {
 
+    private var _dispatch = dispatch
     private var skipLF: Boolean = false
     private val sb = StringBuilder(2 * 1024)
     private val feed = UTF8.newEncoderFeed(sb::append)
@@ -33,8 +33,10 @@ internal class RealLineOutputFeed internal constructor(
     @Throws(IllegalStateException::class)
     public override fun onData(buf: ReadBuffer, len: Int) {
         if (feed.isClosed()) throw IllegalStateException("LineOutputFeed.isClosed[true]")
-        if (buf.capacity() <= 0) return
-        buf.capacity().checkBounds(0, len)
+        buf.capacity().let { capacity ->
+            if (capacity <= 0) return
+            capacity.checkBounds(0, len)
+        }
 
         for (i in 0 until len) {
             val b = buf[i]
@@ -56,11 +58,9 @@ internal class RealLineOutputFeed internal constructor(
             feed.flush()
             if (sb.length > sbMaxLen) sbMaxLen = sb.length
             try {
-                dispatch(sb.toString())
+                _dispatch(sb.toString())
             } catch (t: Throwable) {
-                feed.close()
-                dispatch = NoOp
-                sb.wipe(len = sbMaxLen)
+                dereference()
                 throw t
             }
             sb.setLength(0)
@@ -68,21 +68,37 @@ internal class RealLineOutputFeed internal constructor(
     }
 
     public override fun close() {
-        val d = dispatch
-        dispatch = NoOp
+        val dispatch = _dispatch
+        _dispatch = NoOp
         if (feed.isClosed()) return
+        var threw: Throwable? = null
         try {
             feed.doFinal()
             if (sb.isNotEmpty()) {
                 if (sb.length > sbMaxLen) sbMaxLen = sb.length
-                d(sb.toString())
+                dispatch(sb.toString())
             }
+        } catch (t: Throwable) {
+            threw = t
+            throw t
         } finally {
-            sb.wipe(len = sbMaxLen)
-            sbMaxLen = 0
-            skipLF = false
-            d(null)
+            dereference()
+            try {
+                dispatch(null)
+            } catch (t: Throwable) {
+                threw?.addSuppressed(t) ?: run { throw t }
+            }
         }
+
+        return
+    }
+
+    @JvmSynthetic
+    internal fun dereference() {
+        feed.close()
+        _dispatch = NoOp
+        sb.wipe(len = sbMaxLen)
+        sbMaxLen = 0
     }
 
     internal companion object {

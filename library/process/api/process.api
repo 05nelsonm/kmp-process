@@ -52,9 +52,22 @@ public final class io/matthewnelson/kmp/process/Output {
 	public final field processError Ljava/lang/String;
 	public final field processInfo Lio/matthewnelson/kmp/process/Output$ProcessInfo;
 	public final field stderr Ljava/lang/String;
+	public final field stderrBuf Lio/matthewnelson/kmp/process/Output$Buffered;
 	public final field stdout Ljava/lang/String;
-	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/matthewnelson/kmp/process/Output$ProcessInfo;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final field stdoutBuf Lio/matthewnelson/kmp/process/Output$Buffered;
+	public synthetic fun <init> (Lio/matthewnelson/kmp/process/Output$Buffered;Lio/matthewnelson/kmp/process/Output$Buffered;Ljava/lang/String;Lio/matthewnelson/kmp/process/Output$ProcessInfo;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun toString ()Ljava/lang/String;
+}
+
+public abstract class io/matthewnelson/kmp/process/Output$Buffered {
+	public final field length I
+	public abstract fun get (I)B
+	public final fun getIndices ()Lkotlin/ranges/IntRange;
+	public abstract fun iterator ()Lkotlin/collections/ByteIterator;
+	public abstract fun utf8 ()Ljava/lang/String;
+}
+
+public abstract interface class io/matthewnelson/kmp/process/Output$Feed {
 }
 
 public final class io/matthewnelson/kmp/process/Output$Options {
@@ -86,26 +99,36 @@ public final class io/matthewnelson/kmp/process/Output$ProcessInfo {
 	public fun toString ()Ljava/lang/String;
 }
 
-public abstract interface class io/matthewnelson/kmp/process/OutputFeed {
+public abstract interface class io/matthewnelson/kmp/process/OutputFeed : io/matthewnelson/kmp/process/Output$Feed {
 	public abstract fun onOutput (Ljava/lang/String;)V
 }
 
 public abstract class io/matthewnelson/kmp/process/OutputFeed$Handler : io/matthewnelson/kmp/process/Blocking {
 	protected field isDestroyed Z
 	public synthetic fun <init> (Lio/matthewnelson/kmp/process/Stdio$Config;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
-	protected final fun dispatchStderr (Ljava/lang/String;)V
-	protected final fun dispatchStdout (Ljava/lang/String;)V
+	protected final fun dispatchStderr-94qbmno (Ljava/lang/Object;I)V
+	protected final fun dispatchStdout-94qbmno (Ljava/lang/Object;I)V
 	protected abstract fun onError (Ljava/lang/Throwable;Ljava/lang/String;)V
 	protected abstract fun startStderr ()V
 	protected abstract fun startStdout ()V
+	public final fun stderr (Lio/matthewnelson/kmp/process/Output$Feed;)Lio/matthewnelson/kmp/process/Process;
+	public final fun stderr (Ljava/util/Collection;)Lio/matthewnelson/kmp/process/Process;
+	public final fun stderr ([Lio/matthewnelson/kmp/process/Output$Feed;)Lio/matthewnelson/kmp/process/Process;
 	public final fun stderrFeed (Lio/matthewnelson/kmp/process/OutputFeed;)Lio/matthewnelson/kmp/process/Process;
 	public final fun stderrFeed (Ljava/util/List;)Lio/matthewnelson/kmp/process/Process;
 	public final fun stderrFeed ([Lio/matthewnelson/kmp/process/OutputFeed;)Lio/matthewnelson/kmp/process/Process;
 	public final fun stderrWaiter ()Lio/matthewnelson/kmp/process/OutputFeed$Waiter;
+	public final fun stdout (Lio/matthewnelson/kmp/process/Output$Feed;)Lio/matthewnelson/kmp/process/Process;
+	public final fun stdout (Ljava/util/Collection;)Lio/matthewnelson/kmp/process/Process;
+	public final fun stdout ([Lio/matthewnelson/kmp/process/Output$Feed;)Lio/matthewnelson/kmp/process/Process;
 	public final fun stdoutFeed (Lio/matthewnelson/kmp/process/OutputFeed;)Lio/matthewnelson/kmp/process/Process;
 	public final fun stdoutFeed (Ljava/util/List;)Lio/matthewnelson/kmp/process/Process;
 	public final fun stdoutFeed ([Lio/matthewnelson/kmp/process/OutputFeed;)Lio/matthewnelson/kmp/process/Process;
 	public final fun stdoutWaiter ()Lio/matthewnelson/kmp/process/OutputFeed$Waiter;
+}
+
+public abstract interface class io/matthewnelson/kmp/process/OutputFeed$Raw : io/matthewnelson/kmp/process/Output$Feed {
+	public abstract fun onOutput (ILkotlin/jvm/functions/Function1;)V
 }
 
 public abstract class io/matthewnelson/kmp/process/OutputFeed$Waiter : io/matthewnelson/kmp/process/Blocking$Waiter {

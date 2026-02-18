@@ -17,12 +17,14 @@
 
 package io.matthewnelson.kmp.process.internal
 
+import io.matthewnelson.encoding.core.EncoderDecoder.Companion.DEFAULT_BUFFER_SIZE
 import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.file.errnoToIOException
 import io.matthewnelson.kmp.process.AsyncWriteStream
 import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.ProcessException
+import io.matthewnelson.kmp.process.ReadBuffer
 import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.internal.stdio.StdioHandle
 import kotlinx.cinterop.ExperimentalForeignApi
@@ -205,12 +207,12 @@ internal constructor(
         name: String,
         p: KMutableProperty0<Boolean>,
         r: ReadStream,
-        d: (line: String?) -> Unit,
+        d: (buf: ReadBuffer?, len: Int) -> Unit,
     ): Worker {
         val w = start(name = "Process[pid=$pid, stdio=$name]")
         w.execute(mode = TransferMode.SAFE, producer = { Triple(r, p, d) }) { (reader, started, dispatch) ->
             started.set(true)
-            reader.scanLines(dispatch)
+            reader.bufferedRead(bufSize = DEFAULT_BUFFER_SIZE, dispatch = dispatch)
         }
         return w
     }

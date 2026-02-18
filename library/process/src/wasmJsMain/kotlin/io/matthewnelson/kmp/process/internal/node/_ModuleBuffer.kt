@@ -18,8 +18,14 @@
 package io.matthewnelson.kmp.process.internal.node
 
 import io.matthewnelson.kmp.file.Buffer
+import kotlin.js.unsafeCast
 
 @JsName("Buffer")
-internal actual external interface JsBuffer: JsAny
+internal actual external interface JsBuffer: JsAny {
+    actual fun copy(target: JsBuffer, targetStart: Int, sourceStart: Int, sourceEnd: Int)
+}
+
+internal actual fun jsBufferAllocUnsafe(len: Int): JsBuffer = js("Buffer.allocUnsafe(len)")
 
 internal actual inline fun JsBuffer.asBuffer(): Buffer = Buffer.wrap(this)
+internal actual inline fun Buffer.asJsBuffer(): JsBuffer = unwrap().unsafeCast()

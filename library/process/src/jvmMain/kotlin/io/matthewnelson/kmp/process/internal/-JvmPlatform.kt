@@ -24,7 +24,6 @@ import io.matthewnelson.kmp.file.canonicalFile2
 import io.matthewnelson.kmp.file.exists2
 import io.matthewnelson.kmp.file.toFile
 import io.matthewnelson.kmp.process.Process
-import kotlin.Throws
 import kotlin.time.Duration
 
 internal actual val STDIO_NULL: File = (System.getProperty("os.name")
@@ -39,7 +38,7 @@ internal actual val IsDesktop: Boolean get() = ANDROID.SDK_INT == null
 @Throws(UnsupportedOperationException::class)
 internal actual inline fun Process.Current.platformPID(): Int = JVM_CURRENT_PID
 
-@Throws(InterruptedException::class)
+@Throws(IllegalArgumentException::class, InterruptedException::class)
 internal actual inline fun Duration.threadSleep() {
     Thread.sleep(inWholeMilliseconds)
 }

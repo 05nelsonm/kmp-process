@@ -13,10 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("LocalVariableName", "NOTHING_TO_INLINE")
+@file:Suppress("LocalVariableName", "NOTHING_TO_INLINE", "UnusedReceiverParameter")
 
 package io.matthewnelson.kmp.process.internal
 
+import io.matthewnelson.encoding.core.EncoderDecoder.Companion.DEFAULT_BUFFER_SIZE
 import io.matthewnelson.encoding.utf8.UTF8
 import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.file.IOException
@@ -90,8 +91,8 @@ internal inline fun PlatformBuilder.commonOutput(
 
     var waitForCode: Int? = null
     try {
-        p.stdoutFeed(stdoutBuffer)
-        p.stderrFeed(stderrBuffer)
+        p.stdout(stdoutBuffer)
+        p.stderr(stderrBuffer)
 
         // input will be non-null if and only if Output.Options.hasInput is true.
         p.input?.writeInputAndClose(options, _close, _write, _decodeBuffered)
@@ -223,4 +224,77 @@ internal inline fun AsyncWriteStream.writeInputAndClose(
             threw?.addSuppressed(tt) ?: run { throw tt }
         }
     }
+}
+
+internal const val OUTPUT_OPTIONS_MIN_TIMEOUT = 250
+
+internal inline fun Output.Options.Builder.Companion.commonMaxBufferDefault(): Int {
+    return if (!IsDesktop) 1024 * 5000 else Int.MAX_VALUE / 2
+}
+
+internal inline fun ((
+    (() -> ByteArray)?,
+    (() -> String)?,
+    Int,
+    Duration,
+) -> Output.Options).commonBuild(b: Output.Options.Builder): Output.Options {
+    var maxBuffer = b.maxBuffer
+    if (maxBuffer < (DEFAULT_BUFFER_SIZE * 2)) {
+        maxBuffer = DEFAULT_BUFFER_SIZE * 2
+    }
+    var timeout = b.timeoutMillis
+    if (timeout < OUTPUT_OPTIONS_MIN_TIMEOUT) {
+        timeout = OUTPUT_OPTIONS_MIN_TIMEOUT
+    }
+    return this(b._inputBytes, b._inputUtf8, maxBuffer, timeout.milliseconds)
+}
+
+internal inline fun Output.Options.commonHasInput(
+    noinline inputBytes: (() -> ByteArray)?,
+    noinline inputUtf8: (() -> String)?,
+): Boolean = inputBytes != null || inputUtf8 != null
+
+@OptIn(ExperimentalContracts::class)
+internal inline fun <T: Any> Output.Options.commonConsumeInput(noinline input: (() -> T)?, _setNull: () -> Unit): T? {
+    contract { callsInPlace(_setNull, InvocationKind.AT_MOST_ONCE) }
+    val block = input ?: return null
+    _setNull()
+
+    try {
+        return block()
+    } catch (t: Throwable) {
+        // Wrap it for caller
+        throw IOException("Output.Options.input invocation threw exception", t)
+    }
+}
+
+internal inline fun Output.commonToString(): String = buildString {
+    appendLine("Output: [")
+    appendLine("    stdout: [Omitted]")
+    appendLine("    stderr: [Omitted]")
+    append("    processError: ")
+    appendLine(processError)
+
+    processInfo.toString().lines().let { lines ->
+        appendLine("    processInfo: [")
+        for (i in 1 until lines.size) {
+            append("    ")
+            appendLine(lines[i])
+        }
+    }
+
+    append(']')
+}
+
+internal inline fun Output.ProcessInfo.commonToString(): String = buildString {
+    appendProcessInfo(
+        "Output.ProcessInfo",
+        pid,
+        exitCode.toString(),
+        command,
+        args,
+        cwd,
+        stdio,
+        destroySignal
+    )
 }

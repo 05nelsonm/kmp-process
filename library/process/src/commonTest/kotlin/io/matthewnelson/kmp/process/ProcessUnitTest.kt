@@ -17,7 +17,12 @@
 
 package io.matthewnelson.kmp.process
 
-import io.matthewnelson.kmp.file.*
+import io.matthewnelson.kmp.file.IOException
+import io.matthewnelson.kmp.file.SysTempDir
+import io.matthewnelson.kmp.file.delete2
+import io.matthewnelson.kmp.file.mkdirs2
+import io.matthewnelson.kmp.file.resolve
+import io.matthewnelson.kmp.file.use
 import io.matthewnelson.kmp.process.internal.IsWindows
 import kotlinx.coroutines.test.runTest
 import kotlin.random.Random
@@ -99,21 +104,22 @@ class ProcessUnitTest {
                 .destroySignal(Signal.SIGKILL)
                 .createProcessAsync().use { process ->
 
-                    process.stdoutFeed {}
-                    process.stderrFeed {}
+                    process.stdout(OutputFeed.Raw { _, _ -> })
+                    process.stderr(OutputFeed.Raw { _, _ -> })
 
+                    // Ensures that LineDispatcher is not added because no OutputFeed
                     assertEquals(1, process.stdoutFeedsSize(), "stdout")
                     assertEquals(1, process.stderrFeedsSize(), "stderr")
 
                     val feed = OutputFeed { }
 
-                    process.stdoutFeed(
+                    process.stdout(
                         // Ensures that only added once
                         feed,
                         feed,
                         OutputFeed { },
                     )
-                    process.stderrFeed(
+                    process.stderr(
                         // Ensures that only added once
                         feed,
                         feed,
@@ -121,11 +127,12 @@ class ProcessUnitTest {
                         OutputFeed { },
                     )
 
-                    assertEquals(1 + 2, process.stdoutFeedsSize(), "stdout")
-                    assertEquals(1 + 3, process.stderrFeedsSize(), "stderr")
+                    // Should also have added one LineDispatcher b/c OutputFeed present
+                    assertEquals(1 + 1 + 2, process.stdoutFeedsSize(), "stdout")
+                    assertEquals(1 + 1 + 3, process.stderrFeedsSize(), "stderr")
 
                     @Suppress("UNUSED_EXPRESSION")
-                    process.stderrFeed(
+                    process.stderr(
                         // Ensure backing array grows to accommodate
                         feeds = buildList {
                             repeat(50) { i ->
@@ -140,12 +147,12 @@ class ProcessUnitTest {
                         }
                     )
 
-                    assertEquals(1 + 3 + 50, process.stderrFeedsSize(), "stderr")
+                    assertEquals(1 + 1 + 3 + 50, process.stderrFeedsSize(), "stderr")
 
-                    process.stderrFeed(feed)
-                    process.stderrFeed(feed, feed, feed)
+                    process.stderr(feed)
+                    process.stderr(feed, feed, feed)
 
-                    assertEquals(1 + 3 + 50, process.stderrFeedsSize(), "stderr")
+                    assertEquals(1 + 1 + 3 + 50, process.stderrFeedsSize(), "stderr")
 
                     process.waitForAsync(100.milliseconds)
 
@@ -181,12 +188,12 @@ class ProcessUnitTest {
                 .stderr(Stdio.Inherit)
                 .createProcessAsync().use { p ->
 
-                    p.stdoutFeed(
+                    p.stdout(
                         OutputFeed { },
                         OutputFeed { },
                     )
 
-                    p.stderrFeed(
+                    p.stderr(
                         OutputFeed { },
                         OutputFeed { },
                         OutputFeed { },

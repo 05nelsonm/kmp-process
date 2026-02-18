@@ -70,7 +70,7 @@ internal inline fun NativeProcess.destroySuppressed(other: Throwable): Throwable
     return other
 }
 
-@Throws(InterruptedException::class)
+@Throws(IllegalArgumentException::class, InterruptedException::class)
 internal actual inline fun Duration.threadSleep() {
     if (isNegative()) throw IllegalArgumentException("duration cannot be negative")
 

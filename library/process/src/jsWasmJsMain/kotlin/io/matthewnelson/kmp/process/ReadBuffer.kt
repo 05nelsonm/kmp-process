@@ -20,6 +20,9 @@ package io.matthewnelson.kmp.process
 import io.matthewnelson.encoding.core.EncoderDecoder.Companion.DEFAULT_BUFFER_SIZE
 import io.matthewnelson.kmp.file.Buffer
 import io.matthewnelson.kmp.process.internal.RealLineOutputFeed
+import io.matthewnelson.kmp.process.internal.node.asBuffer
+import io.matthewnelson.kmp.process.internal.node.asJsBuffer
+import io.matthewnelson.kmp.process.internal.node.jsBufferAllocUnsafe
 
 /**
  * For internal usage only.
@@ -37,13 +40,6 @@ public actual value class ReadBuffer private actual constructor(private actual v
      * Public, platform specific access to the underlying [Buffer].
      * */
     public val buf: Buffer get() = (_buf as Buffer)
-
-    internal actual fun capacity(): Int = buf.length.toInt()
-
-    @Throws(IndexOutOfBoundsException::class)
-    internal actual operator fun get(
-        index: Int,
-    ): Byte = buf.readInt8(index)
 
     /**
      * Scans buffered input and dispatches lines, disregarding
@@ -140,5 +136,18 @@ public actual value class ReadBuffer private actual constructor(private actual v
          * */
         @InternalProcessApi
         public fun of(buf: Buffer): ReadBuffer = ReadBuffer(buf)
+    }
+
+    internal actual fun capacity(): Int = buf.length.toInt()
+
+    @Throws(IndexOutOfBoundsException::class)
+    internal actual operator fun get(index: Int): Byte = buf.readInt8(index)
+
+    internal actual fun functionGet(): (index: Int) -> Byte = buf::readInt8
+
+    internal actual fun copy(len: Int): ReadBuffer {
+        val target = jsBufferAllocUnsafe(len)
+        buf.asJsBuffer().copy(target, targetStart = 0, sourceStart = 0, sourceEnd = len)
+        return ReadBuffer(target.asBuffer())
     }
 }

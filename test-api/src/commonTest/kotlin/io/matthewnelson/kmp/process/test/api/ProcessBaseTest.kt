@@ -19,6 +19,7 @@ package io.matthewnelson.kmp.process.test.api
 
 import io.matthewnelson.kmp.file.*
 import io.matthewnelson.kmp.process.Output
+import io.matthewnelson.kmp.process.OutputFeed
 import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.ProcessException.Companion.CTX_FEED_STDOUT
 import io.matthewnelson.kmp.process.Signal
@@ -82,13 +83,13 @@ abstract class ProcessBaseTest {
 
         fun Output.assertOutput() {
             try {
-                assertEquals(expected, stdout)
-                assertEquals("", stderr)
+                assertEquals(expected, stdoutBuf.utf8())
+                assertEquals("", stderrBuf.utf8())
                 assertNull(processError)
                 assertEquals(0, processInfo.exitCode)
             } catch (t: AssertionError) {
-                println(stdout)
-                println(stderr)
+                println(stdoutBuf.utf8())
+                println(stderrBuf.utf8())
                 println(this)
                 throw t
             }
@@ -173,10 +174,10 @@ abstract class ProcessBaseTest {
 
         fun Output.assertOutput() {
             try {
-                assertEquals(d.canonicalPath2(), stdout)
+                assertEquals(d.canonicalPath2(), stdoutBuf.utf8())
             } catch (t: AssertionError) {
-                println(stdout)
-                println(stderr)
+                println(stdoutBuf.utf8())
+                println(stderrBuf.utf8())
                 println(this)
                 throw t
             }
@@ -306,11 +307,11 @@ abstract class ProcessBaseTest {
 
         fun Output.assertOutput() {
             try {
-                assertEquals("", stdout)
-                assertEquals(expected, stderr)
+                assertEquals("", stdoutBuf.utf8())
+                assertEquals(expected, stderrBuf.utf8())
             } catch (t: AssertionError) {
-                println(stdout)
-                println(stderr)
+                println(stdoutBuf.utf8())
+                println(stderrBuf.utf8())
                 println(this)
                 throw t
             }
@@ -342,13 +343,13 @@ abstract class ProcessBaseTest {
                 assertNull(processError)
                 assertEquals(Stdio.Pipe, processInfo.stdio.stdin)
                 assertTrue(
-                    expected == stdout,
-                    "STDOUT did not match expected >> actual.length[${stdout.length}] vs expected.length[${expected.length}]"
+                    expected == stdoutBuf.utf8(),
+                    "STDOUT did not match expected >> actual.length[${stdoutBuf.utf8().length}] vs expected.length[${expected.length}]"
                 )
-                assertEquals("", stderr)
+                assertEquals("", stderrBuf.utf8())
             } catch (t: AssertionError) {
 //                println(stdout)
-                println(stderr)
+                println(stderrBuf.utf8())
                 println(this)
                 throw t
             }
@@ -392,12 +393,12 @@ abstract class ProcessBaseTest {
             try {
                 assertNull(processError, "processError != null")
                 assertEquals(42, processInfo.exitCode, "code[${processInfo.exitCode}]")
-                assertTrue(stdout.isEmpty(), "stdout was not empty")
-                assertTrue(stderr.isEmpty(), "stderr was not empty")
+                assertTrue(stdoutBuf.utf8().isEmpty(), "stdout was not empty")
+                assertTrue(stderrBuf.utf8().isEmpty(), "stderr was not empty")
                 assertTrue(elapsed in 975.milliseconds..1_500.seconds)
             } catch (t: AssertionError) {
-                println(stdout)
-                println(stderr)
+                println(stdoutBuf.utf8())
+                println(stderrBuf.utf8())
                 println(this)
                 throw t
             }
@@ -440,9 +441,9 @@ abstract class ProcessBaseTest {
             .stderr(Stdio.Pipe)
             .createProcessAsync()
 
-        p.stdoutFeed { line ->
+        p.stdout(OutputFeed { line ->
             throw IllegalStateException(line)
-        }.waitForAsync(500.milliseconds)
+        }).waitForAsync(500.milliseconds)
 
         delayTest(100.milliseconds)
 
@@ -484,10 +485,10 @@ abstract class ProcessBaseTest {
                     .joinToString("\n", postfix = "\n")
                     .encodeToByteArray()
 
-                p.stdoutFeed { line ->
-                    if (line == null) return@stdoutFeed
+                p.stdout(OutputFeed { line ->
+                    if (line == null) return@OutputFeed
                     actual.add(line)
-                }
+                })
 
                 var offset = 0
                 // chunked
@@ -557,10 +558,10 @@ abstract class ProcessBaseTest {
 
         fun Output.assertOutput() {
             try {
-                assertTrue(stdout.startsWith("Tor version "))
+                assertTrue(stdoutBuf.utf8().startsWith("Tor version "))
             } catch (t: AssertionError) {
-                println(stdout)
-                println(stderr)
+                println(stdoutBuf.utf8())
+                println(stderrBuf.utf8())
                 println(this)
                 throw t
             }
@@ -625,10 +626,10 @@ abstract class ProcessBaseTest {
 
             try {
                 assertExitCode(processInfo.exitCode)
-                stdout.assertTorRan()
+                stdoutBuf.utf8().assertTorRan()
             } catch (t: AssertionError) {
-                println(stdout)
-                println(stderr)
+                println(stdoutBuf.utf8())
+                println(stderrBuf.utf8())
                 println(this)
                 throw t
             }
@@ -645,19 +646,19 @@ abstract class ProcessBaseTest {
             val stdoutBuilder = StringBuilder()
             val stderrBuilder = StringBuilder()
 
-            p.stdoutFeed { line ->
-                if (line == null) return@stdoutFeed
+            p.stdout(OutputFeed { line ->
+                if (line == null) return@OutputFeed
                 with(stdoutBuilder) {
                     if (isNotEmpty()) appendLine()
                     append(line)
                 }
-            }.stderrFeed { line ->
-                if (line == null) return@stderrFeed
+            }).stderr(OutputFeed { line ->
+                if (line == null) return@OutputFeed
                 with(stderrBuilder) {
                     if (isNotEmpty()) appendLine()
                     append(line)
                 }
-            }
+            })
 
             assertFailsWith<IllegalStateException> {
                 p.stdoutWaiter()

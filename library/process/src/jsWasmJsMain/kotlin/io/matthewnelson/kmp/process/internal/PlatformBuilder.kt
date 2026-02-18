@@ -18,9 +18,21 @@
 
 package io.matthewnelson.kmp.process.internal
 
-import io.matthewnelson.kmp.file.*
+import io.matthewnelson.kmp.file.DelicateFileApi
+import io.matthewnelson.kmp.file.File
+import io.matthewnelson.kmp.file.FileSystemException
+import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.file.async.AsyncFs
-import io.matthewnelson.kmp.process.*
+import io.matthewnelson.kmp.file.get
+import io.matthewnelson.kmp.file.jsExternTryCatch
+import io.matthewnelson.kmp.file.path
+import io.matthewnelson.kmp.file.toFile
+import io.matthewnelson.kmp.file.toIOException
+import io.matthewnelson.kmp.process.Output
+import io.matthewnelson.kmp.process.Process
+import io.matthewnelson.kmp.process.ProcessException
+import io.matthewnelson.kmp.process.Signal
+import io.matthewnelson.kmp.process.Stdio
 import io.matthewnelson.kmp.process.internal.RealLineOutputFeed.Companion.LF
 import io.matthewnelson.kmp.process.internal.js.JsArray
 import io.matthewnelson.kmp.process.internal.js.JsInt8Array
@@ -36,6 +48,7 @@ import io.matthewnelson.kmp.process.internal.js.new
 import io.matthewnelson.kmp.process.internal.js.set
 import io.matthewnelson.kmp.process.internal.js.toJsArray
 import io.matthewnelson.kmp.process.internal.js.toThrowable
+import io.matthewnelson.kmp.process.internal.node.JsBuffer
 import io.matthewnelson.kmp.process.internal.node.JsStats
 import io.matthewnelson.kmp.process.internal.node.ModuleFs
 import io.matthewnelson.kmp.process.internal.node.asBuffer
@@ -153,19 +166,8 @@ internal actual class PlatformBuilder private actual constructor() {
             e.message
         }
 
-        val stdout = output.getJsBufferOrNull("stdout")?.asBuffer().let { buf ->
-            if (buf == null) return@let ""
-            val utf8 = buf.toUtf8Trimmed()
-            buf.fill()
-            utf8
-        }
-
-        val stderr = output.getJsBufferOrNull("stderr")?.asBuffer().let { buf ->
-            if (buf == null) return@let ""
-            val utf8 = buf.toUtf8Trimmed()
-            buf.fill()
-            utf8
-        }
+        val stdout = output.getJsBufferOrNull("stdout").toBufferedOutput()
+        val stderr = output.getJsBufferOrNull("stderr").toBufferedOutput()
 
         val code: Int = output.getIntOrNull("status").let { status ->
             if (status != null) return@let status
@@ -220,6 +222,7 @@ internal actual class PlatformBuilder private actual constructor() {
             windowsHide = windowsHide,
             _close = { fd ->
                 // non-cancellable
+                @Suppress("SuspendCoroutineLacksCancellationGuarantees")
                 suspendCoroutine { cont ->
                     close(fd) { err ->
                         if (err != null) {
@@ -335,13 +338,29 @@ private fun List<Any>.toJsArray(): JsArray {
     return array
 }
 
-@Suppress("NOTHING_TO_INLINE")
-private inline fun Buffer.toUtf8Trimmed(): String {
-    var limit = length.toInt()
-    if (limit == 0) return ""
+private fun JsBuffer?.toBufferedOutput(): Output.Buffered {
+    if (this == null) return OutputFeedBuffer.EMPTY_OUTPUT
+    val buf = this.asBuffer()
 
-    if (readInt8(limit - 1) == LF) limit--
-    return toUtf8(end = limit)
+    // TODO: Issue #229
+    var len = buf.length.toInt()
+    if (len > 0 && buf.readInt8(len - 1) == LF) len--
+    if (len <= 0) return OutputFeedBuffer.EMPTY_OUTPUT
+
+    return object : Output.Buffered(length = len) {
+        private val buffer = buf
+        override fun get(index: Int): Byte = buffer[index]
+        override fun iterator(): ByteIterator = object : ByteIterator() {
+            private var i = 0
+            override fun hasNext(): Boolean = i < length
+            override fun nextByte(): Byte {
+                if (i >= length) throw NoSuchElementException("Index $i out of bounds for length $length")
+                return buffer[i++]
+            }
+        }
+        override fun utf8(): String = _utf8
+        private val _utf8: String by lazy { buffer.toUtf8(end = length) }
+    }
 }
 
 @OptIn(ExperimentalContracts::class)
@@ -484,7 +503,7 @@ private inline fun Stdio.toJsStdio(
 
 @Throws(CancellationException::class, IOException::class)
 @OptIn(ExperimentalContracts::class)
-private inline fun <T: Any?> List<Any>.closeDescriptorsOnFailure(
+private inline fun <T> List<Any>.closeDescriptorsOnFailure(
     _close: ModuleFs.(Double) -> Unit = { fd -> jsExternTryCatch { closeSync(fd) } },
     block: () -> T,
 ): T {

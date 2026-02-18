@@ -16,72 +16,103 @@
 package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.encoding.core.util.wipe
+import io.matthewnelson.kmp.process.InternalProcessApi
 import io.matthewnelson.kmp.process.Output
 import io.matthewnelson.kmp.process.OutputFeed
+import io.matthewnelson.kmp.process.ReadBuffer
 import kotlin.concurrent.Volatile
-import kotlin.jvm.JvmName
 import kotlin.jvm.JvmSynthetic
 
-internal class OutputFeedBuffer private constructor(maxSize: Int): OutputFeed {
+internal class OutputFeedBuffer private constructor(maxSize: Int): OutputFeed.Raw {
 
     private val maxSize = maxSize.coerceAtLeast(1)
-    private val lines = ArrayList<String>(20)
+    private val _buffered = ArrayList<ReadBuffer>(10)
 
     @Volatile
-    @get:JvmName("size")
     internal var size = 0
         private set
 
     @Volatile
-    @get:JvmName("hasEnded")
-    internal var hasEnded: Boolean = false
+    internal var hasEnded = false
         private set
 
     @Volatile
-    @get:JvmName("maxSizeExceeded")
-    internal var maxSizeExceeded: Boolean = false
+    internal var maxSizeExceeded = false
         private set
 
-    override fun onOutput(line: String?) {
-        if (line == null) {
+    internal fun onData(buf: ReadBuffer?, len: Int) {
+        if (buf == null) {
             hasEnded = true
             return
         }
-        if (maxSizeExceeded) return
-
-        // do we need to add a new line character
-        // between the previous line and this one
-        val newLineChar = if (lines.isNotEmpty()) 1 else 0
-
-        val remaining = maxSize - size - newLineChar
-        if ((newLineChar + line.length) > remaining) {
-            maxSizeExceeded = true
-
-            if (line.isEmpty()) {
-                lines.add(line)
-                size += newLineChar
-                return
-            }
-
-            val truncate = line.take(remaining)
-            lines.add(truncate)
-            size += (newLineChar + truncate.length)
-        } else {
-            lines.add(line)
-            size += (newLineChar + line.length)
-        }
+        val copyLen = if ((size + len) > maxSize) maxSize - size else len
+        if (copyLen <= 0) return
+        _buffered.add(buf.copy(copyLen))
+        size += copyLen
+        if (size >= maxSize) maxSizeExceeded = true
     }
 
-    internal fun doFinal(): String {
-        val sb = StringBuilder(size)
-        lines.joinTo(sb, separator = "\n")
-        lines.clear()
-        val result = sb.toString()
-        sb.wipe()
+    internal fun doFinal(): Output.Buffered {
+        val ret = if (_buffered.isEmpty()) EMPTY_OUTPUT else object : Output.Buffered(size) {
+
+            private val buffered = _buffered.toTypedArray()
+
+            override fun get(index: Int): Byte {
+                var i = index
+                buffered.forEach { buf ->
+                    val size = buf.capacity()
+                    if (i < size) return buf[i]
+                    i -= size
+                }
+                throw IndexOutOfBoundsException("index[$index] >= length[$length]")
+            }
+
+            override fun iterator(): ByteIterator = object : ByteIterator() {
+
+                private var i = 0
+                private var iBuf = 0
+                private var _buf: ReadBuffer? = buffered[iBuf]
+
+                override fun hasNext(): Boolean = _buf != null
+
+                override fun nextByte(): Byte {
+                    val buf = _buf ?: throw NoSuchElementException("Index $length out of bounds for length $length")
+                    val b = buf[i++]
+                    if (i == buf.capacity()) {
+                        _buf = buffered.elementAtOrNull(++iBuf)
+                        i = 0
+                    }
+                    return b
+                }
+            }
+
+            override fun utf8(): String = _utf8
+
+            private val _utf8: String by lazy {
+                val sb = StringBuilder(length)
+                // TODO: Issue #229
+
+                @OptIn(InternalProcessApi::class)
+                val feed = ReadBuffer.lineOutputFeed { line ->
+                    if (line == null) return@lineOutputFeed
+                    if (sb.isNotEmpty()) sb.appendLine()
+                    sb.append(line)
+                }
+
+                buffered.forEach { buf -> feed.onData(buf, buf.capacity()) }
+                feed.close()
+                val s = sb.toString()
+                sb.wipe()
+                s
+            }
+        }
+
+        _buffered.clear()
         size = 0
         hasEnded = false
         maxSizeExceeded = false
-        return result
+
+        return ret
     }
 
     internal companion object {
@@ -91,5 +122,15 @@ internal class OutputFeedBuffer private constructor(maxSize: Int): OutputFeed {
 
         @JvmSynthetic
         internal fun of(options: Output.Options) = OutputFeedBuffer(options.maxBuffer)
+
+        @get:JvmSynthetic
+        internal val EMPTY_OUTPUT = object : Output.Buffered(length = 0) {
+            private val _iterator = ByteArray(0).iterator()
+            override fun get(index: Int): Byte = throw IndexOutOfBoundsException("length == 0")
+            override fun iterator(): ByteIterator = _iterator
+            override fun utf8(): String = ""
+        }
     }
+
+    override fun onOutput(len: Int, get: ((index: Int) -> Byte)?) = error("Use OutputFeedBuffer.onData")
 }

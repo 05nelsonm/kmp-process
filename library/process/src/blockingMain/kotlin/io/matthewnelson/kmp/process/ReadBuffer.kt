@@ -39,13 +39,6 @@ public actual value class ReadBuffer private actual constructor(private actual v
      * */
     public val buf: ByteArray get() = _buf as ByteArray
 
-    internal actual fun capacity(): Int = buf.size
-
-    @Throws(IndexOutOfBoundsException::class)
-    internal actual operator fun get(
-        index: Int,
-    ): Byte = buf[index]
-
     /**
      * Scans buffered input and dispatches lines, disregarding
      * line breaks CR (`\r`), LF (`\n`), & CRLF (`\r\n`).
@@ -140,4 +133,13 @@ public actual value class ReadBuffer private actual constructor(private actual v
         @InternalProcessApi
         public fun of(buf: ByteArray): ReadBuffer = ReadBuffer(buf)
     }
+
+    internal actual fun capacity(): Int = buf.size
+
+    @Throws(IndexOutOfBoundsException::class)
+    internal actual operator fun get(index: Int): Byte = buf[index]
+
+    internal actual fun functionGet(): (index: Int) -> Byte = buf::get
+
+    internal actual fun copy(len: Int): ReadBuffer = ReadBuffer(buf.copyOf(len))
 }

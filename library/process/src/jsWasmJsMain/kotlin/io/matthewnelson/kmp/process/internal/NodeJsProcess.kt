@@ -193,30 +193,22 @@ internal class NodeJsProcess internal constructor(
 
     protected override fun startStdout() {
         val stdout = jsProcess.stdout ?: return
-
-        @OptIn(InternalProcessApi::class)
-        ReadBuffer.lineOutputFeed(::dispatchStdout).apply {
-            _hasStdoutStarted = true
-            stdout.onClose {
-                close()
-            }.onData { data ->
-                onData(data, data.capacity())
-            }
+        stdout.onClose {
+            dispatchStdout(buf = null, len = -1)
+        }.onData { data ->
+            dispatchStdout(buf = data, len = data.capacity())
         }
+        _hasStdoutStarted = true
     }
 
     protected override fun startStderr() {
         val stderr = jsProcess.stderr ?: return
-
-        @OptIn(InternalProcessApi::class)
-        ReadBuffer.lineOutputFeed(::dispatchStderr).apply {
-            _hasStderrStarted = true
-            stderr.onClose {
-                close()
-            }.onData { data ->
-                onData(data, data.capacity())
-            }
+        stderr.onClose {
+            dispatchStderr(buf = null, len = -1)
+        }.onData { data ->
+            dispatchStderr(buf = data, len = data.capacity())
         }
+        _hasStderrStarted = true
     }
 
     private companion object {
