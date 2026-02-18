@@ -33,7 +33,6 @@ import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.ProcessException
 import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.Stdio
-import io.matthewnelson.kmp.process.internal.RealLineOutputFeed.Companion.LF
 import io.matthewnelson.kmp.process.internal.js.JsArray
 import io.matthewnelson.kmp.process.internal.js.JsInt8Array
 import io.matthewnelson.kmp.process.internal.js.JsObject
