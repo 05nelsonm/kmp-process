@@ -624,9 +624,7 @@ abstract class ProcessBaseTest {
 
     @Test
     open fun givenExecutable_whenOutput_thenIsAsExpected() = runTest(timeout = 25.seconds) {
-        suspend fun Output.assertOutput() {
-            delayTest(500.milliseconds)
-
+        fun Output.assertOutput() {
             try {
                 assertExitCode(processInfo.exitCode)
                 stdoutBuf.utf8().assertTorRan()
@@ -638,6 +636,7 @@ abstract class ProcessBaseTest {
             }
         }
 
+        delayTest(500.milliseconds)
         val b = LOADER.toProcessBuilder()
         b.createOutput { timeoutMillis = 2_000 }.assertOutput()
         b.createOutputAsync { timeoutMillis = 2_000 }.assertOutput()
@@ -694,14 +693,11 @@ abstract class ProcessBaseTest {
     }
 
     private fun String.assertTorRan() {
-        var ran = false
+        val expected = "[notice] Tor"
         lines().forEach { line ->
-            if (line.contains("[notice] Tor")) {
-                ran = true
-            }
+            if (line.contains(expected)) return
         }
-
-        assertTrue(ran)
+        fail("Output does not contain expected >> $expected")
     }
 
     private suspend fun TestScope.delayTest(duration: Duration) {
