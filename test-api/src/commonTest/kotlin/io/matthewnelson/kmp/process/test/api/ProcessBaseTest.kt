@@ -172,9 +172,11 @@ abstract class ProcessBaseTest {
             .resolve("try_chdir")
             .mkdirs2(mode = null)
 
+        val expected = d.canonicalPath2() + '\n' // echo appends a new line character
+
         fun Output.assertOutput() {
             try {
-                assertEquals(d.canonicalPath2(), stdoutBuf.utf8())
+                assertEquals(expected, stdoutBuf.utf8())
             } catch (t: AssertionError) {
                 println(stdoutBuf.utf8())
                 println(stderrBuf.utf8())
@@ -303,7 +305,8 @@ abstract class ProcessBaseTest {
             return@runTest
         }
 
-        val expected = "Hello World!"
+        val echo = "Hello World!"
+        val expected = "$echo\n" // echo appends a new line character
 
         fun Output.assertOutput() {
             try {
@@ -319,7 +322,7 @@ abstract class ProcessBaseTest {
 
         val b = Process.Builder(command = if (IsAppleSimulator) "/bin/sh" else "sh")
             .args("-c")
-            .args("echo 1>&2 \"$expected\"")
+            .args("echo 1>&2 \"$echo\"")
 
         b.createOutput().assertOutput()
         b.createOutputAsync().assertOutput()
@@ -381,21 +384,27 @@ abstract class ProcessBaseTest {
             return@runTest
         }
 
-        // Test to see that, if the program ends, threads that are reading
-        // stdout and stderr pop out on their own and does not wait the
-        // entire 10-second timeout.
-        val mark = TimeSource.Monotonic.markNow()
+        val expectedExitCode = 42
+        val sleepSeconds = 1
 
-        fun Output.assertOutput() {
+        fun Output.assertOutput(mark: TimeSource.Monotonic.ValueTimeMark) {
             val elapsed = mark.elapsedNow()
             println("elapsed[${elapsed.inWholeMilliseconds}ms]")
 
             try {
                 assertNull(processError, "processError != null")
-                assertEquals(42, processInfo.exitCode, "code[${processInfo.exitCode}]")
+                assertEquals(expectedExitCode, processInfo.exitCode, "code[${processInfo.exitCode}]")
                 assertTrue(stdoutBuf.utf8().isEmpty(), "stdout was not empty")
                 assertTrue(stderrBuf.utf8().isEmpty(), "stderr was not empty")
-                assertTrue(elapsed in 975.milliseconds..1_500.seconds)
+                val min = sleepSeconds.seconds
+                // Only need to ensure that the process ended early, before the 10s timeout.
+                // Native/Linux & Native/Android are sometimes incredibly slow to spawn because
+                // of how the posix_spawn implementation closes file descriptors.
+                val max = min + 3.seconds
+                assertTrue(
+                    elapsed in min..max,
+                    "elapsed[${elapsed.inWholeMilliseconds}ms] !in min[${min.inWholeMilliseconds}ms]..max[${max.inWholeMilliseconds}ms]"
+                )
             } catch (t: AssertionError) {
                 println(stdoutBuf.utf8())
                 println(stderrBuf.utf8())
@@ -406,10 +415,12 @@ abstract class ProcessBaseTest {
 
         val b = Process.Builder(command = "sh")
             .args("-c")
-            .args("sleep 1; exit 42")
+            .args("sleep $sleepSeconds; exit $expectedExitCode")
 
-        b.createOutput { timeoutMillis = 10.seconds.inWholeMilliseconds.toInt() }.assertOutput()
-        b.createOutputAsync { timeoutMillis = 10.seconds.inWholeMilliseconds.toInt() }.assertOutput()
+        var mark = TimeSource.Monotonic.markNow()
+        b.createOutput { timeoutMillis = 10.seconds.inWholeMilliseconds.toInt() }.assertOutput(mark)
+        mark = TimeSource.Monotonic.markNow()
+        b.createOutputAsync { timeoutMillis = 10.seconds.inWholeMilliseconds.toInt() }.assertOutput(mark)
     }
 
     @Test
@@ -621,9 +632,7 @@ abstract class ProcessBaseTest {
 
     @Test
     open fun givenExecutable_whenOutput_thenIsAsExpected() = runTest(timeout = 25.seconds) {
-        suspend fun Output.assertOutput() {
-            delayTest(500.milliseconds)
-
+        fun Output.assertOutput() {
             try {
                 assertExitCode(processInfo.exitCode)
                 stdoutBuf.utf8().assertTorRan()
@@ -635,9 +644,10 @@ abstract class ProcessBaseTest {
             }
         }
 
+        delayTest(500.milliseconds)
         val b = LOADER.toProcessBuilder()
-        b.createOutput { timeoutMillis = 2_000 }.assertOutput()
-        b.createOutputAsync { timeoutMillis = 2_000 }.assertOutput()
+        b.createOutput { timeoutMillis = 3_000 }.assertOutput()
+        b.createOutputAsync { timeoutMillis = 3_000 }.assertOutput()
     }
 
     @Test
@@ -660,15 +670,11 @@ abstract class ProcessBaseTest {
                 }
             })
 
-            assertFailsWith<IllegalStateException> {
-                p.stdoutWaiter()
-            }
-            assertFailsWith<IllegalStateException> {
-                p.stderrWaiter()
-            }
+            assertFailsWith<IllegalStateException> { p.stdoutWaiter() }
+            assertFailsWith<IllegalStateException> { p.stderrWaiter() }
 
             withContext(Dispatchers.Default) {
-                p.waitForAsync(2.seconds)
+                p.waitForAsync(3.seconds)
             }
 
             val exitCode = p.destroy()
@@ -691,14 +697,11 @@ abstract class ProcessBaseTest {
     }
 
     private fun String.assertTorRan() {
-        var ran = false
+        val expected = "[notice] Tor"
         lines().forEach { line ->
-            if (line.contains("[notice] Tor")) {
-                ran = true
-            }
+            if (line.contains(expected)) return
         }
-
-        assertTrue(ran)
+        fail("Output does not contain expected >> $expected")
     }
 
     private suspend fun TestScope.delayTest(duration: Duration) {

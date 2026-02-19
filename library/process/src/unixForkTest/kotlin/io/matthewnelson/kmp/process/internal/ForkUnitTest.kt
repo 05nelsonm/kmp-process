@@ -177,10 +177,10 @@ class ForkUnitTest {
             return
         }
 
-        val sh = Process.Builder(command = "which").args("sh").createOutput().stdoutBuf.utf8().toFile()
+        val sh = Process.Builder(command = "which").args("sh").createOutput().stdoutBuf.utf8().trimEnd().toFile()
         val expected = "Hello World!"
-        assertTrue(sh.exists2())
-        assertTrue(sh.isAbsolute())
+        assertTrue(sh.exists2(), "exists2")
+        assertTrue(sh.isAbsolute(), "isAbsolute")
 
         val parentDirName = sh.parentPath?.substringAfterLast(SysDirSep)
         assertNotNull(parentDirName)

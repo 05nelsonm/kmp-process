@@ -101,9 +101,9 @@ internal class RealLineOutputFeed internal constructor(dispatch: (line: String?)
         sbMaxLen = 0
     }
 
-    internal companion object {
-        internal const val CR: Byte = '\r'.code.toByte()
-        internal const val LF: Byte = '\n'.code.toByte()
+    private companion object {
+        private const val CR: Byte = '\r'.code.toByte()
+        private const val LF: Byte = '\n'.code.toByte()
 
         private val NoOp: (line: String?) -> Unit = {}
     }

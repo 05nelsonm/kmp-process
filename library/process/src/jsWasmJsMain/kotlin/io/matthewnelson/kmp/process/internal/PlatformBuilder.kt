@@ -33,7 +33,6 @@ import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.ProcessException
 import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.Stdio
-import io.matthewnelson.kmp.process.internal.RealLineOutputFeed.Companion.LF
 import io.matthewnelson.kmp.process.internal.js.JsArray
 import io.matthewnelson.kmp.process.internal.js.JsInt8Array
 import io.matthewnelson.kmp.process.internal.js.JsObject
@@ -342,9 +341,7 @@ private fun JsBuffer?.toBufferedOutput(): Output.Buffered {
     if (this == null) return OutputFeedBuffer.EMPTY_OUTPUT
     val buf = this.asBuffer()
 
-    // TODO: Issue #229
-    var len = buf.length.toInt()
-    if (len > 0 && buf.readInt8(len - 1) == LF) len--
+    val len = buf.length.toInt()
     if (len <= 0) return OutputFeedBuffer.EMPTY_OUTPUT
 
     return object : Output.Buffered(length = len) {
