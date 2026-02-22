@@ -26,7 +26,9 @@ internal external interface ModuleBuffer {
 
 @JsName("Buffer")
 internal expect interface JsBuffer {
-    fun copy(target: JsBuffer, targetStart: Int, sourceStart: Int, sourceEnd: Int)
+    fun copy(target: JsBuffer, targetStart: Double, sourceStart: Double, sourceEnd: Double)
+    @JsName("readInt8")
+    fun readInt8Unsafe(offset: Int): Byte
 }
 
 internal expect fun jsBufferAllocUnsafe(len: Int): JsBuffer

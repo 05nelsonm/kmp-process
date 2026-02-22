@@ -29,12 +29,12 @@ public expect class Output {
     /**
      * The buffered contents of [Process.stdout].
      * */
-    public val stdoutBuf: Buffered
+    public val stdoutBuf: Data
 
     /**
      * The buffered contents of [Process.stderr].
      * */
-    public val stderrBuf: Buffered
+    public val stderrBuf: Data
 
     /**
      * If an error occurred with the [Process], such as the [Options.Builder.maxBuffer] or
@@ -49,24 +49,71 @@ public expect class Output {
 
     /**
      * A read-only view of buffered I/O stream contents.
+     *
+     * @see [Output.stdoutBuf]
+     * @see [Output.stderrBuf]
+     * @see [OutputFeed.Raw]
      * */
-    public abstract class Buffered internal constructor(length: Int) {
+    public abstract class Data internal constructor(
+        size: Int,
+        segments: Array<ReadBuffer>,
+        sizes: IntArray?,
+        init: Any,
+    ): Collection<Byte> {
 
         /**
-         * The number of bytes buffered.
+         * The number of bytes this instance contains.
          * */
-        public val length: Int
+        public final override val size: Int
 
-        public val indices: IntRange
-
+        /**
+         * Retrieves a byte at the given [index].
+         *
+         * @param [index] The index within [Data] to retrieve a byte from.
+         *
+         * @throws [IndexOutOfBoundsException] If [index] is inappropriate.
+         * */
         public abstract operator fun get(index: Int): Byte
 
-        public abstract operator fun iterator(): ByteIterator
+        public final override fun isEmpty(): Boolean
+        public abstract override operator fun iterator(): ByteIterator
+        public abstract override fun contains(element: Byte): Boolean
+        public abstract override fun containsAll(elements: Collection<Byte>): Boolean
 
         /**
-         * The UTF-8 decoded text of the buffered bytes.
+         * Creates a copy of the contents of this instances as an array.
+         * */
+        public fun bytes(): ByteArray
+
+        /**
+         * TODO
+         * */
+        public abstract fun copyInto(
+            dest: ByteArray,
+            destOffset: Int = 0,
+            indexStart: Int = 0,
+            indexEnd: Int = size,
+        ): ByteArray
+
+        /**
+         * The UTF-8 decoded text of all bytes this instance contains.
          * */
         public abstract fun utf8(): String
+
+        public companion object {
+
+            /**
+             * Merges multiple [Data] into a single instance.
+             *
+             * TODO
+             *
+             * @throws [RuntimeException] If total [size] of merged [Data] would exceed [Int.MAX_VALUE].
+             * */
+            public fun Collection<Data?>.merge(): Data
+        }
+
+        /** @suppress */
+        public final override fun toString(): String
     }
 
     /**
@@ -198,8 +245,8 @@ public expect class Output {
 
         internal companion object {
             internal fun createOutput(
-                stdoutBuf: Buffered,
-                stderrBuf: Buffered,
+                stdoutBuf: Data,
+                stderrBuf: Data,
                 processError: String?,
                 pid: Int,
                 exitCode: Int,

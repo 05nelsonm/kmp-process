@@ -149,6 +149,15 @@ class ProcessAndroidTest: ProcessBaseTest() {
     }
 
     @Test
+    override fun givenExecutable_whenPipeOutputFeeds_thenOutputFeedRawReceivesTheSameData(): TestResult {
+        if (sdkInt < 21) {
+            println("Skipping...")
+            return
+        }
+        return super.givenExecutable_whenPipeOutputFeeds_thenOutputFeedRawReceivesTheSameData()
+    }
+
+    @Test
     fun givenStdioConfig_whenInherit_thenIsModifiedToDevNullOnApi23OrBelow() {
         val p = Process.Builder(command = "sh")
             .args("-c", "echo \"abc\"; exit 42;")

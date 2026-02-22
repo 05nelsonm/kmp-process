@@ -23,14 +23,15 @@ import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.file.FileSystemException
 import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.file.async.AsyncFs
-import io.matthewnelson.kmp.file.get
 import io.matthewnelson.kmp.file.jsExternTryCatch
 import io.matthewnelson.kmp.file.path
 import io.matthewnelson.kmp.file.toFile
 import io.matthewnelson.kmp.file.toIOException
+import io.matthewnelson.kmp.process.InternalProcessApi
 import io.matthewnelson.kmp.process.Output
 import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.ProcessException
+import io.matthewnelson.kmp.process.ReadBuffer
 import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.Stdio
 import io.matthewnelson.kmp.process.internal.js.JsArray
@@ -165,8 +166,8 @@ internal actual class PlatformBuilder private actual constructor() {
             e.message
         }
 
-        val stdout = output.getJsBufferOrNull("stdout").toBufferedOutput()
-        val stderr = output.getJsBufferOrNull("stderr").toBufferedOutput()
+        val stdout = output.getJsBufferOrNull(key = "stdout").asOutputData()
+        val stderr = output.getJsBufferOrNull(key = "stderr").asOutputData()
 
         val code: Int = output.getIntOrNull("status").let { status ->
             if (status != null) return@let status
@@ -337,27 +338,10 @@ private fun List<Any>.toJsArray(): JsArray {
     return array
 }
 
-private fun JsBuffer?.toBufferedOutput(): Output.Buffered {
-    if (this == null) return OutputFeedBuffer.EMPTY_OUTPUT
-    val buf = this.asBuffer()
-
-    val len = buf.length.toInt()
-    if (len <= 0) return OutputFeedBuffer.EMPTY_OUTPUT
-
-    return object : Output.Buffered(length = len) {
-        private val buffer = buf
-        override fun get(index: Int): Byte = buffer[index]
-        override fun iterator(): ByteIterator = object : ByteIterator() {
-            private var i = 0
-            override fun hasNext(): Boolean = i < length
-            override fun nextByte(): Byte {
-                if (i >= length) throw NoSuchElementException("Index $i out of bounds for length $length")
-                return buffer[i++]
-            }
-        }
-        override fun utf8(): String = _utf8
-        private val _utf8: String by lazy { buffer.toUtf8(end = length) }
-    }
+private fun JsBuffer?.asOutputData(): Output.Data {
+    if (this == null) return emptyList<ReadBuffer>().asOutputData()
+    @OptIn(InternalProcessApi::class)
+    return ReadBuffer.of(buf = asBuffer()).asOutputData()
 }
 
 @OptIn(ExperimentalContracts::class)

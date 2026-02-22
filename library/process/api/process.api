@@ -52,19 +52,44 @@ public final class io/matthewnelson/kmp/process/Output {
 	public final field processError Ljava/lang/String;
 	public final field processInfo Lio/matthewnelson/kmp/process/Output$ProcessInfo;
 	public final field stderr Ljava/lang/String;
-	public final field stderrBuf Lio/matthewnelson/kmp/process/Output$Buffered;
+	public final field stderrBuf Lio/matthewnelson/kmp/process/Output$Data;
 	public final field stdout Ljava/lang/String;
-	public final field stdoutBuf Lio/matthewnelson/kmp/process/Output$Buffered;
-	public synthetic fun <init> (Lio/matthewnelson/kmp/process/Output$Buffered;Lio/matthewnelson/kmp/process/Output$Buffered;Ljava/lang/String;Lio/matthewnelson/kmp/process/Output$ProcessInfo;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final field stdoutBuf Lio/matthewnelson/kmp/process/Output$Data;
+	public synthetic fun <init> (Lio/matthewnelson/kmp/process/Output$Data;Lio/matthewnelson/kmp/process/Output$Data;Ljava/lang/String;Lio/matthewnelson/kmp/process/Output$ProcessInfo;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun toString ()Ljava/lang/String;
 }
 
-public abstract class io/matthewnelson/kmp/process/Output$Buffered {
-	public final field length I
+public abstract class io/matthewnelson/kmp/process/Output$Data : java/util/Collection, kotlin/jvm/internal/markers/KMappedMarker {
+	public static final field Companion Lio/matthewnelson/kmp/process/Output$Data$Companion;
+	public fun add (B)Z
+	public synthetic fun add (Ljava/lang/Object;)Z
+	public fun addAll (Ljava/util/Collection;)Z
+	public final fun byteBuffer ()Ljava/nio/ByteBuffer;
+	public final fun bytes ()[B
+	public fun clear ()V
+	public abstract fun contains (B)Z
+	public final fun contains (Ljava/lang/Object;)Z
+	public abstract fun containsAll (Ljava/util/Collection;)Z
+	public abstract fun copyInto ([BIII)[B
+	public static synthetic fun copyInto$default (Lio/matthewnelson/kmp/process/Output$Data;[BIIIILjava/lang/Object;)[B
 	public abstract fun get (I)B
-	public final fun getIndices ()Lkotlin/ranges/IntRange;
+	public final fun getSize ()I
+	public final fun isEmpty ()Z
 	public abstract fun iterator ()Lkotlin/collections/ByteIterator;
+	public static final fun merge (Ljava/util/Collection;)Lio/matthewnelson/kmp/process/Output$Data;
+	public fun remove (Ljava/lang/Object;)Z
+	public fun removeAll (Ljava/util/Collection;)Z
+	public fun removeIf (Ljava/util/function/Predicate;)Z
+	public fun retainAll (Ljava/util/Collection;)Z
+	public final fun size ()I
+	public fun toArray ()[Ljava/lang/Object;
+	public fun toArray ([Ljava/lang/Object;)[Ljava/lang/Object;
+	public final fun toString ()Ljava/lang/String;
 	public abstract fun utf8 ()Ljava/lang/String;
+}
+
+public final class io/matthewnelson/kmp/process/Output$Data$Companion {
+	public final fun merge (Ljava/util/Collection;)Lio/matthewnelson/kmp/process/Output$Data;
 }
 
 public abstract interface class io/matthewnelson/kmp/process/Output$Feed {
@@ -128,7 +153,7 @@ public abstract class io/matthewnelson/kmp/process/OutputFeed$Handler : io/matth
 }
 
 public abstract interface class io/matthewnelson/kmp/process/OutputFeed$Raw : io/matthewnelson/kmp/process/Output$Feed {
-	public abstract fun onOutput (ILkotlin/jvm/functions/Function1;)V
+	public abstract fun onOutput (Lio/matthewnelson/kmp/process/Output$Data;)V
 }
 
 public abstract class io/matthewnelson/kmp/process/OutputFeed$Waiter : io/matthewnelson/kmp/process/Blocking$Waiter {

@@ -31,7 +31,7 @@ abstract fun interface io.matthewnelson.kmp.process/OutputFeed : io.matthewnelso
     abstract fun onOutput(kotlin/String?) // io.matthewnelson.kmp.process/OutputFeed.onOutput|onOutput(kotlin.String?){}[0]
 
     abstract fun interface Raw : io.matthewnelson.kmp.process/Output.Feed { // io.matthewnelson.kmp.process/OutputFeed.Raw|null[0]
-        abstract fun onOutput(kotlin/Int, kotlin/Function1<kotlin/Int, kotlin/Byte>?) // io.matthewnelson.kmp.process/OutputFeed.Raw.onOutput|onOutput(kotlin.Int;kotlin.Function1<kotlin.Int,kotlin.Byte>?){}[0]
+        abstract fun onOutput(io.matthewnelson.kmp.process/Output.Data?) // io.matthewnelson.kmp.process/OutputFeed.Raw.onOutput|onOutput(io.matthewnelson.kmp.process.Output.Data?){}[0]
     }
 
     sealed class Handler : io.matthewnelson.kmp.process/Blocking { // io.matthewnelson.kmp.process/OutputFeed.Handler|null[0]
@@ -145,25 +145,33 @@ final class io.matthewnelson.kmp.process/Output { // io.matthewnelson.kmp.proces
     final val stderr // io.matthewnelson.kmp.process/Output.stderr|{}stderr[0]
         final fun <get-stderr>(): kotlin/String // io.matthewnelson.kmp.process/Output.stderr.<get-stderr>|<get-stderr>(){}[0]
     final val stderrBuf // io.matthewnelson.kmp.process/Output.stderrBuf|{}stderrBuf[0]
-        final fun <get-stderrBuf>(): io.matthewnelson.kmp.process/Output.Buffered // io.matthewnelson.kmp.process/Output.stderrBuf.<get-stderrBuf>|<get-stderrBuf>(){}[0]
+        final fun <get-stderrBuf>(): io.matthewnelson.kmp.process/Output.Data // io.matthewnelson.kmp.process/Output.stderrBuf.<get-stderrBuf>|<get-stderrBuf>(){}[0]
     final val stdout // io.matthewnelson.kmp.process/Output.stdout|{}stdout[0]
         final fun <get-stdout>(): kotlin/String // io.matthewnelson.kmp.process/Output.stdout.<get-stdout>|<get-stdout>(){}[0]
     final val stdoutBuf // io.matthewnelson.kmp.process/Output.stdoutBuf|{}stdoutBuf[0]
-        final fun <get-stdoutBuf>(): io.matthewnelson.kmp.process/Output.Buffered // io.matthewnelson.kmp.process/Output.stdoutBuf.<get-stdoutBuf>|<get-stdoutBuf>(){}[0]
+        final fun <get-stdoutBuf>(): io.matthewnelson.kmp.process/Output.Data // io.matthewnelson.kmp.process/Output.stdoutBuf.<get-stdoutBuf>|<get-stdoutBuf>(){}[0]
 
     final fun toString(): kotlin/String // io.matthewnelson.kmp.process/Output.toString|toString(){}[0]
 
     sealed interface Feed // io.matthewnelson.kmp.process/Output.Feed|null[0]
 
-    abstract class Buffered { // io.matthewnelson.kmp.process/Output.Buffered|null[0]
-        final val indices // io.matthewnelson.kmp.process/Output.Buffered.indices|{}indices[0]
-            final fun <get-indices>(): kotlin.ranges/IntRange // io.matthewnelson.kmp.process/Output.Buffered.indices.<get-indices>|<get-indices>(){}[0]
-        final val length // io.matthewnelson.kmp.process/Output.Buffered.length|{}length[0]
-            final fun <get-length>(): kotlin/Int // io.matthewnelson.kmp.process/Output.Buffered.length.<get-length>|<get-length>(){}[0]
+    abstract class Data : kotlin.collections/Collection<kotlin/Byte> { // io.matthewnelson.kmp.process/Output.Data|null[0]
+        final val size // io.matthewnelson.kmp.process/Output.Data.size|{}size[0]
+            final fun <get-size>(): kotlin/Int // io.matthewnelson.kmp.process/Output.Data.size.<get-size>|<get-size>(){}[0]
 
-        abstract fun get(kotlin/Int): kotlin/Byte // io.matthewnelson.kmp.process/Output.Buffered.get|get(kotlin.Int){}[0]
-        abstract fun iterator(): kotlin.collections/ByteIterator // io.matthewnelson.kmp.process/Output.Buffered.iterator|iterator(){}[0]
-        abstract fun utf8(): kotlin/String // io.matthewnelson.kmp.process/Output.Buffered.utf8|utf8(){}[0]
+        abstract fun contains(kotlin/Byte): kotlin/Boolean // io.matthewnelson.kmp.process/Output.Data.contains|contains(kotlin.Byte){}[0]
+        abstract fun containsAll(kotlin.collections/Collection<kotlin/Byte>): kotlin/Boolean // io.matthewnelson.kmp.process/Output.Data.containsAll|containsAll(kotlin.collections.Collection<kotlin.Byte>){}[0]
+        abstract fun copyInto(kotlin/ByteArray, kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ...): kotlin/ByteArray // io.matthewnelson.kmp.process/Output.Data.copyInto|copyInto(kotlin.ByteArray;kotlin.Int;kotlin.Int;kotlin.Int){}[0]
+        abstract fun get(kotlin/Int): kotlin/Byte // io.matthewnelson.kmp.process/Output.Data.get|get(kotlin.Int){}[0]
+        abstract fun iterator(): kotlin.collections/ByteIterator // io.matthewnelson.kmp.process/Output.Data.iterator|iterator(){}[0]
+        abstract fun utf8(): kotlin/String // io.matthewnelson.kmp.process/Output.Data.utf8|utf8(){}[0]
+        final fun bytes(): kotlin/ByteArray // io.matthewnelson.kmp.process/Output.Data.bytes|bytes(){}[0]
+        final fun isEmpty(): kotlin/Boolean // io.matthewnelson.kmp.process/Output.Data.isEmpty|isEmpty(){}[0]
+        final fun toString(): kotlin/String // io.matthewnelson.kmp.process/Output.Data.toString|toString(){}[0]
+
+        final object Companion { // io.matthewnelson.kmp.process/Output.Data.Companion|null[0]
+            final fun (kotlin.collections/Collection<io.matthewnelson.kmp.process/Output.Data?>).merge(): io.matthewnelson.kmp.process/Output.Data // io.matthewnelson.kmp.process/Output.Data.Companion.merge|merge@kotlin.collections.Collection<io.matthewnelson.kmp.process.Output.Data?>(){}[0]
+        }
     }
 
     final class Options { // io.matthewnelson.kmp.process/Output.Options|null[0]

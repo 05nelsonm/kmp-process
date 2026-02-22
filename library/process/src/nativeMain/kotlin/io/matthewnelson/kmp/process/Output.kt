@@ -21,26 +21,56 @@ import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.process.internal.OUTPUT_OPTIONS_MIN_TIMEOUT
 import io.matthewnelson.kmp.process.internal.commonBuild
+import io.matthewnelson.kmp.process.internal.commonBytes
 import io.matthewnelson.kmp.process.internal.commonConsumeInput
 import io.matthewnelson.kmp.process.internal.commonHasInput
+import io.matthewnelson.kmp.process.internal.commonInit
+import io.matthewnelson.kmp.process.internal.commonIsEmpty
 import io.matthewnelson.kmp.process.internal.commonToString
 import io.matthewnelson.kmp.process.internal.commonMaxBufferDefault
+import io.matthewnelson.kmp.process.internal.commonMerge
 import kotlin.concurrent.Volatile
 import kotlin.time.Duration
 
-// nonJvmMain
+// nativeMain
 public actual class Output private constructor(
-    public actual val stdoutBuf: Buffered,
-    public actual val stderrBuf: Buffered,
+    public actual val stdoutBuf: Data,
+    public actual val stderrBuf: Data,
     public actual val processError: String?,
     public actual val processInfo: ProcessInfo,
 ) {
 
-    public actual abstract class Buffered internal actual constructor(public actual val length: Int) {
-        public actual val indices: IntRange get() = IntRange(0, length - 1)
+    public actual abstract class Data internal actual constructor(
+        public actual final override val size: Int,
+        private val segments: Array<ReadBuffer>,
+        private val sizes: IntArray?,
+        init: Any,
+    ): Collection<Byte> {
+
         public actual abstract operator fun get(index: Int): Byte
-        public actual abstract operator fun iterator(): ByteIterator
+
+        public actual final override fun isEmpty(): Boolean = commonIsEmpty()
+        public actual abstract override operator fun iterator(): ByteIterator
+        public actual abstract override fun contains(element: Byte): Boolean
+        public actual abstract override fun containsAll(elements: Collection<Byte>): Boolean
+
+        public actual fun bytes(): ByteArray = commonBytes()
+        public actual abstract fun copyInto(
+            dest: ByteArray,
+            destOffset: Int/* = 0*/,
+            indexStart: Int/* = 0*/,
+            indexEnd: Int/* = size*/,
+        ): ByteArray
         public actual abstract fun utf8(): String
+
+        public actual companion object {
+            public actual fun Collection<Data?>.merge(): Data = commonMerge(_segmentsGet = Data::segments)
+        }
+
+        /** @suppress */
+        public actual final override fun toString(): String = commonToString()
+
+        init { commonInit(init) }
     }
 
     public actual sealed interface Feed
@@ -109,8 +139,8 @@ public actual class Output private constructor(
         internal actual companion object {
 
             internal actual fun createOutput(
-                stdoutBuf: Buffered,
-                stderrBuf: Buffered,
+                stdoutBuf: Data,
+                stderrBuf: Data,
                 processError: String?,
                 pid: Int,
                 exitCode: Int,

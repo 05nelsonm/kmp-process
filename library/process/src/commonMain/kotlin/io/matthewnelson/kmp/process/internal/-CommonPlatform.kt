@@ -21,6 +21,7 @@ import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.file.SysDirSep
 import io.matthewnelson.kmp.file.path
+import io.matthewnelson.kmp.process.Output
 import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.Stdio
@@ -112,9 +113,40 @@ internal inline fun ByteArray.checkBounds(offset: Int, len: Int) {
 }
 
 @Throws(IndexOutOfBoundsException::class)
-internal inline fun Int.checkBounds(offset: Int, len: Int) {
+internal fun Int.checkBounds(offset: Int, len: Int) {
     val size = this
     if (offset < 0) throw IndexOutOfBoundsException("offset[$offset] < 0")
     if (len < 0) throw IndexOutOfBoundsException("len[$len] < 0")
     if (offset > size - len) throw IndexOutOfBoundsException("offset[$offset] > size[$size] - len[$len]")
+}
+
+@Throws(IndexOutOfBoundsException::class)
+internal inline fun Output.Data.checkCopyBounds(dest: ByteArray, destOffset: Int, indexStart: Int, indexEnd: Int) {
+    size.checkCopyBounds(dest.size.toLong(), destOffset.toLong(), indexStart, indexEnd)
+}
+
+@Throws(IndexOutOfBoundsException::class)
+internal fun Int.checkCopyBounds(destSize: Long, destOffset: Long, indexStart: Int, indexEnd: Int) {
+    val size = this
+    if (indexStart < 0) throw IndexOutOfBoundsException("indexStart[$indexStart] < 0")
+    if (indexStart > indexEnd) throw IndexOutOfBoundsException("indexStart[$indexStart] > indexEnd[$indexEnd]")
+    if (indexEnd > size) throw IndexOutOfBoundsException("indexEnd[$indexEnd] > size[$size]")
+
+    if (destSize < 0L) throw IndexOutOfBoundsException("dest.size[$destSize] < 0")
+    if (destSize == 0L) {
+        if (destOffset != 0L) {
+            throw IndexOutOfBoundsException("destOffset[$destOffset] !in 0..0")
+        }
+    } else {
+        if (destOffset !in (0L until destSize)) {
+            throw IndexOutOfBoundsException("destOffset[$destOffset] !in 0..${destSize - 1}")
+        }
+    }
+    val len = (indexEnd - indexStart).toLong()
+    val capacity = destSize - destOffset
+    if (len > capacity) {
+        throw IndexOutOfBoundsException(
+            "(indexEnd[$indexEnd] - indexStart[$indexStart]) > (dest.size[$destSize] - destOffset[$destOffset])"
+        )
+    }
 }

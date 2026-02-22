@@ -13,13 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
+@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING", "NOTHING_TO_INLINE")
 
 package io.matthewnelson.kmp.process
 
 import io.matthewnelson.encoding.core.EncoderDecoder.Companion.DEFAULT_BUFFER_SIZE
 import io.matthewnelson.kmp.file.Buffer
+import io.matthewnelson.kmp.file.get
 import io.matthewnelson.kmp.process.internal.RealLineOutputFeed
+import io.matthewnelson.kmp.process.internal.checkCopyBounds
 import io.matthewnelson.kmp.process.internal.node.asBuffer
 import io.matthewnelson.kmp.process.internal.node.asJsBuffer
 import io.matthewnelson.kmp.process.internal.node.jsBufferAllocUnsafe
@@ -138,16 +140,22 @@ public actual value class ReadBuffer private actual constructor(private actual v
         public fun of(buf: Buffer): ReadBuffer = ReadBuffer(buf)
     }
 
-    internal actual fun capacity(): Int = buf.length.toInt()
-
-    @Throws(IndexOutOfBoundsException::class)
-    internal actual operator fun get(index: Int): Byte = buf.readInt8(index)
-
-    internal actual fun functionGet(): (index: Int) -> Byte = buf::readInt8
-
-    internal actual fun copy(len: Int): ReadBuffer {
+    internal actual inline fun capacity(): Int = buf.length.toInt()
+    internal actual inline fun copyUnsafe(len: Int): ReadBuffer {
         val target = jsBufferAllocUnsafe(len)
-        buf.asJsBuffer().copy(target, targetStart = 0, sourceStart = 0, sourceEnd = len)
+        buf.asJsBuffer().copy(target, targetStart = 0.toDouble(), sourceStart = 0.toDouble(), sourceEnd = len.toDouble())
         return ReadBuffer(target.asBuffer())
     }
+    internal actual inline fun copyIntoUnsafe(dest: ByteArray, destOffset: Int, indexStart: Int, indexEnd: Int): ByteArray {
+        var i = destOffset
+        val jsBuf = buf.asJsBuffer()
+        for (j in indexStart until indexEnd) { dest[i++] = jsBuf.readInt8Unsafe(j) }
+        return dest
+    }
+    internal actual inline fun copyInto(dest: ByteArray, destOffset: Int, indexStart: Int, indexEnd: Int): ByteArray {
+        capacity().checkCopyBounds(dest.size.toLong(), destOffset.toLong(), indexStart, indexEnd)
+        return copyIntoUnsafe(dest, destOffset, indexStart, indexEnd)
+    }
+    internal actual inline operator fun get(index: Int): Byte = buf[index]
+    internal actual inline fun utf8(): String = buf.toUtf8()
 }
