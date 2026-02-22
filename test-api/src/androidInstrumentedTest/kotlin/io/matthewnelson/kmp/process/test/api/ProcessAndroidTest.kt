@@ -149,12 +149,12 @@ class ProcessAndroidTest: ProcessBaseTest() {
     }
 
     @Test
-    override fun givenExecutable_whenPipeOutputFeeds_thenOutputFeedRawReceivesTheSameData(): TestResult {
+    override fun givenExecutable_whenPipeOutputFeeds_thenOutputFeedRawReceivesSameData(): TestResult {
         if (sdkInt < 21) {
             println("Skipping...")
             return
         }
-        return super.givenExecutable_whenPipeOutputFeeds_thenOutputFeedRawReceivesTheSameData()
+        return super.givenExecutable_whenPipeOutputFeeds_thenOutputFeedRawReceivesSameData()
     }
 
     @Test
