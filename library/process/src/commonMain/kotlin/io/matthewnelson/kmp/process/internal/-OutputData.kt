@@ -36,7 +36,7 @@ internal fun Output.Data.commonInit(init: Any) {
 @Suppress("ReplaceSizeZeroCheckWithIsEmpty")
 internal inline fun Output.Data.commonIsEmpty(): Boolean = size == 0
 
-internal inline fun Output.Data.commonBytes(): ByteArray = copyInto(dest = ByteArray(size))
+internal inline fun Output.Data.commonToByteArray(): ByteArray = copyInto(dest = ByteArray(size))
 
 internal inline fun Output.Data.commonToString(): String = "Output.Data[size=$size]@" + hashCode()
 

@@ -165,8 +165,8 @@ final class io.matthewnelson.kmp.process/Output { // io.matthewnelson.kmp.proces
         abstract fun get(kotlin/Int): kotlin/Byte // io.matthewnelson.kmp.process/Output.Data.get|get(kotlin.Int){}[0]
         abstract fun iterator(): kotlin.collections/ByteIterator // io.matthewnelson.kmp.process/Output.Data.iterator|iterator(){}[0]
         abstract fun utf8(): kotlin/String // io.matthewnelson.kmp.process/Output.Data.utf8|utf8(){}[0]
-        final fun bytes(): kotlin/ByteArray // io.matthewnelson.kmp.process/Output.Data.bytes|bytes(){}[0]
         final fun isEmpty(): kotlin/Boolean // io.matthewnelson.kmp.process/Output.Data.isEmpty|isEmpty(){}[0]
+        final fun toByteArray(): kotlin/ByteArray // io.matthewnelson.kmp.process/Output.Data.toByteArray|toByteArray(){}[0]
         final fun toString(): kotlin/String // io.matthewnelson.kmp.process/Output.Data.toString|toString(){}[0]
 
         final object Companion { // io.matthewnelson.kmp.process/Output.Data.Companion|null[0]

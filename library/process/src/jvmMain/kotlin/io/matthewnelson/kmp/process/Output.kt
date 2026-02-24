@@ -21,7 +21,7 @@ import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.process.internal.OUTPUT_OPTIONS_MIN_TIMEOUT
 import io.matthewnelson.kmp.process.internal.commonBuild
-import io.matthewnelson.kmp.process.internal.commonBytes
+import io.matthewnelson.kmp.process.internal.commonToByteArray
 import io.matthewnelson.kmp.process.internal.commonConsumeInput
 import io.matthewnelson.kmp.process.internal.commonHasInput
 import io.matthewnelson.kmp.process.internal.commonInit
@@ -62,7 +62,7 @@ public actual class Output private constructor(
         public actual abstract override fun contains(element: Byte): Boolean
         public actual abstract override fun containsAll(elements: Collection<Byte>): Boolean
 
-        public actual fun bytes(): ByteArray = commonBytes()
+        public actual fun toByteArray(): ByteArray = commonToByteArray()
         public actual abstract fun copyInto(
             dest: ByteArray,
             destOffset: Int/* = 0*/,
@@ -74,10 +74,10 @@ public actual class Output private constructor(
         /**
          * The contents of this instances as a read-only [ByteBuffer].
          * */
-        public fun byteBuffer(): ByteBuffer {
+        public fun asByteBuffer(): ByteBuffer {
             val bb = _bb ?: when {
                 segments.size == 1 -> segments[0].buf
-                else -> bytes()
+                else -> toByteArray()
             }.let { array -> ByteBuffer.wrap(array).also { _bb = it } }
             return bb.asReadOnlyBuffer()
         }

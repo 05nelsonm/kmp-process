@@ -40,7 +40,7 @@ class OutputDataJvmUnitTest {
     fun givenEmptyData_whenByteBuffer_thenIsEmpty() {
         emptyList<ReadBuffer>()
             .asOutputData()
-            .byteBuffer()
+            .asByteBuffer()
             .assertState("bb", expectedCapacity = 0)
     }
 
@@ -51,10 +51,10 @@ class OutputDataJvmUnitTest {
         val data = buf.asOutputData()
         assertEquals(20, data.size)
 
-        val bb1 = data.byteBuffer().assertState("bb1", expectedCapacity = data.size)
+        val bb1 = data.asByteBuffer().assertState("bb1", expectedCapacity = data.size)
 
         // Should not be affected by modifications to bb1
-        val bb2 = data.byteBuffer().assertState("bb2", expectedCapacity = data.size)
+        val bb2 = data.asByteBuffer().assertState("bb2", expectedCapacity = data.size)
 
         for (i in data.indices) {
             val e = data[i]
@@ -66,7 +66,7 @@ class OutputDataJvmUnitTest {
         bb2.assertState("bb2", expectedCapacity = data.size)
 
         // For posterity, check a newly created one.
-        data.byteBuffer().assertState("bb3", expectedCapacity = data.size)
+        data.asByteBuffer().assertState("bb3", expectedCapacity = data.size)
     }
 
     @Test
@@ -76,10 +76,10 @@ class OutputDataJvmUnitTest {
         val data = listOf(buf, buf).asOutputData()
         assertEquals(20, data.size)
 
-        val bb1 = data.byteBuffer().assertState("bb1", expectedCapacity = data.size)
+        val bb1 = data.asByteBuffer().assertState("bb1", expectedCapacity = data.size)
 
         // Should not be affected by modifications to bb1
-        val bb2 = data.byteBuffer().assertState("bb2", expectedCapacity = data.size)
+        val bb2 = data.asByteBuffer().assertState("bb2", expectedCapacity = data.size)
 
         for (i in data.indices) {
             val e = data[i]
@@ -91,6 +91,6 @@ class OutputDataJvmUnitTest {
         bb2.assertState("bb2", expectedCapacity = data.size)
 
         // For posterity, check a newly created one.
-        data.byteBuffer().assertState("bb3", expectedCapacity = data.size)
+        data.asByteBuffer().assertState("bb3", expectedCapacity = data.size)
     }
 }

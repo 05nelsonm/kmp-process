@@ -64,8 +64,7 @@ public abstract class io/matthewnelson/kmp/process/Output$Data : java/util/Colle
 	public fun add (B)Z
 	public synthetic fun add (Ljava/lang/Object;)Z
 	public fun addAll (Ljava/util/Collection;)Z
-	public final fun byteBuffer ()Ljava/nio/ByteBuffer;
-	public final fun bytes ()[B
+	public final fun asByteBuffer ()Ljava/nio/ByteBuffer;
 	public fun clear ()V
 	public abstract fun contains (B)Z
 	public final fun contains (Ljava/lang/Object;)Z
@@ -84,6 +83,7 @@ public abstract class io/matthewnelson/kmp/process/Output$Data : java/util/Colle
 	public final fun size ()I
 	public fun toArray ()[Ljava/lang/Object;
 	public fun toArray ([Ljava/lang/Object;)[Ljava/lang/Object;
+	public final fun toByteArray ()[B
 	public final fun toString ()Ljava/lang/String;
 	public abstract fun utf8 ()Ljava/lang/String;
 }

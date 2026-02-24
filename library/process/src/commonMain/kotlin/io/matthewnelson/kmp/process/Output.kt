@@ -83,7 +83,7 @@ public expect class Output {
         /**
          * Creates a copy of the contents of this instances as an array.
          * */
-        public fun bytes(): ByteArray
+        public fun toByteArray(): ByteArray
 
         /**
          * TODO
