@@ -20,9 +20,9 @@ package io.matthewnelson.kmp.process
 import io.matthewnelson.kmp.process.ProcessException.Companion.CTX_FEED_STDERR
 import io.matthewnelson.kmp.process.ProcessException.Companion.CTX_FEED_STDOUT
 import io.matthewnelson.kmp.process.internal.Lock
-import io.matthewnelson.kmp.process.internal.OutputFeedBuffer
+import io.matthewnelson.kmp.process.internal.OutputFeedBufferREMOVE00
 import io.matthewnelson.kmp.process.internal.RealLineOutputFeed
-import io.matthewnelson.kmp.process.internal.asOutputData
+import io.matthewnelson.kmp.process.internal.asOutputDataREMOVE00
 import io.matthewnelson.kmp.process.internal.empty
 import io.matthewnelson.kmp.process.internal.newLock
 import io.matthewnelson.kmp.process.internal.withLock
@@ -372,7 +372,7 @@ public fun interface OutputFeed: Output.Feed {
 
                 // Will only be the case if this Process is for creating Output
                 // via Process.Builder.{createOutput/createOutputAsync}.
-                is OutputFeedBuffer -> onData(buf, len)
+                is OutputFeedBufferREMOVE00 -> onData(buf, len)
 
                 is OutputFeed.Raw -> if (buf == null) onOutput(data = null) else {
                     _dataGet()?.let { data -> return onOutput(data) }
@@ -380,7 +380,7 @@ public fun interface OutputFeed: Output.Feed {
                     val new = if (len <= 0) {
                         Output.Data.empty()
                     } else {
-                        buf.copyUnsafe(len).asOutputData()
+                        buf.copyUnsafe(len).asOutputDataREMOVE00()
                     }
                     _dataSet(new)
                     onOutput(data = new)

@@ -15,7 +15,9 @@
  **/
 package io.matthewnelson.kmp.process
 
+import io.matthewnelson.kmp.process.internal.Bit8Array
 import io.matthewnelson.kmp.process.internal.asOutputData
+import io.matthewnelson.kmp.process.internal.empty
 import java.nio.ByteBuffer
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -38,17 +40,14 @@ class OutputDataJvmUnitTest {
 
     @Test
     fun givenEmptyData_whenAsByteBuffer_thenIsEmpty() {
-        emptyList<ReadBuffer>()
-            .asOutputData()
+        Output.Data.empty()
             .asByteBuffer()
             .assertState("bb", expectedCapacity = 0)
     }
 
     @Test
     fun givenSingleData_whenAsByteBuffer_thenAreDifferentInstances() {
-        val buf = ReadBuffer.of(ByteArray(20))
-        repeat(buf.capacity()) { i -> buf[i] = (i - 10).toByte() }
-        val data = buf.asOutputData()
+        val data = Bit8Array(20) { i -> (i - 10).toByte() }.asOutputData()
         assertEquals(20, data.size)
 
         val bb1 = data.asByteBuffer().assertState("bb1", expectedCapacity = data.size)
@@ -71,8 +70,7 @@ class OutputDataJvmUnitTest {
 
     @Test
     fun givenSegmentedData_whenAsByteBuffer_thenAreDifferentInstances() {
-        val buf = ReadBuffer.of(ByteArray(10))
-        repeat(buf.capacity()) { i -> buf[i] = (i - 10).toByte() }
+        val buf = Bit8Array(10) { i -> (i - 10).toByte() }
         val data = listOf(buf, buf).asOutputData()
         assertEquals(20, data.size)
 
