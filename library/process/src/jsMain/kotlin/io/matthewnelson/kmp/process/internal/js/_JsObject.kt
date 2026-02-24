@@ -16,13 +16,13 @@
 package io.matthewnelson.kmp.process.internal.js
 
 import io.matthewnelson.kmp.process.internal.DoNotReferenceDirectly
-import io.matthewnelson.kmp.process.internal.node.JsBuffer
+import io.matthewnelson.kmp.process.internal.js.typed.JsUint8Array
 
 @DoNotReferenceDirectly("JsObject.Companion.new()")
 internal actual fun jsObjectNew(): JsObject = js(CODE_JS_OBJECT_NEW)
 
 @DoNotReferenceDirectly("obj.getJsBufferOrNull(key)")
-internal actual fun jsObjectGetJsBufferOrNull(obj: JsObject, key: String): JsBuffer? = js(CODE_JS_OBJECT_GET)
+internal actual fun jsObjectGetJsBufferOrNull(obj: JsObject, key: String): JsUint8Array? = js(CODE_JS_OBJECT_GET)
 @DoNotReferenceDirectly("obj.getJsErrorOrNull(key)")
 internal actual fun jsObjectGetJsErrorOrNull(obj: JsObject, key: String): JsError? = js(CODE_JS_OBJECT_GET)
 @DoNotReferenceDirectly("obj.getInt(key)")

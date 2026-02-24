@@ -27,11 +27,9 @@ import io.matthewnelson.kmp.file.jsExternTryCatch
 import io.matthewnelson.kmp.file.path
 import io.matthewnelson.kmp.file.toFile
 import io.matthewnelson.kmp.file.toIOException
-import io.matthewnelson.kmp.process.InternalProcessApi
 import io.matthewnelson.kmp.process.Output
 import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.ProcessException
-import io.matthewnelson.kmp.process.ReadBuffer
 import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.Stdio
 import io.matthewnelson.kmp.process.internal.js.JsArray
@@ -48,10 +46,10 @@ import io.matthewnelson.kmp.process.internal.js.new
 import io.matthewnelson.kmp.process.internal.js.set
 import io.matthewnelson.kmp.process.internal.js.toJsArray
 import io.matthewnelson.kmp.process.internal.js.toThrowable
-import io.matthewnelson.kmp.process.internal.node.JsBuffer
+import io.matthewnelson.kmp.process.internal.js.typed.JsUint8Array
+import io.matthewnelson.kmp.process.internal.js.typed.new
 import io.matthewnelson.kmp.process.internal.node.JsStats
 import io.matthewnelson.kmp.process.internal.node.ModuleFs
-import io.matthewnelson.kmp.process.internal.node.asBuffer
 import io.matthewnelson.kmp.process.internal.node.node_child_process
 import io.matthewnelson.kmp.process.internal.node.node_fs
 import io.matthewnelson.kmp.process.internal.node.node_process
@@ -338,10 +336,11 @@ private fun List<Any>.toJsArray(): JsArray {
     return array
 }
 
-private fun JsBuffer?.asOutputData(): Output.Data {
+private fun JsUint8Array?.asOutputData(): Output.Data {
     if (this == null) return Output.Data.empty()
-    @OptIn(InternalProcessApi::class)
-    return ReadBuffer.of(buf = asBuffer()).asOutputDataREMOVE00()
+    // TODO: Fix imports
+    val int8 = io.matthewnelson.kmp.process.internal.js.typed.JsInt8Array.new(buffer)
+    return Bit8Array(storage = int8).asOutputData()
 }
 
 @OptIn(ExperimentalContracts::class)
