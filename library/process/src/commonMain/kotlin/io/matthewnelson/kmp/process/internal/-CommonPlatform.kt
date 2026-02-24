@@ -122,27 +122,27 @@ internal fun Int.checkBounds(offset: Int, len: Int) {
 
 @Throws(IndexOutOfBoundsException::class)
 internal inline fun Output.Data.checkCopyBounds(dest: ByteArray, destOffset: Int, indexStart: Int, indexEnd: Int) {
-    size.checkCopyBounds(dest.size.toLong(), destOffset.toLong(), indexStart, indexEnd)
+    size.checkCopyBounds(dest.size, destOffset, indexStart, indexEnd)
 }
 
 @Throws(IndexOutOfBoundsException::class)
-internal fun Int.checkCopyBounds(destSize: Long, destOffset: Long, indexStart: Int, indexEnd: Int) {
+internal fun Int.checkCopyBounds(destSize: Int, destOffset: Int, indexStart: Int, indexEnd: Int) {
     val size = this
     if (indexStart < 0) throw IndexOutOfBoundsException("indexStart[$indexStart] < 0")
     if (indexStart > indexEnd) throw IndexOutOfBoundsException("indexStart[$indexStart] > indexEnd[$indexEnd]")
     if (indexEnd > size) throw IndexOutOfBoundsException("indexEnd[$indexEnd] > size[$size]")
 
-    if (destSize < 0L) throw IndexOutOfBoundsException("dest.size[$destSize] < 0")
-    if (destSize == 0L) {
-        if (destOffset != 0L) {
+    if (destSize < 0) throw IndexOutOfBoundsException("dest.size[$destSize] < 0")
+    if (destSize == 0) {
+        if (destOffset != 0) {
             throw IndexOutOfBoundsException("destOffset[$destOffset] !in 0..0")
         }
     } else {
-        if (destOffset !in (0L until destSize)) {
+        if (destOffset !in (0 until destSize)) {
             throw IndexOutOfBoundsException("destOffset[$destOffset] !in 0..${destSize - 1}")
         }
     }
-    val len = (indexEnd - indexStart).toLong()
+    val len = (indexEnd - indexStart)
     val capacity = destSize - destOffset
     if (len > capacity) {
         throw IndexOutOfBoundsException(

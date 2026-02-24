@@ -153,7 +153,7 @@ public actual value class ReadBuffer private actual constructor(private actual v
         return dest
     }
     internal actual inline fun copyInto(dest: ByteArray, destOffset: Int, indexStart: Int, indexEnd: Int): ByteArray {
-        capacity().checkCopyBounds(dest.size.toLong(), destOffset.toLong(), indexStart, indexEnd)
+        capacity().checkCopyBounds(dest.size, destOffset, indexStart, indexEnd)
         return copyIntoUnsafe(dest, destOffset, indexStart, indexEnd)
     }
     internal actual inline operator fun get(index: Int): Byte = buf[index]

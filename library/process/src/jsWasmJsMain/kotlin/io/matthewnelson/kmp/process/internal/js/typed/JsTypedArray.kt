@@ -18,4 +18,6 @@ package io.matthewnelson.kmp.process.internal.js.typed
 import io.matthewnelson.kmp.process.internal.js.array.JsArrayLike
 import io.matthewnelson.kmp.process.internal.js.buffer.JsArrayBufferView
 
-internal sealed external interface JsTypedArray: JsArrayBufferView, JsArrayLike
+internal sealed external interface JsTypedArray: JsArrayBufferView, JsArrayLike {
+    fun slice(start: Int, end: Int): JsTypedArray
+}

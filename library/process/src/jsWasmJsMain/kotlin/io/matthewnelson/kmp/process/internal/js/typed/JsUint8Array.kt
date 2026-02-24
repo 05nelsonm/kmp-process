@@ -28,6 +28,7 @@ internal open external class JsUint8Array: JsTypedArray {
     override val byteLength: Int
     override val byteOffset: Int
     override val length: Int
+    override fun slice(start: Int, end: Int): JsUint8Array
     internal companion object
 }
 
