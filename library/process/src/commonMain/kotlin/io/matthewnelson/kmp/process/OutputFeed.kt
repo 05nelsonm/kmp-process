@@ -51,14 +51,8 @@ import kotlin.time.Duration.Companion.milliseconds
  *     val exitCode = builder.createProcessAsync().use { p ->
  *         p.stdout(
  *             OutputFeed { line -> println(line ?: "--STDOUT EOS--") },
- *             OutputFeed.Raw { len, get ->
- *                 if (get == null) {
- *                     println("--STDOUT EOS--")
- *                     return@Raw
- *                 }
- *                 // Retrieve bytes from the buffer
- *                 for (i in 0 until len) { get(i) }
- *                 repeat(len) { i -> get(i) }
+ *             OutputFeed.Raw { data ->
+ *                 println(data?.utf8() ?: "--STDOUT EOS--")
  *             },
  *         ).stderr(
  *             OutputFeed { line -> println(line ?: "--STDERR EOS--") },
@@ -100,14 +94,8 @@ public fun interface OutputFeed: Output.Feed {
      *     val exitCode = builder.createProcessAsync().use { p ->
      *         p.stdout(
      *             OutputFeed { line -> println(line ?: "--STDOUT EOS--") },
-     *             OutputFeed.Raw { len, get ->
-     *                 if (get == null) {
-     *                     println("--STDOUT EOS--")
-     *                     return@Raw
-     *                 }
-     *                 // Retrieve bytes from the buffer
-     *                 for (i in 0 until len) { get(i) }
-     *                 repeat(len) { i -> get(i) }
+     *             OutputFeed.Raw { data ->
+     *                 println(data?.utf8() ?: "--STDOUT EOS--")
      *             },
      *         ).stderr(
      *             OutputFeed { line -> println(line ?: "--STDERR EOS--") },
@@ -129,7 +117,7 @@ public fun interface OutputFeed: Output.Feed {
         /**
          * Receive a read-only view to the buffered bytes of output from [Process].
          *
-         * @param [data] TODO
+         * @param [data] The [Output.Data], or `null` to indicate end-of-stream.
          * */
         public fun onOutput(data: Output.Data?)
     }

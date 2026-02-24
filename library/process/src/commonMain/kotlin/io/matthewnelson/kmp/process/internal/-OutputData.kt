@@ -109,7 +109,7 @@ private object EmptyData: Output.Data(size = 0, segments = emptyArray(), sizes =
     override fun utf8(): String = ""
 
     override fun equals(other: Any?): Boolean = other is Output.Data && other.isEmpty()
-    override fun hashCode(): Int = 17 * 31 + this::class.hashCode()
+    override fun hashCode(): Int = 1
 }
 
 private sealed class NonEmptyData(
@@ -139,16 +139,47 @@ private sealed class NonEmptyData(
     }
 
     final override fun equals(other: Any?): Boolean {
-        return other is NonEmptyData && other.hashCode() == this.hashCode()
+        if (other === this) return true
+        if (other !is NonEmptyData) return false
+        if (other.size != this.size) return false
+
+        if (other._lazyHashCode != UNKNOWN_HASH_CODE) {
+            if (this._lazyHashCode != UNKNOWN_HASH_CODE) {
+                if (other._lazyHashCode != this._lazyHashCode) return false
+            }
+        }
+
+        var oI = 0
+        var oISegment = 0
+        var oSegment = other.segments[oISegment++]
+
+        var tI = 0
+        var tISegment = 0
+        var tSegment = this.segments[tISegment++]
+        repeat(size) { _ ->
+            if (oI == oSegment.capacity()) {
+                oSegment = other.segments[oISegment++]
+                oI = 0
+            }
+            if (tI == tSegment.capacity()) {
+                tSegment = this.segments[tISegment++]
+                tI = 0
+            }
+            if (oSegment[oI++] != tSegment[tI++]) return false
+        }
+
+        return true
     }
 
     final override fun hashCode(): Int {
         var result = _lazyHashCode
         if (result != UNKNOWN_HASH_CODE) return result
-        result = 17
-        result = result * 31 + NonEmptyData::class.hashCode()
+        result = 1
         for (i in segments.indices) {
-            result = result * 31 + segments[i].hashCode()
+            val segment = segments[i]
+            for (j in 0 until segment.capacity()) {
+                result = result * 31 + segment[j].hashCode()
+            }
         }
         _lazyHashCode = result
         return result
@@ -167,10 +198,12 @@ private class SingleData(
     override fun get(index: Int): Byte = buf[index]
 
     override fun iterator(): ByteIterator = object : ByteIterator() {
+        private val _size = size
+        private val _buf = buf
         private var i = 0
-        override fun hasNext(): Boolean = i < size
-        override fun nextByte(): Byte = if (i < size) buf[i++]
-        else throw NoSuchElementException("Index $i out of bounds for size $size")
+        override fun hasNext(): Boolean = i < _size
+        override fun nextByte(): Byte = if (i < _size) _buf[i++]
+        else throw NoSuchElementException("Index $i out of bounds for size $_size")
     }
 
     override fun copyInto(
@@ -202,17 +235,19 @@ private class SegmentedData(
 
     override fun iterator(): ByteIterator = object : ByteIterator() {
 
+        private val _size = size
+        private val _segments = segments
         private var i = 0
         private var j = 0
-        private var _segment: ReadBuffer? = segments[j++]
+        private var _segment: ReadBuffer? = _segments[j++]
 
         override fun hasNext(): Boolean = _segment != null
 
         override fun nextByte(): Byte {
-            val segment = _segment ?: throw NoSuchElementException("Index $i out of bounds for size $size")
+            val segment = _segment ?: throw NoSuchElementException("Index $i out of bounds for size $_size")
             val b = segment[i++]
             if (i == segment.capacity()) {
-                _segment = segments.elementAtOrNull(j++)
+                _segment = _segments.elementAtOrNull(j++)
                 i = 0
             }
             return b
