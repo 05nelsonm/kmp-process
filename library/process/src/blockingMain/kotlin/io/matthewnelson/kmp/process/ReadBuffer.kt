@@ -13,11 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
+@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING", "NOTHING_TO_INLINE")
 
 package io.matthewnelson.kmp.process
 
+import io.matthewnelson.encoding.core.Encoder.Companion.encodeToString
 import io.matthewnelson.encoding.core.EncoderDecoder.Companion.DEFAULT_BUFFER_SIZE
+import io.matthewnelson.encoding.utf8.UTF8
 import io.matthewnelson.kmp.process.internal.RealLineOutputFeed
 import kotlin.jvm.JvmInline
 
@@ -134,12 +136,14 @@ public actual value class ReadBuffer private actual constructor(private actual v
         public fun of(buf: ByteArray): ReadBuffer = ReadBuffer(buf)
     }
 
-    internal actual fun capacity(): Int = buf.size
-
-    @Throws(IndexOutOfBoundsException::class)
-    internal actual operator fun get(index: Int): Byte = buf[index]
-
-    internal actual fun functionGet(): (index: Int) -> Byte = buf::get
-
-    internal actual fun copy(len: Int): ReadBuffer = ReadBuffer(buf.copyOf(len))
+    internal actual inline fun capacity(): Int = buf.size
+    internal actual inline fun copyUnsafe(len: Int): ReadBuffer = ReadBuffer(buf.copyOf(len))
+    internal actual inline fun copyIntoUnsafe(dest: ByteArray, destOffset: Int, indexStart: Int, indexEnd: Int): ByteArray {
+        return buf.copyInto(dest, destOffset, indexStart, indexEnd)
+    }
+    internal actual inline fun copyInto(dest: ByteArray, destOffset: Int, indexStart: Int, indexEnd: Int): ByteArray {
+        return copyIntoUnsafe(dest, destOffset, indexStart, indexEnd)
+    }
+    internal actual inline operator fun get(index: Int): Byte = buf[index]
+    internal actual inline fun utf8(): String = buf.encodeToString(UTF8)
 }

@@ -29,19 +29,14 @@ import io.matthewnelson.kmp.process.internal.commonIsEmpty
 import io.matthewnelson.kmp.process.internal.commonToString
 import io.matthewnelson.kmp.process.internal.commonMaxBufferDefault
 import io.matthewnelson.kmp.process.internal.commonMerge
-import java.nio.ByteBuffer
 import kotlin.concurrent.Volatile
 import kotlin.time.Duration
 
-// jvmMain
+// nativeMain
 public actual class Output private constructor(
-    @JvmField
     public actual val stdoutBuf: Data,
-    @JvmField
     public actual val stderrBuf: Data,
-    @JvmField
     public actual val processError: String?,
-    @JvmField
     public actual val processInfo: ProcessInfo,
 ) {
 
@@ -51,9 +46,6 @@ public actual class Output private constructor(
         private val sizes: IntArray?,
         init: Any,
     ): Collection<Byte> {
-
-        @Volatile
-        private var _bb: ByteBuffer? = null
 
         public actual abstract operator fun get(index: Int): Byte
 
@@ -71,21 +63,7 @@ public actual class Output private constructor(
         ): ByteArray
         public actual abstract fun utf8(): String
 
-        /**
-         * The contents of this instances as a read-only [ByteBuffer].
-         * */
-        public fun asByteBuffer(): ByteBuffer {
-            val bb = _bb ?: when {
-                segments.size == 1 -> segments[0].buf
-                else -> toByteArray()
-            }.let { array -> ByteBuffer.wrap(array).also { _bb = it } }
-            return bb.asReadOnlyBuffer()
-        }
-
-        // TODO: copyInto for dest ByteBuffer
-
         public actual companion object {
-            @JvmStatic
             public actual fun Collection<Data?>.merge(): Data = commonMerge(_segmentsGet = Data::segments)
         }
 
@@ -102,18 +80,14 @@ public actual class Output private constructor(
         private var inputBytes: (() -> ByteArray)?,
         @Volatile
         private var inputUtf8: (() -> String)?,
-        @get:JvmSynthetic
         internal actual val maxBuffer: Int,
-        @get:JvmSynthetic
         internal actual val timeout: Duration,
     ) {
 
         public actual class Builder private actual constructor() {
 
-            @get:JvmSynthetic
             internal actual var _inputBytes: (() -> ByteArray)? = null
                 private set
-            @get:JvmSynthetic
             internal actual var _inputUtf8: (() -> String)? = null
                 private set
 
@@ -127,60 +101,43 @@ public actual class Output private constructor(
                 _inputUtf8 = block
             }
 
-            @JvmField
             public actual var maxBuffer: Int = commonMaxBufferDefault()
-            @JvmField
             public actual var timeoutMillis: Int = OUTPUT_OPTIONS_MIN_TIMEOUT
 
             @PublishedApi
             internal actual companion object {
 
                 @PublishedApi
-                @JvmSynthetic
                 internal actual fun get(): Builder = Builder()
             }
 
-            @JvmSynthetic
             internal actual fun build(): Options = ::Options.commonBuild(this)
         }
 
-        @get:JvmSynthetic
         internal actual val hasInput: Boolean get() = commonHasInput(inputBytes, inputUtf8)
 
-        @JvmSynthetic
         @Throws(IOException::class)
         internal actual fun consumeInputBytes(): ByteArray? = commonConsumeInput(inputBytes) { inputBytes = null }
 
-        @JvmSynthetic
         @Throws(IOException::class)
         internal actual fun consumeInputUtf8(): String? = commonConsumeInput(inputUtf8) { inputUtf8 = null }
 
-        @JvmSynthetic
         internal actual fun dropAllInput() { inputBytes = null; inputUtf8 = null }
     }
 
     public actual class ProcessInfo private constructor(
-        @JvmField
         public actual val pid: Int,
-        @JvmField
         public actual val exitCode: Int,
-        @JvmField
         public actual val command: String,
-        @JvmField
         public actual val args: List<String>,
-        @JvmField
         public actual val cwd: File?,
-        @JvmField
         public actual val environment: Map<String, String>,
-        @JvmField
         public actual val stdio: Stdio.Config,
-        @JvmField
         public actual val destroySignal: Signal,
     ) {
 
         internal actual companion object {
 
-            @JvmSynthetic
             internal actual fun createOutput(
                 stdoutBuf: Data,
                 stderrBuf: Data,
@@ -223,8 +180,7 @@ public actual class Output private constructor(
         replaceWith = ReplaceWith("stdoutBuf.utf8()"),
         level = DeprecationLevel.WARNING,
     )
-    @JvmField // << Unfortunately cannot convert to a getter
-    public actual val stdout: String = stdoutBuf.utf8()
+    public actual val stdout: String get() = stdoutBuf.utf8()
 
     /**
      * DEPRECATED since `0.6.0`
@@ -235,8 +191,7 @@ public actual class Output private constructor(
         replaceWith = ReplaceWith("stderrBuf.utf8()"),
         level = DeprecationLevel.WARNING,
     )
-    @JvmField // << Unfortunately cannot convert to a getter
-    public actual val stderr: String = stderrBuf.utf8()
+    public actual val stderr: String get() = stderrBuf.utf8()
 
     /** @suppress */
     public actual override fun toString(): String = commonToString()

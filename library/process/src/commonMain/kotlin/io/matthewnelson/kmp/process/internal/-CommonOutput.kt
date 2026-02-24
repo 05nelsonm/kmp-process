@@ -270,8 +270,10 @@ internal inline fun <T: Any> Output.Options.commonConsumeInput(noinline input: (
 
 internal inline fun Output.commonToString(): String = buildString {
     appendLine("Output: [")
-    appendLine("    stdout: [Omitted]")
-    appendLine("    stderr: [Omitted]")
+    append("    stdoutBuf: ")
+    appendLine(stdoutBuf)
+    append("    stderrBuf: ")
+    appendLine(stderrBuf)
     append("    processError: ")
     appendLine(processError)
 

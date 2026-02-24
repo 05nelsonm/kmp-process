@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
+@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING", "NOTHING_TO_INLINE")
 
 package io.matthewnelson.kmp.process
 
@@ -114,12 +114,10 @@ public expect value class ReadBuffer private constructor(private val _buf: Any) 
         public fun lineOutputFeed(dispatch: (line: String?) -> Unit): LineOutputFeed
     }
 
-    internal fun capacity(): Int
-
-    @Throws(IndexOutOfBoundsException::class)
-    internal operator fun get(index: Int): Byte
-
-    internal fun functionGet(): (index: Int) -> Byte
-
-    internal fun copy(len: Int): ReadBuffer
+    internal inline fun capacity(): Int
+    internal inline fun copyUnsafe(len: Int): ReadBuffer
+    internal inline fun copyIntoUnsafe(dest: ByteArray, destOffset: Int, indexStart: Int, indexEnd: Int): ByteArray
+    internal inline fun copyInto(dest: ByteArray, destOffset: Int, indexStart: Int, indexEnd: Int): ByteArray
+    internal inline operator fun get(index: Int): Byte
+    internal inline fun utf8(): String
 }

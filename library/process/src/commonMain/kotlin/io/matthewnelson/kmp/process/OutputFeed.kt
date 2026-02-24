@@ -22,6 +22,8 @@ import io.matthewnelson.kmp.process.ProcessException.Companion.CTX_FEED_STDOUT
 import io.matthewnelson.kmp.process.internal.Lock
 import io.matthewnelson.kmp.process.internal.OutputFeedBuffer
 import io.matthewnelson.kmp.process.internal.RealLineOutputFeed
+import io.matthewnelson.kmp.process.internal.asOutputData
+import io.matthewnelson.kmp.process.internal.empty
 import io.matthewnelson.kmp.process.internal.newLock
 import io.matthewnelson.kmp.process.internal.withLock
 import kotlinx.coroutines.delay
@@ -50,14 +52,8 @@ import kotlin.time.Duration.Companion.milliseconds
  *     val exitCode = builder.createProcessAsync().use { p ->
  *         p.stdout(
  *             OutputFeed { line -> println(line ?: "--STDOUT EOS--") },
- *             OutputFeed.Raw { len, get ->
- *                 if (get == null) {
- *                     println("--STDOUT EOS--")
- *                     return@Raw
- *                 }
- *                 // Retrieve bytes from the buffer
- *                 for (i in 0 until len) { get(i) }
- *                 repeat(len) { i -> get(i) }
+ *             OutputFeed.Raw { data ->
+ *                 println(data?.utf8() ?: "--STDOUT EOS--")
  *             },
  *         ).stderr(
  *             OutputFeed { line -> println(line ?: "--STDERR EOS--") },
@@ -99,14 +95,8 @@ public fun interface OutputFeed: Output.Feed {
      *     val exitCode = builder.createProcessAsync().use { p ->
      *         p.stdout(
      *             OutputFeed { line -> println(line ?: "--STDOUT EOS--") },
-     *             OutputFeed.Raw { len, get ->
-     *                 if (get == null) {
-     *                     println("--STDOUT EOS--")
-     *                     return@Raw
-     *                 }
-     *                 // Retrieve bytes from the buffer
-     *                 for (i in 0 until len) { get(i) }
-     *                 repeat(len) { i -> get(i) }
+     *             OutputFeed.Raw { data ->
+     *                 println(data?.utf8() ?: "--STDOUT EOS--")
      *             },
      *         ).stderr(
      *             OutputFeed { line -> println(line ?: "--STDERR EOS--") },
@@ -128,15 +118,9 @@ public fun interface OutputFeed: Output.Feed {
         /**
          * Receive a read-only view to the buffered bytes of output from [Process].
          *
-         * **NOTE:** [get] must **only** be referenced within the [onOutput] function body; caching it for
-         * use outside of [onOutput] will prevent the underlying buffer for which it belongs from being
-         * deallocated.
-         *
-         * @param [len] The number of bytes, starting from `0`, that are available.
-         * @param [get] The function for retrieving bytes from the underlying buffer, or `null` to indicate
-         *   end-of-stream.
+         * @param [data] The [Output.Data], or `null` to indicate end-of-stream.
          * */
-        public fun onOutput(len: Int, get: ((index: Int) -> Byte)?)
+        public fun onOutput(data: Output.Data?)
     }
 
     /**
@@ -308,11 +292,12 @@ public fun interface OutputFeed: Output.Feed {
         /** @suppress */
         @Throws(Throwable::class)
         protected fun dispatchStdout(buf: ReadBuffer?, len: Int) {
+            var data: Output.Data? = null
             dispatch(
-                thing = buf?.functionGet(),
+                thing = buf,
                 onErrorContext = CTX_FEED_STDOUT,
                 feedsLock = stdoutLock,
-                _onFeed = { onFeedBuf(it, buf, len) },
+                _onFeed = { onFeedRaw(it, len, _dataGet = { data }, _dataSet = { new -> data = new }) },
                 _feedsGet = { _stdoutFeeds },
                 _feedsSet = { new -> _stdoutFeeds = new },
                 _stoppedSet = { new -> _stdoutStopped = new },
@@ -322,11 +307,12 @@ public fun interface OutputFeed: Output.Feed {
         /** @suppress */
         @Throws(Throwable::class)
         protected fun dispatchStderr(buf: ReadBuffer?, len: Int) {
+            var data: Output.Data? = null
             dispatch(
-                thing = buf?.functionGet(),
+                thing = buf,
                 onErrorContext = CTX_FEED_STDERR,
                 feedsLock = stdoutLock,
-                _onFeed = { onFeedBuf(it, buf, len) },
+                _onFeed = { onFeedRaw(it, len, _dataGet = { data }, _dataSet = { new -> data = new }) },
                 _feedsGet = { _stderrFeeds },
                 _feedsSet = { new -> _stderrFeeds = new },
                 _stoppedSet = { new -> _stderrStopped = new },
@@ -340,9 +326,7 @@ public fun interface OutputFeed: Output.Feed {
                 onErrorContext = CTX_FEED_STDOUT,
                 // Do not do closure here, do it in other dispatchStderr function.
                 feedsLock = null,
-                _onFeed = { lineOrNull ->
-                    (this as? OutputFeed)?.onOutput(lineOrNull)
-                },
+                _onFeed = { (this as? OutputFeed)?.onOutput(it) },
                 _feedsGet = { _stdoutFeeds },
                 _feedsSet = {},
                 _stoppedSet = {},
@@ -356,9 +340,7 @@ public fun interface OutputFeed: Output.Feed {
                 onErrorContext = CTX_FEED_STDERR,
                 // Do not do closure here, do it in other dispatchStderr function.
                 feedsLock = null,
-                _onFeed = { lineOrNull ->
-                    (this as? OutputFeed)?.onOutput(lineOrNull)
-                },
+                _onFeed = { (this as? OutputFeed)?.onOutput(it) },
                 _feedsGet = { _stderrFeeds },
                 _feedsSet = {},
                 _stoppedSet = {},
@@ -366,21 +348,47 @@ public fun interface OutputFeed: Output.Feed {
         }
 
         @Suppress("REDUNDANT_ELSE_IN_WHEN")
-        private inline fun Output.Feed.onFeedBuf(
-            noinline getOrNull: ((index: Int) -> Byte)?,
+        @OptIn(ExperimentalContracts::class)
+        private inline fun Output.Feed.onFeedRaw(
             buf: ReadBuffer?,
-            len: Int
-        ): Unit = when (this) {
-            is OutputFeed -> {}
-            is LineDispatcher -> if (buf != null) {
-                lineOutputFeed.onData(buf, len)
-            } else {
-                lineOutputFeed.close()
+            len: Int,
+            _dataGet: () -> Output.Data?,
+            _dataSet: (new: Output.Data) -> Unit,
+        ) {
+            contract {
+                callsInPlace(_dataGet, InvocationKind.AT_MOST_ONCE)
+                callsInPlace(_dataSet, InvocationKind.AT_MOST_ONCE)
             }
-            is OutputFeedBuffer -> onData(buf, len)
-            is OutputFeed.Raw -> onOutput(len, getOrNull)
-            // Output.Feed is expect/actual, so compiler cries. This satisfies it.
-            else -> error("Unknown Output.Feed type ${this::class}")
+
+            when (this) {
+                is OutputFeed -> {}
+
+                // Will only be the case if OutputFeed are present in feeds.
+                is LineDispatcher -> if (buf != null) {
+                    lineOutputFeed.onData(buf, len)
+                } else {
+                    lineOutputFeed.close()
+                }
+
+                // Will only be the case if this Process is for creating Output
+                // via Process.Builder.{createOutput/createOutputAsync}.
+                is OutputFeedBuffer -> onData(buf, len)
+
+                is OutputFeed.Raw -> if (buf == null) onOutput(data = null) else {
+                    _dataGet()?.let { data -> return onOutput(data) }
+
+                    val new = if (len <= 0) {
+                        Output.Data.empty()
+                    } else {
+                        buf.copyUnsafe(len).asOutputData()
+                    }
+                    _dataSet(new)
+                    onOutput(data = new)
+                }
+
+                // Output.Feed is expect/actual, so compiler cries. This satisfies it.
+                else -> error("Unknown Output.Feed type ${this::class}")
+            }
         }
 
         private inline val _this: Process get() = this as Process
@@ -669,5 +677,5 @@ private abstract class RealWaiter(process: Process, isDestroyed: Boolean): Outpu
 
 private class LineDispatcher(lineOutputFeed: ReadBuffer.LineOutputFeed): OutputFeed.Raw {
     val lineOutputFeed = lineOutputFeed as RealLineOutputFeed
-    override fun onOutput(len: Int, get: ((index: Int) -> Byte)?) = error("Use lineOutputFeed.{onData/close}")
+    override fun onOutput(data: Output.Data?) = error("Use lineOutputFeed.{onData/close}")
 }

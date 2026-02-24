@@ -19,6 +19,7 @@ package io.matthewnelson.kmp.process.test.api
 
 import io.matthewnelson.kmp.file.*
 import io.matthewnelson.kmp.process.Output
+import io.matthewnelson.kmp.process.Output.Data.Companion.merge
 import io.matthewnelson.kmp.process.OutputFeed
 import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.ProcessException.Companion.CTX_FEED_STDOUT
@@ -686,6 +687,53 @@ abstract class ProcessBaseTest {
 
             val stdoutString = stdoutBuilder.toString()
             val stderrString = stderrBuilder.toString()
+            println(stdoutString)
+            println(stderrString)
+
+            assertExitCode(exitCode)
+            stdoutString.assertTorRan()
+        }
+
+        delayTest(250.milliseconds)
+    }
+
+    @Test
+    open fun givenExecutable_whenPipeOutputFeeds_thenOutputFeedRawReceivesSameData() = runTest(timeout = 25.seconds) {
+        LOADER.toProcessBuilder().createProcessAsync().use { p ->
+            val stdoutData1 = mutableListOf<Output.Data?>()
+            val stdoutData2 = mutableListOf<Output.Data?>()
+            val stderrData = mutableListOf<Output.Data?>()
+            p.stdout(
+                OutputFeed.Raw { data -> stdoutData1.add(data) },
+                OutputFeed.Raw { data -> stdoutData2.add(data) },
+            ).stderr(
+                OutputFeed.Raw { data -> stderrData.add(data) }
+            )
+
+            withContext(Dispatchers.Default) {
+                p.waitForAsync(3.seconds)
+            }
+
+            val exitCode = p.destroy()
+                .stdoutWaiter()
+                .awaitStopAsync()
+                .stderrWaiter()
+                .awaitStopAsync()
+                .waitForAsync()
+
+            // null + 2 or more Output.Data instances.
+            assertTrue(stdoutData1.size > 1 + 2)
+            assertTrue(stdoutData1.contains(null), "!contains(null)")
+
+            // Both Raw instances received the SAME Output.Data instance.
+            assertEquals(stdoutData1, stdoutData2)
+
+            // Same instances, hash code should equal the same (i.e. the same backing arrays in the same order)
+            val stdoutMerged = stdoutData1.merge()
+            assertEquals(stdoutMerged, stdoutData2.merge())
+
+            val stdoutString = stdoutMerged.utf8()
+            val stderrString = stderrData.merge().utf8()
             println(stdoutString)
             println(stderrString)
 

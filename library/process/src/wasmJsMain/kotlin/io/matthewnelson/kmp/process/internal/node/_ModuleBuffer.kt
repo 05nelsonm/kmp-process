@@ -22,7 +22,9 @@ import kotlin.js.unsafeCast
 
 @JsName("Buffer")
 internal actual external interface JsBuffer: JsAny {
-    actual fun copy(target: JsBuffer, targetStart: Int, sourceStart: Int, sourceEnd: Int)
+    actual fun copy(target: JsBuffer, targetStart: Double, sourceStart: Double, sourceEnd: Double)
+    @JsName("readInt8")
+    actual fun readInt8Unsafe(offset: Int): Byte
 }
 
 internal actual fun jsBufferAllocUnsafe(len: Int): JsBuffer = js("Buffer.allocUnsafe(len)")

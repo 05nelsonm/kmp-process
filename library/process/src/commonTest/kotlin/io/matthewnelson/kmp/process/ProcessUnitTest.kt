@@ -104,8 +104,8 @@ class ProcessUnitTest {
                 .destroySignal(Signal.SIGKILL)
                 .createProcessAsync().use { process ->
 
-                    process.stdout(OutputFeed.Raw { _, _ -> })
-                    process.stderr(OutputFeed.Raw { _, _ -> })
+                    process.stdout(OutputFeed.Raw { })
+                    process.stderr(OutputFeed.Raw { })
 
                     // Ensures that LineDispatcher is not added because no OutputFeed
                     assertEquals(1, process.stdoutFeedsSize(), "stdout")
