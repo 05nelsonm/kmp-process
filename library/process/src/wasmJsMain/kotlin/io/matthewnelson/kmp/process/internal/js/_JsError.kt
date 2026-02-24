@@ -21,12 +21,13 @@ import io.matthewnelson.kmp.file.jsExternTryCatch
 import kotlin.js.JsName
 
 @JsName("Error")
-internal actual external class JsError: JsAny {
+internal actual open external class JsError: JsAny {
     internal actual val message: String?
 }
 
 internal actual fun JsError.toThrowable(): Throwable {
     try {
+        // Will convert to WasmJsException and retrieve Node.js ErrnoException.code
         jsExternTryCatch { jsThrow(this) }
     } catch (t: Throwable) {
         return t
