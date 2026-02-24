@@ -45,7 +45,7 @@ internal inline fun Collection<Output.Data?>.commonMerge(
     _segmentsGet: Output.Data.() -> Array<ReadBuffer>,
 ): Output.Data {
     if (isEmpty()) return Output.Data.empty()
-    if (size == 1) return first() ?: Output.Data.empty()
+    if (size == 1) return firstOrNull() ?: Output.Data.empty()
 
     val segments = ArrayList<ReadBuffer>(size)
     var total = 0
@@ -58,7 +58,7 @@ internal inline fun Collection<Output.Data?>.commonMerge(
         segments.addAll(data._segmentsGet())
     }
     // Collection contained a single NonEmptyData. Return it instead of creating a new one.
-    if (countNonEmpty == 1) return first { data -> !data.isNullOrEmpty() }!!
+    if (countNonEmpty == 1) firstOrNull { data -> !data.isNullOrEmpty() }?.let { return it }
     return segments.asOutputData()
 }
 
