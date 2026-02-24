@@ -44,8 +44,8 @@ internal inline fun Output.Data.commonToString(): String = "Output.Data[size=$si
 internal inline fun Collection<Output.Data?>.commonMerge(
     _segmentsGet: Output.Data.() -> Array<ReadBuffer>,
 ): Output.Data {
-    if (isEmpty()) return emptyList<ReadBuffer>().asOutputData()
-    if (size == 1) return first() ?: emptyList<ReadBuffer>().asOutputData()
+    if (isEmpty()) return Output.Data.empty()
+    if (size == 1) return first() ?: Output.Data.empty()
 
     val segments = ArrayList<ReadBuffer>(size)
     var total = 0
@@ -61,6 +61,8 @@ internal inline fun Collection<Output.Data?>.commonMerge(
     if (countNonEmpty == 1) return first { data -> !data.isNullOrEmpty() }!!
     return segments.asOutputData()
 }
+
+internal inline fun Output.Data.Companion.empty(): Output.Data = emptyList<ReadBuffer>().asOutputData()
 
 internal fun ReadBuffer.asOutputData(): Output.Data {
     val cap = capacity()

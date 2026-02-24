@@ -23,6 +23,7 @@ import io.matthewnelson.kmp.process.internal.Lock
 import io.matthewnelson.kmp.process.internal.OutputFeedBuffer
 import io.matthewnelson.kmp.process.internal.RealLineOutputFeed
 import io.matthewnelson.kmp.process.internal.asOutputData
+import io.matthewnelson.kmp.process.internal.empty
 import io.matthewnelson.kmp.process.internal.newLock
 import io.matthewnelson.kmp.process.internal.withLock
 import kotlinx.coroutines.delay
@@ -377,7 +378,7 @@ public fun interface OutputFeed: Output.Feed {
                     _dataGet()?.let { data -> return onOutput(data) }
 
                     val new = if (len <= 0) {
-                        emptyList<ReadBuffer>().asOutputData()
+                        Output.Data.empty()
                     } else {
                         buf.copyUnsafe(len).asOutputData()
                     }

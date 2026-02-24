@@ -339,7 +339,7 @@ private fun List<Any>.toJsArray(): JsArray {
 }
 
 private fun JsBuffer?.asOutputData(): Output.Data {
-    if (this == null) return emptyList<ReadBuffer>().asOutputData()
+    if (this == null) return Output.Data.empty()
     @OptIn(InternalProcessApi::class)
     return ReadBuffer.of(buf = asBuffer()).asOutputData()
 }

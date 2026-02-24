@@ -37,7 +37,7 @@ class OutputDataJvmUnitTest {
     }
 
     @Test
-    fun givenEmptyData_whenByteBuffer_thenIsEmpty() {
+    fun givenEmptyData_whenAsByteBuffer_thenIsEmpty() {
         emptyList<ReadBuffer>()
             .asOutputData()
             .asByteBuffer()
@@ -45,7 +45,7 @@ class OutputDataJvmUnitTest {
     }
 
     @Test
-    fun givenSingleData_whenByteBuffer_thenAreDifferentInstances() {
+    fun givenSingleData_whenAsByteBuffer_thenAreDifferentInstances() {
         val buf = ReadBuffer.of(ByteArray(20))
         repeat(buf.capacity()) { i -> buf[i] = (i - 10).toByte() }
         val data = buf.asOutputData()
@@ -70,7 +70,7 @@ class OutputDataJvmUnitTest {
     }
 
     @Test
-    fun givenSegmentedData_whenByteBuffer_thenAreDifferentInstances() {
+    fun givenSegmentedData_whenAsByteBuffer_thenAreDifferentInstances() {
         val buf = ReadBuffer.of(ByteArray(10))
         repeat(buf.capacity()) { i -> buf[i] = (i - 10).toByte() }
         val data = listOf(buf, buf).asOutputData()
