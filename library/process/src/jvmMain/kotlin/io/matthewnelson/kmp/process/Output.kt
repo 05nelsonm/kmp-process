@@ -223,7 +223,7 @@ public actual class Output private constructor(
         replaceWith = ReplaceWith("stdoutBuf.utf8()"),
         level = DeprecationLevel.WARNING,
     )
-    @JvmField
+    @JvmField // << Unfortunately cannot convert to a getter
     public actual val stdout: String = stdoutBuf.utf8()
 
     /**
@@ -235,7 +235,7 @@ public actual class Output private constructor(
         replaceWith = ReplaceWith("stderrBuf.utf8()"),
         level = DeprecationLevel.WARNING,
     )
-    @JvmField
+    @JvmField // << Unfortunately cannot convert to a getter
     public actual val stderr: String = stderrBuf.utf8()
 
     /** @suppress */

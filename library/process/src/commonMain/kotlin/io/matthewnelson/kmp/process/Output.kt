@@ -81,12 +81,24 @@ public expect class Output {
         public abstract override fun containsAll(elements: Collection<Byte>): Boolean
 
         /**
-         * Creates a copy of the contents of this instances as an array.
+         * Copies the contents of this instance to a new array of bytes.
          * */
         public fun toByteArray(): ByteArray
 
         /**
-         * TODO
+         * Copies the contents of this instance to the provided [dest] array and returns that array.
+         *
+         * @param [dest] The array to copy to.
+         * @param [destOffset] The index (inclusive) of [dest] to begin placing bytes.
+         * @param [indexStart] The index (inclusive) of [Data] to begin retrieving bytes from.
+         * @param [indexEnd] The index (exclusive) of [Data] to stop retrieving bytes at.
+         *
+         * @return The [dest] array.
+         *
+         * @throws [IndexOutOfBoundsException] or [IllegalArgumentException] when [indexStart] or [indexEnd]
+         *   is out of range of this array indices or when `indexStart > indexEnd`.
+         * @throws [IndexOutOfBoundsException] when the subrange doesn't fit into the [dest] array starting
+         *   at the specified [destOffset], or when that index is out of the [dest] array indices range.
          * */
         public abstract fun copyInto(
             dest: ByteArray,
@@ -105,7 +117,9 @@ public expect class Output {
             /**
              * Merges multiple [Data] into a single instance.
              *
-             * TODO
+             * If the collection contains a single instance of [Data], then that instance is returned. If
+             * the collection contains no data (i.e. the sum is `0`), then the empty [Data] object instance
+             * is returned. Any `null` or empty [Data] within the collection are ignored.
              *
              * @throws [RuntimeException] If total [size] of merged [Data] would exceed [Int.MAX_VALUE].
              * */
