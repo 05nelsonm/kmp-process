@@ -18,5 +18,3 @@
 package io.matthewnelson.kmp.process
 
 internal expect val IsAppleSimulator: Boolean
-
-internal expect inline operator fun ReadBuffer.set(index: Int, value: Byte)

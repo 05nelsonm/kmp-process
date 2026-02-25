@@ -20,5 +20,3 @@ package io.matthewnelson.kmp.process
 import io.matthewnelson.kmp.file.set
 
 internal actual val IsAppleSimulator: Boolean = false
-
-internal actual inline operator fun ReadBuffer.set(index: Int, value: Byte) { buf[index] = value }

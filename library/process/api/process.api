@@ -129,10 +129,11 @@ public abstract interface class io/matthewnelson/kmp/process/OutputFeed : io/mat
 }
 
 public abstract class io/matthewnelson/kmp/process/OutputFeed$Handler : io/matthewnelson/kmp/process/Blocking {
+	protected static final field Companion Lio/matthewnelson/kmp/process/OutputFeed$Handler$Companion;
 	protected field isDestroyed Z
 	public synthetic fun <init> (Lio/matthewnelson/kmp/process/Stdio$Config;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
-	protected final fun dispatchStderr-94qbmno (Ljava/lang/Object;I)V
-	protected final fun dispatchStdout-94qbmno (Ljava/lang/Object;I)V
+	protected final fun dispatchStderr (Ljava/lang/String;)V
+	protected final fun dispatchStdout (Ljava/lang/String;)V
 	protected abstract fun onError (Ljava/lang/Throwable;Ljava/lang/String;)V
 	protected abstract fun startStderr ()V
 	protected abstract fun startStdout ()V
@@ -150,6 +151,9 @@ public abstract class io/matthewnelson/kmp/process/OutputFeed$Handler : io/matth
 	public final fun stdoutFeed (Ljava/util/List;)Lio/matthewnelson/kmp/process/Process;
 	public final fun stdoutFeed ([Lio/matthewnelson/kmp/process/OutputFeed;)Lio/matthewnelson/kmp/process/Process;
 	public final fun stdoutWaiter ()Lio/matthewnelson/kmp/process/OutputFeed$Waiter;
+}
+
+protected final class io/matthewnelson/kmp/process/OutputFeed$Handler$Companion {
 }
 
 public abstract interface class io/matthewnelson/kmp/process/OutputFeed$Raw : io/matthewnelson/kmp/process/Output$Feed {
