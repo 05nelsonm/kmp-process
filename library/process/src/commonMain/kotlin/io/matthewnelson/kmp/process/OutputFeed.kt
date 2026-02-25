@@ -396,7 +396,6 @@ public fun interface OutputFeed: Output.Feed {
                     val new = if (len <= 0) {
                         Output.Data.empty()
                     } else {
-                        // TODO: Issue #233
                         buf.copyOf(newSize = len).asOutputData()
                     }
                     _dataSet(new)

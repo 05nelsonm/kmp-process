@@ -37,7 +37,7 @@ internal class OutputFeedBuffer private constructor(maxSize: Int): OutputFeed.Ra
     internal var maxSizeExceeded = false
         private set
 
-    internal fun update(buf: Bit8Array?, len: Int/*, isReusableBuffer: Boolean TODO: Issue #233 */) {
+    internal fun update(buf: Bit8Array?, len: Int) {
         if (buf == null) {
             hasEnded = true
             return
@@ -45,7 +45,7 @@ internal class OutputFeedBuffer private constructor(maxSize: Int): OutputFeed.Ra
         val copyLen = if ((size + len) > maxSize) maxSize - size else len
         if (copyLen <= 0) return
 
-        val data = /*if (isReusableBuffer || copyLen != len) */buf.copyOf(newSize = copyLen)/* else buf*/
+        val data = buf.copyOf(newSize = copyLen)
         segments.add(data)
         size += copyLen
         if (size >= maxSize) maxSizeExceeded = true

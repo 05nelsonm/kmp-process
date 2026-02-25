@@ -21,6 +21,7 @@ import io.matthewnelson.kmp.process.internal.js.typed.JsInt8Array
 import io.matthewnelson.kmp.process.internal.js.typed.new
 import io.matthewnelson.kmp.process.internal.js.typed.get
 import io.matthewnelson.kmp.process.internal.js.typed.set
+import kotlin.math.min
 
 internal actual typealias Bit8ArrayType = JsInt8Array
 
@@ -56,12 +57,11 @@ internal actual value class Bit8Array internal actual constructor(internal actua
         return dest
     }
 
-    internal actual inline fun copyOf(newSize: Int): Bit8Array = if (newSize <= size()) {
-        Bit8Array(storage.slice(start = 0, end = newSize))
-    } else {
+    internal actual inline fun copyOf(newSize: Int): Bit8Array {
         val a = Bit8Array(newSize)
-        repeat(this.size()) { i -> a[i] = this[i] }
-        a
+        val len = min(size(), newSize)
+        repeat(len) { i -> a[i] = this[i] }
+        return a
     }
 }
 

@@ -24,6 +24,7 @@ import io.matthewnelson.kmp.process.internal.js.typed.asJsUint8Array
 //@Throws(IOException::class)
 internal actual fun Output.Options.jsWasmJsConsumeInputBytes(): JsUint8Array? {
     val b = consumeInputBytes() ?: return null
+    b.copyOf(2)
     val a = Bit8Array(b.size) { i -> b[i] }.storage.asJsUint8Array()
     b.fill(0)
     return a
