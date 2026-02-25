@@ -19,7 +19,6 @@ package io.matthewnelson.kmp.process
 
 import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.file.IOException
-import io.matthewnelson.kmp.process.internal.Bit8Array
 import io.matthewnelson.kmp.process.internal.OUTPUT_OPTIONS_MIN_TIMEOUT
 import io.matthewnelson.kmp.process.internal.commonBuild
 import io.matthewnelson.kmp.process.internal.commonToByteArray
@@ -43,9 +42,7 @@ public actual class Output private constructor(
 
     public actual abstract class Data internal actual constructor(
         public actual final override val size: Int,
-        private val segments: Array<Bit8Array>,
-        private val sizes: IntArray?,
-        init: Any,
+        init: Any?,
     ): Collection<Byte> {
 
         public actual abstract operator fun get(index: Int): Byte
@@ -83,7 +80,7 @@ public actual class Output private constructor(
 //        }
 
         public actual companion object {
-            public actual fun Collection<Data?>.merge(): Data = commonMerge(_segmentsGet = Data::segments)
+            public actual fun Collection<Data?>.merge(): Data = commonMerge()
         }
 
         /** @suppress */

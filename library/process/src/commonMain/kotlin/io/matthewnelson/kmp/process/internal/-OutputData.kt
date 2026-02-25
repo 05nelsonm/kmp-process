@@ -22,12 +22,14 @@ import io.matthewnelson.encoding.core.util.wipe
 import io.matthewnelson.encoding.utf8.UTF8
 import io.matthewnelson.kmp.process.Output
 import kotlin.concurrent.Volatile
+import kotlin.jvm.JvmSynthetic
 import kotlin.math.min
 
+// Used to ensure only asOutputData can instantiate SingleData or SegmentedData
 private val INIT = Any()
 
 @Throws(IllegalArgumentException::class, IllegalStateException::class)
-internal fun Output.Data.commonInit(init: Any) {
+internal fun Output.Data.commonInit(init: Any?) {
     check(init == INIT) { "Output.Data cannot be extended" }
     require(size >= 0) { "size[$size] < 0" }
 }
@@ -40,9 +42,7 @@ internal inline fun Output.Data.commonToByteArray(): ByteArray = copyInto(dest =
 internal inline fun Output.Data.commonToString(): String = "Output.Data[size=$size]@" + hashCode()
 
 @Throws(RuntimeException::class)
-internal inline fun Collection<Output.Data?>.commonMerge(
-    _segmentsGet: Output.Data.() -> Array<Bit8Array>,
-): Output.Data {
+internal inline fun Collection<Output.Data?>.commonMerge(): Output.Data {
     if (isEmpty()) return Output.Data.empty()
     if (size == 1) return firstOrNull() ?: Output.Data.empty()
 
@@ -54,10 +54,15 @@ internal inline fun Collection<Output.Data?>.commonMerge(
         total += data.size
         if (total < 0) throw RuntimeException("Unable to merge Output.Data. Total size exceeds ${Int.MAX_VALUE}.")
         countNonEmpty++
-        segments.addAll(data._segmentsGet())
+        when (data) {
+            is SingleData -> segments.add(data.data)
+            is SegmentedData -> segments.addAll(data.segments)
+        }
     }
+
     // Collection contained a single NonEmptyData. Return it instead of creating a new one.
     if (countNonEmpty == 1) firstOrNull { data -> !data.isNullOrEmpty() }?.let { return it }
+
     return segments.asOutputData()
 }
 
@@ -65,7 +70,7 @@ internal inline fun Output.Data.Companion.empty(): Output.Data = emptyList<Bit8A
 
 internal fun Bit8Array.asOutputData(): Output.Data {
     return if (size() <= 0) EmptyData
-    else SingleData(data = this)
+    else SingleData(data = this, INIT)
 }
 
 // Throws if list has 2 or more Bit8Array and any of them have
@@ -85,10 +90,10 @@ internal fun List<Bit8Array>.asOutputData(): Output.Data {
         segment
     }
 
-    return SegmentedData(segments, sizes)
+    return SegmentedData(segments, sizes, INIT)
 }
 
-private object EmptyData: Output.Data(size = 0, segments = emptyArray(), sizes = null, INIT) {
+private object EmptyData: Output.Data(size = 0, INIT) {
 
     private object EmptyIterator: ByteIterator() {
         override fun hasNext(): Boolean = false
@@ -101,49 +106,48 @@ private object EmptyData: Output.Data(size = 0, segments = emptyArray(), sizes =
     override fun contains(element: Byte): Boolean = false
     override fun containsAll(elements: Collection<Byte>): Boolean = elements.isEmpty()
 
-    override fun copyInto(dest: ByteArray, destOffset: Int, indexStart: Int, indexEnd: Int): ByteArray {
+    override fun copyInto(
+        dest: ByteArray,
+        destOffset: Int,
+        indexStart: Int,
+        indexEnd: Int,
+    ): ByteArray {
         checkCopyBounds(dest, destOffset, indexStart, indexEnd)
         return dest
     }
+
     override fun utf8(): String = ""
 
     override fun equals(other: Any?): Boolean = other is Output.Data && other.isEmpty()
     override fun hashCode(): Int = 1
 }
 
-private sealed class NonEmptyData(
-    protected val segments: Array<Bit8Array>,
-    sizes: IntArray?,
-    size: Int,
-): Output.Data(size, segments, sizes, INIT) {
+internal sealed class NonEmptyData(size: Int, init: Any?): Output.Data(size, init) {
 
     @Volatile
     private var _lazyHashCode: Int = UNKNOWN_HASH_CODE
     @Volatile
     private var _lazyUtf8: String? = null
 
-    final override fun contains(element: Byte): Boolean {
-        for (i in segments.indices) {
-            val segment = segments[i]
-            for (j in segment.indices()) {
-                if (segment[j] == element) return true
-            }
-        }
-        return false
-    }
-
     final override fun containsAll(elements: Collection<Byte>): Boolean {
-        elements.forEach { element -> if (!contains(element)) return false }
+        elements.forEach { element ->
+            if (!this.contains(element)) return false
+        }
         return true
     }
 
     final override fun utf8(): String = _lazyUtf8 ?: run {
         val sb = StringBuilder(size)
         UTF8.newEncoderFeed(sb::append).use { feed ->
-            for (i in segments.indices) {
-                val segment = segments[i]
-                for (j in segment.indices()) {
-                    feed.consume(input = segment[j])
+            when (this) {
+                is SingleData -> for (i in data.indices()) {
+                    feed.consume(input = data[i])
+                }
+                is SegmentedData -> for (i in segments.indices) {
+                    val segment = segments[i]
+                    for (j in segment.indices()) {
+                        feed.consume(input = segment[j])
+                    }
                 }
             }
         }
@@ -164,23 +168,18 @@ private sealed class NonEmptyData(
             }
         }
 
-        var oI = 0
-        var oISegment = 0
-        var oSegment = other.segments[oISegment++]
+        if (other is SingleData && this is SingleData) {
+            for (i in indices) {
+                if (other.data[i] != this.data[i]) return false
+            }
+            return true
+        }
 
-        var tI = 0
-        var tISegment = 0
-        var tSegment = this.segments[tISegment++]
-        repeat(size) { _ ->
-            if (oI == oSegment.size()) {
-                oSegment = other.segments[oISegment++]
-                oI = 0
-            }
-            if (tI == tSegment.size()) {
-                tSegment = this.segments[tISegment++]
-                tI = 0
-            }
-            if (oSegment[oI++] != tSegment[tI++]) return false
+        val otherI = other.iterator()
+        val thisI = this.iterator()
+        @Suppress("UNUSED_PARAMETER")
+        for (i in indices) {
+            if (otherI.nextByte() != thisI.nextByte()) return false
         }
 
         return true
@@ -188,12 +187,17 @@ private sealed class NonEmptyData(
 
     final override fun hashCode(): Int {
         var result = _lazyHashCode
-        if (result != UNKNOWN_HASH_CODE) return result
+        if (_lazyHashCode != UNKNOWN_HASH_CODE) return result
         result = 1
-        for (i in segments.indices) {
-            val segment = segments[i]
-            for (j in segment.indices()) {
-                result = result * 31 + segment[j].hashCode()
+        when (this) {
+            is SingleData -> for (i in data.indices()) {
+                result = result * 31 + data[i].hashCode()
+            }
+            is SegmentedData -> for (i in segments.indices) {
+                val segment = segments[i]
+                for (j in segment.indices()) {
+                    result = result * 31 + segment[j].hashCode()
+                }
             }
         }
         _lazyHashCode = result
@@ -205,9 +209,11 @@ private sealed class NonEmptyData(
     }
 }
 
-private class SingleData(
-    private val data: Bit8Array,
-): NonEmptyData(segments = arrayOf(data), sizes = null, size = data.size()) {
+internal class SingleData internal constructor(
+    @get:JvmSynthetic
+    internal val data: Bit8Array,
+    init: Any?,
+): NonEmptyData(data.size(), init) {
 
     override fun get(index: Int): Byte = data[index]
 
@@ -220,6 +226,13 @@ private class SingleData(
         else throw NoSuchElementException("Index $i out of bounds for size $_size")
     }
 
+    override fun contains(element: Byte): Boolean {
+        for (i in data.indices()) {
+            if (data[i] == element) return true
+        }
+        return false
+    }
+
     override fun copyInto(
         dest: ByteArray,
         destOffset: Int,
@@ -228,10 +241,13 @@ private class SingleData(
     ): ByteArray = data.copyInto(dest, destOffset, indexStart, indexEnd, checkBounds = true)
 }
 
-private class SegmentedData(
-    segments: Array<Bit8Array>,
-    private val sizes: IntArray,
-): NonEmptyData(segments, sizes, sizes.last()) {
+internal class SegmentedData internal constructor(
+    @get:JvmSynthetic
+    internal val segments: Array<Bit8Array>,
+    @get:JvmSynthetic
+    internal val sizes: IntArray,
+    init: Any?,
+): NonEmptyData(sizes.last(), init) {
 
     override fun get(index: Int): Byte {
         // TODO: binary search sizes for segment index
@@ -263,6 +279,16 @@ private class SegmentedData(
             }
             return b
         }
+    }
+
+    override fun contains(element: Byte): Boolean {
+        for (i in segments.indices) {
+            val segment = segments[i]
+            for (j in segment.indices()) {
+                if (segment[j] == element) return true
+            }
+        }
+        return false
     }
 
     override fun copyInto(
