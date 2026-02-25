@@ -22,24 +22,24 @@ import io.matthewnelson.kmp.file.DelicateFileApi
 import io.matthewnelson.kmp.file.jsExternTryCatch
 import io.matthewnelson.kmp.process.internal.Bit8Array
 import io.matthewnelson.kmp.process.internal.DoNotReferenceDirectly
-import io.matthewnelson.kmp.process.internal.js.typed.JsUint8Array
-import io.matthewnelson.kmp.process.internal.js.typed.new
+import io.matthewnelson.kmp.process.internal.js.typed.asJsUint8Array
 import io.matthewnelson.kmp.process.internal.js.typed.set
 import kotlinx.coroutines.CompletableJob
 
 /** [docs](https://nodejs.org/api/stream.html#class-streamreadable) */
-internal actual external interface JsReadable {
+internal actual sealed external interface JsReadable {
     actual fun destroy()
 }
 
+//@Throws(Throwable::class)
+@Suppress("ACTUAL_ANNOTATIONS_NOT_MATCH_EXPECT")
 internal actual inline fun JsWritable.write(
     buf: ByteArray,
     offset: Int,
     len: Int,
     latch: CompletableJob,
 ): Boolean {
-    val chunk = JsUint8Array.new(len)
-    repeat(len) { i -> chunk[i] = buf[i + offset].toUByte() }
+    val chunk = Bit8Array(len) { i -> buf[i + offset] }.storage.asJsUint8Array()
     latch.invokeOnCompletion { repeat(len) { i -> chunk[i] = 0u } }
     return jsExternTryCatch { write(chunk, latch::complete) }
 }

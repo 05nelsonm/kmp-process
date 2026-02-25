@@ -20,13 +20,12 @@ package io.matthewnelson.kmp.process.internal.node
 
 import io.matthewnelson.kmp.process.internal.Bit8Array
 import io.matthewnelson.kmp.process.internal.DoNotReferenceDirectly
-import io.matthewnelson.kmp.process.internal.js.typed.JsUint8Array
 import io.matthewnelson.kmp.process.internal.js.typed.asJsInt8Array
-import io.matthewnelson.kmp.process.internal.js.typed.new
+import io.matthewnelson.kmp.process.internal.js.typed.asJsUint8Array
 import kotlinx.coroutines.CompletableJob
 
 /** [docs](https://nodejs.org/api/stream.html#class-streamreadable) */
-internal actual external interface JsReadable {
+internal actual sealed external interface JsReadable {
     fun on(
         event: String,
         listener: Function<Unit>,
@@ -34,13 +33,15 @@ internal actual external interface JsReadable {
     actual fun destroy()
 }
 
+//@Throws(Throwable::class)
+@Suppress("ACTUAL_ANNOTATIONS_NOT_MATCH_EXPECT")
 internal actual inline fun JsWritable.write(
     buf: ByteArray,
     offset: Int,
     len: Int,
     latch: CompletableJob,
 ): Boolean {
-    var chunk = JsUint8Array.new(buf.asJsInt8Array().buffer)
+    var chunk = buf.asJsInt8Array().asJsUint8Array()
     if (!(offset == 0 && len == buf.size)) {
         chunk = chunk.subarray(start = offset, end = offset + len)
     }

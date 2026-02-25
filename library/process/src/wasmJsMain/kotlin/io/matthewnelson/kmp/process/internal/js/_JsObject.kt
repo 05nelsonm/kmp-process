@@ -19,13 +19,15 @@ package io.matthewnelson.kmp.process.internal.js
 
 import io.matthewnelson.kmp.process.internal.DoNotReferenceDirectly
 import io.matthewnelson.kmp.process.internal.js.array.JsArray
+import io.matthewnelson.kmp.process.internal.js.array.JsArrayLike
+import io.matthewnelson.kmp.process.internal.js.typed.JsTypedArray
 import io.matthewnelson.kmp.process.internal.js.typed.JsUint8Array
 
 @DoNotReferenceDirectly("JsObject.Companion.new()")
 internal actual fun jsObjectNew(): JsObject = js(CODE_JS_OBJECT_NEW)
 
-@DoNotReferenceDirectly("obj.getJsUint8ArrayOrNull(key)")
-internal actual fun jsObjectGetJsUint8ArrayOrNull(obj: JsObject, key: String): JsUint8Array? = js(CODE_JS_OBJECT_GET)
+@DoNotReferenceDirectly("obj.getJsArrayOrNull(key)")
+internal actual fun <T: JsArrayLike> jsObjectGetJsArrayOrNull(obj: JsObject, key: String): T? = js(CODE_JS_OBJECT_GET)
 @DoNotReferenceDirectly("obj.getJsErrorOrNull(key)")
 internal actual fun jsObjectGetJsErrorOrNull(obj: JsObject, key: String): JsError? = js(CODE_JS_OBJECT_GET)
 @DoNotReferenceDirectly("obj.getInt(key)")
@@ -38,14 +40,12 @@ internal actual fun jsObjectGetString(obj: JsObject, key: String): String = js(C
 internal actual fun jsObjectGetStringOrNull(obj: JsObject, key: String): String? = js(CODE_JS_OBJECT_GET)
 
 @DoNotReferenceDirectly("obj[key] = value")
+internal actual fun <T: JsArrayLike> jsObjectSetJsArray(obj: JsObject, key: String, value: T) { js(CODE_JS_OBJECT_SET) }
+@DoNotReferenceDirectly("obj[key] = value")
 internal actual fun jsObjectSetInt(obj: JsObject, key: String, value: Int) { js(CODE_JS_OBJECT_SET) }
 @DoNotReferenceDirectly("obj[key] = value")
 internal actual fun jsObjectSetBoolean(obj: JsObject, key: String, value: Boolean) { js(CODE_JS_OBJECT_SET) }
 @DoNotReferenceDirectly("obj[key] = value")
 internal actual fun jsObjectSetString(obj: JsObject, key: String, value: String) { js(CODE_JS_OBJECT_SET) }
 @DoNotReferenceDirectly("obj[key] = value")
-internal actual fun jsObjectSetJsArray(obj: JsObject, key: String, value: JsArray) { js(CODE_JS_OBJECT_SET) }
-@DoNotReferenceDirectly("obj[key] = value")
 internal actual fun jsObjectSetJsObject(obj: JsObject, key: String, value: JsObject) { js(CODE_JS_OBJECT_SET) }
-@DoNotReferenceDirectly("obj[key] = value")
-internal actual fun jsObjectSetJsInt8Array(obj: JsObject, key: String, value: JsInt8Array) { js(CODE_JS_OBJECT_SET) }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Matthew Nelson
+ * Copyright (c) 2026 Matthew Nelson
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,11 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("OPT_IN_USAGE")
+@file:Suppress("ACTUAL_ANNOTATIONS_NOT_MATCH_EXPECT")
 
-package io.matthewnelson.kmp.process.internal.js
+package io.matthewnelson.kmp.process.internal
 
-import io.matthewnelson.kmp.process.internal.DoNotReferenceDirectly
+import io.matthewnelson.kmp.process.Output
+import io.matthewnelson.kmp.process.internal.js.typed.JsUint8Array
+import io.matthewnelson.kmp.process.internal.js.typed.asJsInt8Array
+import io.matthewnelson.kmp.process.internal.js.typed.asJsUint8Array
 
-@DoNotReferenceDirectly("JsArrayBufferView.set[index] = value")
-internal actual fun <T: JsArrayBufferView> jsArraySet(array: T, index: Int, value: Byte) { js("array[index] = value") }
+//@Throws(IOException::class)
+internal actual fun Output.Options.jsWasmJsConsumeInputBytes(): JsUint8Array? {
+    return consumeInputBytes()?.asJsInt8Array()?.asJsUint8Array()
+}

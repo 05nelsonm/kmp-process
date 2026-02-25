@@ -19,18 +19,17 @@ package io.matthewnelson.kmp.process.internal.node
 
 import io.matthewnelson.kmp.process.internal.Bit8Array
 import io.matthewnelson.kmp.process.internal.DoNotReferenceDirectly
-import io.matthewnelson.kmp.process.internal.js.typed.JsInt8Array
 import io.matthewnelson.kmp.process.internal.js.typed.JsUint8Array
-import io.matthewnelson.kmp.process.internal.js.typed.new
+import io.matthewnelson.kmp.process.internal.js.typed.asJsInt8Array
 import kotlinx.coroutines.CompletableJob
 
 /** [docs](https://nodejs.org/api/stream.html) */
-internal external interface ModuleStream {
+internal sealed external interface ModuleStream {
     //
 }
 
 /** [docs](https://nodejs.org/api/stream.html#class-streamwritable) */
-internal external interface JsWritable {
+internal sealed external interface JsWritable {
     val writable: Boolean
     fun end()
     fun once(
@@ -38,7 +37,7 @@ internal external interface JsWritable {
         listener: () -> Unit,
     ): JsWritable
 
-    @DoNotReferenceDirectly("JsWritable.write(buf, offset, len, job)")
+    @DoNotReferenceDirectly("JsWritable.write(buf, offset, len, latch)")
     fun write(
         chunk: JsUint8Array,
         callback: () -> Unit,
@@ -46,7 +45,7 @@ internal external interface JsWritable {
 }
 
 /** [docs](https://nodejs.org/api/stream.html#class-streamreadable) */
-internal expect interface JsReadable {
+internal expect sealed interface JsReadable {
 //    fun on(
 //        event: String,
 //        listener: (JsAny?/dynamic) -> Unit,
@@ -55,6 +54,7 @@ internal expect interface JsReadable {
 }
 
 // Assumes size/offset/len has already been validated
+@Throws(Throwable::class)
 internal expect inline fun JsWritable.write(
     buf: ByteArray,
     offset: Int,
@@ -73,7 +73,7 @@ internal expect inline fun JsReadable.onData(
 @DoNotReferenceDirectly("JsReadable.onData")
 internal inline fun onDataListener(
     noinline block: (data: Bit8Array) -> Unit
-): (JsUint8Array) -> Unit = { data ->
-    val int8 = JsInt8Array.new(data.buffer)
-    block(Bit8Array(storage = int8))
+): (JsUint8Array) -> Unit = { chunk ->
+    val data = Bit8Array(storage = chunk.asJsInt8Array())
+    block(data)
 }

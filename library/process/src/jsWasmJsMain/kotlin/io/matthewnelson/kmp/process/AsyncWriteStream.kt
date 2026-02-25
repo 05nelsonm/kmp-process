@@ -64,7 +64,7 @@ public actual class AsyncWriteStream internal constructor(private val stream: Js
         try {
             if (!stream.write(buf, offset, len, wLatch)) {
                 dLatch = Job(wLatch)
-                jsExternTryCatch { stream.once("drain") { dLatch.complete() } }
+                jsExternTryCatch { stream.once("drain", dLatch::complete) }
             }
         } catch (t: Throwable) {
             wLatch.cancel()

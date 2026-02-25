@@ -39,6 +39,8 @@ internal inline fun JsInt8Array.Companion.new(buffer: JsArrayBufferLike): JsInt8
 internal inline operator fun JsInt8Array.get(index: Int): Byte = jsGet(this, index)
 internal inline operator fun JsInt8Array.set(index: Int, value: Byte) { jsSet(this, index, value) }
 
+internal inline fun JsInt8Array.asJsUint8Array(): JsUint8Array = JsUint8Array.new(buffer)
+
 internal const val CODE_JS_NEW_INT8_LENGTH = "new Int8Array(length)"
 internal const val CODE_JS_NEW_INT8_BUFFER = "new Int8Array(buffer)"
 
