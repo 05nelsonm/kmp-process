@@ -640,6 +640,34 @@ public fun interface OutputFeed: Output.Feed {
             level = DeprecationLevel.WARNING,
         )
         public fun stderrFeed(feeds: List<OutputFeed>): Process = stderr(feeds)
+
+        /**
+         * DEPRECATED since `0.6.0`
+         * @suppress
+         * */
+        @Deprecated(
+            message = "Replaced by Utf8LineDispatcher via OutputFeed.Raw. Now throws exception.",
+            level = DeprecationLevel.ERROR,
+        )
+        @Suppress("UNUSED_PARAMETER")
+        protected fun dispatchStdout(line: String?) {
+            // It's a protected function, but to maintain binary compatibility.
+            throw IllegalStateException()
+        }
+
+        /**
+         * DEPRECATED since `0.6.0`
+         * @suppress
+         * */
+        @Deprecated(
+            message = "Replaced by Utf8LineDispatcher via OutputFeed.Raw. Now throws exception.",
+            level = DeprecationLevel.ERROR,
+        )
+        @Suppress("UNUSED_PARAMETER")
+        protected fun dispatchStderr(line: String?) {
+            // It's a protected function, but to maintain binary compatibility.
+            throw IllegalStateException()
+        }
     }
 
     /**
