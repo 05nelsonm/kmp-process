@@ -102,6 +102,4 @@ class OutputFeedBufferUnitTest {
         assertEquals(10, data.size)
         assertEquals("SegmentedData", data::class.simpleName)
     }
-
-    // TODO: test isReusableBuffer functionality (Issue #233)
 }
