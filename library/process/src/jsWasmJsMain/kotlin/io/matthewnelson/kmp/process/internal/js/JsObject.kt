@@ -30,7 +30,7 @@ internal sealed external class JsObject {
     }
 }
 
-internal inline fun JsObject.Companion.new(): JsObject = jsObjectNew()
+internal inline fun JsObject.Companion.new(): JsObject = jsObject()
 
 internal inline fun <T: JsArrayLike> JsObject.getJsArrayOrNull(key: String): T? = jsObjectGetJsArrayOrNull(this, key)
 internal inline fun JsObject.getJsErrorOrNull(key: String): JsError? = jsObjectGetJsErrorOrNull(this, key)
@@ -50,7 +50,7 @@ internal const val CODE_JS_OBJECT_GET = "obj[key]"
 internal const val CODE_JS_OBJECT_SET = "obj[key] = value"
 
 @DoNotReferenceDirectly("JsObject.Companion.new()")
-internal expect fun jsObjectNew(): JsObject
+internal expect fun jsObject(): JsObject
 
 @DoNotReferenceDirectly("obj.getJsArrayOrNull(key)")
 internal expect fun <T: JsArrayLike> jsObjectGetJsArrayOrNull(obj: JsObject, key: String): T?

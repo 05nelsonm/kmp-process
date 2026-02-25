@@ -37,7 +37,6 @@ internal class OutputFeedBuffer private constructor(maxSize: Int): OutputFeed.Ra
     internal var maxSizeExceeded = false
         private set
 
-    @Throws(IllegalStateException::class)
     internal fun update(buf: Bit8Array?, len: Int/*, isReusableBuffer: Boolean TODO: Issue #233 */) {
         if (buf == null) {
             hasEnded = true

@@ -18,13 +18,10 @@
 package io.matthewnelson.kmp.process.internal.js
 
 import io.matthewnelson.kmp.process.internal.DoNotReferenceDirectly
-import io.matthewnelson.kmp.process.internal.js.array.JsArray
 import io.matthewnelson.kmp.process.internal.js.array.JsArrayLike
-import io.matthewnelson.kmp.process.internal.js.typed.JsTypedArray
-import io.matthewnelson.kmp.process.internal.js.typed.JsUint8Array
 
 @DoNotReferenceDirectly("JsObject.Companion.new()")
-internal actual fun jsObjectNew(): JsObject = js(CODE_JS_OBJECT_NEW)
+internal actual fun jsObject(): JsObject = js(CODE_JS_OBJECT_NEW)
 
 @DoNotReferenceDirectly("obj.getJsArrayOrNull(key)")
 internal actual fun <T: JsArrayLike> jsObjectGetJsArrayOrNull(obj: JsObject, key: String): T? = js(CODE_JS_OBJECT_GET)
