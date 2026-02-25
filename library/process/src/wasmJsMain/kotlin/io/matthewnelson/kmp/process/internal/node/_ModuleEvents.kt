@@ -23,11 +23,9 @@ import io.matthewnelson.kmp.file.jsExternTryCatch
 import io.matthewnelson.kmp.process.internal.DoNotReferenceDirectly
 import io.matthewnelson.kmp.process.internal.js.JsError
 import io.matthewnelson.kmp.process.internal.js.toThrowable
-import kotlin.js.JsName
 
 /** [docs](https://nodejs.org/api/events.html#class-eventemitter) */
-@JsName("EventEmitter")
-internal actual external interface JsEventEmitter {
+internal actual sealed external interface JsEventEmitter {
     @DoNotReferenceDirectly("JsEventEmitter.onError")
     fun <T: JsAny?> on(
         event: String,

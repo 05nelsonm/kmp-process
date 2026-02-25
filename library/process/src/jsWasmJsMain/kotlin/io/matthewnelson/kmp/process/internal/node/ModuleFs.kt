@@ -16,10 +16,9 @@
 package io.matthewnelson.kmp.process.internal.node
 
 import io.matthewnelson.kmp.process.internal.js.JsError
-import kotlin.js.JsName
 
 /** [docs](https://nodejs.org/api/fs.html) */
-internal external interface ModuleFs {
+internal sealed external interface ModuleFs {
     fun close(fd: Double, callback: (err: JsError?) -> Unit)
     fun fstat(fd: Double, callback: (err: JsError?, stats: JsStats?) -> Unit)
     fun open(path: String, flags: String, callback: (err: JsError?, fd: Double?) -> Unit)
@@ -30,7 +29,6 @@ internal external interface ModuleFs {
 }
 
 /** [docs](https://nodejs.org/api/fs.html#class-fsstats) */
-@JsName("Stats")
-internal external interface JsStats {
+internal sealed external interface JsStats {
     fun isDirectory(): Boolean
 }

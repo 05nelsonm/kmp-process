@@ -13,36 +13,47 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
+@file:OptIn(DelicateFileApi::class, DoNotReferenceDirectly::class)
 @file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING", "NOTHING_TO_INLINE", "UNUSED", "OPT_IN_USAGE")
-@file:OptIn(DelicateFileApi::class)
 
 package io.matthewnelson.kmp.process.internal.node
 
 import io.matthewnelson.kmp.file.DelicateFileApi
 import io.matthewnelson.kmp.file.jsExternTryCatch
-import io.matthewnelson.kmp.process.ReadBuffer
+import io.matthewnelson.kmp.process.internal.Bit8Array
 import io.matthewnelson.kmp.process.internal.DoNotReferenceDirectly
-import kotlin.js.JsName
+import io.matthewnelson.kmp.process.internal.js.typed.asJsUint8Array
+import io.matthewnelson.kmp.process.internal.js.typed.set
+import kotlinx.coroutines.CompletableJob
 
 /** [docs](https://nodejs.org/api/stream.html#class-streamreadable) */
-@JsName("Readable")
-internal actual external interface JsReadable {
+internal actual sealed external interface JsReadable {
     actual fun destroy()
+}
+
+//@Throws(Throwable::class)
+@Suppress("ACTUAL_ANNOTATIONS_NOT_MATCH_EXPECT")
+internal actual inline fun JsWritable.write(
+    buf: ByteArray,
+    offset: Int,
+    len: Int,
+    latch: CompletableJob,
+): Boolean {
+    val chunk = Bit8Array(len) { i -> buf[i + offset] }.storage.asJsUint8Array()
+    latch.invokeOnCompletion { repeat(len) { i -> chunk[i] = 0u } }
+    return jsExternTryCatch { write(chunk, latch::complete) }
 }
 
 internal actual inline fun JsReadable.onClose(
     noinline block: () -> Unit,
-): JsReadable {
-    @OptIn(DoNotReferenceDirectly::class)
-    return jsExternTryCatch { jsReadableOn(this, "close", block) }
+): JsReadable = jsExternTryCatch {
+    jsReadableOn(this, "close", block)
 }
 
 internal actual inline fun JsReadable.onData(
-    noinline block: (data: ReadBuffer) -> Unit,
+    noinline block: (data: Bit8Array) -> Unit,
 ): JsReadable {
-    @OptIn(DoNotReferenceDirectly::class)
     val listener = onDataListener(block)
-    @OptIn(DoNotReferenceDirectly::class)
     return jsExternTryCatch { jsReadableOn(this, "data", listener) }
 }
 

@@ -19,6 +19,7 @@ package io.matthewnelson.kmp.process
 
 import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.file.IOException
+import io.matthewnelson.kmp.process.internal.Bit8Array
 import kotlin.time.Duration
 
 /**
@@ -56,7 +57,7 @@ public expect class Output {
      * */
     public abstract class Data internal constructor(
         size: Int,
-        segments: Array<ReadBuffer>,
+        segments: Array<Bit8Array>,
         sizes: IntArray?,
         init: Any,
     ): Collection<Byte> {

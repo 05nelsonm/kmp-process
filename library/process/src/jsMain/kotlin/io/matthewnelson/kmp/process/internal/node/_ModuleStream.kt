@@ -13,17 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
+@file:OptIn(DoNotReferenceDirectly::class)
 @file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING", "NOTHING_TO_INLINE")
 
 package io.matthewnelson.kmp.process.internal.node
 
-import io.matthewnelson.kmp.process.ReadBuffer
+import io.matthewnelson.kmp.process.internal.Bit8Array
 import io.matthewnelson.kmp.process.internal.DoNotReferenceDirectly
-import kotlin.js.JsName
+import io.matthewnelson.kmp.process.internal.js.typed.asJsInt8Array
+import io.matthewnelson.kmp.process.internal.js.typed.asJsUint8Array
+import kotlinx.coroutines.CompletableJob
 
 /** [docs](https://nodejs.org/api/stream.html#class-streamreadable) */
-@JsName("Readable")
-internal actual external interface JsReadable {
+internal actual sealed external interface JsReadable {
     fun on(
         event: String,
         listener: Function<Unit>,
@@ -31,13 +33,25 @@ internal actual external interface JsReadable {
     actual fun destroy()
 }
 
+//@Throws(Throwable::class)
+@Suppress("ACTUAL_ANNOTATIONS_NOT_MATCH_EXPECT")
+internal actual inline fun JsWritable.write(
+    buf: ByteArray,
+    offset: Int,
+    len: Int,
+    latch: CompletableJob,
+): Boolean {
+    var chunk = buf.asJsInt8Array().asJsUint8Array()
+    if (!(offset == 0 && len == buf.size)) {
+        chunk = chunk.subarray(start = offset, end = offset + len)
+    }
+    return write(chunk, latch::complete)
+}
+
 internal actual inline fun JsReadable.onClose(
     noinline block: () -> Unit,
 ): JsReadable = on("close", block)
 
 internal actual inline fun JsReadable.onData(
-    noinline block: (data: ReadBuffer) -> Unit,
-): JsReadable {
-    @OptIn(DoNotReferenceDirectly::class)
-    return on("data", onDataListener(block))
-}
+    noinline block: (data: Bit8Array) -> Unit,
+): JsReadable = on("data", onDataListener(block))

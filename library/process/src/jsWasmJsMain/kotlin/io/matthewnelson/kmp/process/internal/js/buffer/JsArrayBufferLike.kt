@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Matthew Nelson
+ * Copyright (c) 2026 Matthew Nelson
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,10 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("OPT_IN_USAGE")
+package io.matthewnelson.kmp.process.internal.js.buffer
 
-package io.matthewnelson.kmp.process
-
-import io.matthewnelson.kmp.process.internal.js.JsArrayBufferView
-
-internal actual fun <T: JsArrayBufferView> jsArrayGet(a: T, index: Int): Byte = js("a[index]")
+internal sealed external interface JsArrayBufferLike {
+    val byteLength: Int
+    val maxByteLength: Int
+}

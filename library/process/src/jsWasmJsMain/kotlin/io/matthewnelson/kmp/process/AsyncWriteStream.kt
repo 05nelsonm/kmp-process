@@ -19,16 +19,15 @@
 package io.matthewnelson.kmp.process
 
 import io.matthewnelson.kmp.file.Closeable
+import io.matthewnelson.kmp.file.ClosedException
 import io.matthewnelson.kmp.file.DelicateFileApi
 import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.file.jsExternTryCatch
 import io.matthewnelson.kmp.file.toIOException
 import io.matthewnelson.kmp.file.use
 import io.matthewnelson.kmp.process.internal.checkBounds
-import io.matthewnelson.kmp.process.internal.js.JsUint8Array
-import io.matthewnelson.kmp.process.internal.js.fill
-import io.matthewnelson.kmp.process.internal.js.toJsArray
 import io.matthewnelson.kmp.process.internal.node.JsWritable
+import io.matthewnelson.kmp.process.internal.node.write
 import kotlinx.coroutines.CompletableJob
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.currentCoroutineContext
@@ -55,18 +54,17 @@ public actual class AsyncWriteStream internal constructor(private val stream: Js
      * */
     @Throws(CancellationException::class, IOException::class)
     public actual suspend fun writeAsync(buf: ByteArray, offset: Int, len: Int) {
-        if (isClosed) throw IOException("WriteStream is closed")
+        if (isClosed) throw ClosedException()
         buf.checkBounds(offset, len)
         if (len == 0) return
 
-        val chunk = buf.toJsArray(offset, len, factory = ::JsUint8Array)
         val wLatch: CompletableJob = Job(currentCoroutineContext()[Job])
         var dLatch: CompletableJob? = null
 
         try {
-            if (!jsExternTryCatch { stream.write(chunk) { wLatch.complete(); chunk.fill() } }) {
+            if (!stream.write(buf, offset, len, wLatch)) {
                 dLatch = Job(wLatch)
-                jsExternTryCatch { stream.once("drain") { dLatch.complete() } }
+                jsExternTryCatch { stream.once("drain", dLatch::complete) }
             }
         } catch (t: Throwable) {
             wLatch.cancel()
@@ -114,7 +112,7 @@ public actual class AsyncWriteStream internal constructor(private val stream: Js
      * @throws [IOException] If an I/O error occurs, or the stream is closed.
      * */
     @Throws(IOException::class)
-    public actual fun flush() {}
+    public actual fun flush() { if (isClosed) throw ClosedException() }
 
     /**
      * Closes the resource releasing any system resources that may

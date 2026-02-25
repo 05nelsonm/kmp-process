@@ -14,69 +14,64 @@
  * limitations under the License.
  **/
 @file:OptIn(DoNotReferenceDirectly::class)
-@file:Suppress("NOTHING_TO_INLINE", "UNUSED")
+@file:Suppress("NOTHING_TO_INLINE")
 
 package io.matthewnelson.kmp.process.internal.js
 
 import io.matthewnelson.kmp.process.internal.DoNotReferenceDirectly
-import io.matthewnelson.kmp.process.internal.node.JsBuffer
+import io.matthewnelson.kmp.process.internal.js.array.JsArray
+import io.matthewnelson.kmp.process.internal.js.array.JsArrayLike
 import kotlin.js.JsName
 
 @JsName("Object")
-internal external class JsObject {
+internal sealed external class JsObject {
     internal companion object {
         internal fun keys(obj: JsObject): JsArray
     }
 }
 
-internal inline fun JsObject.Companion.new(): JsObject = jsObjectNew()
-@DoNotReferenceDirectly("JsObject.Companion.new()")
-internal expect fun jsObjectNew(): JsObject
+internal inline fun JsObject.Companion.new(): JsObject = jsObject()
 
-internal inline fun JsObject.getJsBufferOrNull(key: String): JsBuffer? = jsObjectGetJsBufferOrNull(this, key)
-@DoNotReferenceDirectly("JsObject.getJsBufferOrNull(key)")
-internal expect fun jsObjectGetJsBufferOrNull(obj: JsObject, key: String): JsBuffer?
-
+internal inline fun <T: JsArrayLike> JsObject.getJsArrayOrNull(key: String): T? = jsObjectGetJsArrayOrNull(this, key)
 internal inline fun JsObject.getJsErrorOrNull(key: String): JsError? = jsObjectGetJsErrorOrNull(this, key)
-@DoNotReferenceDirectly("JsObject.getJsErrorOrNull(key)")
-internal expect fun jsObjectGetJsErrorOrNull(obj: JsObject, key: String): JsError?
-
 internal inline fun JsObject.getInt(key: String): Int = jsObjectGetInt(this, key)
-@DoNotReferenceDirectly("JsObject.getInt(key)")
-internal expect fun jsObjectGetInt(obj: JsObject, key: String): Int
-
 internal inline fun JsObject.getIntOrNull(key: String): Int? = jsObjectGetIntOrNull(this, key)
-@DoNotReferenceDirectly("JsObject.getIntOrNull(key)")
-internal expect fun jsObjectGetIntOrNull(obj: JsObject, key: String): Int?
-
 internal inline fun JsObject.getString(key: String): String = jsObjectGetString(this, key)
-@DoNotReferenceDirectly("JsObject.getString(key)")
-internal expect fun jsObjectGetString(obj: JsObject, key: String): String
-
 internal inline fun JsObject.getStringOrNull(key: String): String? = jsObjectGetStringOrNull(this, key)
-@DoNotReferenceDirectly("JsObject.getStringOrNull(key)")
+
+internal inline operator fun <T: JsArrayLike> JsObject.set(key: String, value: T) { jsObjectSetJsArray(this, key, value) }
+internal inline operator fun JsObject.set(key: String, value: Int) { jsObjectSetInt(this, key, value) }
+internal inline operator fun JsObject.set(key: String, value: Boolean) { jsObjectSetBoolean(this, key, value) }
+internal inline operator fun JsObject.set(key: String, value: String) { jsObjectSetString(this, key, value) }
+internal inline operator fun JsObject.set(key: String, value: JsObject) { jsObjectSetJsObject(this, key, value) }
+
+internal const val CODE_JS_OBJECT_NEW = "({})"
+internal const val CODE_JS_OBJECT_GET = "obj[key]"
+internal const val CODE_JS_OBJECT_SET = "obj[key] = value"
+
+@DoNotReferenceDirectly("JsObject.Companion.new()")
+internal expect fun jsObject(): JsObject
+
+@DoNotReferenceDirectly("obj.getJsArrayOrNull(key)")
+internal expect fun <T: JsArrayLike> jsObjectGetJsArrayOrNull(obj: JsObject, key: String): T?
+@DoNotReferenceDirectly("obj.getJsErrorOrNull(key)")
+internal expect fun jsObjectGetJsErrorOrNull(obj: JsObject, key: String): JsError?
+@DoNotReferenceDirectly("obj.getInt(key)")
+internal expect fun jsObjectGetInt(obj: JsObject, key: String): Int
+@DoNotReferenceDirectly("obj.getIntOrNull(key)")
+internal expect fun jsObjectGetIntOrNull(obj: JsObject, key: String): Int?
+@DoNotReferenceDirectly("obj.getString(key)")
+internal expect fun jsObjectGetString(obj: JsObject, key: String): String
+@DoNotReferenceDirectly("obj.getStringOrNull(key)")
 internal expect fun jsObjectGetStringOrNull(obj: JsObject, key: String): String?
 
-internal inline operator fun JsObject.set(key: String, value: Int) { jsObjectSetInt(this, key, value) }
-@DoNotReferenceDirectly("JsObject.set[key] = value")
+@DoNotReferenceDirectly("obj[key] = value")
+internal expect fun <T: JsArrayLike> jsObjectSetJsArray(obj: JsObject, key: String, value: T)
+@DoNotReferenceDirectly("obj[key] = value")
 internal expect fun jsObjectSetInt(obj: JsObject, key: String, value: Int)
-
-internal inline operator fun JsObject.set(key: String, value: Boolean) { jsObjectSetBoolean(this, key, value) }
-@DoNotReferenceDirectly("JsObject.set[key] = value")
+@DoNotReferenceDirectly("obj[key] = value")
 internal expect fun jsObjectSetBoolean(obj: JsObject, key: String, value: Boolean)
-
-internal inline operator fun JsObject.set(key: String, value: String) { jsObjectSetString(this, key, value) }
-@DoNotReferenceDirectly("JsObject.set[key] = value")
+@DoNotReferenceDirectly("obj[key] = value")
 internal expect fun jsObjectSetString(obj: JsObject, key: String, value: String)
-
-internal inline operator fun JsObject.set(key: String, value: JsArray) { jsObjectSetJsArray(this, key, value) }
-@DoNotReferenceDirectly("JsObject.set[key] = value")
-internal expect fun jsObjectSetJsArray(obj: JsObject, key: String, value: JsArray)
-
-internal inline operator fun JsObject.set(key: String, value: JsObject) { jsObjectSetJsObject(this, key, value) }
-@DoNotReferenceDirectly("JsObject.set[key] = value")
+@DoNotReferenceDirectly("obj[key] = value")
 internal expect fun jsObjectSetJsObject(obj: JsObject, key: String, value: JsObject)
-
-internal inline operator fun JsObject.set(key: String, value: JsInt8Array) { jsObjectSetJsInt8Array(this, key, value) }
-@DoNotReferenceDirectly("JsObject.set[key] = value")
-internal expect fun jsObjectSetJsInt8Array(obj: JsObject, key: String, value: JsInt8Array)

@@ -27,31 +27,29 @@ import io.matthewnelson.kmp.file.jsExternTryCatch
 import io.matthewnelson.kmp.file.path
 import io.matthewnelson.kmp.file.toFile
 import io.matthewnelson.kmp.file.toIOException
-import io.matthewnelson.kmp.process.InternalProcessApi
 import io.matthewnelson.kmp.process.Output
 import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.ProcessException
-import io.matthewnelson.kmp.process.ReadBuffer
 import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.Stdio
-import io.matthewnelson.kmp.process.internal.js.JsArray
-import io.matthewnelson.kmp.process.internal.js.JsInt8Array
 import io.matthewnelson.kmp.process.internal.js.JsObject
-import io.matthewnelson.kmp.process.internal.js.fill
+import io.matthewnelson.kmp.process.internal.js.array.JsArray
+import io.matthewnelson.kmp.process.internal.js.array.getString
+import io.matthewnelson.kmp.process.internal.js.array.set
 import io.matthewnelson.kmp.process.internal.js.getString
-import io.matthewnelson.kmp.process.internal.js.getJsBufferOrNull
+import io.matthewnelson.kmp.process.internal.js.getJsArrayOrNull
 import io.matthewnelson.kmp.process.internal.js.getInt
 import io.matthewnelson.kmp.process.internal.js.getIntOrNull
 import io.matthewnelson.kmp.process.internal.js.getJsErrorOrNull
 import io.matthewnelson.kmp.process.internal.js.getStringOrNull
 import io.matthewnelson.kmp.process.internal.js.new
 import io.matthewnelson.kmp.process.internal.js.set
-import io.matthewnelson.kmp.process.internal.js.toJsArray
 import io.matthewnelson.kmp.process.internal.js.toThrowable
-import io.matthewnelson.kmp.process.internal.node.JsBuffer
+import io.matthewnelson.kmp.process.internal.js.typed.JsUint8Array
+import io.matthewnelson.kmp.process.internal.js.typed.asJsInt8Array
+import io.matthewnelson.kmp.process.internal.js.typed.set
 import io.matthewnelson.kmp.process.internal.node.JsStats
 import io.matthewnelson.kmp.process.internal.node.ModuleFs
-import io.matthewnelson.kmp.process.internal.node.asBuffer
 import io.matthewnelson.kmp.process.internal.node.node_child_process
 import io.matthewnelson.kmp.process.internal.node.node_fs
 import io.matthewnelson.kmp.process.internal.node.node_process
@@ -119,12 +117,10 @@ internal actual class PlatformBuilder private actual constructor() {
         val opts = JsObject.new()
 
         // To fill after spawnSync completes
-        var input: JsInt8Array? = null
+        var input: JsUint8Array? = null
 
         jsStdio.closeDescriptorsOnFailure {
-            options.consumeInputBytes()?.let { b ->
-                val a = b.toJsArray(factory = ::JsInt8Array)
-                b.fill(0)
+            options.jsWasmJsConsumeInputBytes()?.let { a ->
                 input = a
                 opts["input"] = a
             }
@@ -153,7 +149,9 @@ internal actual class PlatformBuilder private actual constructor() {
                     jsExternTryCatch { m.spawnSync(command, argsArray, opts) }
                 }
             } finally {
-                input?.fill()
+                input?.let { a ->
+                    repeat(a.length) { i -> a[i] = 0u }
+                }
             }
         }
 
@@ -166,8 +164,8 @@ internal actual class PlatformBuilder private actual constructor() {
             e.message
         }
 
-        val stdout = output.getJsBufferOrNull(key = "stdout").asOutputData()
-        val stderr = output.getJsBufferOrNull(key = "stderr").asOutputData()
+        val stdout = output.getJsArrayOrNull<JsUint8Array>(key = "stdout").asOutputData()
+        val stderr = output.getJsArrayOrNull<JsUint8Array>(key = "stderr").asOutputData()
 
         val code: Int = output.getIntOrNull("status").let { status ->
             if (status != null) return@let status
@@ -338,10 +336,9 @@ private fun List<Any>.toJsArray(): JsArray {
     return array
 }
 
-private fun JsBuffer?.asOutputData(): Output.Data {
+private fun JsUint8Array?.asOutputData(): Output.Data {
     if (this == null) return Output.Data.empty()
-    @OptIn(InternalProcessApi::class)
-    return ReadBuffer.of(buf = asBuffer()).asOutputData()
+    return Bit8Array(storage = asJsInt8Array()).asOutputData()
 }
 
 @OptIn(ExperimentalContracts::class)

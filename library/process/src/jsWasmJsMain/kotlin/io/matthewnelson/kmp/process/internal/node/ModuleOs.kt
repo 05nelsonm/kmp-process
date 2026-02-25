@@ -16,6 +16,6 @@
 package io.matthewnelson.kmp.process.internal.node
 
 /** [docs](https://nodejs.org/api/os.html) */
-internal external interface ModuleOs {
+internal sealed external interface ModuleOs {
     fun platform(): String?
 }

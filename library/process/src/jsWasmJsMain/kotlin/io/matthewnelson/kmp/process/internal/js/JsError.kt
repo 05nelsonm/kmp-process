@@ -20,7 +20,7 @@ package io.matthewnelson.kmp.process.internal.js
 import kotlin.js.JsName
 
 @JsName("Error")
-internal expect class JsError {
+internal expect open class JsError {
     internal val message: String?
 }
 

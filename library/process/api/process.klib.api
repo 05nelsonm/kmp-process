@@ -42,8 +42,8 @@ abstract fun interface io.matthewnelson.kmp.process/OutputFeed : io.matthewnelso
         abstract fun onError(kotlin/Throwable, kotlin/String) // io.matthewnelson.kmp.process/OutputFeed.Handler.onError|onError(kotlin.Throwable;kotlin.String){}[0]
         abstract fun startStderr() // io.matthewnelson.kmp.process/OutputFeed.Handler.startStderr|startStderr(){}[0]
         abstract fun startStdout() // io.matthewnelson.kmp.process/OutputFeed.Handler.startStdout|startStdout(){}[0]
-        final fun dispatchStderr(io.matthewnelson.kmp.process/ReadBuffer?, kotlin/Int) // io.matthewnelson.kmp.process/OutputFeed.Handler.dispatchStderr|dispatchStderr(io.matthewnelson.kmp.process.ReadBuffer?;kotlin.Int){}[0]
-        final fun dispatchStdout(io.matthewnelson.kmp.process/ReadBuffer?, kotlin/Int) // io.matthewnelson.kmp.process/OutputFeed.Handler.dispatchStdout|dispatchStdout(io.matthewnelson.kmp.process.ReadBuffer?;kotlin.Int){}[0]
+        final fun dispatchStderr(kotlin/String?) // io.matthewnelson.kmp.process/OutputFeed.Handler.dispatchStderr|dispatchStderr(kotlin.String?){}[0]
+        final fun dispatchStdout(kotlin/String?) // io.matthewnelson.kmp.process/OutputFeed.Handler.dispatchStdout|dispatchStdout(kotlin.String?){}[0]
         final fun stderr(io.matthewnelson.kmp.process/Output.Feed): io.matthewnelson.kmp.process/Process // io.matthewnelson.kmp.process/OutputFeed.Handler.stderr|stderr(io.matthewnelson.kmp.process.Output.Feed){}[0]
         final fun stderr(kotlin.collections/Collection<io.matthewnelson.kmp.process/Output.Feed>): io.matthewnelson.kmp.process/Process // io.matthewnelson.kmp.process/OutputFeed.Handler.stderr|stderr(kotlin.collections.Collection<io.matthewnelson.kmp.process.Output.Feed>){}[0]
         final fun stderr(kotlin/Array<out io.matthewnelson.kmp.process/Output.Feed>...): io.matthewnelson.kmp.process/Process // io.matthewnelson.kmp.process/OutputFeed.Handler.stderr|stderr(kotlin.Array<out|io.matthewnelson.kmp.process.Output.Feed>...){}[0]
@@ -58,6 +58,8 @@ abstract fun interface io.matthewnelson.kmp.process/OutputFeed : io.matthewnelso
         final fun stdoutFeed(kotlin.collections/List<io.matthewnelson.kmp.process/OutputFeed>): io.matthewnelson.kmp.process/Process // io.matthewnelson.kmp.process/OutputFeed.Handler.stdoutFeed|stdoutFeed(kotlin.collections.List<io.matthewnelson.kmp.process.OutputFeed>){}[0]
         final fun stdoutFeed(kotlin/Array<out io.matthewnelson.kmp.process/OutputFeed>...): io.matthewnelson.kmp.process/Process // io.matthewnelson.kmp.process/OutputFeed.Handler.stdoutFeed|stdoutFeed(kotlin.Array<out|io.matthewnelson.kmp.process.OutputFeed>...){}[0]
         final fun stdoutWaiter(): io.matthewnelson.kmp.process/OutputFeed.Waiter // io.matthewnelson.kmp.process/OutputFeed.Handler.stdoutWaiter|stdoutWaiter(){}[0]
+
+        final object Companion // io.matthewnelson.kmp.process/OutputFeed.Handler.Companion|null[0]
     }
 
     sealed class Waiter : io.matthewnelson.kmp.process/Blocking.Waiter { // io.matthewnelson.kmp.process/OutputFeed.Waiter|null[0]

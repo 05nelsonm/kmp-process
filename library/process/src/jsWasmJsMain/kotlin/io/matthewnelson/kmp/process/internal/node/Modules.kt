@@ -18,12 +18,6 @@ package io.matthewnelson.kmp.process.internal.node
 import io.matthewnelson.kmp.file.SysFsInfo
 
 @get:Throws(UnsupportedOperationException::class)
-internal val node_buffer: ModuleBuffer by lazy {
-    requireNodeJs { "buffer" }
-    nodeModuleBuffer()
-}
-
-@get:Throws(UnsupportedOperationException::class)
 internal val node_child_process: ModuleChildProcess by lazy {
     requireNodeJs { "child_process" }
     node_events
@@ -58,11 +52,9 @@ internal val node_process: ModuleProcess by lazy {
 @get:Throws(UnsupportedOperationException::class)
 internal val node_stream: ModuleStream by lazy {
     requireNodeJs { "stream" }
-    node_buffer
     nodeModuleStream()
 }
 
-internal const val CODE_MODULE_BUFFER: String = "eval('require')('buffer')"
 internal const val CODE_MODULE_CHILD_PROCESS: String = "eval('require')('child_process')"
 internal const val CODE_MODULE_EVENTS: String = "eval('require')('events')"
 internal const val CODE_MODULE_FS: String = "eval('require')('fs')"
@@ -70,7 +62,6 @@ internal const val CODE_MODULE_OS: String = "eval('require')('os')"
 internal const val CODE_MODULE_PROCESS: String = "eval('require')('process')"
 internal const val CODE_MODULE_STREAM: String = "eval('require')('stream')"
 
-internal expect fun nodeModuleBuffer(): ModuleBuffer
 internal expect fun nodeModuleChildProcess(): ModuleChildProcess
 internal expect fun nodeModuleEvents(): ModuleEvents
 internal expect fun nodeModuleFs(): ModuleFs

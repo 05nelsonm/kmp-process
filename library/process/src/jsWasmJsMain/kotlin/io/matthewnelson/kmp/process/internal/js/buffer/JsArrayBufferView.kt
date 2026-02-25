@@ -13,8 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("NOTHING_TO_INLINE")
+package io.matthewnelson.kmp.process.internal.js.buffer
 
-package io.matthewnelson.kmp.process
-
-internal actual inline operator fun ReadBuffer.set(index: Int, value: Byte) { buf[index] = value }
+internal external interface JsArrayBufferView: JsBufferSource {
+    val buffer: JsArrayBufferLike
+    val byteOffset: Int
+    val byteLength: Int
+}
