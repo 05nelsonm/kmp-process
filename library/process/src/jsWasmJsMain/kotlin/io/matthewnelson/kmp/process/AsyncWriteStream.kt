@@ -67,8 +67,8 @@ public actual class AsyncWriteStream internal constructor(private val stream: Js
                 jsExternTryCatch { stream.once("drain", dLatch::complete) }
             }
         } catch (t: Throwable) {
-            wLatch.cancel()
-            dLatch?.cancel()
+            wLatch.complete()
+            dLatch?.complete()
             throw t.toIOException()
         }
 
