@@ -32,12 +32,14 @@ import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.ProcessException
 import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.Stdio
-import io.matthewnelson.kmp.process.internal.js.JsArray
 import io.matthewnelson.kmp.process.internal.js.JsInt8Array
 import io.matthewnelson.kmp.process.internal.js.JsObject
+import io.matthewnelson.kmp.process.internal.js.array.JsArray
+import io.matthewnelson.kmp.process.internal.js.array.getString
+import io.matthewnelson.kmp.process.internal.js.array.set
 import io.matthewnelson.kmp.process.internal.js.fill
 import io.matthewnelson.kmp.process.internal.js.getString
-import io.matthewnelson.kmp.process.internal.js.getJsBufferOrNull
+import io.matthewnelson.kmp.process.internal.js.getJsUint8ArrayOrNull
 import io.matthewnelson.kmp.process.internal.js.getInt
 import io.matthewnelson.kmp.process.internal.js.getIntOrNull
 import io.matthewnelson.kmp.process.internal.js.getJsErrorOrNull
@@ -164,8 +166,8 @@ internal actual class PlatformBuilder private actual constructor() {
             e.message
         }
 
-        val stdout = output.getJsBufferOrNull(key = "stdout").asOutputData()
-        val stderr = output.getJsBufferOrNull(key = "stderr").asOutputData()
+        val stdout = output.getJsUint8ArrayOrNull(key = "stdout").asOutputData()
+        val stderr = output.getJsUint8ArrayOrNull(key = "stderr").asOutputData()
 
         val code: Int = output.getIntOrNull("status").let { status ->
             if (status != null) return@let status

@@ -25,26 +25,6 @@ import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
 import kotlin.js.JsName
 
-@JsName("Array")
-internal external class JsArray {
-    internal val length: Int
-    internal companion object {
-        internal fun of(size: Int): JsArray
-    }
-}
-
-internal inline fun JsArray.getString(index: Int): String = jsArrayGetString(this, index)
-@DoNotReferenceDirectly("JsArray.getString(index)")
-internal expect fun jsArrayGetString(array: JsArray, index: Int): String
-
-internal inline operator fun JsArray.set(index: Int, value: String) { jsArraySetString(this, index, value) }
-@DoNotReferenceDirectly("JsArray.set[index] = value")
-internal expect fun jsArraySetString(array: JsArray, index: Int, value: String)
-
-internal inline operator fun JsArray.set(index: Int, value: Double) { jsArraySetDouble(this, index, value) }
-@DoNotReferenceDirectly("JsArray.set[index] = value")
-internal expect fun jsArraySetDouble(array: JsArray, index: Int, value: Double)
-
 @JsName("ArrayBufferView")
 internal external interface JsArrayBufferView {
     val byteLength: Int

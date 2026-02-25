@@ -15,7 +15,7 @@
  **/
 package io.matthewnelson.kmp.process.internal.node
 
-import io.matthewnelson.kmp.process.internal.js.JsArray
+import io.matthewnelson.kmp.process.internal.js.array.JsArray
 import io.matthewnelson.kmp.process.internal.js.JsObject
 
 /** [docs](https://nodejs.org/api/child_process.html) */

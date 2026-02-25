@@ -19,11 +19,5 @@ package io.matthewnelson.kmp.process.internal.js
 
 import io.matthewnelson.kmp.process.internal.DoNotReferenceDirectly
 
-@DoNotReferenceDirectly("JsArray.getString(index)")
-internal actual fun jsArrayGetString(array: JsArray, index: Int): String = js("array[index]")
-@DoNotReferenceDirectly("JsArray.set[index] = value")
-internal actual fun jsArraySetString(array: JsArray, index: Int, value: String) { js("array[index] = value") }
-@DoNotReferenceDirectly("JsArray.set[index] = value")
-internal actual fun jsArraySetDouble(array: JsArray, index: Int, value: Double) { js("array[index] = value") }
 @DoNotReferenceDirectly("JsArrayBufferView.set[index] = value")
 internal actual fun <T: JsArrayBufferView> jsArraySet(array: T, index: Int, value: Byte) { js("array[index] = value") }

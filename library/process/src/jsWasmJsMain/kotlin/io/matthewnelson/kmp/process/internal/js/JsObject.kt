@@ -19,6 +19,7 @@
 package io.matthewnelson.kmp.process.internal.js
 
 import io.matthewnelson.kmp.process.internal.DoNotReferenceDirectly
+import io.matthewnelson.kmp.process.internal.js.array.JsArray
 import io.matthewnelson.kmp.process.internal.js.typed.JsUint8Array
 import kotlin.js.JsName
 
@@ -31,7 +32,7 @@ internal sealed external class JsObject {
 
 internal inline fun JsObject.Companion.new(): JsObject = jsObjectNew()
 
-internal inline fun JsObject.getJsBufferOrNull(key: String): JsUint8Array? = jsObjectGetJsBufferOrNull(this, key)
+internal inline fun JsObject.getJsUint8ArrayOrNull(key: String): JsUint8Array? = jsObjectGetJsUint8ArrayOrNull(this, key)
 internal inline fun JsObject.getJsErrorOrNull(key: String): JsError? = jsObjectGetJsErrorOrNull(this, key)
 internal inline fun JsObject.getInt(key: String): Int = jsObjectGetInt(this, key)
 internal inline fun JsObject.getIntOrNull(key: String): Int? = jsObjectGetIntOrNull(this, key)
@@ -52,8 +53,8 @@ internal const val CODE_JS_OBJECT_SET = "obj[key] = value"
 @DoNotReferenceDirectly("JsObject.Companion.new()")
 internal expect fun jsObjectNew(): JsObject
 
-@DoNotReferenceDirectly("obj.getJsBufferOrNull(key)")
-internal expect fun jsObjectGetJsBufferOrNull(obj: JsObject, key: String): JsUint8Array?
+@DoNotReferenceDirectly("obj.getJsUint8ArrayOrNull(key)")
+internal expect fun jsObjectGetJsUint8ArrayOrNull(obj: JsObject, key: String): JsUint8Array?
 @DoNotReferenceDirectly("obj.getJsErrorOrNull(key)")
 internal expect fun jsObjectGetJsErrorOrNull(obj: JsObject, key: String): JsError?
 @DoNotReferenceDirectly("obj.getInt(key)")
