@@ -23,9 +23,6 @@ import kotlin.js.JsName
 
 @JsName("Array")
 internal sealed external class JsArray: JsArrayLike {
-
-    override val length: Int
-
     internal companion object {
         internal fun of(size: Int): JsArray
     }

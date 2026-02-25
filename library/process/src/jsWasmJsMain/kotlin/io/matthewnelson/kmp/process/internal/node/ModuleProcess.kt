@@ -18,7 +18,7 @@ package io.matthewnelson.kmp.process.internal.node
 import io.matthewnelson.kmp.process.internal.js.JsObject
 
 /** [docs](https://nodejs.org/api/process.html) */
-internal external interface ModuleProcess {
+internal sealed external interface ModuleProcess {
     val env: JsObject
     val pid: Int
     val versions: JsObject

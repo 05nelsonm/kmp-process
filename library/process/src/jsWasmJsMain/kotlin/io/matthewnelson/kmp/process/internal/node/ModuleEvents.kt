@@ -17,16 +17,13 @@
 
 package io.matthewnelson.kmp.process.internal.node
 
-import kotlin.js.JsName
-
 /** [docs](https://nodejs.org/api/events.html) */
-internal external interface ModuleEvents {
+internal sealed external interface ModuleEvents {
     //
 }
 
 /** [docs](https://nodejs.org/api/events.html#class-eventemitter) */
-@JsName("EventEmitter")
-internal expect interface JsEventEmitter {
+internal expect sealed interface JsEventEmitter {
 //    fun on(
 //        event: String,
 //        listener: (JsAny?/dynamic?) -> Unit,

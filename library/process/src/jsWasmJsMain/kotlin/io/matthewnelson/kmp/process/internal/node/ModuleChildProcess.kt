@@ -17,17 +17,15 @@ package io.matthewnelson.kmp.process.internal.node
 
 import io.matthewnelson.kmp.process.internal.js.JsArray
 import io.matthewnelson.kmp.process.internal.js.JsObject
-import kotlin.js.JsName
 
 /** [docs](https://nodejs.org/api/child_process.html) */
-internal external interface ModuleChildProcess {
+internal sealed external interface ModuleChildProcess {
     fun spawn(command: String, args: JsArray, options: JsObject): JsChildProcess
     fun spawnSync(command: String, args: JsArray, options: JsObject): JsObject
 }
 
 /** [docs](https://nodejs.org/api/child_process.html#class-childprocess) */
-@JsName("ChildProcess")
-internal external interface JsChildProcess: JsEventEmitter {
+internal sealed external interface JsChildProcess: JsEventEmitter {
     val exitCode: Int?
     fun kill(signal: String): Boolean
     val killed: Boolean

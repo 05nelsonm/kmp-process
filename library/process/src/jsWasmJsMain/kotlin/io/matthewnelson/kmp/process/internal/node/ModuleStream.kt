@@ -22,7 +22,7 @@ import io.matthewnelson.kmp.process.internal.DoNotReferenceDirectly
 import io.matthewnelson.kmp.process.internal.js.typed.JsInt8Array
 import io.matthewnelson.kmp.process.internal.js.typed.JsUint8Array
 import io.matthewnelson.kmp.process.internal.js.typed.new
-import kotlin.js.JsName
+import kotlinx.coroutines.CompletableJob
 
 /** [docs](https://nodejs.org/api/stream.html) */
 internal external interface ModuleStream {
@@ -30,7 +30,6 @@ internal external interface ModuleStream {
 }
 
 /** [docs](https://nodejs.org/api/stream.html#class-streamwritable) */
-@JsName("Writable")
 internal external interface JsWritable {
     val writable: Boolean
     fun end()
@@ -38,14 +37,15 @@ internal external interface JsWritable {
         event: String,
         listener: () -> Unit,
     ): JsWritable
+
+    @DoNotReferenceDirectly("JsWritable.write(buf, offset, len, job)")
     fun write(
-        chunk: io.matthewnelson.kmp.process.internal.js.JsUint8Array,
+        chunk: JsUint8Array,
         callback: () -> Unit,
     ): Boolean
 }
 
 /** [docs](https://nodejs.org/api/stream.html#class-streamreadable) */
-@JsName("Readable")
 internal expect interface JsReadable {
 //    fun on(
 //        event: String,
@@ -53,6 +53,14 @@ internal expect interface JsReadable {
 //    ): JsReadable
     fun destroy()
 }
+
+// Assumes size/offset/len has already been validated
+internal expect inline fun JsWritable.write(
+    buf: ByteArray,
+    offset: Int,
+    len: Int,
+    latch: CompletableJob,
+): Boolean
 
 internal expect inline fun JsReadable.onClose(
     noinline block: () -> Unit,
