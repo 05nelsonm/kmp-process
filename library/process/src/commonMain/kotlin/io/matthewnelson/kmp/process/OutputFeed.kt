@@ -336,7 +336,9 @@ public fun interface OutputFeed: Output.Feed {
             dispatch(
                 thing = line,
                 onErrorContext = CTX_FEED_STDOUT,
-                // Do not do closure here, do it in other dispatchStderr function.
+                // Do not do closure here. This is being called from the Utf8LineDispatcher,
+                // which is being called from dispatchStdoutData where actual closure will
+                // be had.
                 feedsLock = null,
                 _onFeed = { (this as? OutputFeed)?.onOutput(it) },
                 _feedsGet = { _stdoutFeeds },
@@ -350,7 +352,9 @@ public fun interface OutputFeed: Output.Feed {
             dispatch(
                 thing = line,
                 onErrorContext = CTX_FEED_STDERR,
-                // Do not do closure here, do it in other dispatchStderr function.
+                // Do not do closure here. This is being called from the Utf8LineDispatcher,
+                // which is being called from dispatchStdoutData where actual closure will
+                // be had.
                 feedsLock = null,
                 _onFeed = { (this as? OutputFeed)?.onOutput(it) },
                 _feedsGet = { _stderrFeeds },

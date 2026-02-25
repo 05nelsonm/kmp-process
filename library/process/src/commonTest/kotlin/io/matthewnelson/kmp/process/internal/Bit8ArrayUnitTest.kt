@@ -16,6 +16,7 @@
 package io.matthewnelson.kmp.process.internal
 
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
 class Bit8ArrayUnitTest {
@@ -37,6 +38,31 @@ class Bit8ArrayUnitTest {
 
     private val b = Bit8Array(SIZE) { i -> (i + 1).toByte() }
     private val dest = ByteArray(b.size())
+
+    @Test
+    fun givenNew_whenInitLambda_thenPopulatesArray() {
+        var j = 0
+        for (i in b.indices()) {
+            j++
+            val e = (i + 1).toByte()
+            val a = b[i]
+            assertEquals(e, a, "index[$i]")
+        }
+        // indirectly checks indices() implementation
+        assertEquals(SIZE, j)
+    }
+
+    @Test
+    fun givenNew_whenByteIterator_thenFunctionsAsExpected() {
+        val i = b.iterator()
+        var e = 1.toByte()
+        while (i.hasNext()) {
+            val a = i.next()
+            assertEquals(e++, a)
+        }
+        assertEquals(SIZE + 1, e.toInt())
+        assertFailsWith<NoSuchElementException> { i.nextByte() }
+    }
 
     @Test
     fun givenCopyInto_whenIndexStartNegative_thenThrowsIndexOutOfBoundsException() {

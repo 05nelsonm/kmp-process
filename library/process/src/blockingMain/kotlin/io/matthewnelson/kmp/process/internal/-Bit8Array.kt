@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING", "NOTHING_TO_INLINE", "ReplaceGetOrSet")
+@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING", "NOTHING_TO_INLINE")
 
 package io.matthewnelson.kmp.process.internal
 
@@ -39,7 +39,7 @@ internal actual value class Bit8Array internal actual constructor(internal actua
         destOffset: Int,
         indexStart: Int,
         indexEnd: Int,
-        // Only used for Js/WasmJs, as Jvm/Native ByteArray does this already.
+        // Only used for Js/WasmJs, as Jvm/Native ByteArray.copyInto does this already.
         checkBounds: Boolean,
     ): ByteArray = storage.copyInto(dest, destOffset, indexStart, indexEnd)
 

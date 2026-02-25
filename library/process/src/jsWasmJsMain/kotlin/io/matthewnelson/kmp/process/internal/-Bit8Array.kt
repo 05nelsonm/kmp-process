@@ -45,7 +45,7 @@ internal actual value class Bit8Array internal actual constructor(internal actua
         destOffset: Int,
         indexStart: Int,
         indexEnd: Int,
-        checkBounds: Boolean
+        checkBounds: Boolean,
     ): ByteArray {
         if (checkBounds) size().checkCopyBounds(dest.size, destOffset, indexStart, indexEnd)
 
@@ -60,7 +60,7 @@ internal actual value class Bit8Array internal actual constructor(internal actua
         Bit8Array(storage.slice(start = 0, end = newSize))
     } else {
         val a = Bit8Array(newSize)
-        repeat(size()) { i -> a[i] = this[i] }
+        repeat(this.size()) { i -> a[i] = this[i] }
         a
     }
 }

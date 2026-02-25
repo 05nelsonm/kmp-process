@@ -22,17 +22,6 @@ import kotlin.test.assertNotEquals
 class Bit8ArrayJsWasmJsUnitTest {
 
     @Test
-    fun givenNew_whenInitLambda_thenPopulatesArray() {
-        val b = Bit8Array(20) { i -> (i + 1).toByte() }
-        assertEquals(20, b.size())
-        repeat(b.size()) { i ->
-            val e = (i + 1).toByte()
-            val a = b[i]
-            assertEquals(e, a, "index[$i]")
-        }
-    }
-
-    @Test
     fun givenCopyOf_whenNewSizeLessThanOrEqual_thenNewArrayIsPopulatedFromOld() {
         val b1 = Bit8Array(20) { i -> (i + 1).toByte() }
         assertEquals(20, b1.size())
@@ -80,5 +69,16 @@ class Bit8ArrayJsWasmJsUnitTest {
         b2[0] = -10
         // b2 is in fact a new array
         assertNotEquals(b1[0], b2[0])
+    }
+
+    @Test
+    fun givenCopyInto_whenDestOffset_thenCorrectlyPlacesBytes() {
+        val bit8 = Bit8Array(10) { it.toByte() }
+        val b = ByteArray(bit8.size())
+        bit8.copyInto(b, b.lastIndex, 5, 6, checkBounds = true)
+        assertEquals(5.toByte(), b.last())
+        for (i in 0 until b.lastIndex) {
+            assertEquals(0.toByte(), b[i], "index[$i]")
+        }
     }
 }

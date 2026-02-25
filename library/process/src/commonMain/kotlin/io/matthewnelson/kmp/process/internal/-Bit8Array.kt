@@ -35,7 +35,8 @@ internal expect value class Bit8Array internal constructor(internal val storage:
         destOffset: Int,
         indexStart: Int,
         indexEnd: Int,
-        checkBounds: Boolean
+        // Only used for Js/WasmJs, as Jvm/Native ByteArray.copyInto does this already.
+        checkBounds: Boolean,
     ): ByteArray
 
     internal inline fun copyOf(newSize: Int): Bit8Array
