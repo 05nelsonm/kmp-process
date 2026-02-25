@@ -17,7 +17,7 @@
 
 package io.matthewnelson.kmp.process.internal.node
 
-import io.matthewnelson.kmp.process.ReadBuffer
+import io.matthewnelson.kmp.process.internal.Bit8Array
 import io.matthewnelson.kmp.process.internal.DoNotReferenceDirectly
 import kotlin.js.JsName
 
@@ -36,7 +36,7 @@ internal actual inline fun JsReadable.onClose(
 ): JsReadable = on("close", block)
 
 internal actual inline fun JsReadable.onData(
-    noinline block: (data: ReadBuffer) -> Unit,
+    noinline block: (data: Bit8Array) -> Unit,
 ): JsReadable {
     @OptIn(DoNotReferenceDirectly::class)
     return on("data", onDataListener(block))

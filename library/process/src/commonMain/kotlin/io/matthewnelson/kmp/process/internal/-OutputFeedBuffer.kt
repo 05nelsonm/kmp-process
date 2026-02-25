@@ -17,15 +17,13 @@ package io.matthewnelson.kmp.process.internal
 
 import io.matthewnelson.kmp.process.Output
 import io.matthewnelson.kmp.process.OutputFeed
-import io.matthewnelson.kmp.process.ReadBuffer
 import kotlin.concurrent.Volatile
 import kotlin.jvm.JvmSynthetic
 
 internal class OutputFeedBuffer private constructor(maxSize: Int): OutputFeed.Raw {
 
     private val maxSize = maxSize.coerceAtLeast(1)
-    // TODO: Use Channel(Channel.UNLIMITED)???
-    private val segments = ArrayList<ReadBuffer>(10)
+    private val segments = ArrayList<Bit8Array>(10)
 
     @Volatile
     internal var size = 0
@@ -39,14 +37,17 @@ internal class OutputFeedBuffer private constructor(maxSize: Int): OutputFeed.Ra
     internal var maxSizeExceeded = false
         private set
 
-    internal fun onData(buf: ReadBuffer?, len: Int) {
+    @Throws(IllegalStateException::class)
+    internal fun update(buf: Bit8Array?, len: Int/*, isReusableBuffer: Boolean TODO: Issue #233 */) {
         if (buf == null) {
             hasEnded = true
             return
         }
         val copyLen = if ((size + len) > maxSize) maxSize - size else len
         if (copyLen <= 0) return
-        segments.add(buf.copyUnsafe(copyLen))
+
+        val data = /*if (isReusableBuffer || copyLen != len) */buf.copyOf(newSize = copyLen)/* else buf*/
+        segments.add(data)
         size += copyLen
         if (size >= maxSize) maxSizeExceeded = true
     }
@@ -69,5 +70,5 @@ internal class OutputFeedBuffer private constructor(maxSize: Int): OutputFeed.Ra
         internal fun of(options: Output.Options) = OutputFeedBuffer(options.maxBuffer)
     }
 
-    override fun onOutput(data: Output.Data?) = error("Use OutputFeedBuffer.onData")
+    override fun onOutput(data: Output.Data?) = error("Use OutputFeedBuffer.{update/doFinal}")
 }

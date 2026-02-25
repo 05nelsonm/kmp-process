@@ -21,10 +21,6 @@ import io.matthewnelson.encoding.core.EncoderDecoder.Companion.DEFAULT_BUFFER_SI
 import io.matthewnelson.kmp.file.Buffer
 import io.matthewnelson.kmp.file.get
 import io.matthewnelson.kmp.process.internal.RealLineOutputFeed
-import io.matthewnelson.kmp.process.internal.checkCopyBounds
-import io.matthewnelson.kmp.process.internal.node.asBuffer
-import io.matthewnelson.kmp.process.internal.node.asJsBuffer
-import io.matthewnelson.kmp.process.internal.node.jsBufferAllocUnsafe
 
 /**
  * For internal usage only.
@@ -141,21 +137,5 @@ public actual value class ReadBuffer private actual constructor(private actual v
     }
 
     internal actual inline fun capacity(): Int = buf.length.toInt()
-    internal actual inline fun copyUnsafe(len: Int): ReadBuffer {
-        val target = jsBufferAllocUnsafe(len)
-        buf.asJsBuffer().copy(target, targetStart = 0.toDouble(), sourceStart = 0.toDouble(), sourceEnd = len.toDouble())
-        return ReadBuffer(target.asBuffer())
-    }
-    internal actual inline fun copyIntoUnsafe(dest: ByteArray, destOffset: Int, indexStart: Int, indexEnd: Int): ByteArray {
-        var i = destOffset
-        val jsBuf = buf.asJsBuffer()
-        for (j in indexStart until indexEnd) { dest[i++] = jsBuf.readInt8Unsafe(j) }
-        return dest
-    }
-    internal actual inline fun copyInto(dest: ByteArray, destOffset: Int, indexStart: Int, indexEnd: Int): ByteArray {
-        capacity().checkCopyBounds(dest.size, destOffset, indexStart, indexEnd)
-        return copyIntoUnsafe(dest, destOffset, indexStart, indexEnd)
-    }
     internal actual inline operator fun get(index: Int): Byte = buf[index]
-    internal actual inline fun utf8(): String = buf.toUtf8()
 }

@@ -15,83 +15,93 @@
  **/
 package io.matthewnelson.kmp.process.internal
 
-import io.matthewnelson.kmp.process.InternalProcessApi
-import io.matthewnelson.kmp.process.ReadBuffer
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-@OptIn(InternalProcessApi::class)
 class OutputFeedBufferUnitTest {
 
     @Test
     fun givenMaxSizeLessThan1_whenOf_thenSizeIs1() {
-        val buf = ReadBuffer.allocate()
+        val buf = Bit8Array(2)
         arrayOf(0, -1).forEach { maxSize ->
             val feed = OutputFeedBuffer.of(maxSize)
-            feed.onData(buf, len = 10)
+            feed.update(buf, len = buf.size()/*, isReusableBuffer = false*/)
             assertEquals(1, feed.size)
         }
     }
 
     @Test
-    fun givenOnData_whenLenLessThan1_thenIgnores() {
+    fun givenUpdate_whenLenIsLessThan1_thenIsIgnored() {
         val feed = OutputFeedBuffer.of(maxSize = 5)
-        val buf = ReadBuffer.allocate()
+        val buf = Bit8Array(3)
         assertEquals(0, feed.size)
-        feed.onData(buf, len = 0)
+
+        feed.update(buf, len = 0/*, false*/)
+        feed.update(buf, len = 0/*, true*/)
         assertEquals(0, feed.size)
-        feed.onData(buf, len = -1)
+
+        feed.update(buf, len = -1/*, false*/)
+        feed.update(buf, len = -1/*, true*/)
         assertEquals(0, feed.size)
-        val data = feed.doFinal()
-        assertEquals(0, data.size)
+
+        feed.update(null, -1/*, false*/)
+        assertEquals(0, feed.doFinal().size)
     }
 
     @Test
-    fun givenMaxSize_whenOutputExceeded_thenIgnoresFurtherOutput() {
+    fun givenMaxSize_whenExceeded_thenIgnoresFurtherInput() {
         val feed = OutputFeedBuffer.of(maxSize = 10)
-        val buf = ReadBuffer.allocate()
-        feed.onData(buf, len = 9)
+        val buf = Bit8Array(10) { i -> (i + 1).toByte() }
+
+        feed.update(buf, len = 9/*, isReusableBuffer = true*/)
         assertEquals(9, feed.size)
-        feed.onData(buf, len = 2)
+
+        feed.update(buf, len = 2/*, isReusableBuffer = true*/)
         assertEquals(10, feed.size)
         assertEquals(true, feed.maxSizeExceeded)
+
+        feed.update(null, -1/*, false*/)
         assertEquals(10, feed.doFinal().size)
     }
 
     @Test
-    fun givenOnData_whenNull_thenSetsHasEnded() {
+    fun givenUpdate_whenNull_thenHasEndedIsTrue() {
         val feed = OutputFeedBuffer.of(maxSize = 10)
         assertEquals(false, feed.hasEnded)
-        feed.onData(null, -1)
+        feed.update(null, -1/*, true*/)
         assertEquals(true, feed.hasEnded)
     }
 
     @Test
-    fun givenNoOutput_whenDoFinal_thenReturnsEmptyData() {
-        val data = OutputFeedBuffer.of(maxSize = 2).doFinal()
+    fun givenNoInput_whenDoFinal_thenReturnsEmptyData() {
+        val feed = OutputFeedBuffer.of(2)
+        feed.update(null, -1/*, false*/)
+        val data = feed.doFinal()
         assertEquals(0, data.size)
         assertEquals("EmptyData", data::class.simpleName)
     }
 
     @Test
-    fun givenSingleOutput_whenDoFinal_thenReturnsSingleData() {
+    fun givenSingleInput_whenDoFinal_thenReturnsSingleData() {
         val feed = OutputFeedBuffer.of(maxSize = 5)
-        val buf = ReadBuffer.allocate()
-        feed.onData(buf, len = 6)
-
+        feed.update(Bit8Array(6), 6/*, isReusableBuffer = false*/)
+        feed.update(null, -1/*, false*/)
         val data = feed.doFinal()
         assertEquals(5, data.size)
         assertEquals("SingleData", data::class.simpleName)
     }
 
     @Test
-    fun givenMultipleOutput_whenDoFinal_thenReturnsSegmentedData() {
+    fun givenMultipleInput_whenDoFinal_thenReturnsSegmentedData() {
         val feed = OutputFeedBuffer.of(maxSize = 10)
-        val buf = ReadBuffer.allocate()
-        feed.onData(buf, len = 2)
-        feed.onData(buf, len = 11)
+        val buf = Bit8Array(15)
+        feed.update(buf, len = 2/*, isReusableBuffer = true*/)
+        feed.update(buf, len = 11/*, isReusableBuffer = true*/)
+        feed.update(null, -1/*, false*/)
         val data = feed.doFinal()
         assertEquals(10, data.size)
         assertEquals("SegmentedData", data::class.simpleName)
     }
+
+    // TODO: test isReusableBuffer functionality (Issue #233)
 }

@@ -17,10 +17,11 @@
 
 package io.matthewnelson.kmp.process.internal.node
 
-import io.matthewnelson.kmp.process.InternalProcessApi
-import io.matthewnelson.kmp.process.ReadBuffer
+import io.matthewnelson.kmp.process.internal.Bit8Array
 import io.matthewnelson.kmp.process.internal.DoNotReferenceDirectly
-import io.matthewnelson.kmp.process.internal.js.JsUint8Array
+import io.matthewnelson.kmp.process.internal.js.typed.JsInt8Array
+import io.matthewnelson.kmp.process.internal.js.typed.JsUint8Array
+import io.matthewnelson.kmp.process.internal.js.typed.new
 import kotlin.js.JsName
 
 /** [docs](https://nodejs.org/api/stream.html) */
@@ -38,7 +39,7 @@ internal external interface JsWritable {
         listener: () -> Unit,
     ): JsWritable
     fun write(
-        chunk: JsUint8Array,
+        chunk: io.matthewnelson.kmp.process.internal.js.JsUint8Array,
         callback: () -> Unit,
     ): Boolean
 }
@@ -58,15 +59,13 @@ internal expect inline fun JsReadable.onClose(
 ): JsReadable
 
 internal expect inline fun JsReadable.onData(
-    noinline block: (data: ReadBuffer) -> Unit,
+    noinline block: (data: Bit8Array) -> Unit,
 ): JsReadable
 
 @DoNotReferenceDirectly("JsReadable.onData")
 internal inline fun onDataListener(
-    noinline block: (data: ReadBuffer) -> Unit
-): (JsBuffer) -> Unit = { chunk ->
-    @OptIn(InternalProcessApi::class)
-    val buf = ReadBuffer.of(chunk.asBuffer())
-    block(buf)
-    buf.buf.fill()
+    noinline block: (data: Bit8Array) -> Unit
+): (JsUint8Array) -> Unit = { data ->
+    val int8 = JsInt8Array.new(data.buffer)
+    block(Bit8Array(storage = int8))
 }

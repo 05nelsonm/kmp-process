@@ -21,7 +21,6 @@ import io.matthewnelson.encoding.core.use
 import io.matthewnelson.encoding.core.util.wipe
 import io.matthewnelson.encoding.utf8.UTF8
 import io.matthewnelson.kmp.process.Output
-import io.matthewnelson.kmp.process.ReadBuffer
 import kotlin.concurrent.Volatile
 import kotlin.math.min
 
@@ -84,32 +83,6 @@ internal fun List<Bit8Array>.asOutputData(): Output.Data {
         total += segment.size()
         sizes[i] = total
         segment
-    }
-
-    return SegmentedData(segments, sizes)
-}
-
-// TODO: REMOVE
-internal fun ReadBuffer.asOutputDataREMOVE00(): Output.Data {
-    val cap = capacity()
-    return if (cap <= 0) EmptyData
-    else SingleData(data = Bit8Array(size = cap) { i -> this[i] })
-}
-
-// TODO: REMOVE
-internal fun List<ReadBuffer>.asOutputDataREMOVE00(): Output.Data {
-    if (isEmpty()) return EmptyData
-    if (size == 1) return this[0].asOutputDataREMOVE00()
-
-    var total = 0
-    val sizes = IntArray(size)
-    val segments = Array(size) { i ->
-        val buf = get(i)
-        val cap = buf.capacity()
-        require(cap > 0) { "$buf at index[$i] has capacity[$cap] <= 0" }
-        total += cap
-        sizes[i] = total
-        Bit8Array(cap) { j -> buf[j] }
     }
 
     return SegmentedData(segments, sizes)

@@ -25,7 +25,11 @@ import io.matthewnelson.kmp.file.errorCodeOrNull
 import io.matthewnelson.kmp.file.jsExternTryCatch
 import io.matthewnelson.kmp.file.toFile
 import io.matthewnelson.kmp.file.toIOException
-import io.matthewnelson.kmp.process.*
+import io.matthewnelson.kmp.process.AsyncWriteStream
+import io.matthewnelson.kmp.process.Process
+import io.matthewnelson.kmp.process.ProcessException
+import io.matthewnelson.kmp.process.Signal
+import io.matthewnelson.kmp.process.Stdio
 import io.matthewnelson.kmp.process.internal.node.node_process
 import io.matthewnelson.kmp.process.internal.js.getString
 import io.matthewnelson.kmp.process.internal.node.JsChildProcess
@@ -193,21 +197,15 @@ internal class NodeJsProcess internal constructor(
 
     protected override fun startStdout() {
         val stdout = jsProcess.stdout ?: return
-        stdout.onClose {
-            dispatchStdout(buf = null, len = -1)
-        }.onData { data ->
-            dispatchStdout(buf = data, len = data.capacity())
-        }
+        val dispatch = dispatchStdoutRef()
+        stdout.onClose { dispatch(null, -1) }.onData { data -> dispatch(data, data.size()) }
         _hasStdoutStarted = true
     }
 
     protected override fun startStderr() {
         val stderr = jsProcess.stderr ?: return
-        stderr.onClose {
-            dispatchStderr(buf = null, len = -1)
-        }.onData { data ->
-            dispatchStderr(buf = data, len = data.capacity())
-        }
+        val dispatch = dispatchStderrRef()
+        stderr.onClose { dispatch(null, -1) }.onData { data -> dispatch(data, data.size()) }
         _hasStderrStarted = true
     }
 

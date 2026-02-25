@@ -115,9 +115,5 @@ public expect value class ReadBuffer private constructor(private val _buf: Any) 
     }
 
     internal inline fun capacity(): Int
-    internal inline fun copyUnsafe(len: Int): ReadBuffer
-    internal inline fun copyIntoUnsafe(dest: ByteArray, destOffset: Int, indexStart: Int, indexEnd: Int): ByteArray
-    internal inline fun copyInto(dest: ByteArray, destOffset: Int, indexStart: Int, indexEnd: Int): ByteArray
     internal inline operator fun get(index: Int): Byte
-    internal inline fun utf8(): String
 }

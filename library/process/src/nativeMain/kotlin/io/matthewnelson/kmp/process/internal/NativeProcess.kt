@@ -24,7 +24,6 @@ import io.matthewnelson.kmp.file.errnoToIOException
 import io.matthewnelson.kmp.process.AsyncWriteStream
 import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.ProcessException
-import io.matthewnelson.kmp.process.ReadBuffer
 import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.internal.stdio.StdioHandle
 import kotlinx.cinterop.ExperimentalForeignApi
@@ -96,13 +95,13 @@ internal constructor(
     private val stdoutWorker = lazy {
         if (isDestroyed) return@lazy null
         val reader = handle.stdoutStream() ?: return@lazy null
-        Worker.execute("stdout", ::_hasStdoutStarted, reader, ::dispatchStdout)
+        Worker.execute("stdout", ::_hasStdoutStarted, reader, dispatchStdoutRef())
     }
 
     private val stderrWorker = lazy {
         if (isDestroyed) return@lazy null
         val reader = handle.stderrStream() ?: return@lazy null
-        Worker.execute("stderr", ::_hasStderrStarted, reader, ::dispatchStderr)
+        Worker.execute("stderr", ::_hasStderrStarted, reader, dispatchStderrRef())
     }
 
     @Throws(Throwable::class)
@@ -207,7 +206,7 @@ internal constructor(
         name: String,
         p: KMutableProperty0<Boolean>,
         r: ReadStream,
-        d: (buf: ReadBuffer?, len: Int) -> Unit,
+        d: (buf: Bit8Array?, len: Int) -> Unit,
     ): Worker {
         val w = start(name = "Process[pid=$pid, stdio=$name]")
         w.execute(mode = TransferMode.SAFE, producer = { Triple(r, p, d) }) { (reader, started, dispatch) ->

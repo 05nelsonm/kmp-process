@@ -19,10 +19,11 @@ package io.matthewnelson.kmp.process
 
 import io.matthewnelson.kmp.process.ProcessException.Companion.CTX_FEED_STDERR
 import io.matthewnelson.kmp.process.ProcessException.Companion.CTX_FEED_STDOUT
+import io.matthewnelson.kmp.process.internal.Bit8Array
 import io.matthewnelson.kmp.process.internal.Lock
-import io.matthewnelson.kmp.process.internal.OutputFeedBufferREMOVE00
-import io.matthewnelson.kmp.process.internal.RealLineOutputFeed
-import io.matthewnelson.kmp.process.internal.asOutputDataREMOVE00
+import io.matthewnelson.kmp.process.internal.OutputFeedBuffer
+import io.matthewnelson.kmp.process.internal.Utf8LineDispatcher
+import io.matthewnelson.kmp.process.internal.asOutputData
 import io.matthewnelson.kmp.process.internal.empty
 import io.matthewnelson.kmp.process.internal.newLock
 import io.matthewnelson.kmp.process.internal.withLock
@@ -289,9 +290,22 @@ public fun interface OutputFeed: Output.Feed {
         /** @suppress */
         protected abstract fun startStderr()
 
+        // protected functions with internal type parameters is not a thing, so to maintain
+        // encapsulation without opening things up as internal, Process implementations will
+        // obtain the private function reference this way when starting stdout/stderr. This
+        // is especially necessary for Native because it uses Worker, requiring the reference
+        // to be passed in at time of execution.
         /** @suppress */
-        @Throws(Throwable::class)
-        protected fun dispatchStdout(buf: ReadBuffer?, len: Int) {
+        protected companion object {
+
+            @JvmSynthetic
+            internal fun Handler.dispatchStdoutRef(): (Bit8Array?, Int) -> Unit = ::dispatchStdoutData
+
+            @JvmSynthetic
+            internal fun Handler.dispatchStderrRef(): (Bit8Array?, Int) -> Unit = ::dispatchStderrData
+        }
+
+        private fun dispatchStdoutData(buf: Bit8Array?, len: Int) {
             var data: Output.Data? = null
             dispatch(
                 thing = buf,
@@ -304,14 +318,12 @@ public fun interface OutputFeed: Output.Feed {
             )
         }
 
-        /** @suppress */
-        @Throws(Throwable::class)
-        protected fun dispatchStderr(buf: ReadBuffer?, len: Int) {
+        private fun dispatchStderrData(buf: Bit8Array?, len: Int) {
             var data: Output.Data? = null
             dispatch(
                 thing = buf,
                 onErrorContext = CTX_FEED_STDERR,
-                feedsLock = stdoutLock,
+                feedsLock = stderrLock,
                 _onFeed = { onFeedRaw(it, len, _dataGet = { data }, _dataSet = { new -> data = new }) },
                 _feedsGet = { _stderrFeeds },
                 _feedsSet = { new -> _stderrFeeds = new },
@@ -320,7 +332,7 @@ public fun interface OutputFeed: Output.Feed {
         }
 
         @Throws(Throwable::class)
-        private fun dispatchStdout(line: String?) {
+        private fun dispatchStdoutLine(line: String?) {
             dispatch(
                 thing = line,
                 onErrorContext = CTX_FEED_STDOUT,
@@ -334,7 +346,7 @@ public fun interface OutputFeed: Output.Feed {
         }
 
         @Throws(Throwable::class)
-        private fun dispatchStderr(line: String?) {
+        private fun dispatchStderrLine(line: String?) {
             dispatch(
                 thing = line,
                 onErrorContext = CTX_FEED_STDERR,
@@ -350,7 +362,7 @@ public fun interface OutputFeed: Output.Feed {
         @Suppress("REDUNDANT_ELSE_IN_WHEN")
         @OptIn(ExperimentalContracts::class)
         private inline fun Output.Feed.onFeedRaw(
-            buf: ReadBuffer?,
+            buf: Bit8Array?,
             len: Int,
             _dataGet: () -> Output.Data?,
             _dataSet: (new: Output.Data) -> Unit,
@@ -364,15 +376,15 @@ public fun interface OutputFeed: Output.Feed {
                 is OutputFeed -> {}
 
                 // Will only be the case if OutputFeed are present in feeds.
-                is LineDispatcher -> if (buf != null) {
-                    lineOutputFeed.onData(buf, len)
+                is Utf8LineDispatcher -> if (buf != null) {
+                    update(offset = 0, len = len, get = buf::get)
                 } else {
-                    lineOutputFeed.close()
+                    doFinal()
                 }
 
                 // Will only be the case if this Process is for creating Output
                 // via Process.Builder.{createOutput/createOutputAsync}.
-                is OutputFeedBufferREMOVE00 -> onData(buf, len)
+                is OutputFeedBuffer -> update(buf, len)
 
                 is OutputFeed.Raw -> if (buf == null) onOutput(data = null) else {
                     _dataGet()?.let { data -> return onOutput(data) }
@@ -380,7 +392,8 @@ public fun interface OutputFeed: Output.Feed {
                     val new = if (len <= 0) {
                         Output.Data.empty()
                     } else {
-                        buf.copyUnsafe(len).asOutputDataREMOVE00()
+                        // TODO: Issue #233
+                        buf.copyOf(newSize = len).asOutputData()
                     }
                     _dataSet(new)
                     onOutput(data = new)
@@ -458,8 +471,8 @@ public fun interface OutputFeed: Output.Feed {
                 _feedsSet(emptyArray())
                 _stoppedSet(true)
                 for (feed in feeds) {
-                    if (feed !is LineDispatcher) continue
-                    feed.lineOutputFeed.dereference()
+                    if (feed !is Utf8LineDispatcher) continue
+                    feed.close()
                     break
                 }
             }
@@ -469,7 +482,7 @@ public fun interface OutputFeed: Output.Feed {
         private fun addStdoutFeeds(feeds: MutableSet<Output.Feed>): Process = addFeeds(
             feedsAdd = feeds,
             feedsLock = stdoutLock,
-            _dispatchLine = ::dispatchStdout,
+            _dispatchLine = ::dispatchStdoutLine,
             _feedsGet = { _stdoutFeeds },
             _feedsSet = { new -> _stdoutFeeds = new },
             _isStopped = { _stdoutStopped },
@@ -479,7 +492,7 @@ public fun interface OutputFeed: Output.Feed {
         private fun addStderrFeeds(feeds: MutableSet<Output.Feed>): Process = addFeeds(
             feedsAdd = feeds,
             feedsLock = stderrLock,
-            _dispatchLine = ::dispatchStderr,
+            _dispatchLine = ::dispatchStderrLine,
             _feedsGet = { _stderrFeeds },
             _feedsSet = { new -> _stderrFeeds = new },
             _isStopped = { _stderrStopped },
@@ -517,7 +530,7 @@ public fun interface OutputFeed: Output.Feed {
                 var hasLineDispatcher = false
                 for (i in feedsBefore.indices) {
                     val feed = feedsBefore[i]
-                    if (feed is LineDispatcher) {
+                    if (feed is Utf8LineDispatcher) {
                         hasLineDispatcher = true
                         continue
                     }
@@ -541,9 +554,7 @@ public fun interface OutputFeed: Output.Feed {
                 val feedsAfter = feedsBefore.copyOf(newSize)
                 var i = feedsBefore.size
                 if (needsLineDispatcher) {
-                    @OptIn(InternalProcessApi::class)
-                    val lineOutputFeed = ReadBuffer.lineOutputFeed(_dispatchLine)
-                    feedsAfter[i++] = LineDispatcher(lineOutputFeed)
+                    feedsAfter[i++] = Utf8LineDispatcher.of(_dispatchLine)
                 }
                 feedsAdd.forEach { feed -> feedsAfter[i++] = feed }
 
@@ -674,8 +685,3 @@ public fun interface OutputFeed: Output.Feed {
 }
 
 private abstract class RealWaiter(process: Process, isDestroyed: Boolean): OutputFeed.Waiter(process, isDestroyed)
-
-private class LineDispatcher(lineOutputFeed: ReadBuffer.LineOutputFeed): OutputFeed.Raw {
-    val lineOutputFeed = lineOutputFeed as RealLineOutputFeed
-    override fun onOutput(data: Output.Data?) = error("Use lineOutputFeed.{onData/close}")
-}

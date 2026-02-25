@@ -23,11 +23,9 @@ import io.matthewnelson.kmp.file.IOException
 import io.matthewnelson.kmp.file.InterruptedException
 import io.matthewnelson.kmp.file.use
 import io.matthewnelson.kmp.process.AsyncWriteStream
-import io.matthewnelson.kmp.process.InternalProcessApi
 import io.matthewnelson.kmp.process.Output
 import io.matthewnelson.kmp.process.OutputFeed
 import io.matthewnelson.kmp.process.Process
-import io.matthewnelson.kmp.process.ReadBuffer
 import io.matthewnelson.kmp.process.Signal
 import io.matthewnelson.kmp.process.Stdio
 import kotlin.time.Duration
@@ -65,15 +63,14 @@ internal inline fun PlatformBuilder.blockingOutput(
 )
 
 @Throws(Throwable::class)
-@OptIn(InternalProcessApi::class)
-internal fun ReadStream.bufferedRead(bufSize: Int, dispatch: (buf: ReadBuffer?, len: Int) -> Unit) {
-    val buf = ReadBuffer.of(buf = ByteArray(bufSize))
+internal fun ReadStream.bufferedRead(bufSize: Int, dispatch: (buf: Bit8Array?, len: Int) -> Unit) {
+    val buf = Bit8Array(bufSize)
 
     use { stream ->
         var threw: Throwable? = null
         while (true) {
             val read = try {
-                stream.read(buf.buf)
+                stream.read(buf.storage)
             } catch (_: IOException) {
                 break
             }
@@ -90,7 +87,7 @@ internal fun ReadStream.bufferedRead(bufSize: Int, dispatch: (buf: ReadBuffer?, 
                 break
             }
         }
-        buf.buf.fill(0)
+        buf.storage.fill(0)
         threw?.let { throw it }
         dispatch(null, -1)
     }

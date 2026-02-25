@@ -86,8 +86,8 @@ internal inline fun PlatformBuilder.commonOutput(
     // time at when things were returned to us.
     val startTime = TimeSource.Monotonic.markNow()
 
-    val stdoutBuffer = OutputFeedBufferREMOVE00.of(options)
-    val stderrBuffer = OutputFeedBufferREMOVE00.of(options)
+    val stdoutBuffer = OutputFeedBuffer.of(options)
+    val stderrBuffer = OutputFeedBuffer.of(options)
 
     var waitForCode: Int? = null
     try {

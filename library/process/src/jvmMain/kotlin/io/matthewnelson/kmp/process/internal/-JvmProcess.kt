@@ -114,14 +114,14 @@ internal class JvmProcess private constructor(
     protected override fun startStdout() {
         Runnable {
             _hasStdoutStarted = true
-            jProcess.inputStream.bufferedRead(bufSize = DEFAULT_BUFFER_SIZE, dispatch = ::dispatchStdout)
+            jProcess.inputStream.bufferedRead(bufSize = DEFAULT_BUFFER_SIZE, dispatchStdoutRef())
         }.execute(stdio = "stdout")
     }
 
     protected override fun startStderr() {
         Runnable {
             _hasStderrStarted = true
-            jProcess.errorStream.bufferedRead(bufSize = DEFAULT_BUFFER_SIZE, dispatch = ::dispatchStderr)
+            jProcess.errorStream.bufferedRead(bufSize = DEFAULT_BUFFER_SIZE, dispatchStderrRef())
         }.execute(stdio = "stderr")
     }
 

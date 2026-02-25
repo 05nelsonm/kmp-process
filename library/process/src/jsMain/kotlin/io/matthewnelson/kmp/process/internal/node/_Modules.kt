@@ -15,7 +15,6 @@
  **/
 package io.matthewnelson.kmp.process.internal.node
 
-internal actual fun nodeModuleBuffer(): ModuleBuffer = js(CODE_MODULE_BUFFER)
 internal actual fun nodeModuleChildProcess(): ModuleChildProcess = js(CODE_MODULE_CHILD_PROCESS)
 internal actual fun nodeModuleEvents(): ModuleEvents = js(CODE_MODULE_EVENTS)
 internal actual fun nodeModuleFs(): ModuleFs = js(CODE_MODULE_FS)
