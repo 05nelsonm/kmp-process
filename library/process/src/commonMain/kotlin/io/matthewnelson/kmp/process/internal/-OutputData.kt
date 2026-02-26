@@ -187,7 +187,7 @@ internal sealed class NonEmptyData(size: Int, init: Any?): Output.Data(size, ini
 
     final override fun hashCode(): Int {
         var result = _lazyHashCode
-        if (_lazyHashCode != UNKNOWN_HASH_CODE) return result
+        if (result != UNKNOWN_HASH_CODE) return result
         result = 1
         when (this) {
             is SingleData -> for (i in data.indices()) {
