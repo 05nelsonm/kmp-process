@@ -19,8 +19,8 @@ package io.matthewnelson.kmp.process
 
 import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.file.IOException
-import io.matthewnelson.kmp.process.internal.Bit8Array
 import io.matthewnelson.kmp.process.internal.OUTPUT_OPTIONS_MIN_TIMEOUT
+import io.matthewnelson.kmp.process.internal.SingleData
 import io.matthewnelson.kmp.process.internal.commonBuild
 import io.matthewnelson.kmp.process.internal.commonToByteArray
 import io.matthewnelson.kmp.process.internal.commonConsumeInput
@@ -48,9 +48,7 @@ public actual class Output private constructor(
 
     public actual abstract class Data internal actual constructor(
         public actual final override val size: Int,
-        private val segments: Array<Bit8Array>,
-        private val sizes: IntArray?,
-        init: Any,
+        init: Any?,
     ): Collection<Byte> {
 
         @Volatile
@@ -76,9 +74,9 @@ public actual class Output private constructor(
          * The contents of this instances as a read-only [ByteBuffer].
          * */
         public fun asByteBuffer(): ByteBuffer {
-            val bb = _bb ?: when {
-                segments.size == 1 -> segments[0].storage
-                else -> toByteArray()
+            val bb: ByteBuffer = _bb ?: when (this) {
+                is SingleData -> data.storage
+                else -> toByteArray() // Either empty or SegmentedData.
             }.let { array -> ByteBuffer.wrap(array).also { _bb = it } }
             return bb.asReadOnlyBuffer()
         }
@@ -87,7 +85,7 @@ public actual class Output private constructor(
 
         public actual companion object {
             @JvmStatic
-            public actual fun Collection<Data?>.merge(): Data = commonMerge(_segmentsGet = Data::segments)
+            public actual fun Collection<Data?>.merge(): Data = commonMerge()
         }
 
         /** @suppress */
