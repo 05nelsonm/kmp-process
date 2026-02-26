@@ -42,7 +42,7 @@ internal inline fun Output.Data.commonToByteArray(): ByteArray = copyInto(dest =
 internal inline fun Output.Data.commonToString(): String = "Output.Data[size=$size]@" + hashCode()
 
 @Throws(RuntimeException::class)
-internal inline fun Collection<Output.Data?>.commonMerge(): Output.Data {
+internal inline fun Collection<Output.Data?>.commonConsolidate(): Output.Data {
     if (isEmpty()) return Output.Data.empty()
     if (size == 1) return firstOrNull() ?: Output.Data.empty()
 
@@ -52,7 +52,7 @@ internal inline fun Collection<Output.Data?>.commonMerge(): Output.Data {
     for (data in this) {
         if (data.isNullOrEmpty()) continue
         total += data.size
-        if (total < 0) throw RuntimeException("Unable to merge Output.Data. Total size exceeds ${Int.MAX_VALUE}.")
+        if (total < 0) throw RuntimeException("Unable to consolidate Output.Data. Total size exceeds ${Int.MAX_VALUE}.")
         countNonEmpty++
         when (data) {
             is SingleData -> segments.add(data.data)

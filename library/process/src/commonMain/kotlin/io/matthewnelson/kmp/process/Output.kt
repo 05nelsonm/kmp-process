@@ -84,9 +84,9 @@ public expect class Output {
          * Copies the contents of this instance to the provided [dest] array and returns that array.
          *
          * @param [dest] The array to copy to.
-         * @param [destOffset] The index (inclusive) of [dest] to begin placing bytes.
-         * @param [indexStart] The index (inclusive) of [Data] to begin retrieving bytes from.
-         * @param [indexEnd] The index (exclusive) of [Data] to stop retrieving bytes at.
+         * @param [destOffset] The index (inclusive) within [dest] to begin placing bytes.
+         * @param [indexStart] The index (inclusive) within [Data] to begin retrieving bytes from.
+         * @param [indexEnd] The index (exclusive) within [Data] to stop retrieving bytes at.
          *
          * @return The [dest] array.
          *
@@ -110,15 +110,30 @@ public expect class Output {
         public companion object {
 
             /**
-             * Merges multiple [Data] into a single instance.
+             * Consolidates multiple [Data] into a single instance, without duplicating any of the arrays
+             * backing the [Data] instance(s).
              *
              * If the collection contains a single instance of [Data], then that instance is returned. If
              * the collection contains no data (i.e. the sum is `0`), then the empty [Data] object instance
              * is returned. Any `null` or empty [Data] within the collection are ignored.
              *
-             * @throws [RuntimeException] If total [size] of merged [Data] would exceed [Int.MAX_VALUE].
+             * e.g.
+             *
+             *     println(data1.utf8())
+             *     println(data2.utf8())
+             *     println(listOf(data1, data2).consolidate().utf8())
+             *     println(listOf(data2, data1).consolidate().utf8())
+             *     println(listOf(data1, data1).consolidate().utf8())
+             *
+             *     // Hello World --ONE--!
+             *     // Hello World --TWO--!
+             *     // Hello World --ONE--!Hello World --TWO--!
+             *     // Hello World --TWO--!Hello World --ONE--!
+             *     // Hello World --ONE--!Hello World --ONE--!
+             *
+             * @throws [RuntimeException] If total [size] of consolidated [Data] would exceed [Int.MAX_VALUE].
              * */
-            public fun Collection<Data?>.merge(): Data
+            public fun Collection<Data?>.consolidate(): Data
         }
 
         /** @suppress */

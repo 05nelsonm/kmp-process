@@ -28,7 +28,7 @@ import io.matthewnelson.kmp.process.internal.commonInit
 import io.matthewnelson.kmp.process.internal.commonIsEmpty
 import io.matthewnelson.kmp.process.internal.commonToString
 import io.matthewnelson.kmp.process.internal.commonMaxBufferDefault
-import io.matthewnelson.kmp.process.internal.commonMerge
+import io.matthewnelson.kmp.process.internal.commonConsolidate
 import kotlin.concurrent.Volatile
 import kotlin.time.Duration
 
@@ -62,7 +62,7 @@ public actual class Output private constructor(
         public actual abstract fun utf8(): String
 
         public actual companion object {
-            public actual fun Collection<Data?>.merge(): Data = commonMerge()
+            public actual fun Collection<Data?>.consolidate(): Data = commonConsolidate()
         }
 
         /** @suppress */
