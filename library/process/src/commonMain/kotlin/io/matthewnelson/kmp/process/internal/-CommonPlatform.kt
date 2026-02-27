@@ -108,6 +108,13 @@ internal fun StringBuilder.appendProcessInfo(
 }
 
 @Throws(IndexOutOfBoundsException::class)
+internal inline fun Int.checkIndex(index: Int) {
+    val size = this
+    if (index < 0) throw IndexOutOfBoundsException("index[$index] < 0")
+    if (index >= size) throw IndexOutOfBoundsException("index[$index] >= size[$size]")
+}
+
+@Throws(IndexOutOfBoundsException::class)
 internal inline fun ByteArray.checkBounds(offset: Int, len: Int) {
     size.checkBounds(offset, len)
 }

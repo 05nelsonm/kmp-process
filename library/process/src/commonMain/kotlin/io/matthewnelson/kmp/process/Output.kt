@@ -72,7 +72,7 @@ public expect class Output {
 
         public final override fun isEmpty(): Boolean
         public abstract override operator fun iterator(): ByteIterator
-        public abstract override fun contains(element: Byte): Boolean
+        public abstract override operator fun contains(element: Byte): Boolean
         public abstract override fun containsAll(elements: Collection<Byte>): Boolean
 
         /**

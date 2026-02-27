@@ -28,11 +28,13 @@ internal actual value class Bit8Array internal actual constructor(internal actua
     internal actual constructor(size: Int): this(Bit8ArrayType(size))
 
     internal actual inline operator fun get(index: Int): Byte = storage[index]
+    internal actual inline fun checkIndexAndGet(index: Int): Byte = this[index]
     internal actual inline operator fun set(index: Int, value: Byte) { storage[index] = value }
 
     internal actual inline fun size(): Int = storage.size
     internal actual inline fun indices(): IntRange = storage.indices
     internal actual inline operator fun iterator(): ByteIterator = storage.iterator()
+    internal actual inline operator fun contains(element: Byte): Boolean = storage.contains(element)
 
     internal actual inline fun copyInto(
         dest: ByteArray,

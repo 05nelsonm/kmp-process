@@ -65,6 +65,13 @@ class Bit8ArrayUnitTest {
     }
 
     @Test
+    fun givenCheckIndexAndGet_whenIndexInvalid_thenThrowsIndexOutOfBoundsException() {
+        val b = Bit8Array(4)
+        assertFailsWith<IndexOutOfBoundsException> { b.checkIndexAndGet(-1) }
+        assertFailsWith<IndexOutOfBoundsException> { b.checkIndexAndGet(4) }
+    }
+
+    @Test
     fun givenCopyInto_whenIndexStartNegative_thenThrowsIndexOutOfBoundsException() {
         b.assertCopyFailure(dest, indexStart = -1)
     }
