@@ -19,7 +19,7 @@ package io.matthewnelson.kmp.process.test.api
 
 import io.matthewnelson.kmp.file.*
 import io.matthewnelson.kmp.process.Output
-import io.matthewnelson.kmp.process.Output.Data.Companion.merge
+import io.matthewnelson.kmp.process.Output.Data.Companion.consolidate
 import io.matthewnelson.kmp.process.OutputFeed
 import io.matthewnelson.kmp.process.Process
 import io.matthewnelson.kmp.process.ProcessException.Companion.CTX_FEED_STDOUT
@@ -729,11 +729,11 @@ abstract class ProcessBaseTest {
             assertEquals(stdoutData1, stdoutData2)
 
             // Same instances, hash code should equal the same (i.e. the same backing arrays in the same order)
-            val stdoutMerged = stdoutData1.merge()
-            assertEquals(stdoutMerged, stdoutData2.merge())
+            val stdoutConsolidated = stdoutData1.consolidate()
+            assertEquals(stdoutConsolidated, stdoutData2.consolidate())
 
-            val stdoutString = stdoutMerged.utf8()
-            val stderrString = stderrData.merge().utf8()
+            val stdoutString = stdoutConsolidated.utf8()
+            val stderrString = stderrData.consolidate().utf8()
             println(stdoutString)
             println(stderrString)
 

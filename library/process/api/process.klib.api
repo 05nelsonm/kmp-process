@@ -172,7 +172,7 @@ final class io.matthewnelson.kmp.process/Output { // io.matthewnelson.kmp.proces
         final fun toString(): kotlin/String // io.matthewnelson.kmp.process/Output.Data.toString|toString(){}[0]
 
         final object Companion { // io.matthewnelson.kmp.process/Output.Data.Companion|null[0]
-            final fun (kotlin.collections/Collection<io.matthewnelson.kmp.process/Output.Data?>).merge(): io.matthewnelson.kmp.process/Output.Data // io.matthewnelson.kmp.process/Output.Data.Companion.merge|merge@kotlin.collections.Collection<io.matthewnelson.kmp.process.Output.Data?>(){}[0]
+            final fun (kotlin.collections/Collection<io.matthewnelson.kmp.process/Output.Data?>).consolidate(): io.matthewnelson.kmp.process/Output.Data // io.matthewnelson.kmp.process/Output.Data.Companion.consolidate|consolidate@kotlin.collections.Collection<io.matthewnelson.kmp.process.Output.Data?>(){}[0]
         }
     }
 
