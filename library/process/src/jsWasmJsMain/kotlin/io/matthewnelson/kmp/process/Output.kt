@@ -61,23 +61,14 @@ public actual class Output private constructor(
         ): ByteArray
         public actual abstract fun utf8(): String
 
-//        /**
-//         * Creates a copy of the contents of this instances as a [Buffer].
-//         * */
-//        public fun toBuffer(): Buffer = copyInto(dest = jsBufferAllocUnsafe(len = size).asBuffer())
-//
-//        /**
-//         * TODO
-//         * */
-//        public fun copyInto(
-//            dest: Buffer,
-//            destOffset: Long = 0L,
-//            indexStart: Int = 0,
-//            indexEnd: Int = size,
-//        ): Buffer {
-//            size.checkCopyBounds(destSize = dest.length.toLong(), destOffset, indexStart, indexEnd)
-//            TODO("Not yet implemented")
-//        }
+        // TODO: https://github.com/05nelsonm/kmp-file/issues/229
+        //  public fun toBuffer(): Buffer = copyInto(dest = Buffer.allocUnsafe(len = size))
+        //  public fun copyInto(
+        //      dest: Buffer,
+        //      destOffset: Long = 0L,
+        //      indexStart: Int = 0,
+        //      indexEnd: Int = size,
+        //  ): Buffer
 
         public actual companion object {
             public actual fun Collection<Data?>.consolidate(): Data = commonConsolidate()

@@ -81,8 +81,6 @@ public actual class Output private constructor(
             return bb.asReadOnlyBuffer()
         }
 
-        // TODO: copyInto for dest ByteBuffer
-
         public actual companion object {
             @JvmStatic
             public actual fun Collection<Data?>.consolidate(): Data = commonConsolidate()
