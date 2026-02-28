@@ -29,7 +29,6 @@ import io.matthewnelson.kmp.tor.common.api.ResourceLoader
 import kotlinx.coroutines.*
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
-import kotlin.math.min
 import kotlin.random.Random
 import kotlin.test.*
 import kotlin.time.Duration
@@ -505,7 +504,7 @@ abstract class ProcessBaseTest {
                 var offset = 0
                 // chunked
                 while (offset < data.size) {
-                    val len = min(4097, data.size - offset)
+                    val len = minOf(4097, data.size - offset)
                     p.input!!.writeAsync(data, offset, len)
                     offset += len
                 }

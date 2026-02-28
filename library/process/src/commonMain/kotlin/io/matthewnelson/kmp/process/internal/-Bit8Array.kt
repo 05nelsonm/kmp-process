@@ -24,11 +24,13 @@ internal expect value class Bit8Array internal constructor(internal val storage:
     internal constructor(size: Int)
 
     internal inline operator fun get(index: Int): Byte
+    internal inline fun checkIndexAndGet(index: Int): Byte
     internal inline operator fun set(index: Int, value: Byte)
 
     internal inline fun size(): Int
     internal inline fun indices(): IntRange
     internal inline operator fun iterator(): ByteIterator
+    internal inline operator fun contains(element: Byte): Boolean
 
     internal inline fun copyInto(
         dest: ByteArray,

@@ -21,7 +21,6 @@ import io.matthewnelson.kmp.process.internal.js.typed.JsInt8Array
 import io.matthewnelson.kmp.process.internal.js.typed.new
 import io.matthewnelson.kmp.process.internal.js.typed.get
 import io.matthewnelson.kmp.process.internal.js.typed.set
-import kotlin.math.min
 
 internal actual typealias Bit8ArrayType = JsInt8Array
 
@@ -30,15 +29,24 @@ internal actual value class Bit8Array internal actual constructor(internal actua
     internal actual constructor(size: Int): this(Bit8ArrayType.new(size))
 
     internal actual inline operator fun get(index: Int): Byte = storage[index]
+    internal actual inline fun checkIndexAndGet(index: Int): Byte { size().checkIndex(index); return this[index] }
     internal actual inline operator fun set(index: Int, value: Byte) { storage[index] = value }
 
     internal actual inline fun size(): Int = storage.length
     internal actual inline fun indices(): IntRange = IntRange(0, size() - 1)
     internal actual inline operator fun iterator(): ByteIterator = object : ByteIterator() {
+        private val _size = size()
+        private val _storage = storage
         private var i = 0
-        override fun hasNext(): Boolean = i < size()
-        override fun nextByte(): Byte = if (i < size()) storage[i++]
-        else throw NoSuchElementException("Index $i out of bounds for size ${size()}")
+        override fun hasNext(): Boolean = i < _size
+        override fun nextByte(): Byte = if (i < _size) _storage[i++]
+        else throw NoSuchElementException("Index $i out of bounds for size $_size")
+    }
+    internal actual inline operator fun contains(element: Byte): Boolean {
+        for (i in indices()) {
+            if (storage[i] == element) return true
+        }
+        return false
     }
 
     internal actual inline fun copyInto(
@@ -59,7 +67,7 @@ internal actual value class Bit8Array internal actual constructor(internal actua
 
     internal actual inline fun copyOf(newSize: Int): Bit8Array {
         val a = Bit8Array(newSize)
-        val len = min(size(), newSize)
+        val len = minOf(size(), newSize)
         repeat(len) { i -> a[i] = this[i] }
         return a
     }

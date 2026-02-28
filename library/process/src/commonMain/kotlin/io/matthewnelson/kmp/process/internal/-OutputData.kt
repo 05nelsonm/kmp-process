@@ -23,7 +23,6 @@ import io.matthewnelson.encoding.utf8.UTF8
 import io.matthewnelson.kmp.process.Output
 import kotlin.concurrent.Volatile
 import kotlin.jvm.JvmSynthetic
-import kotlin.math.min
 
 // Used to ensure only asOutputData can instantiate SingleData or SegmentedData
 private val INIT = Any()
@@ -81,16 +80,16 @@ internal fun List<Bit8Array>.asOutputData(): Output.Data {
     if (size == 1) return this[0].asOutputData()
 
     var total = 0
-    val sizes = IntArray(size)
+    val cumulativeSizes = IntArray(size)
     val segments = Array(size) { i ->
         val segment = get(i)
         require(segment.size() > 0) { "array at index[$i] has size[${segment.size()}] <= 0" }
         total += segment.size()
-        sizes[i] = total
+        cumulativeSizes[i] = total
         segment
     }
 
-    return SegmentedData(segments, sizes, INIT)
+    return SegmentedData(segments, cumulativeSizes, INIT)
 }
 
 private object EmptyData: Output.Data(size = 0, INIT) {
@@ -100,10 +99,10 @@ private object EmptyData: Output.Data(size = 0, INIT) {
         override fun nextByte(): Byte = throw NoSuchElementException("Index 0 out of bounds for size 0")
     }
 
-    override fun get(index: Int): Byte = throw IndexOutOfBoundsException("size == 0")
+    override operator fun get(index: Int): Byte = throw IndexOutOfBoundsException("size == 0")
 
-    override fun iterator(): ByteIterator = EmptyIterator
-    override fun contains(element: Byte): Boolean = false
+    override operator fun iterator(): ByteIterator = EmptyIterator
+    override operator fun contains(element: Byte): Boolean = false
     override fun containsAll(elements: Collection<Byte>): Boolean = elements.isEmpty()
 
     override fun copyInto(
@@ -131,7 +130,7 @@ internal sealed class NonEmptyData(size: Int, init: Any?): Output.Data(size, ini
 
     final override fun containsAll(elements: Collection<Byte>): Boolean {
         elements.forEach { element ->
-            if (!this.contains(element)) return false
+            if (element !in this) return false
         }
         return true
     }
@@ -177,8 +176,7 @@ internal sealed class NonEmptyData(size: Int, init: Any?): Output.Data(size, ini
 
         val otherI = other.iterator()
         val thisI = this.iterator()
-        @Suppress("UNUSED_PARAMETER")
-        for (i in indices) {
+        repeat(size) {
             if (otherI.nextByte() != thisI.nextByte()) return false
         }
 
@@ -214,25 +212,9 @@ internal class SingleData internal constructor(
     internal val data: Bit8Array,
     init: Any?,
 ): NonEmptyData(data.size(), init) {
-
-    override fun get(index: Int): Byte = data[index]
-
-    override fun iterator(): ByteIterator = object : ByteIterator() {
-        private val _size = size
-        private val _data = data
-        private var i = 0
-        override fun hasNext(): Boolean = i < _size
-        override fun nextByte(): Byte = if (i < _size) _data[i++]
-        else throw NoSuchElementException("Index $i out of bounds for size $_size")
-    }
-
-    override fun contains(element: Byte): Boolean {
-        for (i in data.indices()) {
-            if (data[i] == element) return true
-        }
-        return false
-    }
-
+    override operator fun get(index: Int): Byte = data.checkIndexAndGet(index)
+    override operator fun iterator(): ByteIterator = data.iterator()
+    override operator fun contains(element: Byte): Boolean = element in data
     override fun copyInto(
         dest: ByteArray,
         destOffset: Int,
@@ -245,22 +227,19 @@ internal class SegmentedData internal constructor(
     @get:JvmSynthetic
     internal val segments: Array<Bit8Array>,
     @get:JvmSynthetic
-    internal val sizes: IntArray,
+    internal val cumulativeSizes: IntArray,
     init: Any?,
-): NonEmptyData(sizes.last(), init) {
+): NonEmptyData(size = cumulativeSizes.last(), init) {
 
-    override fun get(index: Int): Byte {
-        // TODO: binary search sizes for segment index
-        var i = index
-        for (j in segments.indices) {
-            val segment = segments[j]
-            if (i < segment.size()) return segment[i]
-            i -= segment.size()
-        }
-        throw IndexOutOfBoundsException("index[$index] >= size[$size]")
+    override operator fun get(index: Int): Byte {
+        size.checkIndex(index)
+        val iSegment = segmentIndexAt(byteIndex = index)
+        val segment = segments[iSegment]
+        val offset = cumulativeSizes[iSegment] - segment.size()
+        return segment[index - offset]
     }
 
-    override fun iterator(): ByteIterator = object : ByteIterator() {
+    override operator fun iterator(): ByteIterator = object : ByteIterator() {
 
         private val _size = size
         private val _segments = segments
@@ -281,12 +260,9 @@ internal class SegmentedData internal constructor(
         }
     }
 
-    override fun contains(element: Byte): Boolean {
+    override operator fun contains(element: Byte): Boolean {
         for (i in segments.indices) {
-            val segment = segments[i]
-            for (j in segment.indices()) {
-                if (segment[j] == element) return true
-            }
+            if (element in segments[i]) return true
         }
         return false
     }
@@ -298,23 +274,39 @@ internal class SegmentedData internal constructor(
         indexEnd: Int,
     ): ByteArray {
         checkCopyBounds(dest, destOffset, indexStart, indexEnd)
-        // TODO: binary search sizes for segment index
-        var i = indexStart
-        var offset = destOffset
+        var iSegment = segmentIndexAt(byteIndex = indexStart)
+        var offsetSegment = indexStart - (cumulativeSizes[iSegment] - segments[iSegment].size())
+        var offsetDest = destOffset
         var remainder = indexEnd - indexStart
-        var j = 0
-        while (j < segments.size && remainder > 0) {
-            val segment = segments[j++]
-            if (i >= segment.size()) {
-                i -= segment.size()
-                continue
-            }
-            val len = min(remainder, segment.size() - i)
-            segment.copyInto(dest, offset, i, i + len, checkBounds = false)
-            i = 0
-            offset += len
-            remainder -= len
+        while (remainder > 0) {
+            val segment = segments[iSegment++]
+            val length = minOf(remainder, segment.size() - offsetSegment)
+            segment.copyInto(
+                dest,
+                destOffset = offsetDest,
+                indexStart = offsetSegment,
+                indexEnd = offsetSegment + length,
+                checkBounds = false,
+            )
+            offsetSegment = 0 // Will always be 0 after first segment is copied
+            offsetDest += length
+            remainder -= length
         }
         return dest
+    }
+
+    // Assumes byteIndex has been checked to be within 0 until size
+    private fun segmentIndexAt(byteIndex: Int): Int {
+        val cumulativeSizes = cumulativeSizes
+        var i = cumulativeSizes.size / 2
+        while (i > 0 && i < cumulativeSizes.size) {
+            if (byteIndex >= cumulativeSizes[i]) {
+                i++
+                continue
+            }
+            if (byteIndex >= cumulativeSizes[i - 1]) return i
+            i--
+        }
+        return i
     }
 }

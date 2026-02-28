@@ -58,7 +58,7 @@ public actual class Output private constructor(
 
         public actual final override fun isEmpty(): Boolean = commonIsEmpty()
         public actual abstract override operator fun iterator(): ByteIterator
-        public actual abstract override fun contains(element: Byte): Boolean
+        public actual abstract override operator fun contains(element: Byte): Boolean
         public actual abstract override fun containsAll(elements: Collection<Byte>): Boolean
 
         public actual fun toByteArray(): ByteArray = commonToByteArray()
@@ -80,8 +80,6 @@ public actual class Output private constructor(
             }.let { array -> ByteBuffer.wrap(array).also { _bb = it } }
             return bb.asReadOnlyBuffer()
         }
-
-        // TODO: copyInto for dest ByteBuffer
 
         public actual companion object {
             @JvmStatic

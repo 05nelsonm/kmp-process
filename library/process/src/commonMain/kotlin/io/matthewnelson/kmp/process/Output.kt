@@ -72,7 +72,7 @@ public expect class Output {
 
         public final override fun isEmpty(): Boolean
         public abstract override operator fun iterator(): ByteIterator
-        public abstract override fun contains(element: Byte): Boolean
+        public abstract override operator fun contains(element: Byte): Boolean
         public abstract override fun containsAll(elements: Collection<Byte>): Boolean
 
         /**
@@ -114,8 +114,8 @@ public expect class Output {
              * backing the [Data] instance(s).
              *
              * If the collection contains a single instance of [Data], then that instance is returned. If
-             * the collection contains no data (i.e. the sum is `0`), then the empty [Data] object instance
-             * is returned. Any `null` or empty [Data] within the collection are ignored.
+             * the collection contains no data (i.e. the summed size is `0`), then the empty [Data] object
+             * instance is returned. Any `null` or empty [Data] within the collection are dropped.
              *
              * e.g.
              *

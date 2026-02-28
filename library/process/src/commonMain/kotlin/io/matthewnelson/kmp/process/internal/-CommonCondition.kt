@@ -21,7 +21,6 @@ import io.matthewnelson.kmp.process.Process
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
-import kotlin.math.min
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.nanoseconds
@@ -57,7 +56,7 @@ internal inline fun <T: Any> Condition<T>.commonWaitFor(
         if (condition != null) return condition
 
         if (remainingNanos > 0) {
-            val millis = min(
+            val millis = minOf(
                 (remainingNanos.nanoseconds.inWholeMilliseconds + 1).toDouble(),
                 100.0
             ).toLong().milliseconds
